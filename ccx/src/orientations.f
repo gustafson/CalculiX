@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine orientations(inpc,textpart,orname,orab,norien,
-     &  norien_,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &  norien_,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *ORIENTATION
 !
@@ -28,7 +28,7 @@
       character*132 textpart(16)
 !
       integer norien,norien_,istep,istat,n,key,i,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),iaxis,j
+     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),iaxis,j,ier
 !
       real*8 orab(7,*),a(3,3),c(3,3),angle,p(3),dc,ds,pi
 !
@@ -36,13 +36,15 @@
          write(*,*) 
      &       '*ERROR reading *ORIENTATION: *ORIENTATION should be'
          write(*,*) '  placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       norien=norien+1
       if(norien.gt.norien_) then
          write(*,*) '*ERROR reading *ORIENTATION: increase norien_'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     rectangular coordinate system: orab(7,norien)=1
@@ -58,7 +60,8 @@
                write(*,*) '*ERROR reading *ORIENTATION: name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       orientation name:',textpart(i)(1:132)
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:7).eq.'SYSTEM=') then
             if(textpart(i)(8:8).eq.'C') then
@@ -80,13 +83,17 @@
          write(*,*)
      &      '*ERROR reading *ORIENTATION: definition of the following'
          write(*,*) '  orientation is not complete: ',orname(norien)
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=1,6
          read(textpart(i)(1:20),'(f20.0)',iostat=istat) orab(i,norien)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ORIENTATION%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*ORIENTATION%",ier)
+            return
+         endif
       enddo
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -95,11 +102,17 @@
       if((istat.lt.0).or.(key.eq.1)) return
 !
       read(textpart(1)(1:10),'(i10)',iostat=istat) iaxis
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ORIENTATION%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*ORIENTATION%",ier)
+         return
+      endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) angle
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ORIENTATION%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*ORIENTATION%",ier)
+         return
+      endif
 !
 !     additional rotation about an angle only for rectangular
 !     coordinate systems
@@ -108,7 +121,8 @@
          write(*,*) '*ERROR reading *ORIENTATION'
          write(*,*) '       additional rotation about an angle'
          write(*,*) '       is only allowed for rectangular systems'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       call transformatrix(orab(1,norien),p,a)

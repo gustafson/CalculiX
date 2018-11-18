@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine frictionheating(ne0,ne,ipkon,lakon,ielmat,mi,elcon,
      &  ncmat_,ntmat_,kon,islavsurf,pmastsurf,springarea,co,vold,
      &  veold,pslavsurf,xloadact,nload,nload_,nelemload,iamload,
-     &  idefload,sideload,stx,nam)
+     &  idefload,sideload,stx,nam,time,ttime,matname,istep,iinc)
 !
 !     determines the effect of friction heating
 !
@@ -27,19 +27,26 @@
 !
       character*8 lakon(*),lakonl
       character*20 label,sideload(*)
+      character*80 matname(*)
 !
       integer i,j,k,ne0,ne,indexe,ipkon(*),imat,mi(*),ielmat(mi(3),*),
-     &  ncmat_,ntmat_,kon(*),nope,iloc,jfaces,ifaces,nelems,ifacem,
+     &  ncmat_,ntmat_,kon(*),nope,igauss,jfaces,ifaces,nelems,ifacem,
      &  nelemm,jfacem,islavsurf(2,*),nopes,nopem,konl(20),iflag,
      &  mint2d,iamplitude,isector,nload,nload_,nelemload(2,*),nam,
-     &  iamload(2,*),idefload(*)
+     &  iamload(2,*),idefload(*),istep,iinc
 !
       real*8 elcon(0:ncmat_,ntmat_,*),pressure,stx(6,mi(1),*),
      &  pmastsurf(6,*),area,springarea(2,*),pl(3,20),co(3,*),
      &  vold(0:mi(2),*),areaslav,xi,et,vels(3),veold(0:mi(2),*),
      &  xsj2m(3),xs2m(3,7),shp2m(7,9),xsj2s(3),xs2s(3,7),shp2s(7,9),
      &  areamast,pslavsurf(3,*),value,velm(3),um,xloadact(2,*),weight,
-     &  shear,vnorm,f,eta
+     &  shear,vnorm,f,eta,timeend(2),time,ttime,coords(3),xl(3,20)
+!
+      intent(in) ne0,ne,ipkon,lakon,ielmat,mi,elcon,
+     &  ncmat_,ntmat_,kon,islavsurf,pmastsurf,springarea,co,vold,
+     &  veold,pslavsurf,nload_,stx,nam,time,ttime,matname,istep,iinc 
+!
+      intent(inout) iamload,xloadact,sideload,idefload,nelemload,nload
 !
       include "gauss.f"
 !
@@ -69,13 +76,15 @@
          um=elcon(6,1,imat)
 !
          pressure=stx(4,1,i)
+         if(pressure.lt.0.d0) cycle
+!
          shear=dsqrt(stx(5,1,i)**2+stx(6,1,i)**2)
-         if(vnorm.lt.0.d0) then
+         if(vnorm.lt.-0.5d0) then
 !
 !           if ||v||<0 => take differential velocity from the results
 !           no heat generation if no slip
 !
-            if(shear.lt.um*pressure*0.95) cycle
+            if(shear.lt.um*pressure*0.95d0) cycle
          endif
 !
          indexe=ipkon(i)
@@ -85,7 +94,7 @@
          nopem=ichar(lakonl(8:8))-48
          nopes=nope-nopem
 !
-         iloc=kon(indexe+nope+1)
+         igauss=kon(indexe+nope+1)
          jfaces=kon(indexe+nope+2)
 !
 !        slave face
@@ -96,13 +105,13 @@
 !
 !        master face
 !
-         ifacem=int(pmastsurf(3,iloc))
+         ifacem=int(pmastsurf(3,igauss))
          nelemm=int(ifacem/10.d0)
          jfacem=ifacem-10*nelemm
 !
 !        contact area
 !
-         area=springarea(1,iloc)
+         area=springarea(1,igauss)
 !
 !        slave and master nodes
 !
@@ -112,6 +121,51 @@
                pl(k,j)=co(k,konl(j))+vold(k,konl(j))
             enddo
          enddo
+!
+!        user subroutine called if vnorm=-0.01d0
+!
+         if((vnorm.lt.0.d0).and.(vnorm.gt.-0.5d0)) then
+!
+            xi=pslavsurf(1,igauss)
+            et=pslavsurf(2,igauss)
+!
+            do j=nopem+1,nopem+nopes
+               konl(j)=kon(indexe+j)
+               do k=1,3
+                  xl(k,j)=co(k,konl(j))
+               enddo
+            enddo
+!
+!           determining the jacobian vector on the surface 
+!
+            iflag=1
+            if(nopes.eq.8) then
+               call shape8q(xi,et,xl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
+            elseif(nopes.eq.4) then
+               call shape4q(xi,et,xl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
+            elseif(nopes.eq.6) then
+               call shape6tri(xi,et,xl(1,nopem+1),xsj2s,xs2s,shp2s,
+     &                        iflag)
+            else
+               call shape3tri(xi,et,xl(1,nopem+1),xsj2s,xs2s,shp2s,
+     &                        iflag)
+            endif
+!
+!           position of the slave integration point
+!
+            do j=1,3
+               coords(j)=0.d0
+               do k=1,nopes
+                  coords(j)=coords(j)+shp2s(4,k)*xl(j,nopem+k)
+               enddo
+            enddo
+!
+            timeend(1)=time
+            timeend(2)=ttime+time
+            call fricheat(eta,f,vnorm,timeend,matname(imat),i,
+     &                    nelems,jfaces,nelemm,jfacem,um,
+     &                    istep,iinc,area,pressure,coords)
+         endif
 !
 !        heat flux into the slave face
 !
@@ -174,14 +228,14 @@
             call loadadd(nelems,label,value,nelemload,sideload,xloadact,
      &                nload,nload_,iamload,iamplitude,nam,isector,
      &                idefload)
-         else
+         elseif(vnorm.lt.-0.5d0) then
 !
 !           calculate the differential velocity
 !
 !           determining the slave velocity
 !
-            xi=pslavsurf(1,iloc)
-            et=pslavsurf(2,iloc)
+            xi=pslavsurf(1,igauss)
+            et=pslavsurf(2,igauss)
             iflag=1
             if(nopes.eq.8) then
                call shape8q(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
@@ -189,24 +243,24 @@
                call shape4q(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
             elseif(nopes.eq.6) then
                call shape6tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,
-     &iflag)
+     &                        iflag)
             else
                call shape3tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,
-     &iflag)
+     &                        iflag)
             endif
 !
             do k=1,3
                vels(k)=0.d0
                do j=1,nopes
                   vels(k)=vels(k)+shp2s(4,j)*
-     &                            veold(k,konl(nope+j))
+     &                            veold(k,konl(nopem+j))
                enddo
             enddo
 !
 !           determining the master velocity
 !
-            xi=pmastsurf(1,iloc)
-            et=pmastsurf(2,iloc)
+            xi=pmastsurf(1,igauss)
+            et=pmastsurf(2,igauss)
             iflag=1
             if(nopem.eq.8) then
                call shape8q(xi,et,pl,xsj2m,xs2m,shp2m,iflag)

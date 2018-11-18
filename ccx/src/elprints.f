@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine elprints(inpc,textpart,set,
      &  nset,nprint,nprint_,jout,prlab,prset,
      &  nmethod,elprint_flag,nener,ithermal,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,cfd)
+     &  inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,cfd,ier)
 !
 !     reading the *ELEMENT PRINT cards in the input deck
 !
@@ -33,14 +33,15 @@
       character*81 set(*),elset,prset(*)
       character*132 textpart(16)
 !
-      integer nset,nprint,nprint_,istep,istat,n,i,ii,key,
+      integer nset,nprint,nprint_,istep,istat,n,i,ii,key,ier,
      &  jout(2),joutl,ipos,nmethod,nener,ithermal,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),nam,itpamp,idrct,ipoinpc(0:*),cfd
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *EL PRINT: *EL PRINT should only be'
          write(*,*) '  used within a *STEP definition'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       elemsys='L'
@@ -92,8 +93,11 @@
           endif
         elseif(textpart(ii)(1:10).eq.'FREQUENCY=') then
            read(textpart(ii)(11:20),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EL PRINT%")
+           if(istat.gt.0) then
+              call inputerror(inpc,ipoinpc,iline,
+     &             "*EL PRINT%",ier)
+              return
+           endif
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -107,8 +111,11 @@
            endif
         elseif(textpart(ii)(1:11).eq.'FREQUENCYF=') then
            read(textpart(ii)(12:21),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EL PRINT%")
+           if(istat.gt.0) then
+              call inputerror(inpc,ipoinpc,iline,
+     &             "*EL PRINT%",ier)
+              return
+           endif
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -140,13 +147,15 @@
               write(*,*) '*ERROR elprints: time'
               write(*,*) '       points definition',
      &               timepointsname,' is unknown'
-              call exit(201)
+              ier=1
+              return
            endif
            if(idrct.eq.1) then
               write(*,*) '*ERROR reading *EL PRINT: the DIRECT option'
               write(*,*) '       collides with a TIME POINTS '
               write(*,*) '       specification'
-              call exit(201)
+              ier=1
+              return
            endif
            jout(1)=1
            jout(2)=1
@@ -227,8 +236,8 @@
                   write(*,*) '         make sense for 3D fluid'
                   write(*,*) '         calculations; '
                   call inputerror(inpc,ipoinpc,iline,
-     &"*EL PRINT%")
-                  cycle
+     &                 "*EL PRINT%",ier)
+                  return
                endif
             elseif((textpart(ii)(1:4).ne.'S   ').and.
      &             (textpart(ii)(1:4).ne.'E   ').and.
@@ -239,13 +248,14 @@
      &             '*WARNING reading *EL PRINT: label not applicable'
                write(*,*) '         or unknown; '
                call inputerror(inpc,ipoinpc,iline,
-     &"*EL PRINT%")
-               cycle
+     &              "*EL PRINT%",ier)
+               return
             endif
             nprint=nprint+1
             if(nprint.gt.nprint_) then
                write(*,*) '*ERROR reading *EL PRINT: increase nprint_'
-               call exit(201)
+               ier=1
+               return
             endif
             prset(nprint)=elset
             prlab(nprint)(1:4)=textpart(ii)(1:4)

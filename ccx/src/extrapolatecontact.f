@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -47,6 +47,12 @@
      &  t1(3),t2(3),trac(3),xquad(2,9),xtri(2,7),xl2s(3,9),
      &  stn(6,nk),dt1,dl,a2(6,2),a4(4,4),a27(20,27),a9(6,9),
      &  a8(8,8),prop(*)
+!
+      intent(in) yi,ipkon,kon,lakon,nfield,
+     &  nk,ne,mi,ndim,co,cflag,vold,force,pslavsurf,islavact,islavnode,
+     &  nslavnode,ntie,islavsurf,ielprop,prop,ielmat,ne0
+!
+      intent(inout) yn,inum
 !
       data nonei10 /5,1,2,6,2,3,7,3,1,8,1,4,9,2,4,10,3,4/
 !
@@ -540,20 +546,20 @@ c     Bernhardi end
 !     
 !     zeroing nonactive nodes
 !  
-      do i=1,nslavnode(ntie+1)
-         if(islavact(i).ne.1) then
-            do j=1,nfield
-               yn(j,islavnode(i))=0.d0
-            enddo
-         endif
-      enddo
+c      do i=1,nslavnode(ntie+1)
+c         if(islavact(i).ne.1) then
+c            do j=1,nfield
+c               yn(j,islavnode(i))=0.d0
+c            enddo
+c         endif
+c      enddo
 !     
 !     for 1d and 2d elements only:
 !     finding the solution in the original nodes
 !     
       if((cflag.ne.' ').and.(cflag.ne.'E')) then
          call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co,
-     &        vold,force,mi)
+     &        vold,force,mi,ielprop,prop)
       endif
 !     
       return

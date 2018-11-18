@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine createinum(ipkon,inum,kon,lakon,nk,ne,cflag,nelemload,
-     &  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat)
+     &  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat,
+     &  ielprop,prop)
 !
 !     determines inum in case no extrapolation is requested in the
 !     input deck (e.g. only nodal variables are requested)
@@ -31,9 +32,15 @@
 !
       integer ipkon(*),inum(*),kon(*),ne,indexe,nope,nfield,mi(*),
      &  nk,i,j,nelemload(2,*),nload,node,nboun,nlayer,nopeexp,
-     &  nodeboun(*),ndirboun(*),ithermal(2),ielmat(mi(3),*)
+     &  nodeboun(*),ndirboun(*),ithermal(2),ielmat(mi(3),*),
+     &  ielprop(*)
 !
-      real*8 yn,co(3,*),vold(0:mi(2),*)
+      real*8 yn,co(3,*),vold(0:mi(2),*),prop(*)
+!
+      intent(in) ipkon,kon,lakon,nk,ne,cflag,nelemload,
+     &  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat
+!
+      intent(inout) inum
 !
       force=.false.
 !
@@ -119,7 +126,7 @@ c     Bernhardi end
       if((cflag.ne.' ').and.(cflag.ne.'E')) then
          nfield=0
          call map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,ne,cflag,co,
-     &         vold,force,mi)
+     &         vold,force,mi,ielprop,prop)
       endif
 !
       return

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,9 +28,181 @@
 !
 !     calculates nal,qa,fn,xstiff,ener,eme,eei,stx for user element 1
 !
+!     This is a beam type element. Reference:
 !     Yunhua Luo, An Efficient 3D Timoshenko Beam Element with
 !     Consistent Shape Functions, Adv. Theor. Appl. Mech., Vol. 1,
 !     2008, no. 3, 95-106
+!
+!
+!     special case for which the beam axis goes through the
+!     center of gravity of the cross section and the 1-direction
+!     corresponds with a principal axis
+!
+!     note that the strain components are Lagrange strain components,
+!     the stress components are Piola-Kirchhoff components of the
+!     second kind. For linear geometric calculations the strains
+!     reduce to the infinitesimal strains
+!
+!
+!     INPUT:
+!
+!     co(1..3,i)         coordinates of node i
+!     kon(*)             contains the topology of all elements. The
+!                        topology of element i starts at kon(ipkon(i)+1)
+!                        and continues until all nodes are covered. The
+!                        number of nodes depends on the element label
+!     ipkon(i)           points to the location in field kon preceding
+!                        the topology of element i
+!     lakon(i)           label of element i (character*8)
+!     ne                 highest element number in the mesh
+!     v(0..mi(2),i)      value of the variables in node i at the end
+!                        of the present iteration
+!     elcon              elastic constants (cf. List of variables and
+!                        their meaning in the User's Manual)
+!     nelcon             integers describing the elastic constant fields
+!                        (cf. User's Manual)
+!     rhcon              density constants (cf. User's Manual)
+!     nrhcon             integers describing the density constant fields
+!                        (cf. User's Manual)
+!     alcon              thermal expansion constants (cf. User's Manual)
+!     nalcon             integers describing the thermal expansion 
+!                        constants (cf. User's Manual)
+!     alzero             thermal expansion reference values (cf. User's Manual)
+!     ielmat(i)          material for element i
+!     ielorien(i)        orientation for element i
+!     norien             number of orientations
+!     orab(7,*)          description of all local coordinate systems.
+!                        (cf. List of variables and their meaning in the
+!                        User's manual)
+!     ntmat_             maximum number of material temperature points
+!     t0(i)              temperature in node i at start of calculation
+!     t1(i)              temperature in node i at the end of the current
+!                        increment
+!     ithermal(1..2)     cf. List of variables and
+!                        their meaning in the User's Manual
+!     prestr(i,j,k)      residual stress component i in integration point j
+!                        of element k 
+!     iprestr            if 0: no residual stresses
+!                        else: residual stresses
+!     iperturb(*)        describes the kind of nonlinearity of the
+!                        calculation, cf. User's Manual
+!     iout               if -2: v is assumed to be known and is used to
+!                               calculate strains, stresses..., no result output
+!                               corresponds to iout=-1 with in addition the
+!                               calculation of the internal energy density
+!                        if -1: v is assumed to be known and is used to
+!                               calculate strains, stresses..., no result 
+!                               output; is used to take changes in SPC's and 
+!                               MPC's at the start of a new increment or 
+!                               iteration into account
+!                        if 0: v is calculated from the system solution
+!                              and strains, stresses.. are calculated, 
+!                              no result output
+!                        if 1: v is calculated from the system solution and 
+!                              strains, stresses.. are calculated, requested 
+!                              results output
+!                        if 2: v is assumed to be known and is used to 
+!                              calculate strains, stresses..., requested 
+!                              results output
+!     vold(0..mi(2),i)   value of the variables in node i at the end
+!                        of the previous iteration
+!     nmethod            procedure:
+!                        1: static analysis
+!                        2: frequency analysis  
+!                        3: buckling analysis 
+!                        4: (linear or nonlinear) dynamic analysis 
+!                        5: steady state dynamics analysis 
+!                        6: Coriolis frequency calculation 
+!                        7: flutter frequency calculation 
+!                        8:  magnetostatics 
+!                        9:  magnetodynamics 
+!                        10: electromagnetic eigenvalue problems 
+!                        11: superelement creation or Green function 
+!                            calculation 
+!                        12: sensitivity analysis  
+!     veold(j,i)         time rate of variable j in node i at the end
+!                        of the previous iteration
+!     dtime              length of present time increment
+!     time               step time at the end of the present increment
+!     ttime              total time at the start of the present increment
+!     plicon,nplicon     fields describing isotropic hardening of
+!                        a plastic material or spring constants of
+!                        a nonlinear spring (cf. User's Manual)
+!     plkcon,nplkcon     fields describing kinematic hardening of
+!                        a plastic material or gap conductance
+!                        constants (cf. User's Manual)
+!     xstateini(i,j,k)   state variable component i in integration point j
+!                        of element k at the start of the present increment
+!     xstate(i,j,k)      state variable component i in integration point j
+!                        of element k at the end of the present increment
+!     npmat_             maximum number of plastic constants
+!     matname(i)         name of material i
+!     mi(1)              max # of integration points per element (max
+!                        over all elements)
+!     mi(2)              max degree of freedom per node (max over all
+!                        nodes) in fields like v(0:mi(2))...
+!     mi(3)              max number of layers in the structure
+!     ielas              0: no elastic iteration: irreversible effects
+!                        are allowed
+!                        1: elastic iteration, i.e. no irreversible
+!                           deformation allowed
+!     icmd               not equal to 3: calculate stress and stiffness
+!                        3: calculate only stress
+!     ncmat_             max number of elastic constants
+!     nstate_            max number of state variables in any integration
+!                        point
+!     stiini(i,j,k)      stress component i in integration point j
+!                        of element k at the start of the present
+!                        increment (= end of last increment)
+!     vini(0..mi(2),i)   value of the variables in node i at the start
+!                        of the present increment
+!     enerini(j,k)       internal energy density at integration point j
+!                        of element k at the start of the present increment
+!     istep              current step number
+!     iinc               current increment number within the actual step
+!     reltime            relative step time (between 0 and 1)
+!     calcul_fn          if 0: no nodal forces have to be calculated
+!                        else: nodal forces are required on output
+!     calcul_qa          if 0: no mean forces have to be calculated
+!                        else: mean forces are required on output
+!     calcul_cauchy      if 0: no Cauchy stresses are required
+!                        else: Cauchy stresses are required on output: have
+!                              to be calculated from the PK2 stresses
+!     nener              if 0: internal energy calculation is not required
+!                        else: internal energy is required on output
+!     ikin               if 0: kinetic energy calculation is not requred
+!                        else: kinetic energy is required on output
+!     ne0                largest element number without contact elements (are
+!                        stored after all other elements)
+!     thicke(j,i)        layer thickness for layer j in element i
+!     emeini(i,j,k)      mechanical strain component i in integration point j
+!                        of element k at the start of the present increment
+!     i                  actual element at stake
+!     ielprop(i)         points to the location in field prop preceding
+!                        the properties of element i
+!     prop(*)            contains the properties and some beam 
+!                        elements (cf. User's Manual)
+!
+!
+!     OUTPUT:
+!
+!     stx(i,j,k)         stress component i in integration point j
+!                        of element k at the end of the present
+!                        iteration
+!     eme(i,j,k)         mechanical strain component i in integration point j
+!                        of element k at the end of the present iteration
+!     fn(j,i)            nodal force component j in node i
+!     qa(1..4)           qa(1): average force
+!                        qa(2): average flux
+!                        ... cf. User's Manual
+!     xstiff(i,j,k)      stiffness (i=1...21) and conductivity
+!                        (i=22..27) constants in integration point j
+!                        of element k
+!     ener(j,k)          internal energy density at integration point j
+!                        of element k at the end of the present increment
+!     eei(i,j,k)         total strain component i in integration point j
+!                        of element k at the end of the present iteration
+!     nal                number of nodal force contributions
 !
       implicit none
 !
@@ -75,17 +247,6 @@
       intent(inout) nal,qa,fn,xstiff,ener,eme,eei,stx
 !
       nope=2
-!
-!     q contains the nodal forces per element; initialization of q
-!
-      if((iperturb(1).ge.2).or.((iperturb(1).le.0).and.(iout.lt.1))) 
-     &     then
-         do m1=1,nope
-            do m2=0,mi(2)
-               q(m2,m1)=fn(m2,konl(m1))
-            enddo
-         enddo
-      endif
 !
       indexe=ipkon(i)
 !
@@ -151,6 +312,17 @@
             vl(j,k)=v(j,konl(k))
          enddo
       enddo
+!
+!     q contains the nodal forces per element; initialization of q
+!
+      if((iperturb(1).ge.2).or.((iperturb(1).le.0).and.(iout.lt.1))) 
+     &     then
+         do m1=1,nope
+            do m2=0,mi(2)
+               q(m2,m1)=fn(m2,konl(m1))
+            enddo
+         enddo
+      endif
 !
 !     local axes e1-e2-e3  (e2 is given by the user (in the input deck
 !     this is called e1), e1 is parallel to the beam axis)
@@ -234,6 +406,8 @@
 !
 !     calculating the local displacement and rotation values
 !
+!     values 1..6 of vl are u,v,w,phi,psi,theta from Luo
+!
       do k=1,nope
          node=kon(indexe+k)
          do j=1,3
@@ -257,11 +431,11 @@
       do jj=1,nope
 !
 !        calculating the derivative of the local displacement and
-!        rotation values
+!        rotation values (from Eqn. (19) and (20) in Luo)
 !
          vlp(1,jj)=(-vl(1,1)+vl(1,2))/dl
          vlp(2,jj)=
-     &     bey*(6.d0*xi(jj)**2-3.d0*xi(jj)+aly*xi(jj))/dl*vl(2,1)+
+     &     bey*(6.d0*xi(jj)**2-6.d0*xi(jj)+aly*xi(jj))/dl*vl(2,1)+
      &    bey*(3.d0*xi(jj)**2+(aly-4.d0)*xi(jj)+(1.d0-aly/2.d0))*vl(6,1)
      &    +bey*(-6.d0*xi(jj)**2+6.d0*xi(jj)-aly)/dl*vl(2,2)
      &    +bey*(3.d0*xi(jj)**2-(2.d0+aly)*xi(jj)+aly/2.d0)*vl(6,2)
@@ -279,7 +453,7 @@
      &           +6.d0*bey*(-2.d0*xi(jj)+1.d0)/(dl*dl)*vl(2,2)
      &           +bey*(6.d0*xi(jj)-(aly+2.d0))/dl*vl(6,2)
 !
-!        calculation of the strains
+!        calculation of the strains (Eqn. (8) in Luo)
 !
          eloc(1)=vlp(1,jj)
          eloc(2)=-vlp(6,jj)
@@ -288,7 +462,7 @@
          eloc(5)=vlp(3,jj)+vl(5,jj)
          eloc(6)=vlp(4,jj)
 !
-!           determining the mechanical strain
+!        determining the mechanical strain
 !
          if(ithermal(1).ne.0) then
             do m1=2,6
@@ -310,6 +484,8 @@
          endif
 !
 !        calculating the section forces
+!        simplified version of Eqn. (11) in Luo (symmetric case
+!        for which Ay=Az=J=0)
 !
          stre(1)=e*a*emec(1)
          stre(2)=e*xi11*emec(2)

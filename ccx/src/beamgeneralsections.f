@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  iendset,ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  thicke,ipkon,iponor,xnor,ixfree,offset,lakon,irstrt,istep,
      &  istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,mi,ielprop,nprop,
-     &  nprop_,prop,nelcon)
+     &  nprop_,prop,nelcon,ier)
 !
 !     reading the input deck: *BEAM SECTION
 !     for sections of type PIPE, BOX and GENERAL
@@ -41,17 +41,18 @@
      &  ipoinpc(0:*),ielorien(mi(3),*),ipkon(*),iline,ipol,inl,lprop,
      &  ipoinp(2,*),inp(3,*),nset,nmat,norien,istep,istat,n,key,i,j,k,l,
      &  imaterial,iorientation,ipos,m,iponor(2,*),ixfree,indexx,indexe,
-     &  irstrt,ielprop(*),nprop_,nprop,npropstart,ndprop,ndpropread,
-     &  nelcon(2,*)
+     &  irstrt(*),ielprop(*),nprop_,nprop,npropstart,ndprop,ndpropread,
+     &  nelcon(2,*),ier
 !
       real*8 thicke(mi(3),*),thickness1,thickness2,p(3),xnor(*),
      &  offset(2,*),offset1,offset2,dd,prop(*)
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *BEAM SECTION:'
          write(*,*) '       *BEAM SECTION should'
          write(*,*) '       be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       offset1=0.d0
@@ -85,16 +86,23 @@
             else
                write(*,*) 
      &           '*ERROR reading *BEAM SECTION: unknown section'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:8).eq.'OFFSET1=') then
             read(textpart(i)(9:28),'(f20.0)',iostat=istat) offset1
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BEAM SECTION%",ier)
+               return
+            endif
          elseif(textpart(i)(1:8).eq.'OFFSET2=') then
             read(textpart(i)(9:28),'(f20.0)',iostat=istat) offset2
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BEAM SECTION%",ier)
+               return
+            endif
          else
             write(*,*) '*WARNING reading *BEAM SECTION:'
             write(*,*) '         parameter not recognized:'
@@ -110,7 +118,8 @@
       if(section.eq.'    ') then
          write(*,*) '*ERROR reading *BEAM SECTION:'
          write(*,*) '       no section defined'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     check for the existence of the set,the material and orientation
@@ -123,8 +132,8 @@
          write(*,*) '       nonexistent material'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM SECTION%")
-         call exit(201)
+     &        "*BEAM SECTION%",ier)
+         return
       endif
       imaterial=i
 !
@@ -146,8 +155,8 @@
      &   '*ERROR reading *BEAM SECTION: nonexistent orientation'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM SECTION%")
-            call exit(201)
+     &           "*BEAM SECTION%",ier)
+            return
          endif
          iorientation=i
       endif
@@ -161,8 +170,8 @@
      &      elset(1:ipos)
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM SECTION%")
-         call exit(201)
+     &        "*BEAM SECTION%",ier)
+         return
       endif
 !
 !     assigning the elements of the set the appropriate material,
@@ -173,11 +182,13 @@
             if(ialset(j).gt.0) then
                if(lakon(ialset(j))(1:4).ne.'B32R') then
                   write(*,*) '*ERROR reading *BEAM SECTION:'
-                  write(*,*) '       *BEAM SECTION can'
+                  write(*,*) '       *BEAM SECTION of type ',
+     &                            section,' can'
                   write(*,*) '       only be used for B32R elements.'
                   write(*,*) '       Element ',ialset(j),' is not a B32R
      & element.'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                ielmat(1,ialset(j))=imaterial
                ielorien(1,ialset(j))=iorientation
@@ -195,11 +206,13 @@
                   if(k.ge.ialset(j-1)) exit
                   if(lakon(k)(1:1).ne.'B') then
                      write(*,*) '*ERROR reading *BEAM SECTION:'
-                     write(*,*) '       *BEAM SECTION can'
+                     write(*,*) '       *BEAM SECTION of type ',
+     &                            section,' can'
                      write(*,*) '       only be used for beam elements.'
                      write(*,*) '       Element ',k,' is not a beam elem
      &ent.'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   ielmat(1,k)=imaterial
                   ielorien(1,k)=iorientation
@@ -219,13 +232,14 @@
 !
          do j=istartset(i),iendset(i)
             if(ialset(j).gt.0) then
-               if(lakon(ialset(j))(1:2).ne.'U1') then
+               if(lakon(ialset(j))(1:5).ne.'U1   ') then
                   write(*,*) '*ERROR reading *BEAM SECTION:'
                   write(*,*) '       *BEAM SECTION of type GENERAL can'
                   write(*,*) '       only be used for U1 elements.'
                   write(*,*) '       Element ',ialset(j),' is not a U1
      & element.'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                ielmat(1,ialset(j))=imaterial
                ielorien(1,ialset(j))=iorientation
@@ -234,14 +248,15 @@
                do
                   k=k-ialset(j)
                   if(k.ge.ialset(j-1)) exit
-                  if(lakon(k)(1:2).ne.'U1') then
+                  if(lakon(k)(1:5).ne.'U1   ') then
                      write(*,*) '*ERROR reading *BEAM SECTION:'
                      write(*,*) '       *BEAM SECTION of type GENERAL'
                      write(*,*) '       can only be used for beam'
                      write(*,*) '       elements.'
                      write(*,*) '       Element ',k,' is not a beam elem
      &ent.'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   ielmat(1,k)=imaterial
                   ielorien(1,k)=iorientation
@@ -262,8 +277,11 @@
             if(lprop.gt.ndpropread) exit
             read(textpart(k),'(f40.0)',iostat=istat)
      &           prop(nprop+lprop)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BEAM SECTION%",ier)
+               return
+            endif
          enddo
       enddo
       nprop=nprop+ndprop
@@ -284,20 +302,30 @@
 !           1-direction specified by the user
 !
             read(textpart(1)(1:20),'(f20.0)',iostat=istat) p(1)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &           "*BEAM SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BEAM SECTION%",ier)
+               return
+            endif
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) p(2)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &           "*BEAM SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BEAM SECTION%",ier)
+               return
+            endif
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) p(3)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &           "*BEAM SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BEAM SECTION%",ier)
+               return
+            endif
             dd=dsqrt(p(1)*p(1)+p(2)*p(2)+p(3)*p(3))
             if(dd.lt.1.d-10) then
                write(*,*) 
      &           '*ERROR reading *BEAM SECTION: normal in direction 1'
                write(*,*) '       has zero size'
-               call exit(201)
+               ier=1
+               return
             endif
             do j=1,3
                prop(nprop+j)=p(j)/dd
@@ -313,7 +341,8 @@
       if(nprop.gt.nprop_) then
          write(*,*) 
      &       '*ERROR reading *BEAM SECTION: increase nprop_'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     calculating the dimensions of the rectangular parent beam
@@ -374,20 +403,30 @@
 !
       indexx=-1
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) p(1)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM SECTION%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*BEAM SECTION%",ier)
+         return
+      endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) p(2)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM SECTION%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*BEAM SECTION%",ier)
+         return
+      endif
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) p(3)
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BEAM SECTION%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*BEAM SECTION%",ier)
+         return
+      endif
       dd=dsqrt(p(1)*p(1)+p(2)*p(2)+p(3)*p(3))
       if(dd.lt.1.d-10) then
          write(*,*) 
      &    '*ERROR reading *BEAM SECTION: normal in direction 1'
          write(*,*) '       has zero size'
-         call exit(201)
+         ier=1
+         return
       endif
       do j=1,3
          p(j)=p(j)/dd

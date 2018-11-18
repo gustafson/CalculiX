@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -62,7 +62,7 @@
          areax=((p1(2)*p2(3))-(p2(2)*p1(3)))**2
          areay=(-(p1(1)*p2(3))+(p2(1)*p1(3)))**2
          areaz=((p1(1)*p2(2))-(p2(1)*p1(2)))**2
-         areaface=areaface+dsqrt(areax+areay+areaz)/2.
+         areaface=areaface+dsqrt(areax+areay+areaz)/2.d0
        enddo
 !     
 !     loop over clipping edges
@@ -258,7 +258,7 @@
          areax=((p1(2)*p2(3))-(p2(2)*p1(3)))**2
          areay=(-(p1(1)*p2(3))+(p2(1)*p1(3)))**2
          areaz=((p1(1)*p2(2))-(p2(1)*p1(2)))**2
-         area=area+dsqrt(areax+areay+areaz)/2.
+         area=area+dsqrt(areax+areay+areaz)/2.d0
        enddo
          if(border)write(20,*)'border reached'
       endif

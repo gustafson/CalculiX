@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,7 +51,7 @@
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,nea,
      &  neb,ndesi,nodedesi(*),idesvar,istartelem(*),ialelem(*),
      &  icoordinate,ii,inode,lprev,ij,ilength,idof2,id1,
-     &  icomplex,ics(*),mcs,nzss
+     &  icomplex,ics(*),mcs,nzss,idesloc
 !
       real*8 co(3,*),coefmpc(*),xload(2,*),p1(3),p2(3),bodyf(3),
      &  xloadold(2,*),reltime,t0(*),t1(*),vold(0:mi(2),*),
@@ -64,7 +64,7 @@
      &  plkcon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),cs(17,*),
      &  veold(0:mi(2),*),om,dtime,ttime,time,thicke(mi(3),*),
      &  doubleglob(*),clearini(3,9,*),pslavsurf(3,*),valuei,
-     &  pmastsurf(6,*),distmin,dfl(ndesi,60),waluer,waluei,
+     &  pmastsurf(6,*),distmin,dfl(20,120),waluer,waluei,
      &  df(*),dxstiff(27,mi(1),ne,*),v(0:mi(2),*)
 !
       intent(in) co,kon,ipkon,lakon,ne,ipompc,nodempc,coefmpc,nmpc,
@@ -161,9 +161,9 @@ c     Bernhardi end
 !     
 !     assigning centrifugal forces
 !     
-               bodyf(1)=0.
-               bodyf(2)=0.
-               bodyf(3)=0.
+               bodyf(1)=0.d0
+               bodyf(2)=0.d0
+               bodyf(3)=0.d0
 !     
                index=i
                do
@@ -216,6 +216,7 @@ c     Bernhardi end
             do ii=istartelem(i),istartelem(i+1)-1
                idesvar=ialelem(ii)
                if(idesvar.eq.0) cycle
+               idesloc=ii-istartelem(i)+1
 !
                do jj=1,3*nope
 !     
@@ -255,10 +256,10 @@ c     Bernhardi end
                               endif
                               idof2=nactdof(nodempc(2,index),inode)
                               if(idof2.gt.0) then
-                                 valuer=-coefmpc(index)*dfl(idesvar,jj)/
+                                 valuer=-coefmpc(index)*dfl(idesloc,jj)/
      &                                coefmpc(ist)
                                  valuei=-coefmpc(index)*
-     &                                dfl(idesvar,60+jj)/coefmpc(ist)
+     &                                dfl(idesloc,60+jj)/coefmpc(ist)
                                  if(icomplex.eq.0) then
                                     call add_bo_st(df,jqs,irows,idof2,
      &                                   idesvar,valuer)
@@ -283,9 +284,9 @@ c     Bernhardi end
                      cycle
                   endif
                   call add_bo_st(df,jqs,irows,jdof1,
-     &                 idesvar,dfl(idesvar,jj))
+     &                 idesvar,dfl(idesloc,jj))
                   call add_bo_st(df(nzss+1),jqs,irows,jdof1,
-     &                 idesvar,dfl(idesvar,60+jj))
+     &                 idesvar,dfl(idesloc,60+jj))
                enddo
             enddo
          enddo

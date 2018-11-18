@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -79,7 +79,7 @@ c      write(*,*) (jdof(i),i=1,7)
 !
 c      write(*,*) 'mpcforc=, f= ',force,f
 !
-      a(7)=-1.
+      a(7)=-1.d0
 !
 !     only one change per increment is allowed
 !        (change= from free to linked or vice versa)

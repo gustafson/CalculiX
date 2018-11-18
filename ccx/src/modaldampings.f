@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine modaldampings(inpc,textpart,nmethod,xmodal,istep,
-     &  istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &  istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *MODAL DAMPING
 !
@@ -29,14 +29,16 @@
       character*132 textpart(16)
 !
       integer nmethod,istep,istat,n,key,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ipoinpc(0:*),i,lowfrequ,highfrequ,k
+     &  inp(3,*),ipoinpc(0:*),i,lowfrequ,highfrequ,k,ier
 !
       real*8 xmodal(*),zeta
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in modaldampings: *MODAL DAMPING can only'
+         write(*,*) 
+     &      '*ERROR reading *MODAL DAMPING: *MODAL DAMPING can only'
          write(*,*) '  be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       rayleigh=.false.
@@ -45,7 +47,7 @@
             rayleigh=.true.
          else
             write(*,*) 
-     &        '*WARNING in modaldampings: parameter not recognized:'
+     &      '*WARNING reading *MODAL DAMPING: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -53,23 +55,29 @@
          endif
       enddo
       if(rayleigh) then
-         xmodal(11)=-0.5
+         xmodal(11)=-0.5d0
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) then
-            write(*,*) '*ERROR in modaldampings: definition 
+            write(*,*) '*ERROR reading *MODAL DAMPING: definition 
      &                  not complete'
             write(*,*) '       '
             call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DAMPING%")
-            call exit(201)
+     &           "*MODAL DAMPING%",ier)
+            return
          endif
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmodal(1)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DAMPING%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*MODAL DAMPING%",ier)
+            return
+         endif
          read(textpart(4)(1:20),'(f20.0)',iostat=istat) xmodal(2)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DAMPING%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*MODAL DAMPING%",ier)
+            return
+         endif
 !
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
@@ -81,14 +89,23 @@
             if((istat.lt.0).or.(key.eq.1)) exit
 !
             read(textpart(1)(1:10),'(i10)',iostat=istat) lowfrequ
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DAMPING%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*MODAL DAMPING%",ier)
+               return
+            endif
             read(textpart(2)(1:10),'(i10)',iostat=istat) highfrequ
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DAMPING%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*MODAL DAMPING%",ier)
+               return
+            endif
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) zeta
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DAMPING%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*MODAL DAMPING%",ier)
+               return
+            endif
 !
             if(highfrequ<lowfrequ) highfrequ=lowfrequ  
             do k=lowfrequ,highfrequ

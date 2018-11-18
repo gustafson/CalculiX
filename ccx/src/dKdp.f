@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -52,10 +52,10 @@
       df1dK=7d0/4d0*zk0**(7d0/4d0)*K_x**(3.d0/4.d0)
      &     +7d0/4d0*dabs(1-K_x)**(3.d0/4.d0)
 !     
-      uprime(1)=0.8d0*x**1.6d0*lambda1*Pup**(-0.2)
+      uprime(1)=0.8d0*x**1.6d0*lambda1*Pup**(-0.2d0)
      &     /(xflow*Tup**0.8d0)*f1_x+u(1)
      &     *(lambda1*x**1.6d0*Pup**0.8d0/(xflow*Tup**0.8d0)
-     &     *df1dK-2/x)
+     &     *df1dK-2.d0/x)
 !      write(*,*) 'uprime',x,uprime(1)
 !     
       return

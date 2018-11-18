@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1099,25 +1099,25 @@ c                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
 !     determining p
 !     
          gr(1,1)=1.d0 
-         gr(1,2)=0. 
+         gr(1,2)=0.d0 
          gr(2,2)=1.d0 
-         gr(1,3)=0. 
-         gr(2,3)=0. 
+         gr(1,3)=0.d0 
+         gr(2,3)=0.d0 
          gr(3,3)=1.d0 
-         gr(1,4)=0. 
-         gr(2,4)=0. 
-         gr(3,4)=0. 
+         gr(1,4)=0.d0 
+         gr(2,4)=0.d0 
+         gr(3,4)=0.d0 
          gr(4,4)=1.d0
-         gr(1,5)=0.
-         gr(2,5)=0.
-         gr(3,5)=0.
-         gr(4,5)=0.
+         gr(1,5)=0.d0
+         gr(2,5)=0.d0
+         gr(3,5)=0.d0
+         gr(4,5)=0.d0
          gr(5,5)=1.d0
-         gr(1,6)=0.
-         gr(2,6)=0.
-         gr(3,6)=0.
-         gr(4,6)=0.
-         gr(5,6)=0.
+         gr(1,6)=0.d0
+         gr(2,6)=0.d0
+         gr(3,6)=0.d0
+         gr(4,6)=0.d0
+         gr(5,6)=0.d0
          gr(6,6)=1.d0
          do i=1,6
             do j=1,i-1
@@ -1165,7 +1165,8 @@ c                  write(*,*) 'iloop,dg,fu ',iloop,dg,fu
 !
 !     maximum equivalent viscoplastic strain in this increment
 !
-      depvisc=max(depvisc,c0*dg)
+c      depvisc=max(depvisc,c0*dg)
+      depvisc=0.d0
 !
       return
       end

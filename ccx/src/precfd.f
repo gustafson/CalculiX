@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -661,8 +661,6 @@ c         write(*,*) 'precfd ',i,nactdoh(i)
 !           wedges
 !
             j=ielfa(4,i)
-c            j=jopposite6(j)
-c            if(j.eq.0) cycle
             jop=jopposite6(j)
             if(jop.eq.0) then
                jop=j+1
@@ -677,7 +675,6 @@ c            if(j.eq.0) cycle
          else
             cycle
          endif
-c         indexf=ipnei(iel1)
          ielfa(3,i)=neiel(indexf+j)
       enddo
 !
@@ -706,7 +703,6 @@ c      write(*,*)
          write(*,*) '         has not been defined.'
          write(*,*)
       else
-c         nsolidsurf=0
          do j=istartset(i),iendset(i)
             nsolidsurf=nsolidsurf+1
             isolidsurf(nsolidsurf)=ialset(j)

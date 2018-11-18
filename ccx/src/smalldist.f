@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,6 +28,10 @@
 !
       real*8 dist,distmin,co(3,*)
 !
+      intent(in) co,lakon,ipkon,kon,ne
+!
+      intent(inout) distmin
+!
       neigh2=reshape((/1,2/),(/2,1/))
       neigh4=reshape((/1,2,2,3,3,1,1,4,2,4,3,4/),(/2,6/))
       neigh6=reshape((/1,2,2,3,3,1,4,5,5,6,6,4,1,4,2,5,3,6/),(/2,9/))
@@ -43,7 +47,7 @@
      &               5,13,13,6,6,14,14,7,7,15,15,8,8,16,16,5,
      &               1,17,17,5,2,18,18,6,3,19,19,7,4,20,20,8/),(/2,24/))
 
-!     determining the distance between nodes 
+!     determining the smallest distance between nodes 
 !     
       distmin=1.d30
 !
@@ -126,8 +130,8 @@
          endif
       enddo
 !
-c      distmin=dsqrt(distmin)*1.0e-03
-      distmin=dsqrt(distmin)*1.0e-04
+c      distmin=dsqrt(distmin)*1.0e-04
+      distmin=dsqrt(distmin)*1.0e-06
 !     
       return
       end

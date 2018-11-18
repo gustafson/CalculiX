@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@
      &  co,labmpc,typeboun,istat,n,iline,ipol,
      &  inl,ipoinp,inp,nam_,namtot_,namta,amta,nmethod,iperturb,
      &  ipoinpc,vold,mi,xload,sideload,nload,nelemload,lakon,kon,
-     &  ipkon,ne)
+     &  ipkon,ne,iamplitudedefault,namtot,ier)
 !
 !     reading the input deck: *BOUNDARYF
 !
@@ -48,13 +48,13 @@
      &  ilmpc(*),ntrans,nk_,ipos,m,ne,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,namtot_,
      &  namta(3,*),idelay,nmethod,iperturb,ipoinpc(0:*),
-     &  mi(*)
+     &  mi(*),iamplitudedefault,ier
 !
       real*8 xboun(*),bounval,coefmpc(*),trab(7,*),co(3,*),amta(2,*),
      &  vold(0:mi(2),*),xload(2,*)
 !
       type='F'
-      iamplitude=0
+      iamplitude=iamplitudedefault
       idelay=0
       user=.false.
       fixed=.false.
@@ -74,8 +74,8 @@
      &           '*ERROR reading *BOUNDARYF: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARYF%")
-               call exit(201)
+     &              "*BOUNDARYF%",ier)
+               return
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
@@ -84,41 +84,42 @@
                write(*,*) '       DELAY is used twice in the same'
                write(*,*) '       keyword; '
                call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARYF%")
-               call exit(201)
+     &              "*BOUNDARYF%",ier)
+               return
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR reading *BOUNDARYF: increase nam_'
-               call exit(201)
+               ier=1
+               return
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
                write(*,*)'*ERROR reading *BOUNDARYF: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
-            if(nam.eq.1) then
-               namtot=0
-            else
-               namtot=namta(2,nam-1)
-            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR boundaries: increase namtot_'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARYF%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARYF%",ier)
+               return
+            endif
          elseif(textpart(i)(1:4).eq.'USER') then
             user=.true.
          else
@@ -144,23 +145,32 @@
          if((istat.lt.0).or.(key.eq.1)) return
 !
          read(textpart(3)(1:10),'(i10)',iostat=istat) ibounstart
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARYF%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*BOUNDARYF%",ier)
+            return
+         endif
 !     
          if(textpart(4)(1:1).eq.' ') then
             ibounend=ibounstart
          else
             read(textpart(4)(1:10),'(i10)',iostat=istat) ibounend
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARYF%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARYF%",ier)
+               return
+            endif
          endif
 !     
          if(textpart(5)(1:1).eq.' ') then
             bounval=0.d0
          else
             read(textpart(5)(1:20),'(f20.0)',iostat=istat) bounval
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARYF%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARYF%",ier)
+               return
+            endif
          endif
 !     
 !        dummy boundary condition consisting of the first primes
@@ -172,11 +182,15 @@
             if((l.gt.ne).or.(l.le.0)) then
                write(*,*) '*ERROR reading *BOUNDARYF:'
                write(*,*) '       element ',l,' is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
             read(textpart(2)(2:2),'(i1)',iostat=istat) iface
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARYF%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARYF%",ier)
+               return
+            endif
             l=10*l+iface
             call bounaddf(l,ibounstart,ibounend,bounval,
      &        nodeboun,ndirboun,xboun,nboun,nboun_,
@@ -207,13 +221,16 @@
                   write(*,*) '*ERROR reading *BOUNDARYF: surface ',elset
                   write(*,*) '       has not yet been defined. '
                   call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARYF%")
-                  call exit(201)
+     &                 "*BOUNDARYF%",ier)
+                  return
                endif
             endif
             read(textpart(2)(2:2),'(i1)',iostat=istat) iface
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARYF%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARYF%",ier)
+               return
+            endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
                   k=ialset(j)

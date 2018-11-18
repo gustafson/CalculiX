@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -159,21 +159,21 @@ c         endif
 !
 !     shape functions
 !
-         ratio(1)=-0.5*a*(1.0-ze)*(2.0*xi+2.0*et+ze)
-         ratio(2)=0.5*xi*(1.0-ze)*(2.0*xi-2.0-ze)
-         ratio(3)=0.5*et*(1.0-ze)*(2.0*et-2.0-ze)
-         ratio(4)=-0.5*a*(1.0+ze)*(2.0*xi+2.0*et-ze)
-         ratio(5)=0.5*xi*(1.0+ze)*(2.0*xi-2.0+ze)
-         ratio(6)=0.5*et*(1.0+ze)*(2.0*et-2.0+ze)
-         ratio(7)=2.0*xi*a*(1.0-ze)
-         ratio(8)=2.0*xi*et*(1.0-ze)
-         ratio(9)=2.0*et*a*(1.0-ze)
-         ratio(10)=2.0*xi*a*(1.0+ze)
-         ratio(11)=2.0*xi*et*(1.0+ze) 
-         ratio(12)=2.0*et*a*(1.0+ze)
-         ratio(13)= a*(1.0-ze*ze)
-         ratio(14)=xi*(1.0-ze*ze)
-         ratio(15)=et*(1.0-ze*ze)
+         ratio(1)=-0.5d0*a*(1.d0-ze)*(2.d0*xi+2.d0*et+ze)
+         ratio(2)=0.5d0*xi*(1.d0-ze)*(2.d0*xi-2.d0-ze)
+         ratio(3)=0.5d0*et*(1.d0-ze)*(2.d0*et-2.d0-ze)
+         ratio(4)=-0.5d0*a*(1.d0+ze)*(2.d0*xi+2.d0*et-ze)
+         ratio(5)=0.5d0*xi*(1.d0+ze)*(2.d0*xi-2.d0+ze)
+         ratio(6)=0.5d0*et*(1.d0+ze)*(2.d0*et-2.d0+ze)
+         ratio(7)=2.d0*xi*a*(1.d0-ze)
+         ratio(8)=2.d0*xi*et*(1.d0-ze)
+         ratio(9)=2.d0*et*a*(1.d0-ze)
+         ratio(10)=2.d0*xi*a*(1.d0+ze)
+         ratio(11)=2.d0*xi*et*(1.d0+ze) 
+         ratio(12)=2.d0*et*a*(1.d0+ze)
+         ratio(13)= a*(1.d0-ze*ze)
+         ratio(14)=xi*(1.d0-ze*ze)
+         ratio(15)=et*(1.d0-ze*ze)
       elseif(nterms.eq.20) then
          xi=xig
          et=etg

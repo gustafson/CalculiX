@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,19 +17,22 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine checkconstraint(nobject,objectset,g0,nactive,
-     &   nnlconst,ipoacti,ndesi,dgdxglob,nk,nodedesi)               
+     &   nnlconst,ipoacti,ndesi,dgdxglob,nk,nodedesi,iconstacti,
+     &   objnorm,inameacti)               
 !
-!     check which constraints are active      
+!     check which constraints are active on the basis of the 
+!     function values of the constraints     
 !
       implicit none
 !
       character*81 objectset(4,*)
       character*20 empty
 !
-      integer iobject,nobject,istat,nactive,nnlconst,
-     &   ipoacti(*),ifree,i,ndesi,nk,node,nodedesi(ndesi)
+      integer iobject,nobject,istat,nactive,nnlconst,inameacti(*),
+     &   ipoacti(*),ifree,i,ndesi,nk,node,nodedesi(ndesi),
+     &   iconstacti(*)
 !
-      real*8 g0(nobject),bounds(20),scale,bound,objnorm,
+      real*8 g0(nobject),bounds(20),scale,bound,objnorm(nobject),
      &   dgdxglob(2,nk,nobject)
 !
 !     determine bounds of constraints
@@ -39,7 +42,9 @@
       do iobject=1,nobject
          if((objectset(1,iobject)(19:20).eq.'LE').or.
      &        (objectset(1,iobject)(19:20).eq.'GE')) then
-            if(objectset(1,iobject)(1:9).eq.'THICKNESS') then
+            if((objectset(1,iobject)(1:9).eq.'THICKNESS').or.
+     &         (objectset(1,iobject)(1:9).eq.'FIXGROWTH').or.
+     &         (objectset(1,iobject)(1:12).eq.'FIXSHRINKAGE')) then
                do i=1,ndesi
                   node=nodedesi(i)
                   if(dgdxglob(2,node,iobject).gt.0) then
@@ -73,20 +78,28 @@
       do iobject=1,nobject
          if(objectset(1,iobject)(19:20).eq.'LE') then
             if(objectset(1,iobject)(1:9).eq.'THICKNESS') cycle 
-            objnorm=g0(iobject)/bounds(iobject)-1
-            if(objnorm.gt.-0.02) then
+            if(objectset(1,iobject)(1:9).eq.'FIXGROWTH') cycle 
+            if(objectset(1,iobject)(1:12).eq.'FIXSHRINKAGE') cycle 
+            objnorm(ifree)=g0(iobject)/bounds(iobject)-1
+            if(objnorm(ifree).gt.-0.02) then
                nactive=nactive+1
                nnlconst=nnlconst+1
                ipoacti(ifree)=iobject
+         inameacti(ifree)=iobject
+         iconstacti(ifree)=-1
                ifree=ifree+1
             endif
          elseif(objectset(1,iobject)(19:20).eq.'GE') then
             if(objectset(1,iobject)(1:9).eq.'THICKNESS') cycle 
-            objnorm=-1*(g0(iobject)/bounds(iobject))+1
-            if(objnorm.gt.-0.02) then
+            if(objectset(1,iobject)(1:9).eq.'FIXGROWTH') cycle 
+            if(objectset(1,iobject)(1:12).eq.'FIXSHRINKAGE') cycle 
+            objnorm(ifree)=-1*(g0(iobject)/bounds(iobject))+1
+            if(objnorm(ifree).gt.-0.02) then
                nactive=nactive+1
                nnlconst=nnlconst+1
                ipoacti(ifree)=iobject
+               inameacti(ifree)=iobject
+               iconstacti(ifree)=1
                ifree=ifree+1
             endif
          endif
@@ -96,12 +109,15 @@
 !
       do iobject=1,nobject
          if(objectset(1,iobject)(19:20).eq.'LE') then
-            if(objectset(1,iobject)(1:9).eq.'THICKNESS') then
+            if((objectset(1,iobject)(1:9).eq.'THICKNESS').or.
+     &         (objectset(1,iobject)(1:9).eq.'FIXGROWTH')) then
                if(g0(iobject)>0) then
                   do i=1,ndesi
                      node=nodedesi(i)
                      if(dgdxglob(2,node,iobject).eq.1) then
                         ipoacti(ifree)=i
+                        inameacti(ifree)=iobject
+                        iconstacti(ifree)=-1
                         ifree=ifree+1
                         nactive=nactive+1
                      endif
@@ -109,12 +125,15 @@
                endif   
             endif
          elseif(objectset(1,iobject)(19:20).eq.'GE') then
-            if(objectset(1,iobject)(1:9).eq.'THICKNESS') then
+            if((objectset(1,iobject)(1:9).eq.'THICKNESS').or.
+     &         (objectset(1,iobject)(1:12).eq.'FIXSHRINKAGE')) then
                if(g0(iobject)>0) then
                   do i=1,ndesi
                      node=nodedesi(i)
                      if(dgdxglob(2,node,iobject).eq.1) then
                         ipoacti(ifree)=i
+                        inameacti(ifree)=iobject
+                        iconstacti(ifree)=1
                         ifree=ifree+1
                         nactive=nactive+1
                      endif
@@ -123,29 +142,6 @@
             endif
          endif
       enddo
-!
-      if(nactive.gt.0) then
-         write(*,*)
-         write(*,*) '*INFO at least 1 constraint active:'
-         write(*,*) '      projected gradient has been '
-         write(*,*) '      calculated based on the '
-         write(*,*) '      constraints:'
-         if(nnlconst.eq.nactive) then
-            do i=1,nactive
-               write(*,'(7x,a11)') objectset(1,ipoacti(i))
-            enddo
-            write(*,*)
-         elseif(nnlconst.lt.nactive) then
-            do i=1,nactive
-               write(*,'(7x,a11)') objectset(1,ipoacti(i))
-            enddo
-            write(*,*) '      THICKNESS'
-            write(*,*)
-         elseif(nnlconst.eq.0) then
-            write(*,*) '      THICKNESS'
-            write(*,*)
-         endif
-      endif
 !
       return        
       end

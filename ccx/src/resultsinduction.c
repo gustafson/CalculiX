@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -30,7 +30,8 @@ static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,*nplicon1,*iponoel1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
     num_cpus,mt1,*nk1,*nshcon1,*nelemload1,*nload1,mortar1,
-    *istartset1,*iendset1,*ialset1,*iactive1,*network1,*ipobody1,*ibody1;
+    *istartset1,*iendset1,*ialset1,*iactive1,*network1,*ipobody1,*ibody1,
+    *neapar=NULL,*nebpar=NULL;
 
 static double *co1,*v1,*elcon1,*rhcon1,*alcon1,*orab1,*t01,
     *fn1=NULL,*qa1=NULL,*vold1,*dtime1,*time1,*prop1,
@@ -183,6 +184,12 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        integration points; calculating the internal forces */
 
     if(((ithermal[0]<=1)||(ithermal[0]>=3))&&(intpointvarm==1)){
+    
+        /* determining the element bounds in each thread */
+
+	NNEW(neapar,ITG,num_cpus);
+	NNEW(nebpar,ITG,num_cpus);
+	elementcpuload(neapar,nebpar,ne,ipkon,&num_cpus);
 
 	co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;v1=v;elcon1=elcon;
         nelcon1=nelcon;ielmat1=ielmat;ntmat1_=ntmat_;vini1=vini;dtime1=dtime;
@@ -204,7 +211,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	    pthread_create(&tid[i], NULL, (void *)resultsemmt, (void *)&ithread[i]);
 	}
 	for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
-	SFREE(ithread);
+	SFREE(ithread);SFREE(neapar);SFREE(nebpar);
 
 	qa[0]=0.;
     }
@@ -213,6 +220,12 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        integration points; calculating the internal point flux */
 
     if((ithermal[0]>=2)&&(intpointvart==1)){
+    
+        /* determining the element bounds in each thread */
+
+	NNEW(neapar,ITG,num_cpus);
+	NNEW(nebpar,ITG,num_cpus);
+	elementcpuload(neapar,nebpar,ne,ipkon,&num_cpus);
 
 	NNEW(fn1,double,num_cpus*mt**nk);
 	NNEW(qa1,double,num_cpus*4);
@@ -258,7 +271,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 		fn[mt*i]+=fn1[mt*i+j*mt**nk];
 	    }
 	}
-	SFREE(fn1);SFREE(ithread);
+	SFREE(fn1);SFREE(ithread);SFREE(neapar);SFREE(nebpar);
 	
         /* determine the internal concentrated heat flux */
 
@@ -310,13 +323,15 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
 void *resultsemmt(ITG *i){
 
-    ITG nea,neb,nedelta;
+    ITG nea,neb;
 
-    nedelta=(ITG)floor(*ne1/(double)num_cpus);
+/*    nedelta=(ITG)floor(*ne1/(double)num_cpus);
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
-// next line! -> all parallel sections
-    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;*/
+
+    nea=neapar[*i]+1;
+    neb=nebpar[*i]+1;
 
     FORTRAN(resultsem,(co1,kon1,ipkon1,lakon1,v1,elcon1,nelcon1,ielmat1,
        ntmat1_,vini1,dtime1,matname1,mi1,ncmat1_,&nea,&neb,sti1,alcon1,
@@ -329,16 +344,19 @@ void *resultsemmt(ITG *i){
 
 void *resultsthermemmt(ITG *i){
 
-    ITG indexfn,indexqa,indexnal,nea,neb,nedelta;
+    ITG indexfn,indexqa,indexnal,nea,neb;
 
     indexfn=*i*mt1**nk1;
     indexqa=*i*4;
     indexnal=*i;
     
-    nedelta=(ITG)floor(*ne1/(double)num_cpus);
+/*    nedelta=(ITG)floor(*ne1/(double)num_cpus);
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
-    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;*/
+
+    nea=neapar[*i]+1;
+    neb=nebpar[*i]+1;
 
     FORTRAN(resultstherm,(co1,kon1,ipkon1,lakon1,v1,
 	   elcon1,nelcon1,rhcon1,nrhcon1,ielmat1,ielorien1,norien1,orab1,

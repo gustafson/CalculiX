@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine addizdofcload(nodeforc,ndirforc,nactdof,mi,izdof,
-     &  nzdof,iforc,iznode,nznode,nk,imdnode,nmdnode,xforc)
+     &  nzdof,iforc,iznode,nznode,nk,imdnode,nmdnode,xforc,ntrans,
+     &  inotr)
 !
 !     adds the dof in which a point force was applied to iznode, izdof
 !     and to ** imdnode if user-defined load **
@@ -27,7 +28,7 @@
 !
       integer nodeforc(2,*),ndirforc(*),iforc,node,j,jdof,mi(*),nk,
      &  nactdof(0:mi(2),*),izdof(*),nzdof,iznode(*),nznode,nodebasis,
-     &  imdnode(*),nmdnode
+     &  imdnode(*),nmdnode,ntrans,itr,inotr(2,*)
 !
       real*8 xforc(*)
 !
@@ -37,21 +38,39 @@
 !
       nodebasis=mod(node,nk)
       call addimd(iznode,nznode,nodebasis)
+c!
+c!     user-defined load
+c!
+c      if((xforc(iforc).lt.1.2357111318d0).and.
+c     &     (xforc(iforc).gt.1.2357111316d0)) then
+c         call addimd(imdnode,nmdnode,node)
+c      endif
 !
-!     user-defined load
-!
-      if((xforc(iforc).lt.1.2357111318d0).and.
-     &     (xforc(iforc).gt.1.2357111316d0)) then
-         call addimd(imdnode,nmdnode,node)
+      if(ntrans.eq.0) then
+         itr=0
+      else
+         itr=inotr(1,node)
       endif
 !
-      j=ndirforc(iforc)
+      if(itr.eq.0) then
+!        
+!        no local transformation
 !
-!     C-convention!
+         j=ndirforc(iforc)
 !
-      jdof=nactdof(j,node)-1
+!        C-convention!
 !
-      if(jdof.gt.0) call addimd(izdof,nzdof,jdof)
+         jdof=nactdof(j,node)-1
+         if(jdof.gt.0) call addimd(izdof,nzdof,jdof)
+      else
+!
+!        local transformation: loop over all dofs
+!
+         do j=1,3
+            jdof=nactdof(j,node)-1
+            if(jdof.gt.0) call addimd(izdof,nzdof,jdof)
+         enddo
+      endif
 !
       return
       end

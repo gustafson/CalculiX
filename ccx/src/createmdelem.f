@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine createmdelem(imdnode,nmdnode,xforc,
+      subroutine createmdelem(imdnode,nmdnode,
      &              ikmpc,ilmpc,ipompc,nodempc,nmpc,imddof,nmddof,
      &              nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,
      &              ikboun,nboun,ilboun,ithermal,imdelem,nmdelem,
@@ -24,8 +24,12 @@
      &              ialset,ipkon,kon,istartset,iendset,nforc,
      &              ikforc,ilforc)
 !
-!     stores the elements for which results are requested in at
-!     least one node
+!     stores the elements 
+!     1) for which results are requested in at least one node
+!     2) for which there are *EL PRINT requests
+!
+!     stores the nodes, dofs, spcs and mpcs in the elements
+!     for which there are *EL PRINT requests
 !
       implicit none
 !
@@ -40,8 +44,6 @@
      &  iponoel(*),inoel(2,*),index,id,nprint,i,j,k,l,indexe,
      &  nope,nset,nrset,ialset(*),ipkon(*),kon(*),istartset(*),
      &  iendset(*),idof,m,ikforc(*),ilforc(*),nforc
-!
-      real*8 xforc(*)
 !
 !     storing all elements to which nodes in imdnode belong
 !     in imdelem

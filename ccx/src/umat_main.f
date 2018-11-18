@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,pnewdt,istep,iinc,ipkon,nmethod,
-     &        iperturb,depvisc)
+     &        iperturb,depvisc,eloc,nlgeom_undo)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -30,11 +30,11 @@
       character*80 amat,amatloc
 !
       integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
-     &  istep,iinc,ipkon(*),nmethod,iperturb(*)
+     &  istep,iinc,ipkon(*),nmethod,iperturb(*),nlgeom_undo
 !
       real*8 elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xikl(3,3),vij,pgauss(3),orab(7,*),
-     &  time,ttime,pnewdt,depvisc
+     &  time,ttime,pnewdt,depvisc,eloc(6)
 !
       real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
@@ -180,6 +180,16 @@
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,pnewdt,ipkon)
+!
+      elseif(amat(1:22).eq.'UNDO_NLGEOM_LIN_ISO_EL') then
+!
+         amatloc(1:58)=amat(23:80)
+         amatloc(59:80)='                      '
+         call umat_undo_nlgeom_lin_iso_el(amatloc,iel,iint,kode,
+     &        elconloc,emec,emec0,
+     &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
+     &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
+     &        iorien,pgauss,orab,eloc,nlgeom_undo)
 !
       elseif(amat(1:1).eq.'@') then
 !

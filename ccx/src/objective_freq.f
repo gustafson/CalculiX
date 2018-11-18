@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,6 +26,10 @@
      &  jqs(*),irows(*),nactdofinv(*),node,idof,inode,mt
 !      
       real*8 dgdx(ndesi,*),df(*),vold(0:mi(2),*)
+!
+      intent(in) df,vold,ndesi,iobject,mi,nactdofinv,jqs,irows
+!
+      intent(inout) dgdx
 !
 !     ----------------------------------------------------------------
 !     Calculation of the total differential:

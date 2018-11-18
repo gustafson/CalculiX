@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  ithermal,cs,ics,tieset,istartset,
      &  iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
      &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd,ttime,
-     &  iaxial,nelcon,nmat,tincf)
+     &  iaxial,nelcon,nmat,tincf,ier)
 !
 !     reading the input deck: *STATIC
 !
@@ -47,7 +47,7 @@
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ics(*),iexpl,
      &  istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*),
-     &  cfd,iaxial,nelcon(2,*),nmat
+     &  cfd,iaxial,nelcon(2,*),nmat,ier
 !
       real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*),ttime,tincf
 !
@@ -61,13 +61,15 @@
          write(*,*) '       not provided in a *STATIC step. Perform'
          write(*,*) '       a genuine nonlinear geometric calculation'
          write(*,*) '       instead (parameter NLGEOM)'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *STATIC: *STATIC can only be used'
          write(*,*) '       within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 c!
 c!     no creep allowed in a *STATIC step
@@ -159,8 +161,8 @@ c      enddo
      &        ipol,inl,ipoinp,inp,nmethod,key,ipoinpc)
          nmethod=1
          do i=1,mcs
-            cs(2,i)=-0.5
-            cs(3,i)=-0.5
+            cs(2,i)=-0.5d0
+            cs(3,i)=-0.5d0
          enddo
       endif
 !
@@ -186,38 +188,56 @@ c            tincf=1.d-2
       endif
 !
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STATIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*STATIC%",ier)
+         return
+      endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STATIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*STATIC%",ier)
+         return
+      endif
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STATIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*STATIC%",ier)
+         return
+      endif
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STATIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*STATIC%",ier)
+         return
+      endif
       read(textpart(5)(1:20),'(f20.0)',iostat=istat) tincf
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STATIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*STATIC%",ier)
+         return
+      endif
 !
       if(tper.lt.0.d0) then
          write(*,*) '*ERROR reading *STATIC: step size is negative'
-         call exit(201)
+         ier=1
+         return
       elseif(tper.le.0.d0) then
          tper=1.d0
       endif
       if(tinc.lt.0.d0) then
          write(*,*) '*ERROR reading *STATIC: initial increment size is n
      &egative'
-         call exit(201)
+         ier=1
+         return
       elseif(tinc.le.0.d0) then
          tinc=tper
       endif
       if(tinc.gt.tper) then
          write(*,*) '*ERROR reading *STATIC: initial increment size exce
      &eds step size'
-         call exit(201)
+         ier=1
+         return
       endif
 !      
       if(idrct.ne.1) then

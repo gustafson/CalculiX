@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,7 @@
      &  cload_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,nam_,
      &  namtot_,namta,amta,nmethod,iaxial,iperturb,ipoinpc,
      &  maxsectors,idefforc,ipompc,nodempc,
-     &  nmpc,ikmpc,ilmpc,labmpc)
+     &  nmpc,ikmpc,ilmpc,labmpc,iamplitudedefault,namtot,ier)
 !
 !     reading the input deck: *CLOADS
 !
@@ -42,11 +42,12 @@
      &  ilforc(*),nk,iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,
      &  namtot_,namta(3,*),idelay,lc,nmethod,ndirforc(*),isector,
      &  iperturb,iaxial,ipoinpc(0:*),maxsectors,jsector,idefforc(*),
-     &  iglobstep,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*)
+     &  iglobstep,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),
+     &  iamplitudedefault,ier
 !
       real*8 xforc(*),forcval,co(3,*),trab(7,*),amta(2,*),omega0
 !
-      iamplitude=0
+      iamplitude=iamplitudedefault
       idelay=0
       lc=1
       isector=0
@@ -57,9 +58,10 @@
       green=.false.
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in cloads: *CLOAD should only be used'
+         write(*,*) '*ERROR reading *CLOAD: *CLOAD should only be used'
          write(*,*) '  within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -76,78 +78,96 @@
                endif
             enddo
             if(j.gt.nam) then
-               write(*,*)'*ERROR in cloads: nonexistent amplitude'
+               write(*,*)'*ERROR reading *CLOAD: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
-               call exit(201)
+     &              "*CLOAD%",ier)
+               return
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
             if(idelay.ne.0) then
-               write(*,*) '*ERROR in cloads: the parameter TIME DELAY'
+               write(*,*) 
+     &            '*ERROR reading *CLOAD: the parameter TIME DELAY'
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
                call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
-               call exit(201)
+     &              "*CLOAD%",ier)
+               return
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
-               write(*,*) '*ERROR in cloads: increase nam_'
-               call exit(201)
+               write(*,*) '*ERROR reading *CLOAD: increase nam_'
+               ier=1
+               return
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
-               write(*,*) '*ERROR in cloads: time delay must be'
+               write(*,*) '*ERROR reading *CLOAD: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
-            if(nam.eq.1) then
-               namtot=0
-            else
-               namtot=namta(2,nam-1)
-            endif
+c            if(nam.eq.1) then
+c               namtot=0
+c            else
+c               namtot=namta(2,nam-1)
+c            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR cloads: increase namtot_'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
+c            call reorderampl(amname,namta,nam)
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CLOAD%",ier)
+               return
+            endif
          elseif(textpart(i)(1:9).eq.'LOADCASE=') then
             read(textpart(i)(10:19),'(i10)',iostat=istat) lc
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CLOAD%",ier)
+               return
+            endif
             if(nmethod.ne.5) then
-               write(*,*) '*ERROR in cloads: the parameter LOAD CASE'
+               write(*,*) 
+     &            '*ERROR reading *CLOAD: the parameter LOAD CASE'
                write(*,*) '       is only allowed in STEADY STATE'
                write(*,*) '       DYNAMICS calculations'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:7).eq.'SECTOR=') then
             read(textpart(i)(8:17),'(i10)',iostat=istat) isector
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CLOAD%",ier)
+               return
+            endif
             if((nmethod.le.3).or.(iperturb.gt.1)) then
-               write(*,*) '*ERROR in cloads: the parameter SECTOR'
+               write(*,*) '*ERROR reading *CLOAD: the parameter SECTOR'
                write(*,*) '       is only allowed in MODAL DYNAMICS or'
                write(*,*) '       STEADY STATE DYNAMICS calculations'
-               call exit(201)
+               ier=1
+               return
             endif
             if(isector.gt.maxsectors) then
-               write(*,*) '*ERROR in cloads: sector ',isector
+               write(*,*) '*ERROR reading *CLOAD: sector ',isector
                write(*,*) '       exceeds number of sectors'
-               call exit(201)
+               ier=1
+               return
             endif
             isector=isector-1
          elseif(textpart(i)(1:4).eq.'USER') then
@@ -156,17 +176,23 @@
             submodel=.true.
          elseif(textpart(i)(1:5).eq.'STEP=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CLOAD%",ier)
+               return
+            endif
          elseif(textpart(i)(1:7).eq.'OMEGA0=') then
             green=.true.
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) omega0
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CLOAD%",ier)
+               return
+            endif
             omega0=omega0**2
          else
             write(*,*) 
-     &        '*WARNING in cloads: parameter not recognized:'
+     &        '*WARNING reading *CLOAD: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -180,7 +206,8 @@
          write(*,*) '*ERROR reading *CLOAD: no global step'
          write(*,*) '       step specified for the submodel'
          call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
+     &        "*CLOAD%",ier)
+         return
       endif
 !
 !     storing the step for submodels in iamboun
@@ -207,14 +234,18 @@
          if((istat.lt.0).or.(key.eq.1)) return
 !
          read(textpart(2)(1:10),'(i10)',iostat=istat) iforcdir
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*CLOAD%",ier)
+            return
+         endif
          if((iforcdir.lt.1).or.(iforcdir.gt.6)) then
-            write(*,*) '*ERROR in cloads: nonexistent degree of freedom'
+            write(*,*) 
+     &         '*ERROR reading *CLOAD: nonexistent degree of freedom'
             write(*,*) '       '
             call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
-            call exit(201)
+     &           "*CLOAD%",ier)
+            return
          endif
 c         if(iforcdir.gt.3) iforcdir=iforcdir+1
 !
@@ -227,8 +258,11 @@ c         if(iforcdir.gt.3) iforcdir=iforcdir+1
             forcval=0.d0
          else
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) forcval
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CLOAD%",ier)
+               return
+            endif
             if(iaxial.eq.180) forcval=forcval/iaxial
          endif
 !
@@ -240,9 +274,10 @@ c         if(iforcdir.gt.3) iforcdir=iforcdir+1
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if(l.gt.nk) then
-               write(*,*) '*ERROR in cloads: node ',l
+               write(*,*) '*ERROR reading *CLOAD: node ',l
                write(*,*) '       is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
             if(submodel) then
                if(ntrans.gt.0) then
@@ -251,7 +286,8 @@ c         if(iforcdir.gt.3) iforcdir=iforcdir+1
                      write(*,*) '       node',l,' a local coordinate'
                      write(*,*) '       system was defined. This is not'
                      write(*,*) '       allowed'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                endif
             endif
@@ -274,11 +310,11 @@ c         if(iforcdir.gt.3) iforcdir=iforcdir+1
             enddo
             if(i.gt.nset) then
                noset(ipos:ipos)=' '
-               write(*,*) '*ERROR in cloads: node set ',noset
+               write(*,*) '*ERROR reading *CLOAD: node set ',noset
                write(*,*) '  has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*CLOAD%")
-               call exit(201)
+     &              "*CLOAD%",ier)
+               return
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
@@ -293,7 +329,8 @@ c         if(iforcdir.gt.3) iforcdir=iforcdir+1
                            write(*,*) 
      &                       '       system was defined. This is not'
                            write(*,*) '       allowed'
-                           call exit(201)
+                           ier=1
+                           return
                         endif
                      endif
                   endif
@@ -322,7 +359,8 @@ c         if(iforcdir.gt.3) iforcdir=iforcdir+1
                               write(*,*) 
      &                          '       system was defined. This is not'
                               write(*,*) '       allowed'
-                              call exit(201)
+                              ier=1
+                              return
                            endif
                         endif
                      endif

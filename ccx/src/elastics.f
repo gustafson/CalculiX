@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine elastics(inpc,textpart,elcon,nelcon,
      &  nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc)
+     &  inp,ipoinpc,ier)
 !
 !     reading the input deck: *ELASTIC
 !
@@ -30,24 +30,27 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ipoinpc(0:*),
-     &  n,key,i,ityp,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
+     &  n,key,i,ityp,ncmat_,irstrt(*),iline,ipol,inl,ipoinp(2,*),
+     &  inp(3,*),ier
 !
       real*8 elcon(0:ncmat_,ntmat_,*),e1,e2,e3,un12,un21,un13,un31,
      &  un23,un32,gam
 !
       ntmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *ELASTIC: *ELASTIC should be placed'
          write(*,*) '       before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*) 
      &       '*ERROR reading *ELASTIC: *ELASTIC should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ityp=2
@@ -87,25 +90,52 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *ELASTIC: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             if(n.lt.2) then
                write(*,*) '*ERROR reading *ELASTIC: not enough'
                write(*,*) '       constants on the input line'
                call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+     &              "*ELASTIC%",ier)
+               return
             endif
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                 elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*ELASTIC%",ier)
+                  return
+               endif
             enddo
+!
+!           check on the Young's modulus and the Poisson
+!           coefficient
+!
+            if(elcon(1,ntmat,nmat).le.0.d0) then
+               write(*,*) '*ERROR reading *ELASTIC: the Young'
+               write(*,*) '       modulus should exceed 0.0'
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*ELASTIC%",ier)
+               return
+            endif
+            if(elcon(2,ntmat,nmat).ge.0.5d0) then
+               write(*,*) '*ERROR reading *ELASTIC: Poisson'
+               write(*,*) '       coefficient should be less than 0.5'
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*ELASTIC%",ier)
+               return
+            endif
+!
             if(textpart(3)(1:1).ne.' ') then
                read(textpart(3)(1:20),'(f20.0)',iostat=istat)
      &                   elcon(0,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*ELASTIC%",ier)
+                  return
+               endif
             else
                elcon(0,ntmat,nmat)=0.d0
             endif
@@ -119,19 +149,24 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *ELASTIC: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             if(n.lt.8) then
                write(*,*) '*ERROR reading *ELASTIC: not enough'
                write(*,*) '       constants on the input line'
                call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+     &              "*ELASTIC%",ier)
+               return
             endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                 elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*ELASTIC%",ier)
+                  return
+               endif
             enddo
 !
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -141,20 +176,26 @@
      &           '*ERROR reading *ELASTIC: orthotropic definition'
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
-               call exit(201)
+     &              "*ELASTIC%",ier)
+               return
             endif
             do i=1,1
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                 elcon(8+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*ELASTIC%",ier)
+                  return
+               endif
             enddo
             if(textpart(2)(1:1).ne.' ') then
                read(textpart(2)(1:20),'(f20.0)',iostat=istat)
      &                       elcon(0,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*ELASTIC%",ier)
+                  return
+               endif
             else
                elcon(0,ntmat,nmat)=0.d0
             endif
@@ -187,19 +228,24 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *ELASTIC: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             if(n.lt.8) then
                write(*,*) '*ERROR reading *ELASTIC: not enough'
                write(*,*) '       constants on the input line'
                call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+     &              "*ELASTIC%",ier)
+               return
             endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                   elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*ELASTIC%",ier)
+                  return
+               endif
             enddo
 !
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -209,20 +255,24 @@
      &            '*ERROR reading *ELASTIC: anisotropic definition'
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
-               call exit(201)
+     &              "*ELASTIC%",ier)
+               return
             endif
             if(n.lt.2) then
                write(*,*) '*ERROR reading *ELASTIC: not enough'
                write(*,*) '       constants on the input line'
                call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+     &              "*ELASTIC%",ier)
+               return
             endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &            elcon(8+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*ELASTIC%",ier)
+                  return
+               endif
             enddo
 !
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -232,26 +282,33 @@
      &           '*ERROR reading *ELASTIC: anisotropic definition'
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
-               call exit(201)
+     &              "*ELASTIC%",ier)
+               return
             endif
             if(n.lt.5) then
                write(*,*) '*ERROR reading *ELASTIC: not enough'
                write(*,*) '       constants on the input line'
                call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+     &              "*ELASTIC%",ier)
+               return
             endif
             do i=1,5
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                  elcon(16+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*ELASTIC%",ier)
+                  return
+               endif
             enddo
             if(textpart(6)(1:1).ne.' ') then
                read(textpart(6)(1:20),'(f20.0)',iostat=istat)
      &                  elcon(0,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*ELASTIC%",ier)
+                  return
+               endif
             else
                elcon(0,ntmat,nmat)=0.d0
             endif

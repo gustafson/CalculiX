@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &        plicon,nplicon,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
-     &        nset,ielmat,ielorien,ipoinpc,mi,norien,orname)
+     &        nset,ielmat,ielorien,ipoinpc,mi,norien,orname,ier)
 !
 !     reading the input deck: *SPRING
 !
@@ -35,9 +35,9 @@
 !
       integer mi(*),nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,
      &  n,key,i,nplicon(0:ntmat_,*),ncmat_,istat,istartset(*),
-     &  iendset(*),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
+     &  iendset(*),irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
      &  ialset(*),ipos,nset,j,k,ielmat(mi(3),*),ielorien(mi(3),*),
-     &  ipoinpc(0:*),idof,iorientation,norien,idof2  
+     &  ipoinpc(0:*),idof,iorientation,norien,idof2,ier  
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),temperature,
      &  elcon(0:ncmat_,ntmat_,*)
@@ -50,16 +50,18 @@
       orientation='
      &                           '
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *SPRING: *SPRING should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
          write(*,*) '*ERROR reading *SPRING: increase nmat_'
-         call exit(201)
+         ier=1
+         return
       endif
       matname(nmat)(1:6)='SPRING'
       do i=7,80
@@ -97,8 +99,8 @@
      &       '*ERROR reading *SPRING: nonexistent orientation'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*SPRING%")
-            call exit(201)
+     &           "*SPRING%",ier)
+            return
          endif
          iorientation=i
       endif
@@ -129,8 +131,11 @@
                enddo
                if(idof.eq.1) then
                   read(textpart(2)(1:10),'(i10)',iostat=istat) idof2
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SPRING%")
+                  if(istat.gt.0) then
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*SPRING%",ier)
+                     return
+                  endif
                   if(idof2.eq.0) then
                      if(ncmat_.lt.3) then
                         write(*,*) '*ERROR reading *SPRING: one degree'
@@ -140,7 +145,8 @@
                         write(*,*) '       SPRING1 elements'
                         write(*,*) '       in the input deck'
                         call inputerror(inpc,ipoinpc,iline,
-     &                       "*SPRING%")
+     &                                              "*SPRING%",ier)
+                        return
                      endif
                      read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
      &                    elcon(3,1,nmat)
@@ -153,7 +159,8 @@
                         write(*,*) '       SPRING2 elements'
                         write(*,*) '       in the input deck'
                         call inputerror(inpc,ipoinpc,iline,
-     &                       "*SPRING%")
+     &                                              "*SPRING%",ier)
+                        return
                      endif
                      read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
      &                    elcon(3,1,nmat)
@@ -168,19 +175,26 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *SPRING: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                 elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SPRING%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*SPRING%",ier)
+                  return
+               endif
             enddo
             if(textpart(3)(1:1).ne.' ') then
                read(textpart(3)(1:20),'(f20.0)',iostat=istat)
      &                   elcon(0,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SPRING%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*SPRING%",ier)
+                  return
+               endif
             else
                elcon(0,ntmat,nmat)=0.d0
             endif
@@ -218,7 +232,8 @@
                      write(*,*) '       SPRING1 nor SPRING2 elements'
                      write(*,*) '       in the input deck'
                      call inputerror(inpc,ipoinpc,iline,
-     &"*SPRING%")
+     &                    "*SPRING%",ier)
+                     return
                   endif
                   read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
      &                 elcon(3,1,nmat)
@@ -229,8 +244,11 @@
             endif
 !
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SPRING%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*SPRING%",ier)
+               return
+            endif
 !
 !           first temperature
 !
@@ -239,7 +257,8 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *SPRING: increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -251,7 +270,8 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *SPRING: increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -259,13 +279,17 @@
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &              plicon(2*npmat+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SPRING%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*SPRING%",ier)
+                  return
+               endif
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then
                write(*,*) '*ERROR reading *SPRING: increase npmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             nplicon(ntmat,nmat)=npmat
          enddo
@@ -273,7 +297,8 @@
 !
       if(ntmat.eq.0) then
          write(*,*) '*ERROR reading *SPRING: *SPRING card without data'
-         call exit(201)
+         ier=1
+         return
       endif
       do i=1,nset
          if(set(i).eq.elset) exit
@@ -283,8 +308,8 @@
          write(*,*) '*ERROR reading *SPRING: element set ',elset
          write(*,*) '       has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*SPRING%")
-         call exit(201)
+     &        "*SPRING%",ier)
+         return
       endif
 !
 !     assigning the elements of the set the appropriate material

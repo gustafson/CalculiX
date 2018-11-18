@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calccvfacomp(nface,vfa,shcon,nshcon,ielmat,ntmat_,
+      subroutine calccvfacomp(nface,vfa,shcon,nshcon,ielmatf,ntmat_,
      &  mi,ielfa,cvfa,physcon)
 !
 !     calculation of the secant heat capacity at constant volume
@@ -25,12 +25,12 @@
       implicit none
 !
       integer nface,i,nshcon(2,*),imat,ntmat_,mi(*),
-     &  ielmat(mi(3),*),ielfa(4,*)
+     &  ielmatf(mi(3),*),ielfa(4,*)
 !
       real*8 t1l,vfa(0:7,*),cp,shcon(0:3,ntmat_,*),cvfa(*),physcon(*)
 !     
 c$omp parallel default(none)
-c$omp& shared(nface,vfa,ielmat,ielfa,ntmat_,shcon,nshcon,physcon,cvfa)
+c$omp& shared(nface,vfa,ielmatf,ielfa,ntmat_,shcon,nshcon,physcon,cvfa)
 c$omp& private(i,t1l,imat,cp)
 c$omp do
       do i=1,nface
@@ -38,7 +38,7 @@ c$omp do
 !
 !        take the material of the first adjacent element
 !
-         imat=ielmat(1,ielfa(1,i))
+         imat=ielmatf(1,ielfa(1,i))
          call materialdata_cp_sec(imat,ntmat_,t1l,shcon,nshcon,cp,
      &       physcon)
 !

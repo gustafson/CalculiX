@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -86,21 +86,7 @@
                      if((ifabou(indexb).ne.0).or.
      &                    (dabs(xflux).lt.1.d-10)) then
                         b(i)=b(i)-vfa(0,ifa)*xflux
-                     else
-c                        write(*,*) '*ERROR in mafillt: the tempera-'
-c                        write(*,*) '       ture of an incoming flux'
-c                        write(*,*) '       through face ',
-c     &                     indexf-ipnei(i),'of'
-c                        write(*,*)'       element ',nactdohinv(i),
-c     &                          ' is not given'
                      endif
-                  else
-c                     write(*,*) '*ERROR in mafillt: the tempera-'
-c                     write(*,*) '       ture of an incoming flux'
-c                     write(*,*) '       through face ',
-c     &                     indexf-ipnei(i),'of'
-c                     write(*,*)'       element ',nactdohinv(i),
-c     &                   ' is not given'
                   endif
                endif
             endif

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                     */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -84,7 +84,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
      (are not counted in envtemp.f as true network elements) */
 
   ITG nhrs=1,info=0,i,j,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1,im,
-      symmetryflag=2,inputformat=1,node,channel,*ithread=NULL,iplausi;
+      symmetryflag=2,inputformat=1,node,ichannel,*ithread=NULL,iplausi;
 
   static ITG ifactorization=0;
 
@@ -124,6 +124,12 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	  
 	  if(iin==0){
 	     
+              /* since in nonlingeo.c radflowload.c is called before
+                 results.c at the start of a new increment vold does 
+                 not contain the spc's at the end of the increment yet;
+                 for this purpose voldwithspc is locally introduced
+                 in radflowload.c  */
+
 	      memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
 
               /* resetting ineighe to 0 for renewed call of
@@ -133,8 +139,6 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
               /* for a cut-back iin is reset to 0, iin_abs is not */
 
 	      if(iin_abs==0) DMEMSET(ineighe,0,*ntg,0);
-
-//	      for(i=0;i<mt**nk;i++) v[i]=vold[i];
 
               /* initialization pressurized flow 
                  (no free surface: gas networks or
@@ -146,13 +150,13 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			   nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
 			   physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
 			   xbodyact,co,nbody,network,&iin_abs,vold,set,
-			   istep,iit,mi,ineighe,ilboun,&channel,iaxial,
+			   istep,iit,mi,ineighe,ilboun,&ichannel,iaxial,
 			   nmpc,labmpc,ipompc,nodempc,coefmpc,ttime,time,
-			   iponoel,inoel));
+			   iponoel,inoel,vold));
       
               /* initialization for channels with free surface */
 
-	      if(channel==1){
+	      if(ichannel==1){
 		  FORTRAN(initialchannel,(itg,ieg,ntg,ac,bc,lakon,v,
                            ipkon,kon,nflow,
 			   ikboun,nboun,prop,ielprop,nactdog,ndirboun,
@@ -275,14 +279,14 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  printf
                     ("      largest energy flow residual in present network iteration= %e\n",ramt);
 		  printf
-                    ("      largest change of gas temperature since start of network iteratons= %e\n",vamt);
+                    ("      largest change of gas temperature since start of network iterations= %e\n",vamt);
 		  if((ITG)camt[1]==0){
 		      printf
 		      ("      largest correction to gas temperature in present network iteration= %e\n\n",
                        camt[0]);
 		  }else{
 		      printf
-		      ("      largest correction to gas temperature= %e in node %" ITGFORMAT "\n\n",
+		      ("      largest correction to gas temperature in present network iteration= %e in node %" ITGFORMAT "\n\n",
                        camt[0],(ITG)camt[1]);
 		  }
 	      }
@@ -300,7 +304,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		      printf("      largest correction to gas massflow in present network iteration= %e\n\n",
 			 camf[0]);
 		  }else{
-		      printf("      largest correction to gas massflow= %e in node %" ITGFORMAT "\n\n",
+		      printf("      largest correction to gas massflow in present network iteration= %e in node %" ITGFORMAT "\n\n",
 			 camf[0],(ITG)camf[1]);
 		  }
 		  
@@ -314,7 +318,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		      printf("      largest correction to gas pressure in present network iteration= %e\n\n",
                          camp[0]);
 		  }else{
-		      printf("      largest correction to gas pressure= %e in node %" ITGFORMAT "\n\n",
+		      printf("      largest correction to gas pressure in present network iteration= %e in node %" ITGFORMAT "\n\n",
                          camp[0],(ITG)camp[1]);
 		  }
 		  
@@ -326,7 +330,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		      printf("      largest correction to geometry in present network iteration= %e\n",
                          cama[0]);
 		  }else{
-		      printf("      largest correction to geometry= %e in node %" ITGFORMAT "\n",
+		      printf("      largest correction to geometry in present network iteration= %e in node %" ITGFORMAT "\n",
                          cama[0],(ITG)cama[1]);
 		  }
 	      }	      
@@ -346,7 +350,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		 &cam1t,&cam1f,&cam1p,&cam2t,&cam2f,&cam2p,&cam0t,&cam0f,
 		 &cam0p,&icntrl,&dtheta,ctrl,&cam1a,&cam2a,&cam0a,
 		 &vamt,&vamf,&vamp,&vama,qa,&qamt,&qamf,&ramt,&ramf,&ramp,
-                 &iplausi);
+		 &iplausi,&ichannel);
 	  }
       }
 
@@ -578,7 +582,9 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
            (i.e. call of dgesv) */
 
       if(((*ithermal==3)&&(*iviewfile>=0))||
-         ((*iit==-1)&&(*iviewfile!=-2))||(*iemchange==1)||((*iit==0)&&(abs(*nmethod)==1))){
+         ((*iit==-1)&&(*iviewfile!=-2))||
+         (*iemchange==1)||
+         ((*iit==0)&&(abs(*nmethod)==1))){
 
 #if defined(PARDISO)
 	if(ifactorization==1) pardiso_cleanup_as(ntr,&symmetryflag);

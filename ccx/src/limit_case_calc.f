@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -49,35 +49,35 @@
      &     expon2,root,a2,f,df,pt2,km1,kp1,pt1pt2
 !
 !     **changed 15.11.2006**
-      Pt2=0.99*Pt1
+      pt2=0.99d0*pt1
       pt1pt2=pt1/pt2
-      km1=kappa-1
-      kp1=kappa+1
-      expon1=-0.5*(kp1)/(zeta*kappa)
+      km1=kappa-1.d0
+      kp1=kappa+1.d0
+      expon1=-0.5d0*(kp1)/(zeta*kappa)
       expon2=(km1)/(zeta*kappa)
-      root=2/(km1)*((pt1pt2)**expon2-1.d0)
+      root=2.d0/(km1)*((pt1pt2)**expon2-1.d0)
       Qred=dsqrt(kappa/R)*(pt1pt2)**(-0.5d0*kp1/(kappa*zeta))
-     &     *dsqrt(2.d0/km1*((pt1pt2)**(km1/(kappa*zeta))-1d0))
+     &     *dsqrt(2.d0/km1*((pt1pt2)**(km1/(kappa*zeta))-1.d0))
 !
-      pt2_lim=pt1/(1+0.5d0*(km1))**(zeta*kappa/(km1))
+      pt2_lim=pt1/(1.d0+0.5d0*(km1))**(zeta*kappa/(km1))
 
 !
 !     M2_lim calculation
 !
-      M2=0.5
-      expon1=-0.5*(kp1)/(km1)
-      Qred=dabs(xflow)*dsqrt(R*Tt2)/(A2*Pt2_lim*dsqrt(kappa))
-      if(Qred.gt.((1+0.5d0*(km1))**expon1)) then
-         Qred=(1+0.5d0*(km1))**expon1
+      M2=0.5d0
+      expon1=-0.5d0*(kp1)/(km1)
+      Qred=dabs(xflow)*dsqrt(R*Tt2)/(A2*pt2_lim*dsqrt(kappa))
+      if(Qred.gt.((1.d0+0.5d0*(km1))**expon1)) then
+         Qred=(1.d0+0.5d0*(km1))**expon1
       endif
 !
       do 
-         root=(1+0.5d0*(km1)*M2**2)
+         root=(1.d0+0.5d0*(km1)*M2**2.d0)
          f=Qred-M2*root**(expon1)
 !
-         df=root**expon1*(-1d0+0.5*(kp1)*M2**2*root**-1)
+         df=root**expon1*(-1d0+0.5d0*(kp1)*M2**2.d0*root**-1.d0)
 !
-         if(dabs(-f/df).le.1E-6) then
+         if(dabs(-f/df).le.1d-6) then
             M2=M2-f/df
             
             exit

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine hyperfoams(inpc,textpart,elcon,nelcon,
      &  nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iperturb,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc)
+     &  inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *HYPERFOAM
 !
@@ -28,8 +28,8 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ipoinpc(0:*),
-     &  n,key,i,ityp,iperturb(*),iend,ncmat_,irstrt,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*)
+     &  n,key,i,ityp,iperturb(*),iend,ncmat_,irstrt(*),iline,ipol,inl,
+     &  ipoinp(2,*),inp(3,*),ier
 !
       real*8 elcon(0:ncmat_,ntmat_,*)
 !
@@ -40,16 +40,18 @@
       write(*,*) '      effects are turned on'
       write(*,*)
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *HYPERFOAM: *HYPERFOAM should be'
          write(*,*) '  placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *HYPERFOAM: *HYPERFOAM should be'
          write(*,*) '  preceded by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ityp=-15
@@ -65,7 +67,8 @@
                write(*,*) '*WARNING reading *HYPERFOAM: only N=1, N=2, o 
      &r N=3 are allowed; '
                call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERFOAM%")
+     &              "*HYPERFOAM%",ier)
+               return
             endif
          else
             write(*,*) 
@@ -93,18 +96,25 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *HYPERFOAM: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,iend
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                    elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERFOAM%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*HYPERFOAM%",ier)
+                  return
+               endif
             enddo
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &              elcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERFOAM%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*HYPERFOAM%",ier)
+               return
+            endif
          enddo
       else
          do
@@ -115,13 +125,17 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *HYPERFOAM: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                       elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERFOAM%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*HYPERFOAM%",ier)
+                  return
+               endif
             enddo
 !
             iend=1
@@ -132,19 +146,25 @@
      &           '*ERROR reading *HYPERFOAM: orthotropic definition'
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERFOAM%")
-               call exit(201)
+     &              "*HYPERFOAM%",ier)
+               return
             endif
             do i=1,iend
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                 elcon(8+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERFOAM%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*HYPERFOAM%",ier)
+                  return
+               endif
             enddo
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) 
      &                  elcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERFOAM%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*HYPERFOAM%",ier)
+               return
+            endif
          enddo
       endif
 !

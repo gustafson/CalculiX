@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@
      &  xstateini,xstate,thicke,integerglob,doubleglob,
      &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
      &  mortar,clearini,ielprop,prop,ne0,fnext,kscale,iponoel,inoel,
-     &  network)
+     &  network,ntrans,inotr,trab)
 !
 !     filling the stiffness matrix in spare matrix format (sm)
 !
@@ -58,12 +58,12 @@
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,
-     &  kscale,iponoel(*),inoel(2,*),network
+     &  kscale,iponoel(*),inoel(2,*),network,ntrans,inotr(2,*)
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
      &  t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),
-     &  ff(60),fnext(0:mi(2),*),
+     &  ff(60),fnext(0:mi(2),*),trab(7,*),
      &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
      &  alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),prop(*),
@@ -222,9 +222,9 @@ c           nope=nope+1
 !
 !          assigning centrifugal forces
 !
-           bodyf(1)=0.
-           bodyf(2)=0.
-           bodyf(3)=0.
+           bodyf(1)=0.d0
+           bodyf(2)=0.d0
+           bodyf(3)=0.d0
 !
            index=i
            do
@@ -305,21 +305,16 @@ c           nope=nope+1
 !
                if(jdof1.le.0) then
                   idof1=jdof2
-c                  idof2=(node1-1)*8+k
                   idof2=jdof1
                else
                   idof1=jdof1
-c                  idof2=(node2-1)*8+m
                   idof2=jdof2
                endif
                if(nmpc.gt.0) then
-c                  call nident(ikmpc,idof2,nmpc,id)
-c                  if((id.gt.0).and.(ikmpc(id).eq.idof2)) then
                   if(idof2.ne.2*(idof2/2)) then
 !
 !                    regular DOF / MPC
 !
-c                     id=ilmpc(id)
                      id=(-idof2+1)/2
                      ist=ipompc(id)
                      index=nodempc(3,ist)
@@ -354,29 +349,19 @@ c
                if(rhsi.eq.1) then
                elseif(nmethod.eq.2) then
                   value=s(jj,ll)
-c                  call nident(ikboun,idof2,nboun,id)
-c                  icolumn=neq(2)+ilboun(id)
                   icolumn=neq(2)-idof2/2
                   call add_bo_st(au,jq,irow,idof1,icolumn,value)
                endif
             else
-c               idof1=(node1-1)*8+k
-c               idof2=(node2-1)*8+m
                idof1=jdof1
                idof2=jdof2
                mpc1=0
                mpc2=0
                if(nmpc.gt.0) then
-c                  call nident(ikmpc,idof1,nmpc,id1)
-c                  if((id1.gt.0).and.(ikmpc(id1).eq.idof1)) mpc1=1
-c                  call nident(ikmpc,idof2,nmpc,id2)
-c                  if((id2.gt.0).and.(ikmpc(id2).eq.idof2)) mpc2=1
                   if(idof1.ne.2*(idof1/2)) mpc1=1
                   if(idof2.ne.2*(idof2/2)) mpc2=1
                endif
                if((mpc1.eq.1).and.(mpc2.eq.1)) then
-c                  id1=ilmpc(id1)
-c                  id2=ilmpc(id2)
                   id1=(-idof1+1)/2
                   id2=(-idof2+1)/2
                   if(id1.eq.id2) then
@@ -461,27 +446,6 @@ c
                         if(index1.eq.0) exit
                      enddo
                   endif
-c               elseif(((mpc1.eq.1).or.(mpc2.eq.1)).and.rhsi)
-c     &           then
-c                  if(mpc1.eq.1) then
-c!
-c!                    MPC id1 / SPC
-c!
-c                     call nident(ikboun,idof2,nboun,id2)
-c                     idof2=ilboun(id2)
-c                     ist1=ipompc(id1)
-c                     index1=nodempc(3,ist1)
-c                     if(index1.eq.0) cycle
-c                  elseif(mpc2.eq.1) then
-c!
-c!                    MPC id2 / SPC
-c!
-c                     call nident(ikboun,idof1,nboun,id1)
-c                     idof1=ilboun(id1)
-c                     ist2=ipompc(id2)
-c                     index2=nodempc(3,ist2)
-c                     if(index2.eq.0) cycle
-c                  endif
                endif
             endif
           enddo
@@ -848,51 +812,54 @@ c                         id=ilmpc(id)
       endif
 !
       if(rhsi.eq.1) then
-!
-!        point forces
-!      
-         do i=1,nforc
-            if(ndirforc(i).gt.3) cycle
-!
-!           updating the external force vector for dynamic
-!           calculations
-!
-            if(nmethod.eq.4) fnext(ndirforc(i),nodeforc(1,i))=
-     &                       fnext(ndirforc(i),nodeforc(1,i))+xforc(i)
-!
-            jdof=nactdof(ndirforc(i),nodeforc(1,i))
-            if(jdof.gt.0) then
-               fext(jdof)=fext(jdof)+xforc(i)
-            else
-!
-!              node is a dependent node of a MPC: distribute
-!              the forces among the independent nodes
-!              (proportional to their coefficients)
-!
-c               jdof=8*(nodeforc(1,i)-1)+ndirforc(i)
-c               call nident(ikmpc,jdof,nmpc,id)
-c               if(id.gt.0) then
-c                  if(ikmpc(id).eq.jdof) then
-               if(jdof.ne.2*(jdof/2)) then
-c                     id=ilmpc(id)
-                     id=(-jdof+1)/2
-                     ist=ipompc(id)
-                     index=nodempc(3,ist)
-                     if(index.eq.0) cycle
-                     do
-                        jdof=nactdof(nodempc(2,index),nodempc(1,index))
-                        if(jdof.gt.0) then
-                           fext(jdof)=fext(jdof)-
-     &                          coefmpc(index)*xforc(i)/coefmpc(ist)
-                        endif
-                        index=nodempc(3,index)
-                        if(index.eq.0) exit
-                     enddo
-c                  endif
-               endif
-            endif
-         enddo
-!
+         call mafillsmforc(nforc,ndirforc,nodeforc,xforc,nactdof,
+     &        fext,ipompc,nodempc,coefmpc,mi,rhsi,fnext,nmethod,
+     &        ntrans,inotr,trab)
+c!
+c!        point forces
+c!      
+c         do i=1,nforc
+c            if(ndirforc(i).gt.3) cycle
+c!
+c!           updating the external force vector for dynamic
+c!           calculations
+c!
+c            if(nmethod.eq.4) fnext(ndirforc(i),nodeforc(1,i))=
+c     &                       fnext(ndirforc(i),nodeforc(1,i))+xforc(i)
+c!
+c            jdof=nactdof(ndirforc(i),nodeforc(1,i))
+c            if(jdof.gt.0) then
+c               fext(jdof)=fext(jdof)+xforc(i)
+c            else
+c!
+c!              node is a dependent node of a MPC: distribute
+c!              the forces among the independent nodes
+c!              (proportional to their coefficients)
+c!
+cc               jdof=8*(nodeforc(1,i)-1)+ndirforc(i)
+cc               call nident(ikmpc,jdof,nmpc,id)
+cc               if(id.gt.0) then
+cc                  if(ikmpc(id).eq.jdof) then
+c               if(jdof.ne.2*(jdof/2)) then
+cc                     id=ilmpc(id)
+c                     id=(-jdof+1)/2
+c                     ist=ipompc(id)
+c                     index=nodempc(3,ist)
+c                     if(index.eq.0) cycle
+c                     do
+c                        jdof=nactdof(nodempc(2,index),nodempc(1,index))
+c                        if(jdof.gt.0) then
+c                           fext(jdof)=fext(jdof)-
+c     &                          coefmpc(index)*xforc(i)/coefmpc(ist)
+c                        endif
+c                        index=nodempc(3,index)
+c                        if(index.eq.0) exit
+c                     enddo
+cc                  endif
+c               endif
+c            endif
+c         enddo
+c!
       endif
 !
       return

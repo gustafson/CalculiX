@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine contactpairs(inpc,textpart,tieset,istep,
      &                istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,
      &                iperturb,matname,nmat,ipoinpc,tietol,set,nset,
-     &                mortar,ncmat_,ntmat_,elcon)
+     &                mortar,ncmat_,ntmat_,elcon,ier)
 !
 !     reading the input deck: *CONTACT PAIR
 !
@@ -34,7 +34,7 @@
 !
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ntie,ntie_,iperturb(2),nmat,ipoinpc(0:*),nset,j,
-     &  mortar,ncmat_,ntmat_
+     &  mortar,ncmat_,ntmat_,ier
 !
       real*8 tietol(3,*),adjust,elcon(0:ncmat_,ntmat_,*)
 !
@@ -46,7 +46,8 @@
       if(istep.gt.0) then
          write(*,*) '*ERROR reading *CONTACT PAIR: *CONTACT PAIR should'
          write(*,*) '  be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       mortar=-1
@@ -55,7 +56,8 @@
       ntie=ntie+1
       if(ntie.gt.ntie_) then
          write(*,*) '*ERROR reading *CONTACT PAIR: increase ntie_'
-         call exit(201)
+         ier=1
+         return
       endif
       tietol(1,ntie)=1.d0
 !
@@ -90,8 +92,8 @@
      &                   noset
                   write(*,*) '       has not been defined'
                   call inputerror(inpc,ipoinpc,iline,
-     &"*CONTACT PAIR%")
-                  call exit(201)
+     &                 "*CONTACT PAIR%",ier)
+                  return
                endif
                do j=1,ipos-1
                   tieset(1,ntie)(j:j)=noset(j:j)
@@ -128,7 +130,8 @@
          write(*,*) '*ERROR reading *CONTACT PAIR'
          write(*,*) '       no TYPE specified'
          call inputerror(inpc,ipoinpc,iline,
-     &"*CONTACT PAIR%")
+     &        "*CONTACT PAIR%",ier)
+         return
       endif
 !
 !     SMALL SLIDING significates that the number of contact elements
@@ -151,8 +154,8 @@
          write(*,*) '*ERROR reading *CONTACT PAIR: nonexistent surface'
          write(*,*) '       interaction; '
          call inputerror(inpc,ipoinpc,iline,
-     &"*CONTACT PAIR%")
-         call exit(201)
+     &        "*CONTACT PAIR%",ier)
+         return
       endif
       tietol(2,ntie)=i+0.5d0
 !
@@ -164,13 +167,15 @@
      &     '*ERROR reading *CONTACT PAIR: no PRESSURE-OVERCLOSURE'
          write(*,*) 
      &   '       has been defined for at least one *CONTACT INTERACTION'
-         call exit(201)
+         ier=1
+         return
       elseif(int(elcon(3,1,i)).le.0) then
          write(*,*) 
      &     '*ERROR reading *CONTACT PAIR: no PRESSURE-OVERCLOSURE'
          write(*,*) 
      &   '       has been defined for at least one *CONTACT INTERACTION'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(int(elcon(3,1,i)).eq.2) then
@@ -183,8 +188,8 @@
                write(*,*) '       tension at large clearances'
                write(*,*) '       must exceed 1.e-30'
                call inputerror(inpc,ipoinpc,iline,
-     &"*CONTACT PAIR%")
-               call exit(201)
+     &              "*CONTACT PAIR%",ier)
+               return
             endif
          endif
       endif
@@ -196,7 +201,8 @@
       if((istat.lt.0).or.(key.eq.1)) then
          write(*,*)'*ERROR reading *CONTACT PAIR: definition of the '
          write(*,*) '      contact pair is not complete.'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     storing the slave surface

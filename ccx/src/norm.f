@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,11 +27,17 @@
 !
       real*8 velnorm(0:4),vel(nef,0:7)
 !     
+c$omp parallel default(none)
+c$omp& shared(velnorm,vel,nef)
+c$omp& private(i,j)
+c$omp do
       do i=1,nef
          do j=0,4
             velnorm(j)=velnorm(j)+vel(i,j)**2
          enddo
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

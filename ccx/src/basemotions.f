@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine basemotions(inpc,textpart,amname,nam,ibasemotion,
      &  xboun,ndirboun,iamboun,typeboun,nboun,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc)
+     &  inl,ipoinp,inp,ipoinpc,iamplitudedefault,ier)
 !
 !     reading the input deck: *BASE MOTION
 !
@@ -30,26 +30,30 @@
 !
       integer iamplitude,idof,i,j,n,nam,ibasemotion,iamboun(*),nboun,
      &  ndirboun(*),istep,istat,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  key,ipoinpc(0:*)
+     &  key,ipoinpc(0:*),iamplitudedefault,ier
 !
       real*8 xboun(*)
 !
       type='A'
-      iamplitude=0
+      iamplitude=iamplitudedefault
       idof=0
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *BASE MOTION:'
          write(*,*) '       *BASE MOTION should only be used'
          write(*,*) '       within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
          if(textpart(i)(1:4).eq.'DOF=') then
             read(textpart(i)(5:14),'(i10)',iostat=istat) idof
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BASE MOTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BASE MOTION%",ier)
+               return
+            endif
          elseif(textpart(i)(1:10).eq.'AMPLITUDE=') then
             read(textpart(i)(11:90),'(a80)') amplitude
             do j=1,nam
@@ -63,8 +67,8 @@
                write(*,*) '       nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*BASE MOTION%")
-               call exit(201)
+     &              "*BASE MOTION%",ier)
+               return
             endif
             iamplitude=j
          elseif(textpart(i)(1:5).eq.'TYPE=') then
@@ -76,7 +80,8 @@
                write(*,*) '*ERROR reading *BASE MOTION:'
                write(*,*) '       invalid TYPE'
                call inputerror(inpc,ipoinpc,iline,
-     &"*BASE MOTION%")
+     &              "*BASE MOTION%",ier)
+               return
             endif
          else
             write(*,*) 
@@ -91,11 +96,13 @@
       if(idof.eq.0) then
          write(*,*) '*ERROR reading *BASE MOTION'
          write(*,*) '       no degree of freedom specified'
-         call exit(201)
+         ier=1
+         return
       elseif(iamplitude.eq.0) then
          write(*,*) '*ERROR reading *BASE MOTION'
          write(*,*) '       no amplitude specified'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(ibasemotion.eq.0) then

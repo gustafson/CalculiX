@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,9 @@
      &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
      &  ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
      &  iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
-     &  h0scale,inomat,ipobody,iponoel,inoel)
+     &  h0scale,inomat,ipobody,iponoel,inoel,ipkon,kon,lakon,
+     &  ielprop,prop,ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,
+     &  ncocon)
 !
 !     calculates the loading at a given time
 !
@@ -34,6 +36,7 @@
       logical gasnode
 !
       character*1 entity
+      character*8 lakon(*)
       character*20 sideload(*)
       character*80 amname(*)
       character*81 tieset(3,*)
@@ -47,7 +50,9 @@
      &  ipresboun,mi(*),ntrans,inotr(2,*),idummy,integerglob(*),
      &  istartset(*),iendset(*),ialset(*),ntie,iselect(1),
      &  nmpc,ikmpc(*),ilmpc(*),nodempc(3,*),k,ist,index,ipompc(*),
-     &  inomat(*),ipobody(2,*),iponoel(*),inoel(2,*)
+     &  inomat(*),ipobody(2,*),iponoel(*),inoel(2,*),ipkon(*),
+     &  kon(*),ielprop(*),ielmat(mi(3),*),nshcon(*),nrhcon(*),
+     &  ncocon(2,*),ntmat_
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,fixed_temp,
@@ -55,7 +60,23 @@
      &  xbounold(*),xboun(*),xbounact(*),ttime,dtime,reftime,
      &  xbody(7,*),xbodyold(7,*),xbodyact(7,*),co(3,*),
      &  vold(0:mi(2),*),abqtime(2),coords(3),trab(7,*),
-     &  veold(0:mi(2),*),ddummy,doubleglob(*),h0scale
+     &  veold(0:mi(2),*),ddummy,doubleglob(*),h0scale,prop(*),
+     &  shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),cocon(0:6,ntmat_,*)
+!
+      intent(in) xforcold,xforc,iamforc,nforc,
+     &  xloadold,xload,iamload,nload,ibody,xbody,nbody,
+     &  xbodyold,t1old,t1,iamt1,nk,ipkon,kon,lakon,
+     &  amta,namta,nam,time,reltime,ttime,dtime,ithermal,nmethod,
+     &  xbounold,xboun,iamboun,nboun,ielprop,prop,
+     &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,ielmat,
+     &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
+     &  ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
+     &  iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
+     &  inomat,ipobody,iponoel,inoel,shcon,nshcon,rhcon,
+     &  nrhcon,ntmat_,cocon,ncocon
+!
+      intent(inout) xloadact,xforcact,xbounact,h0scale,ampli,t1act,
+     &  xbodyact
 !
       data msecpt /1/
       data one /1/
@@ -141,11 +162,15 @@
             if(ndirboun(i).eq.0) then
                call utemp(xbounact(i),msecpt,istep,iinc,abqtime,node,
      &              coords,vold,mi,iponoel,inoel,
-     &              ipobody,xbodyact,ibody)
+     &              ipobody,xbodyact,ibody,ipkon,kon,
+     &              lakon,ielprop,prop,ielmat,
+     &              shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
             else
                call uboun(xbounact(i),istep,iinc,abqtime,node,
      &              ndirboun(i),coords,vold,mi,iponoel,inoel,
-     &              ipobody,xbodyact,ibody)
+     &              ipobody,xbodyact,ibody,ipkon,kon,
+     &              lakon,ielprop,prop,ielmat,
+     &              shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
             endif
             cycle
          endif
@@ -248,7 +273,9 @@ c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
                endif
 !
                call cflux(xforcact(i),msecpt,istep,iinc,abqtime,node,
-     &              coords,vold,mi)
+     &              coords,vold,mi,ipkon,kon,lakon,iponoel,inoel,
+     &              ielprop,prop,ielmat,shcon,nshcon,rhcon,nrhcon,
+     &              ntmat_,cocon,ncocon)
                cycle
             endif
          else
@@ -304,7 +331,12 @@ c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
             iamforci=0
          endif
          if(iamforci.gt.0) then
-            xforcact(i)=xforc(i)*ampli(iamforci)
+            if(amname(iamforci).eq.'RAMP12357111317') then
+               xforcact(i)=xforcold(i)+
+     &              (xforc(i)-xforcold(i))*reltime
+            else
+               xforcact(i)=xforc(i)*ampli(iamforci)
+            endif
          elseif(nmethod.eq.1) then
             xforcact(i)=xforcold(i)+
      &         (xforc(i)-xforcold(i))*reltime
@@ -339,7 +371,12 @@ c            write(*,*) 'tempload ',node,ndirboun(i),xbounact(i)
                iamloadi2=0
             endif
             if(iamloadi1.gt.0) then
-               xloadact(1,i)=xload(1,i)*ampli(iamloadi1)
+               if(amname(iamloadi1).eq.'RAMP12357111317') then
+                  xloadact(1,i)=xloadold(1,i)+
+     &                 (xload(1,i)-xloadold(1,i))*reltime
+               else
+                  xloadact(1,i)=xload(1,i)*ampli(iamloadi1)
+               endif
             elseif(nmethod.eq.1) then
                xloadact(1,i)=xloadold(1,i)+
      &              (xload(1,i)-xloadold(1,i))*reltime
@@ -363,7 +400,12 @@ c               xloadact(2,i)=xload(2,i)
             iambodyi=0
          endif
          if(iambodyi.gt.0) then
-            xbodyact(1,i)=xbody(1,i)*ampli(iambodyi)
+            if(amname(iambodyi).eq.'RAMP12357111317') then
+               xbodyact(1,i)=xbodyold(1,i)+
+     &              (xbody(1,i)-xbodyold(1,i))*reltime
+            else
+               xbodyact(1,i)=xbody(1,i)*ampli(iambodyi)
+            endif
          elseif(nmethod.eq.1) then
             xbodyact(1,i)=xbodyold(1,i)+
      &           (xbody(1,i)-xbodyold(1,i))*reltime
@@ -387,7 +429,9 @@ c               xloadact(2,i)=xload(2,i)
                enddo
                call utemp(t1act(i),msecpt,istep,iinc,abqtime,i,
      &              coords,vold,mi,iponoel,inoel,
-     &              ipobody,xbodyact,ibody)
+     &              ipobody,xbodyact,ibody,ipkon,kon,
+     &              lakon,ielprop,prop,ielmat,
+     &              shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
                cycle
             endif
 !
@@ -420,7 +464,11 @@ c               xloadact(2,i)=xload(2,i)
                iamt1i=0
             endif
             if(iamt1i.gt.0) then
-               t1act(i)=t1(i)*ampli(iamt1i)
+               if(amname(iamt1i).eq.'RAMP12357111317') then
+                  t1act(i)=t1old(i)+(t1(i)-t1old(i))*reltime
+               else
+                  t1act(i)=t1(i)*ampli(iamt1i)
+               endif
             elseif(nmethod.eq.1) then
                t1act(i)=t1old(i)+(t1(i)-t1old(i))*reltime
             else

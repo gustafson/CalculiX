@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -292,12 +292,9 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
   return;
 }
 
-void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag){
+void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag,ITG *nrhs){
 
-/*  char *env;
-  char env1[32]; 
-  ITG nthread,nthread_v; */
-  ITG maxfct=1,mnum=1,phase=33,*perm=NULL,nrhs=1,mtype,
+  ITG maxfct=1,mnum=1,phase=33,*perm=NULL,mtype,
       msglvl=0,i,error=0;
   double *x=NULL;
 
@@ -317,13 +314,13 @@ void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag){
 
   printf(" number of threads =% d\n\n",nthread_mkl);
 
-  NNEW(x,double,*neq);
+  NNEW(x,double,*nrhs**neq);
 
   FORTRAN(pardiso,(pt,&maxfct,&mnum,&mtype,&phase,neq,aupardiso,
-		   pointers,icolpardiso,perm,&nrhs,iparm,&msglvl,
+		   pointers,icolpardiso,perm,nrhs,iparm,&msglvl,
                    b,x,&error));
 
-  for(i=0;i<*neq;i++){b[i]=x[i];}
+  for(i=0;i<*nrhs**neq;i++){b[i]=x[i];}
   SFREE(x);
 
   return;
@@ -355,14 +352,14 @@ void pardiso_cleanup(ITG *neq,ITG *symmetryflag){
 void pardiso_main(double *ad, double *au, double *adb, double *aub, 
          double *sigma,double *b, ITG *icol, ITG *irow, 
 	 ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,
-	 ITG *jq, ITG *nzs3){
+	 ITG *jq, ITG *nzs3,ITG *nrhs){
 
   if(*neq==0) return;
 
   pardiso_factor(ad,au,adb,aub,sigma,icol,irow, 
 		 neq,nzs,symmetryflag,inputformat,jq,nzs3);
 
-  pardiso_solve(b,neq,symmetryflag);
+  pardiso_solve(b,neq,symmetryflag,nrhs);
 
   pardiso_cleanup(neq,symmetryflag);
 

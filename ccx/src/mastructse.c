@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -26,12 +26,12 @@
 
 void mastructse(ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	      ITG *ipompc, ITG *nodempc, ITG *nmpc,
-	      ITG *nactdof, ITG *icols,ITG *jqs, ITG **mast1p, ITG **irowsp, 
+	      ITG *nactdof, ITG *jqs, ITG **mast1p, ITG **irowsp, 
               ITG *ipointer, ITG *nzss, ITG *mi, ITG *mortar,
 	      ITG *nodedesi, ITG *ndesi,ITG *icoordinate,ITG *ielorien,
 	      ITG *istartdesi,ITG *ialdesi){
 
-  /* determines the structure of the thermo-mechanical matrices;
+  /* determines the structure of the sensitivity matrix;
      (i.e. the location of the nonzeros */
 
   char lakonl[2]=" \0";
@@ -158,10 +158,6 @@ void mastructse(ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       jqs[i]=jstart;
   }
   jqs[*ndesi]=nmast+1;
-  
-  for(i=0;i<*ndesi;i++){
-      icols[i]=jqs[i+1]-jqs[i];
-  }
   
   *nzss=jqs[*ndesi]-1;
   

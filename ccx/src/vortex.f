@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !     
       subroutine vortex(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,numf,set,mi,ttime,time,iaxial)
+     &     nodef,idirf,df,cp,R,numf,set,mi,ttime,time,iaxial,iplausi)
 !     
 !     vortex element
 !
@@ -32,7 +32,7 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,iaxial,
-     &     inv,ipkon(*),kon(*),t_chang,nelemswirl,mi(*)
+     &     inv,ipkon(*),kon(*),t_chang,nelemswirl,mi(*),iplausi
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,r,cp,
      &     p1,p2,T1,T2,km1,pi,ttime,time,r2d,r1d,eta,U1,
@@ -44,7 +44,7 @@
      &     cp,R,set,mi,ttime,time,iaxial
 !
       intent(out) identity,node1,node2,xflow,numf,nodef,idirf,prop,
-     &  f,df
+     &  f,df,iplausi
 !     
       if(iflag.eq.0) then
          identity=.true.
@@ -228,7 +228,7 @@
                cte1=c1u**2/(2*Cp*T1)
                cte2=1-(R1/R2)**2
                
-               f=P2/P1-1d0-eta*((1+cte1*cte2)**expon-1d0)
+               f=p2/p1-1d0-eta*((1+cte1*cte2)**expon-1d0)
 !     
                df(1)=-p2/p1**2
 !     
@@ -244,7 +244,7 @@
                cte1=c2u**2/(2*Cp*T2)
                cte2=1-(R2/R1)**2
 !     
-               f=P1/P2-1d0-eta*((1+cte1*cte2)**expon-1d0)
+               f=p1/p2-1d0-eta*((1+cte1*cte2)**expon-1d0)
 !     
                df(1)=1/p2
 !     
@@ -501,7 +501,7 @@
                cte1=c1u**2/(2*Cp*T1)
                cte2=1-(R1/R2)**2
                
-               f=P2/P1-1d0-eta*((1+cte1*cte2)**expon-1d0)
+               f=p2/p1-1d0-eta*((1+cte1*cte2)**expon-1d0)
 !     
                df(1)=-p2/p1**2
 !     
@@ -517,7 +517,7 @@
                cte1=c2u**2/(2*Cp*T2)
                cte2=1-(R2/R1)**2
 !     
-               f=P1/P2-1d0-eta*((1+cte1*cte2)**expon-1d0)
+               f=p1/p2-1d0-eta*((1+cte1*cte2)**expon-1d0)
 !     
                df(1)=1/p2
 !     
@@ -576,21 +576,21 @@
 !
          if(inv.eq.1) then
             write(1,56)'       Inlet node ',node1,' :     Tt1 = ',T1,
-     &           '  , Ts1 = ',T1,'  , Pt1 = ',P1
+     &           '  , Ts1 = ',T1,'  , Pt1 = ',p1
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'             C1u = ',C1u,
      &'  , C2u = ',C2u
             write(1,56)'      Outlet node ',node2,' :    Tt2 = ',T2,
-     &           '  , Ts2 = ',T2,'  , Pt2 = ',P2
+     &           '  , Ts2 = ',T2,'  , Pt2 = ',p2
 !     
          else if(inv.eq.-1) then
             write(1,56)'       Inlet node ',node2,':     Tt1 = ',T1,
-     &           '  , Ts1 = ',T1,'  , Pt1 = ',P1
+     &           '  , Ts1 = ',T1,'  , Pt1 = ',p1
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'             C1u = ',C1u,
      &'  , C2u = ',C2u
             write(1,56)'      Outlet node ',node1,'     Tt2 = ',
-     &           T2,'  , Ts2 = ',T2,'  , Pt2 = ',P2
+     &           T2,'  , Ts2 = ',T2,'  , Pt2 = ',p2
          endif
       endif
 !

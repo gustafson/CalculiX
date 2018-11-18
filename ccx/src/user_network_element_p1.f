@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine user_network_element_p1(node1,node2,nodem,nelem,lakon,
      &     kon,ipkon,nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,co,vold,mi,ttime,
-     &     time,iaxial)
+     &     time,iaxial,iplausi)
 !     
 !     UP1 element: mass flow = c * dsqrt(pt2-pt1)
 !
@@ -85,6 +85,10 @@
 !                        mechanical increment
 !     iaxial             number of times the current structure fits into
 !                        360 degrees
+!     iplausi            flag telling whether any plausibility checks
+!                        have been violated up to entry in this routine
+!                        0: plausibility checks not satisfied
+!                        1: plausibility checks (if any) are satisfied
 !     
 !
 !     OUTPUT:
@@ -100,6 +104,12 @@
 !     df                 derivatives of the element equation w.r.t. its
 !                        variables
 !     numf               number of variables in the element equation
+!     iplausi            flag telling whether any plausibility checks
+!                        were violated at return time from this routine
+!                        0: plausibility checks not satisfied
+!                        1: plausibility checks (if any) are satisfied
+!                        only feasible change within this routine is from
+!                        1 to 0.
 !     
       implicit none
 !     
@@ -109,7 +119,7 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(*),idirf(*),iflag,ipkon(*),kon(*),
-     &     iaxial,mi(*),inv,index,icase
+     &     iaxial,mi(*),inv,index,icase,iplausi
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),R,cp,physcon(*),dvi,
      &     co(3,*),vold(0:mi(2),*),ttime,time,xmach,xflow_oil,Tt1,Tt2,
@@ -120,7 +130,7 @@
      &     cp,R,physcon,dvi,set,co,vold,mi,ttime,
      &     time,iaxial  
 !
-      intent(inout) xflow,f,df,identity,nodef,idirf,numf
+      intent(inout) xflow,f,df,identity,nodef,idirf,numf,iplausi
 !
       pi=4.d0*datan(1.d0)   
       if(iflag.eq.0) then
@@ -257,7 +267,7 @@
 !     
 !     calculation of the dynamic viscosity 
 !     
-         if(dabs(dvi).lt.1E-30) then
+         if(dabs(dvi).lt.1d-30) then
             write(*,*) '*ERROR in orifice: '
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi

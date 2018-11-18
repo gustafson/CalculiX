@@ -1343,29 +1343,17 @@ C     Clean-up loop so remaining vector length is a multiple of 4.
 C
    20 M = MOD(N,4)
       IF (M .EQ. 0) GO TO 40
-c$omp parallel default(none)
-c$omp& shared(m,dy,da,dx)
-c$omp& private(i)
-c$omp do
       DO 30 I = 1,M
         DY(I) = DY(I) + DA*DX(I)
    30 CONTINUE
-c$omp end do
-c$omp end parallel
       IF (N .LT. 4) RETURN
    40 MP1 = M + 1
-c$omp parallel default(none)
-c$omp& shared(mp1,n,dy,da,dx)
-c$omp& private(i)
-c$omp do
       DO 50 I = MP1,N,4
         DY(I) = DY(I) + DA*DX(I)
         DY(I+1) = DY(I+1) + DA*DX(I+1)
         DY(I+2) = DY(I+2) + DA*DX(I+2)
         DY(I+3) = DY(I+3) + DA*DX(I+3)
    50 CONTINUE
-c$omp end do
-c$omp end parallel
       RETURN
 C
 C     Code for equal, positive, non-unit increments.
@@ -1451,10 +1439,6 @@ C
    30 CONTINUE
       IF (N .LT. 7) RETURN
    40 MP1 = M + 1
-c$omp parallel default(none)
-c$omp& shared(mp1,n,dx,dy)
-c$omp& private(i)
-c$omp do
       DO 50 I = MP1,N,7
         DY(I) = DX(I)
         DY(I+1) = DX(I+1)
@@ -1464,8 +1448,6 @@ c$omp do
         DY(I+5) = DX(I+5)
         DY(I+6) = DX(I+6)
    50 CONTINUE
-c$omp end do
-c$omp end parallel
       RETURN
 C
 C     Code for equal, positive, non-unit increments.
@@ -2540,16 +2522,10 @@ C
    30 CONTINUE
       IF (N .LT. 5) RETURN
    40 MP1 = M + 1
-c$omp parallel default(none)
-c$omp& shared(mp1,n,dx,dy,ddot)
-c$omp& private(i)
-c$omp do reduction(+:ddot)
       DO 50 I = MP1,N,5
       DDOT = DDOT + DX(I)*DY(I) + DX(I+1)*DY(I+1) + DX(I+2)*DY(I+2) +
      1              DX(I+3)*DY(I+3) + DX(I+4)*DY(I+4)
    50 CONTINUE
-c$omp end do
-c$omp end parallel
       RETURN
 C
 C     Code for equal, positive, non-unit increments.

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,8 @@
 !     
       subroutine carbon_seal(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi,ttime,time,iaxial)
+     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi,ttime,time,
+     &     iaxial,iplausi)
 !     
 !     carbon seal element calculated with Richter method
 !      Richter "Rohrhydraulik", Springer ,1971,p. 175
@@ -33,10 +34,17 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,
-     &     inv,mi(*),iaxial
+     &     inv,mi(*),iaxial,iplausi
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),R,d,dl,
      &     p1,p2,T1,physcon(*),dvi,pi,s,T2,ttime,time
+!
+      intent(in) node1,node2,nodem,nelem,lakon,
+     &     nactdog,ielprop,prop,iflag,v,
+     &     R,physcon,dvi,set,mi,ttime,time,
+     &     iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi
 !     
       if(iflag.eq.0) then
          identity=.true.
@@ -74,7 +82,7 @@
 !     gapflow
 !     Richter "Rohrhydraulik", Springer ,1971,p. 175
 !     
-            xflow=inv*Pi*d*s**3*(P1**2-P2**2)/(24.d0*R*T1*dvi*dl)
+            xflow=inv*Pi*d*s**3*(p1**2-p2**2)/(24.d0*R*T1*dvi*dl)
             
          elseif(lakon(nelem)(2:6).ne.'CARBS') then
             write(*,*) '*WARNING in Carbon_seal.f'
@@ -121,12 +129,12 @@
 !     
          if(lakon(nelem)(2:6).eq.'CARBS') then
 !     
-            f=xflow*T1-pi*d*s**3*(P1**2-P2**2)/(24.d0*R*dvi*dl)
+            f=xflow*T1-pi*d*s**3*(p1**2-p2**2)/(24.d0*R*dvi*dl)
 !     
-            df(1)=-(pi*d*s**3*P1)/(12.d0*R*dvi*dl)
+            df(1)=-(pi*d*s**3*p1)/(12.d0*R*dvi*dl)
             df(2)=xflow
             df(3)=T1
-            df(4)=(pi*d*s**3*P2)/(12.d0*R*dvi*dl)
+            df(4)=(pi*d*s**3*p2)/(12.d0*R*dvi*dl)
 !       
          endif
 
@@ -162,21 +170,21 @@
 
          if(inv.eq.1) then
             write(1,56)'       Inlet node ',node1,':   Tt1=',T1,
-     &           ' , Ts1=',T1,' , Pt1=',P1
+     &           ' , Ts1=',T1,' , Pt1=',p1
          
             write(1,*)'             Element',nelem,lakon(nelem)
 
             write(1,56)'      Outlet node ',node2,':   Tt2=',T2,
-     &           ' , Ts2=',T2,' , Pt2=',P2
+     &           ' , Ts2=',T2,' , Pt2=',p2
 !     
          else if(inv.eq.-1) then
             write(1,56)'       Inlet node ',node2,':    Tt1=',T1,
-     &           ' , Ts1=',T1,' , Pt1=',P1
+     &           ' , Ts1=',T1,' , Pt1=',p1
      &          
             write(1,*)'             Element',nelem,lakon(nelem)
 
             write(1,56)'      Outlet node ',node1,':    Tt2=',T2,
-     &           ' , Ts2=',T2,' , Pt2=',P2
+     &           ' , Ts2=',T2,' , Pt2=',p2
 
          endif
       

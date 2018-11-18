@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,7 +43,8 @@
      &     ipobody(2,*),nodem,ieq,kflag,nrhcon(*),numf,k_oil,
      &     idofp1,idofp2,idofm,idoft1,idoft2,idoft,nactdog(0:3,*),
      &     nacteq(0:3,*),ielprop(*),nodef(8),idirf(8),nbody,
-     &     nmethod,icase,nmpc,nodempc(3,*),ipompc(*),idir,ider
+     &     nmethod,icase,nmpc,nodempc(3,*),ipompc(*),idir,ider,
+     &     iplausi
 !     
       real*8 ac(nteq,*),xloadact(2,*),cp,h(2),physcon(*),dvi,
      &     xl2(3,8),coords(3),dxsj2,temp,xi,et,weight,xsj2(3),
@@ -54,8 +55,18 @@
      &     pt1,pt2,vold(0:mi(2),*),xloadold(2,*),reltime,pi,d,
      &     cocon(0:6,ntmat_,*),xflow360,xflow_oil,ks,form_fact,
      &     Qred_crit,reynolds,pt2zpt1_c,Qred1,pt2zpt1,phi,lambda,
-     &     M1,M2,bb,cc,km1,kp1,a,kappa,ff1,ff2,Tt1,Tt2,T1,T2,M1_c,
+     &     M1,M2,bb,cc,km1,kp1,A,kappa,ff1,ff2,Tt1,Tt2,T1,T2,M1_c,
      &     heatnod,heatfac
+!
+      intent(in) itg,ieg,ntg,nload,sideload,nelemload,
+     &     xloadact,lakon,ntmat_,v,shcon,nshcon,ipkon,kon,co,nflow,iinc,
+     &     istep,dtime,ttime,time,
+     &     ielmat,nteq,prop,ielprop,nactdog,nacteq,physcon,
+     &     rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,vold,xloadold,
+     &     reltime,nmethod,set,mi,nmpc,nodempc,ipompc,coefmpc,labmpc,
+     &     iaxial,cocon,ncocon,iponoel,inoel
+!
+      intent(inout) ac
 !     
       include "gauss.f"
 !     
@@ -239,8 +250,7 @@ c               if(xflow.gt.0.d0) then
 !              calculation of the static temperatures T1 and T2
 !              (K)
 !
-               call ts_calc(xflow360,Tt1,Pt1,kappa,r,a,T1,icase)
-c               call ts_calc(xflow360,Tt2,Pt2,kappa,r,a,T2,icase)
+               call ts_calc(xflow360,Tt1,pt1,kappa,r,A,T1,icase)
             endif
          endif
 !     
@@ -266,9 +276,13 @@ c               call ts_calc(xflow360,Tt2,Pt2,kappa,r,a,T2,icase)
                      write(*,*) '         node',node1,' unknown'
 c                     call exit(201)
                   endif
+!
+!                 removal of the dependency of the energy equation
+!                 on the mass seems to be beneficial for convergence
 !     
                   if(idofm.ne.0) then
-                     ac(ieq,idofm)=ac(ieq,idofm)-cp*(tg1-tg2)
+c                     ac(ieq,idofm)=ac(ieq,idofm)-cp*(tg1-tg2)
+                     ac(ieq,idofm)=0.d0
                   endif
 !
                elseif((node2.ne.0).and.(nacteq(3,node1).eq.node2)) then
@@ -279,7 +293,7 @@ c                     call exit(201)
 !     
 !     calculation of the dynamic viscosity
 !     
-                  if(dabs(dvi).lt.1E-30) then
+                  if(dabs(dvi).lt.1d-30) then
                      write(*,*) '*ERROR in gaspipe_fanno: '
                      write(*,*) '       no dynamic viscosity defined'
                      write(*,*) '       dvi= ',dvi
@@ -297,7 +311,7 @@ c                     call exit(201)
 !     
 !                    two-phase-flow
 !     
-                     call two_phase_flow(Tt1,pt1,T1,pt2,xflow360,
+                     call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow360,
      &                    xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &                    v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
      &                    shcon,rhcon,ntmat_,mi)
@@ -316,7 +330,7 @@ c                     call exit(201)
                   call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,dl,d,
      &                 pt2zpt1_c,Qred_crit,crit,icase,M1_c)
 !
-                  Qred1=xflow360*dsqrt(Tt1)/(A*Pt1)
+                  Qred1=xflow360*dsqrt(Tt1)/(A*pt1)
 !
 !                 check whether flow is critical
 !                 assigning the physical correct sign to xflow360
@@ -325,7 +339,7 @@ c                     call exit(201)
 !
 !                    critical flow
 !
-                     xflow360=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+                     xflow360=inv*Qred_crit*A*pt1/dsqrt(Tt1)
                      M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
 c                     M1=min(M1,0.999d0/dsqrt(kappa))
                   else
@@ -333,13 +347,13 @@ c                     M1=min(M1,0.999d0/dsqrt(kappa))
 !                    subcritical flow
 !
                      if(Qred1.gt.Qred_crit) then
-                        xflow360=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+                        xflow360=inv*Qred_crit*A*pt1/dsqrt(Tt1)
                         M1=M1_c
                      else
                         xflow360=inv*xflow360
                         M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
                      endif
-                     call ts_calc(xflow360,Tt2,Pt2,kappa,r,a,T2,icase)
+                     call ts_calc(xflow360,Tt2,pt2,kappa,r,A,T2,icase)
                      M2=dsqrt(2/km1*((Tt2/T2)-1.d0))
                   endif
 !     
@@ -355,8 +369,13 @@ c                     M1=min(M1,0.999d0/dsqrt(kappa))
                      if(idoft1.ne.0) then
                         ac(ieq,idoft1)=(1.d0-ff1/2.d0)/(1.d0+bb*M1**2)
                      endif
+!
+!                 removal of the dependency of the energy equation
+!                 on the mass seems to be beneficial for convergence
+!     
                      if(idofm.ne.0) then
-                        ac(ieq,idofm)=(ff2*T2-ff1*T1)/xflow360
+c                        ac(ieq,idofm)=(ff2*T2-ff1*T1)/xflow360
+                        ac(ieq,idofm)=0.d0
                      endif
                      if(idofp2.ne.0) then
                         ac(ieq,idofp2)=-ff2*T2/pt2
@@ -371,8 +390,13 @@ c                     M1=min(M1,0.999d0/dsqrt(kappa))
                      if(idoft1.ne.0) then
                         ac(ieq,idoft1)=(1.d0-ff1/2.d0)/(1.d0+bb*M1**2)
                      endif
+!
+!                 removal of the dependency of the energy equation
+!                 on the mass seems to be beneficial for convergence
+!     
                      if(idofm.ne.0) then
-                        ac(ieq,idofm)=-ff1*T1/xflow360
+c                        ac(ieq,idofm)=-ff1*T1/xflow360
+                        ac(ieq,idofm)=0.d0
                      endif
                      if(idoft2.ne.0) then
                         ac(ieq,idoft2)=-1.d0/(1.d0+bb/kappa)
@@ -415,8 +439,13 @@ c                     call exit(201)
                      ac(ieq,idoft2)=ac(ieq,idoft2)+cp*xflow
                   endif
 !     
+!
+!                 removal of the dependency of the energy equation
+!                 on the mass seems to be beneficial for convergence
+!     
                   if(idofm.ne.0) then
-                     ac(ieq,idofm)=ac(ieq,idofm)+cp*(tg2-tg1)
+c                     ac(ieq,idofm)=ac(ieq,idofm)+cp*(tg2-tg1)
+                     ac(ieq,idofm)=0.d0
                   endif
 !     
                elseif((node1.ne.0).and.(nacteq(3,node2).eq.node1))then
@@ -427,7 +456,7 @@ c                     call exit(201)
 !     
 !     calculation of the dynamic viscosity
 !     
-                  if(dabs(dvi).lt.1E-30) then
+                  if(dabs(dvi).lt.1d-30) then
                      write(*,*) '*ERROR in gaspipe_fanno: '
                      write(*,*) '       no dynamic viscosity defined'
                      write(*,*) '       dvi= ',dvi
@@ -445,7 +474,7 @@ c                     call exit(201)
 !     
 !                    two-phase-flow
 !     
-                     call two_phase_flow(Tt1,pt1,T1,pt2,xflow360,
+                     call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow360,
      &                    xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &                    v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
      &                    shcon,rhcon,ntmat_,mi)
@@ -464,7 +493,7 @@ c                     call exit(201)
                   call pt2zpt1_crit(pt2,pt1,Tt1,lambda,kappa,r,dl,d,
      &                 pt2zpt1_c,Qred_crit,crit,icase,M1_c)
 !
-                  Qred1=xflow360*dsqrt(Tt1)/(A*Pt1)
+                  Qred1=xflow360*dsqrt(Tt1)/(A*pt1)
 !
 !                 check whether flow is critical
 !                 assigning the physical correct sign to xflow360
@@ -473,7 +502,7 @@ c                     call exit(201)
 !
 !                    critical flow
 !
-                     xflow360=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+                     xflow360=inv*Qred_crit*A*pt1/dsqrt(Tt1)
                      M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
 c                     M1=min(M1,0.999d0/dsqrt(kappa))
                   else
@@ -481,13 +510,13 @@ c                     M1=min(M1,0.999d0/dsqrt(kappa))
 !                    subcritical flow
 !
                      if(Qred1.gt.Qred_crit) then
-                        xflow360=inv*Qred_crit*A*Pt1/dsqrt(Tt1)
+                        xflow360=inv*Qred_crit*A*pt1/dsqrt(Tt1)
                         M1=M1_c
                      else
                         xflow360=inv*xflow360
                         M1=dsqrt(2/km1*((Tt1/T1)-1.d0))
                      endif
-                     call ts_calc(xflow360,Tt2,Pt2,kappa,r,a,T2,icase)
+                     call ts_calc(xflow360,Tt2,pt2,kappa,r,A,T2,icase)
                      M2=dsqrt(2/km1*((Tt2/T2)-1.d0))
                   endif
 !     
@@ -503,8 +532,13 @@ c                     M1=min(M1,0.999d0/dsqrt(kappa))
                      if(idoft1.ne.0) then
                         ac(ieq,idoft1)=(1.d0-ff1/2.d0)/(1.d0+bb*M1**2)
                      endif
+!
+!                 removal of the dependency of the energy equation
+!                 on the mass seems to be beneficial for convergence
+!     
                      if(idofm.ne.0) then
-                        ac(ieq,idofm)=(ff2*T2-ff1*T1)/xflow360
+c                        ac(ieq,idofm)=(ff2*T2-ff1*T1)/xflow360
+                        ac(ieq,idofm)=0.d0
                      endif
                      if(idofp2.ne.0) then
                         ac(ieq,idofp2)=-ff2*T2/pt2
@@ -519,8 +553,13 @@ c                     M1=min(M1,0.999d0/dsqrt(kappa))
                      if(idoft1.ne.0) then
                         ac(ieq,idoft1)=(1.d0-ff1/2.d0)/(1.d0+bb*M1**2)
                      endif
+!
+!                 removal of the dependency of the energy equation
+!                 on the mass seems to be beneficial for convergence
+!     
                      if(idofm.ne.0) then
-                        ac(ieq,idofm)=-ff1*T1/xflow360
+c                        ac(ieq,idofm)=-ff1*T1/xflow360
+                        ac(ieq,idofm)=0.d0
                      endif
                      if(idoft2.ne.0) then
                         ac(ieq,idoft2)=-1.d0/(1.d0+bb/kappa)
@@ -571,7 +610,7 @@ c                     M1=min(M1,0.999d0/dsqrt(kappa))
      &           nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &           nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf,
      &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
-     &           ttime,time,iaxial)
+     &           ttime,time,iaxial,iplausi)
 !
             do k=1,numf
                idof=nactdog(idirf(k),nodef(k))
@@ -808,7 +847,9 @@ c     &                 (h(1)-xloadold(1,i))*reltime
 !           user-defined network equation
 !
             call networkmpc_lhs(i,ipompc,nodempc,coefmpc,labmpc,
-     &          v,nactdog,ac,j,mi,nteq)
+     &          v,nactdog,ac,j,mi,nteq,ipkon,kon,lakon,iponoel,
+     &          inoel,ielprop,prop,ielmat,
+     &          shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
          endif
       enddo
 !

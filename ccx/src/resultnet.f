@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,7 +38,7 @@
 !     
       integer mi(*),itg(*),ieg(*),ntg,nteq,nflow,nload,
      &     ielmat(mi(3),*),iflag,ider,iaxial,nalt,nalf,
-     &     nelemload(2,*),nope,nopes,mint2d,i,j,k,l,nrhcon(*),
+     &     nelemload(2,*),nope,nopes,mint2d,i,j,k,m,nrhcon(*),
      &     node,imat,ntmat_,id,ifaceq(8,6),ifacet(6,4),numf,
      &     ifacew(8,5),node1,node2,nshcon(*),nelem,ig,index,konl(20),
      &     ipkon(*),kon(*),idof,ineighe(*),idir,ncocon(2,*),
@@ -55,14 +55,27 @@
      &     field,prop(*),tg1,tg2,dtime,ttime,time,g(3),eta,
      &     xforcact(*),areaj,xflow,tvar(2),f,df(8),camt(*),camf(*),
      &     camp(*),tl2(8),cama(*),vamt,vamf,vamp,vama,term,
-     &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,kappa,a,T,Tt,pt,
-     &     dtheta,ts1,ts2,xs2(3,7),xk1,xk2,xdenom1,xdenom2,expon,pt1,
-     &     pt2,dt1,dt2,xcst,xnum1,xnum2,Qred_crit,xflow_crit,
+     &     rhcon(0:1,ntmat_,*),xbodyact(7,*),sinktemp,kappa,A,T,Tt,pt,
+     &     dtheta,ts1,ts2,xs2(3,7),pt1,pt2,Qred_crit,xflow_crit,
      &     xflow0,xflow1,reltime,coefmpc(*),qat,qaf,ramt,ramf,ramp,
-     &     xflow2,R1,R2,Rout,Rin,Uout,Uin,heat,cocon(0:6,ntmat_,*),
-     &     Cp_cor,U,Ct,vold(0:mi(2),*),xloadold(2,*),omega,bnac,
-     &     xflow360,Tt1,Tt2,T1,T2,heatnod,heatfac
+     &     xflow2,heat,cocon(0:6,ntmat_,*),
+     &     Cp_cor,U,Ct,vold(0:mi(2),*),xloadold(2,*),bnac,
+     &     xflow360,Tt1,Tt2,T1,T2,heatnod,heatfac,A2,d,l,s
 !     
+      intent(in) itg,ieg,ntg,
+     &     nload,sideload,nelemload,xloadact,lakon,ntmat_,
+     &     shcon,nshcon,ipkon,kon,co,nflow,
+     &     iinc,istep,dtime,ttime,time,
+     &     ikforc,ilforc,xforcact,nforc,ielmat,nteq,ielprop,
+     &     nactdog,nacteq,physcon,rhcon,nrhcon,
+     &     ipobody,ibody,xbodyact,nbody,dtheta,vold,xloadold,
+     &     reltime,nmethod,set,mi,ineighe,
+     &     nmpc,nodempc,ipompc,coefmpc,labmpc,iaxial,
+     &     cocon,ncocon,iponoel,inoel
+!
+      intent(inout) camt,camf,camp,cama,vamt,vamf,vamp,vama,bc,v,
+     &  prop,iin,iplausi,qat,qaf,ramt,ramf,ramp
+!
       include "gauss.f"
 !     
       data ifaceq /4,3,2,1,11,10,9,12,
@@ -180,7 +193,7 @@
             v(3,node)=v(3,node)+bc(nactdog(3,node))*dtheta
             if(v(3,node).gt.0.99999d0) then
                v(3,node)=0.99999d0
-            elseif(v(3,node).lt.0.12501) then
+            elseif(v(3,node).lt.0.12501d0) then
                v(3,node)=0.12501d0
             endif
             if(dabs(v(3,node)).gt.vama) vama=dabs(v(3,node))
@@ -198,14 +211,14 @@
 !              Using a smaller step gets better convergence(factor 0.5)
                v(3,node)=v(3,node)+bc(nactdog(3,node))*
      &            dtheta
-               if(v(3,node).lt.0.1)then
-                  v(3,node) = 0.1
+               if(v(3,node).lt.0.1d0)then
+                  v(3,node) = 0.1d0
                endif
 !           Hole diameter factor unknown               
             elseif(nint(prop(index+1)).eq.3) then
                v(3,node)=v(3,node)+bc(nactdog(3,node))*dtheta
-               if(v(3,node).lt.0.1)then
-                  v(3,node) = 0.1
+               if(v(3,node).lt.0.1d0)then
+                  v(3,node) = 0.1d0
                endif
             endif
             if(dabs(v(3,node)).gt.vama) vama=dabs(v(3,node))
@@ -294,7 +307,7 @@
      &                 ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &                 cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
      &                 nshcon,rhcon,nrhcon,ntmat_,mi,ider,ttime,time,
-     &                 iaxial)
+     &                 iaxial,iplausi)
                   kflag=2
 !     
                endif
@@ -415,7 +428,21 @@ c      enddo
             kappa=(cp/(cp-R))
 !     
             if(lakon(nelem)(2:5).eq.'GAPF') then
-               A=prop(index+1)
+!
+!              distinguish between standard pipes and flexible
+!              pipes
+! 
+               if((lakon(nelem)(6:8).eq.'AFR').or.
+     &            (lakon(nelem)(6:8).eq.'ARL').or.
+     &            (lakon(nelem)(6:8).eq.'ARG').or.
+     &            (lakon(nelem)(6:8).eq.'IFR').or.
+     &            (lakon(nelem)(6:8).eq.'IRL')) then
+                  call calcgeomelemnet(vold,co,prop,lakon,nelem,
+     &                   ttime,time,ielprop,mi,A,A2,d,l,s)
+               else
+                  A=prop(index+1)
+               endif
+!
                if(lakon(nelem)(2:6).eq.'GAPFA') then
                   icase=0
                elseif(lakon(nelem)(2:6).eq.'GAPFI') then
@@ -458,19 +485,28 @@ c      enddo
 !     
                else
 !     
-                  if(node.eq.node1) then
-                     A=prop(index+1)
-                  elseif(node.eq.node2) then
-                     A=prop(index+2)
+                  if((lakon(nelem)(2:5).eq.'RBSF')) then
+                     call calcgeomelemnet(vold,co,prop,lakon,nelem,
+     &                       ttime,time,ielprop,mi,A,A2,d,l,s)
+                     if(node.eq.node2) then
+                        A=A2
+                     endif
+                  else
+                     if(node.eq.node1) then
+                        A=prop(index+1)
+                     elseif(node.eq.node2) then
+                        A=prop(index+2)
+                     endif
                   endif
                endif
             elseif(lakon(nelem)(2:3).eq.'UP') then
 !
 !              user elements whose names start with UP are assumed
 !              to be Pipe-like (static and total temperatures differ)
-!              The cross area is assumed to be the first property
 !
-               a=prop(index+1)
+               call calcgeomelemnet(vold,co,prop,lakon,nelem,
+     &                       ttime,time,ielprop,mi,A,A2,d,l,s)
+c               A=prop(index+1)
                icase=0
             endif
 !     
@@ -491,11 +527,11 @@ c      enddo
                endif
 !     
                if(icase.eq.0) then
-                  Qred_crit=dsqrt(kappa/R)*(1.+0.5*(kappa-1.))
-     &                 **(-0.5d0*(kappa+1.)/(kappa-1.))
+                  Qred_crit=dsqrt(kappa/R)*(1.d0+0.5d0*(kappa-1.d0))
+     &                 **(-0.5d0*(kappa+1.d0)/(kappa-1.d0))
                else
-                  Qred_crit=dsqrt(1/R)*(1.+0.5*(kappa-1.)/kappa)
-     &                 **(-0.5d0*(kappa+1.)/(kappa-1.))
+                  Qred_crit=dsqrt(1/R)*(1.d0+0.5d0*(kappa-1.d0)/kappa)
+     &                 **(-0.5d0*(kappa+1.d0)/(kappa-1.d0))
                endif
                xflow_crit=Qred_crit*pt*A/dsqrt(Tt)   
 !     
@@ -538,7 +574,11 @@ c      enddo
 !           INLET, RIMSEAL, S-PUMP and VORTEX
 !
             if((lakon(nelem)(2:8).ne.'ACCTUBE').and.
+     &         (lakon(nelem)(2:5).ne.'ATR').and.
+     &         (lakon(nelem)(2:5).ne.'RTA').and.   
      &         (lakon(nelem)(2:5).ne.'CROS').and.
+     &         (lakon(nelem)(2:3).ne.'LI').and.
+     &         (lakon(nelem)(2:3).ne.'LP').and.     
      &         (lakon(nelem)(2:4).ne.'MRG').and.
      &         (lakon(nelem)(2:4).ne.'RCV').and.
      &         (lakon(nelem)(2:3).ne.'RO').and.
@@ -643,7 +683,15 @@ c      enddo
 !     
          if(lakon(nelem)(2:6).eq.'GAPFI') then
             if((node1.ne.0).and.(node2.ne.0)) then
-               A=prop(ielprop(nelem)+1)
+!
+               if((lakon(nelem)(7:8).eq.'FR').or.
+     &            (lakon(nelem)(7:8).eq.'RL')) then
+                  call calcgeomelemnet(vold,co,prop,lakon,nelem,
+     &                       ttime,time,ielprop,mi,A,A2,d,l,s)
+               else
+                  A=prop(ielprop(nelem)+1)
+               endif
+!
                pt1=v(2,node1)
                pt2=v(2,node2)
 !     
@@ -651,17 +699,18 @@ c      enddo
                icase=1
 !
                if(pt1.ge.pt2)then
-                  if(dabs(tg2/ts2-(1+0.5*(kappa-1)/kappa)).lt.1E-5) then
+                  if(dabs(tg2/ts2-(1.d0+0.5d0*(kappa-1)/kappa)).lt.1d-5)
+     &                      then
                      pt2=dabs(xflow360)*dsqrt(Tg2*R)/A
-     &                    *(1+0.5*(kappa-1)/kappa)
-     &                    **(0.5*(kappa+1)/(kappa-1))
+     &                    *(1.d0+0.5d0*(kappa-1.d0)/kappa)
+     &                    **(0.5d0*(kappa+1.d0)/(kappa-1.d0))
 !                  
                   endif
                   Tt1=v(0,node1)-physcon(1)
                   Tt2=v(0,node2)-physcon(1)
                   T1=v(3,node1)
-                  call ts_calc(xflow360,Tt1,pt1,kappa,r,a,T1,icase)
-                  call ts_calc(xflow360,Tt2,pt2,kappa,r,a,T2,icase)
+                  call ts_calc(xflow360,Tt1,pt1,kappa,r,A,T1,icase)
+                  call ts_calc(xflow360,Tt2,pt2,kappa,r,A,T2,icase)
                   v(3,node1)=T1
                   v(3,node2)=T2
                else
@@ -672,9 +721,9 @@ c      enddo
                   endif
 !
                   Tt1=v(0,node2)-physcon(1)
-                  call ts_calc(xflow360,Tt1,pt1,kappa,r,a,T1,icase)
+                  call ts_calc(xflow360,Tt1,pt1,kappa,r,A,T1,icase)
                   Tt2=v(0,node1)-physcon(1)
-                  call ts_calc(xflow360,Tt2,pt2,kappa,r,a,T2,icase)
+                  call ts_calc(xflow360,Tt2,pt2,kappa,r,A,T2,icase)
                endif
 !     
             endif
@@ -796,7 +845,8 @@ c      enddo
      &           nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &           cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
-     &           nshcon,rhcon,nrhcon,ntmat_,mi,ider,ttime,time,iaxial)
+     &           nshcon,rhcon,nrhcon,ntmat_,mi,ider,ttime,time,
+     &           iaxial,iplausi)
             bc(ieq)=-f
          endif
       enddo
@@ -913,32 +963,32 @@ c      enddo
 !     integration to obtain the area and the mean
 !     temperature
 !     
-            do l=1,mint2d
+            do m=1,mint2d
                if((lakonl(4:5).eq.'8R').or.
      &              ((lakonl(4:4).eq.'6').and.(nopes.eq.4))) then
-                  xi=gauss2d1(1,l)
-                  et=gauss2d1(2,l)
-                  weight=weight2d1(l)
+                  xi=gauss2d1(1,m)
+                  et=gauss2d1(2,m)
+                  weight=weight2d1(m)
                elseif((lakonl(4:4).eq.'8').or.
      &                 (lakonl(4:6).eq.'20R').or.
      &                 ((lakonl(4:5).eq.'15').and.(nopes.eq.8))) then
-                  xi=gauss2d2(1,l)
-                  et=gauss2d2(2,l)
-                  weight=weight2d2(l)
+                  xi=gauss2d2(1,m)
+                  et=gauss2d2(2,m)
+                  weight=weight2d2(m)
                elseif(lakonl(4:4).eq.'2') then
-                  xi=gauss2d3(1,l)
-                  et=gauss2d3(2,l)
-                  weight=weight2d3(l)
+                  xi=gauss2d3(1,m)
+                  et=gauss2d3(2,m)
+                  weight=weight2d3(m)
                elseif((lakonl(4:5).eq.'10').or.
      &                 ((lakonl(4:5).eq.'15').and.(nopes.eq.6))) then
-                  xi=gauss2d5(1,l)
-                  et=gauss2d5(2,l)
-                  weight=weight2d5(l)
+                  xi=gauss2d5(1,m)
+                  et=gauss2d5(2,m)
+                  weight=weight2d5(m)
                elseif((lakonl(4:4).eq.'4').or.
      &                 ((lakonl(4:4).eq.'6').and.(nopes.eq.3))) then
-                  xi=gauss2d4(1,l)
-                  et=gauss2d4(2,l)
-                  weight=weight2d4(l)
+                  xi=gauss2d4(1,m)
+                  et=gauss2d4(2,m)
+                  weight=weight2d4(m)
                endif
 !     
                if(nopes.eq.8) then
@@ -973,13 +1023,11 @@ c      enddo
                   read(sideload(i)(2:2),'(i1)') jltyp
                   jltyp=jltyp+10
                   call film(h,sinktemp,temp,istep,
-     &                 iinc,tvar,nelem,l,coords,jltyp,field,nfield,
+     &                 iinc,tvar,nelem,m,coords,jltyp,field,nfield,
      &                 sideload(i),node,areaj,v,mi,ipkon,kon,lakon,
      &                 iponoel,inoel,ielprop,prop,ielmat,shcon,nshcon,
      &                 rhcon,nrhcon,ntmat_,cocon,ncocon,
      &                 ipobody,xbodyact,ibody,heatnod,heatfac)
-c                  if(nmethod.eq.1) h(1)=xloadold(1,i)+
-c     &                 (h(1)-xloadold(1,i))*reltime
                endif
                if(lakonl(5:7).eq.'0RA') then
                   term=2.d0*((temp-sinktemp)*h(1)+heatnod)*dxsj2*weight
@@ -1022,129 +1070,33 @@ c     &                 (h(1)-xloadold(1,i))*reltime
 !     
       do i=1,nflow
          nelem=ieg(i)
-         if(lakon(nelem)(2:3).ne.'VO') cycle
 !     
 !     free vortex and no temperature change
 !     
-         if((lakon(nelem)(2:5).eq.'VOFR').and.
-     &        (nint(prop(ielprop(nelem)+8)).eq.0)) cycle
+         if(lakon(nelem)(2:3).eq.'VO') then
+            if(lakon(nelem)(4:5).eq.'FR') then
+               if((nint(prop(ielprop(nelem)+8)).eq.0).or.
+     &            (nint(prop(ielprop(nelem)+8)).eq.1)) cycle
+            elseif(lakon(nelem)(4:5).eq.'FO') then
+               if(nint(prop(ielprop(nelem)+6)).eq.0) cycle
+            endif
 !     
-!     free vortex and temperature change in the absolute system
+            call calcheatnet(nelem,lakon,ipkon,kon,v,ielprop,prop,
+     &           ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,ipobody,ibody,
+     &           xbodyact,mi,nacteq,bc,qat,nalt)
 !     
-         if((lakon(nelem)(2:5).eq.'VOFR').and.
-     &        (nint(prop(ielprop(nelem)+8)).eq.1)) cycle
-!     
-!     forced vortex and no temperature change
-!     
-         if((lakon(nelem)(2:5).eq.'VOFO').and.
-     &        (nint(prop(ielprop(nelem)+6)).eq.0)) cycle
-!     
-         nodem=kon(ipkon(nelem)+2)
-         xflow=v(1,nodem)
-         if(xflow.gt.0d0) then
-            node1=kon(ipkon(nelem)+1)
-            node2=kon(ipkon(nelem)+3)
+         elseif(lakon(nelem)(2:2).eq.'U') then
+            call calcheatnet(nelem,lakon,ipkon,kon,v,ielprop,prop,
+     &           ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,ipobody,ibody,
+     &           xbodyact,mi,nacteq,bc,qat,nalt)
          else
-            node1=kon(ipkon(nelem)+1)
-            node2=kon(ipkon(nelem)+3)
-         endif
-!     
-         if(xflow.gt.0d0) then
-            R1=prop(ielprop(nelem)+2)
-            R2=prop(ielprop(nelem)+1)
-            if(R1.gt.R2) then
-               Rout=R2
-               Rin=R1
-            else
-               Rout=R2
-               Rin=R1
-            endif
-         else
-            R1=prop(ielprop(nelem)+2)
-            R2=prop(ielprop(nelem)+1)
-            if(R1.gt.R2) then
-               Rout=R1
-               Rin=R2
-            else
-               Rout=R1
-               Rin=R2
-            endif
-         endif
-!     
-!     computing temperature corrected Cp=Cp(T) coefficient
-!     
-         Tg1=v(0,node1)
-         Tg2=v(0,node2)
-         if((lakon(nelem)(2:3).ne.'LP').and.
-     &      (lakon(nelem)(2:3).ne.'LI')) then
-            gastemp=(tg1+tg2)/2.d0
-         else
-            if(xflow.gt.0) then
-               gastemp=tg1
-            else
-               gastemp=tg2
-            endif
-         endif
-!
-         imat=ielmat(1,nelem)
-         call materialdata_tg(imat,ntmat_,gastemp,
-     &        shcon,nshcon,cp,r,dvi,rhcon,nrhcon,rho)
-!
-         call cp_corrected(cp,Tg1,Tg2,cp_cor)
-!     
-         Uout=prop(ielprop(nelem)+5)*Rout
-         Uin=prop(ielprop(nelem)+5)*Rin
-!     
-!     free and forced vortices with temperature 
-!     change in the relative system of coordinates 
-!     
-         if((lakon(nelem)(2:5).eq.'VOFR') .and.
-     &        (nint(prop(ielprop(nelem)+8)).eq.(-1))) then
-!     
-            Uout=prop(ielprop(nelem)+7)*Rout
-            Uin=prop(ielprop(nelem)+7)*Rin
-!     
-            heat=0.5d0*Cp/Cp_cor*(Uout**2-Uin**2)*xflow
-!     
-         elseif (((lakon(nelem)(2:5).eq.'VOFO')
-     &           .and.(nint(prop(ielprop(nelem)+6)).eq.(-1)))) then
-!     
-            Uout=prop(ielprop(nelem)+5)*Rout
-            Uin=prop(ielprop(nelem)+5)*Rin
-!     
-            heat=0.5d0*Cp/Cp_cor*(Uout**2-Uin**2)*xflow
-!     
-!     forced vortices with temperature change in the absolute system
-!     
-         elseif((lakon(nelem)(2:5).eq.'VOFO')
-     &           .and.((nint(prop(ielprop(nelem)+6)).eq.1))) then
-!     
-            heat=Cp/Cp_cor*(Uout**2-Uin**2)*xflow
-!     
-         endif
-!     
-!     including the resulting additional heat flux in the energy equation
-!     
-         if(xflow.gt.0d0)then
-            ieq=nacteq(0,node2)
-            if(ieq.ne.0) then
-               bc(ieq)=bc(ieq)+heat
-               qat=qat+dabs(heat)
-               nalt=nalt+1
-            endif
-         else
-            ieq=nacteq(0,node1)
-            if(ieq.ne.0) then
-               bc(ieq)=bc(ieq)+heat
-               qat=qat+dabs(heat)
-               nalt=nalt+1
-            endif
+            cycle
          endif
       enddo
 !     
 !     transfer element ABSOLUTE TO RELATIVE / RELATIVE TO ABSOLUTE
 !     
-      do i= 1, nflow
+      do i=1,nflow
          nelem=ieg(i)
 !     
          if((lakon(nelem)(2:4).eq.'ATR').or.
@@ -1188,7 +1140,6 @@ c     &                 (h(1)-xloadold(1,i))*reltime
 !           if a swirl element was given by the user, this takes
 !           precendence to a value of ct
 !
-c            if(ct.eq.0) then
             if(nint(prop(index+3)).ne.0) then
                nelemswirl=nint(prop(index+3))
                index2=ielprop(nelemswirl)
@@ -1261,7 +1212,9 @@ c            if(ct.eq.0) then
 !           user-defined network equation
 !
             call networkmpc_rhs(i,ipompc,nodempc,coefmpc,labmpc,
-     &          v,bc,j,mi)
+     &          v,bc,j,mi,ipkon,kon,lakon,iponoel,
+     &          inoel,ielprop,prop,ielmat,
+     &          shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
          endif
       enddo
 !

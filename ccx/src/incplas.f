@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1039,9 +1039,15 @@ c                     write(*,*) cop,fu
       enddo
       xstate(1,iint,iel)=ep
 !
-!     maximum equivalent viscoplastic strain in this increment
+!     maximum difference in the equivalent viscoplastic strain 
+!     in this increment based on the viscoplastic strain rate at
+!     the start and the end of the increment
 !
-      depvisc=max(depvisc,ep-epini)
+      if(ivisco.eq.1) then
+         depvisc=max(depvisc,abs(decra(1)-dtime*xstateini(14,iint,iel)))
+         xstate(14,iint,iel)=decra(1)/dtime
+      endif
+c      depvisc=max(depvisc,ep-epini)
 !
       return
       end

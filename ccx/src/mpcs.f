@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,lakon,ipkon,kon,nk,nk_,
      &  nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,iperturb,ne_,
      &  co,xboun,ctrl,typeboun,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc)
+     &  inp,ipoinpc,ier)
 !
 !     reading the input deck: *MPC
 !
@@ -34,7 +34,7 @@
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),ipompc(*),
-     &  nodempc(3,*),idirref,
+     &  nodempc(3,*),idirref,ier,
      &  nset,nset_,nalset,nalset_,nmpc,nmpc_,mpcfree,nk,nk_,ikmpc(*),
      &  ilmpc(*),ipkon(*),kon(*),i,node,ipos,istep,istat,n,ne_,
      &  j,k,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),ipoinpc(0:*),
@@ -49,13 +49,15 @@
          write(*,*) 
      &     '*ERROR reading *MPC: *MPC should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(iperturb(1).eq.1) then
          write(*,*) '*ERROR reading *MPC: the *MPC option'
          write(*,*) '       cannot be used in a perturbation step'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -128,7 +130,8 @@
                   write(*,*) '*ERROR in nosets: node set ',
      &                 noset
                   write(*,*) '       has not been defined yet'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             else
                inode=inode+1

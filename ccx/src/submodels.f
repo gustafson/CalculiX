@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine submodels(inpc,textpart,set,istartset,iendset,ialset,
      &  nset,nset_,nalset,nalset_,nk,istep,istat,n,iline,ipol,
      &  inl,ipoinp,inp,ipoinpc,nsubmodel,tieset,tietol,ntie,
-     &  ntie_,jobnamec,amta,namta,nam,nam_,namtot_)
+     &  ntie_,jobnamec,amta,namta,nam,nam_,namtot_,ier)
 !
 !     reading the input deck: *SUBMODEL
 !
@@ -34,7 +34,7 @@
      &  j,istartset(*),iendset(*),ialset(*),ipos,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),l,k,kstart,kend,ipoinpc(0:*),
      &  iglobset,kincrement,nsubmodel,kflag,idummy,nalsetold,ntie,ntie_,
-     &  nlength,namta(3,*),nam,nam_,namtot_
+     &  nlength,namta(3,*),nam,nam_,namtot_,ier
 !
       real*8 tietol(3,*),amta(2,*)
 !
@@ -44,13 +44,15 @@
          write(*,*) 
      &          '*ERROR reading *SUBMODEL: *SURFACE should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ntie=ntie+1
       if(ntie.gt.ntie_) then
-         write(*,*) '*ERROR in ties: increase ntie_'
-         call exit(201)
+         write(*,*) '*ERROR reading *SUBMODEL: increase ntie_'
+         ier=1
+         return
       endif
 !
       tietol(1,ntie)=-1.d0
@@ -65,12 +67,14 @@
          nam=1
          if(nam_.lt.1) then
             write(*,*) '*ERROR reading *SUBMODEL: increase nam_'
-            call exit(201)
+            ier=1
+            return
          endif
          if(namtot_.lt.2) then
             write(*,*) 
      &           '*ERROR reading *SUBMODEL: increase namtot_'
-            call exit(201)
+            ier=1
+            return
          endif
          amta(1,1)=0.d0
          amta(2,1)=1.d0
@@ -96,7 +100,8 @@ c      globset(1:1)=' '
       else
          write(*,*) '*ERROR reading *SUBMODEL: no more than 999'
          write(*,*) '       submodels allowed'
-         call exit(201)
+         ier=1
+         return
       endif
       do i=12,81
          submset(i:i)=' '
@@ -111,7 +116,8 @@ c      globset(1:1)=' '
             else
                write(*,*) 
      &          '*ERROR reading *SUBMODEL: unknown type'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:12).eq.'GLOBALELSET=') then
             globset(1:80)=textpart(i)(13:92)
@@ -126,7 +132,8 @@ c      globset(1:1)=' '
      &            '*ERROR reading *SUBMODEL: global element set ',
      &            globset(1:ipos-1)
                write(*,*) '       does not exist'
-               call exit(201)
+               ier=1
+               return
             endif
             do j=istartset(iglobset),iendset(iglobset)
                if(ialset(j).lt.0) then
@@ -135,7 +142,8 @@ c      globset(1:1)=' '
      &               globset(1:ipos-1)
                   write(*,*) '       was defined using GENERATE;'
                   write(*,*) '       this is not allowed'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             enddo
          elseif(textpart(i)(1:6).eq.'INPUT=') then
@@ -170,13 +178,15 @@ c      globset(1:1)=' '
 c      if(globset(1:1).eq.' ') then
 c         write(*,*) '*ERROR reading *SUBMODEL: no global elset'
 c         write(*,*) '       defined'
-c         call exit(201)
+c         ier=1
+c         return
 c      endif
 !
 c      ipos=index(submset,' ')
 c      if(ipos.eq.1) then
 c         write(*,*) '*ERROR reading *SUBMODEL: no name specified'
-c         call exit(201)
+c         ier=1
+c         return
 c      endif
       submset(12:12)=type
 !
@@ -184,8 +194,9 @@ c      endif
 !
       nset=nset+1
       if(nset.gt.nset_) then
-         write(*,*) '*ERROR in submsets: increase nset_'
-         call exit(201)
+         write(*,*) '*ERROR reading *SUBMODEL: increase nset_'
+         ier=1
+         return
       endif
       set(nset)=submset
       istartset(nset)=nalset+1
@@ -202,7 +213,8 @@ c      endif
                if(iendset(nset).eq.0) then
                   write(*,*) '*ERROR reading *SUBMODEL: nodal'
                   write(*,*) '       submodel contains no nodes'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                exit
             endif
@@ -211,7 +223,8 @@ c      endif
                if(nalset+1.gt.nalset_) then
                   write(*,*) 
      &               '*ERROR reading *SUBMODEL: increase nalset_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !     
                read(textpart(l)(1:10),'(i10)',iostat=istat)
@@ -229,7 +242,8 @@ c      endif
                               if(nalset.gt.nalset_) then
                                  write(*,*) 
      &                   '*ERROR reading *SUBMODEL: increase nalset_'
-                                 call exit(201)
+                                 ier=1
+                                 return
                               endif
                               ialset(nalset)=ialset(j)
                            else
@@ -242,7 +256,8 @@ c      endif
                                  if(nalset.gt.nalset_) then
                                     write(*,*) 
      &                     '*ERROR reading *SUBMODEL: increase nalset_'
-                                    call exit(201)
+                                    ier=1
+                                    return
                                  endif
                                  ialset(nalset)=k
                               enddo
@@ -257,7 +272,8 @@ c      endif
                      write(*,*) '*ERROR reading *SUBMODEL: node set ',
      &                     noset
                      write(*,*) '       does not exist'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                else
                   if(ialset(nalset+1).gt.nk) then
@@ -286,7 +302,8 @@ c      endif
                if(iendset(nset).eq.0) then
                   write(*,*) '*ERROR reading *SUBMODEL: facial'
                   write(*,*) '       submodel contains no faces'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                exit
             endif
@@ -295,7 +312,8 @@ c      endif
                write(*,*) '*ERROR reading *SUBMODEL: no more than'
                write(*,*) '       one entry per line allowed for'
                write(*,*) '       a facial submodel interface'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             facialset(1:80)=textpart(1)(1:80)
@@ -309,7 +327,8 @@ c      endif
                      if(nalset.gt.nalset_) then
                         write(*,*)
      &                   '*ERROR in reading *SUBMODEL: increase nalset_'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      ialset(nalset)=ialset(j)
                   enddo
@@ -346,8 +365,9 @@ c      endif
             nalset=nalset+1
             if(nalset.gt.nalset_) then
                write(*,*) 
-     &              '*ERROR in surfaces: increase nalset_'
-               call exit(201)
+     &              '*ERROR reading *SUBMODEL: increase nalset_'
+               ier=1
+               return
             endif
             ialset(nalset)=ialset(j)
          else
@@ -359,8 +379,9 @@ c      endif
                nalset=nalset+1
                if(nalset.gt.nalset_) then
                   write(*,*) 
-     &                 '*ERROR in surfaces: increase nalset_'
-                  call exit(201)
+     &                 '*ERROR reading *SUBMODEL: increase nalset_'
+                  ier=1
+                  return
                endif
                ialset(nalset)=k
             enddo

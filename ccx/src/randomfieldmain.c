@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                     */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -56,7 +56,7 @@ void randomfieldmain(ITG *kon,ITG *ipkon,char *lakon,ITG *ne,ITG *nmpc,
       *nx=NULL,*ny=NULL,*nz=NULL,symmetryflag=0,inputformat=0,mei[4],ido,ldz,
       iparam[11],mxiter,info,ncv,jrow,lworkl,nev,ipntr[14],m,
       *select=NULL,rvec=1,i,k,kflag,idesvar,node,j,inorm=0,irand=1,
-      iinc=1,mode,noddiam=-1,ngraph,iobject,icoordinate;
+      iinc=1,mode,noddiam=-1,ngraph,iobject,icoordinate,nrhs=1;
   
   double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,*au=NULL,*ad=NULL,
          *adb=NULL,*aub=NULL,sigma,*resid=NULL,*workd=NULL,*workl=NULL,tol,
@@ -260,7 +260,7 @@ void randomfieldmain(ITG *kon,ITG *ipkon,char *lakon,ITG *ne,ITG *nmpc,
         }
         else if(*isolver==7){
 #ifdef PARDISO
-          pardiso_solve(temp_array,ndesi,&symmetryflag);
+	    pardiso_solve(temp_array,ndesi,&symmetryflag,&nrhs);
 #endif
         }
         for(jrow=0;jrow<*ndesi;jrow++){
@@ -285,7 +285,7 @@ void randomfieldmain(ITG *kon,ITG *ipkon,char *lakon,ITG *ne,ITG *nmpc,
         }
         else if(*isolver==7){
 #ifdef PARDISO
-          pardiso_solve(&workd[ipntr[2]-1],ndesi,&symmetryflag);
+	    pardiso_solve(&workd[ipntr[2]-1],ndesi,&symmetryflag,&nrhs);
 #endif
         }
         for(jrow=0;jrow<*ndesi;jrow++){

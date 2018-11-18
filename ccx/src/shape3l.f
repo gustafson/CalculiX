@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,7 @@
       intent(out) xsj,xs,shp
 !
 !     shape functions and their glocal derivatives for an element
-!     described with two local parameters and three global ones.
+!     described with one local parameter and three global ones.
 !
 !     local derivatives of the shape functions: xi-derivative
 !
@@ -63,7 +63,11 @@
 !
 !     computation of the jacobian vector
 !
-      xsj(1)=dsqrt(xs(1,1)**2+xs(2,1)**2+xs(3,1)**2)
+c      xsj(1)=dsqrt(xs(1,1)**2+xs(2,1)**2+xs(3,1)**2)
+!
+      xsj(1)=xs(1,1)
+      xsj(2)=xs(2,1)
+      xsj(3)=xs(3,1)
 !     
       return
       end

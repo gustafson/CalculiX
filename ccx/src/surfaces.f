@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine surfaces(inpc,textpart,set,istartset,iendset,ialset,
      &  nset,nset_,nalset,nalset_,nk,ne,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,lakon,ipoinpc)
+     &  inl,ipoinp,inp,lakon,ipoinpc,ier)
 !
 !     reading the input deck: *SURFACE
 !
@@ -33,12 +33,13 @@
       integer nset,nset_,nalset,nalset_,istep,istat,n,key,i,nk,ne,
      &  j,istartset(*),iendset(*),ialset(*),ipos,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),iside,l,k,kstart,kend,ipoinpc(0:*),
-     &  iset,nn,kincrement
+     &  iset,nn,kincrement,ier
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR reading *SURFACE: *SURFACE should be placed'
          write(*,*) '       before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       kstart=0
@@ -56,7 +57,8 @@
      &           '*ERROR reading *SURFACE: surface name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       surface name:',textpart(i)(1:132)
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:5).eq.'TYPE=') then
             if(textpart(i)(6:12).eq.'ELEMENT') then
@@ -66,7 +68,8 @@
             else
                write(*,*) 
      &             '*ERROR reading *SURFACE: unknown surface type'
-               call exit(201)
+               ier=1
+               return
             endif
          else
             write(*,*) 
@@ -81,7 +84,8 @@
       ipos=index(noelset,' ')
       if(ipos.eq.1) then
          write(*,*) '*ERROR reading *SURFACE: no name specified'
-         call exit(201)
+         ier=1
+         return
       endif
       noelset(ipos:ipos)=type
 !
@@ -101,8 +105,9 @@
 !
                nn=iendset(iset)-istartset(iset)+1
                if(nalset+nn.gt.nalset_) then
-                  write(*,*)'*ERROR in noelsets: increase nalset_'
-                  call exit(201)
+                  write(*,*)'*ERROR reading *SURFACE: increase nalset_'
+                  ier=1
+                  return
                endif
                do k=1,nn
                   ialset(nalset+k)=ialset(istartset(iset)+k-1)
@@ -125,8 +130,9 @@
       if(iset.gt.nset) then
          nset=nset+1
          if(nset.gt.nset_) then
-            write(*,*) '*ERROR in noelsets: increase nset_'
-            call exit(201)
+            write(*,*) '*ERROR reading *SURFACE: increase nset_'
+            ier=1
+            return
          endif
          set(nset)=noelset
          istartset(nset)=nalset+1
@@ -151,12 +157,14 @@
                write(*,*) '*ERROR reading *SURFACE: only one entry per'
                write(*,*) '       line allowed'
                call inputerror(inpc,ipoinpc,iline,
-     &"*SURFACE%")
+     &              "*SURFACE%",ier)
+               return
             endif
 !
             if(nalset+1.gt.nalset_) then
                write(*,*) '*ERROR reading *SURFACE: increase nalset_'
-               call exit(201)
+               ier=1
+               return
             endif
 !     
             read(textpart(1)(1:10),'(i10)',iostat=istat)ialset(nalset+1)
@@ -173,7 +181,8 @@
                            if(nalset.gt.nalset_) then
                               write(*,*) 
      &                       '*ERROR reading *SURFACE: increase nalset_'
-                              call exit(201)
+                              ier=1
+                              return
                            endif
                            ialset(nalset)=ialset(j)
                         else
@@ -186,7 +195,8 @@
                               if(nalset.gt.nalset_) then
                                  write(*,*) 
      &                       '*ERROR reading *SURFACE: increase nalset_'
-                                 call exit(201)
+                                 ier=1
+                                 return
                               endif
                               ialset(nalset)=k
                            enddo
@@ -200,7 +210,8 @@
                   noset(ipos:ipos)=' '
                   write(*,*) '*ERROR reading *SURFACE: node set ',noset
                   write(*,*) '       does not exist'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             else
                if(ialset(nalset+1).gt.nk) then
@@ -229,7 +240,8 @@
             endif
             if(nalset+1.gt.nalset_) then
                write(*,*) '*ERROR reading *SURFACE: increase nalset_'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             read(textpart(2)(1:20),'(a20)',iostat=istat) label
@@ -239,6 +251,10 @@
             elseif(label(2:4).eq.'POS') then
                label(2:4)='2  '
             endif
+!
+!           for plane stress elements: 'N' and 'P' are converted
+!           into '5' and '6' and farther down in '1' and '2'
+!
             if(label(2:2).eq.'N') then
                label(2:2)='5'
             elseif(label(2:2).eq.'P') then
@@ -249,7 +265,8 @@
      &         (label(1:2).ne.'S3').and.(label(1:2).ne.'S4').and.
      &         (label(1:2).ne.'S5').and.(label(1:2).ne.'S6')) then
                call inputerror(inpc,ipoinpc,iline,
-     &"*SURFACE%")
+     &              "*SURFACE%",ier)
+               return
             endif
 !            
             read(textpart(1)(1:10),'(i10)',iostat=istat)l
@@ -269,7 +286,8 @@
                            if(nalset.gt.nalset_) then
                               write(*,*) 
      &                       '*ERROR reading *SURFACE: increase nalset_'
-                              call exit(201)
+                              ier=1
+                              return
                            endif
                            newlabel=label
                            if((lakon(l)(1:2).eq.'CP').or.
@@ -299,7 +317,8 @@
                               if(nalset.gt.nalset_) then
                                  write(*,*) 
      &                       '*ERROR reading *SURFACE: increase nalset_'
-                                 call exit(201)
+                                 ier=1
+                                 return
                               endif
                               newlabel=label
                               if((lakon(l)(1:2).eq.'CP').or.
@@ -333,7 +352,8 @@
                   write(*,*) '*ERROR reading *SURFACE: element set ',
      &                  elset
                   write(*,*) '       does not exist'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             else
                if(l.gt.ne) then

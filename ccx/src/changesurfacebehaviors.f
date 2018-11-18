@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine changesurfacebehaviors(inpc,textpart,matname,nmat,
      &  nmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
-     &  imat)
+     &  imat,ier)
 !
 !     reading the input deck: *CHANGE SURFACE BEHAVIOR
 !
@@ -28,14 +28,15 @@
       character*80 matname(*),interactionname
       character*132 textpart(16)
 !
-      integer nmat,nmat_,istep,istat,n,key,i,irstrt,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),imat
+      integer nmat,nmat_,istep,istat,n,key,i,irstrt(*),iline,ipol,inl,
+     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),imat,ier
 !
       if(istep.eq.0) then
          write(*,*) '*ERROR reading *CHANGE SURFACE BEHAVIOR:'
          write(*,*) '       *CHANGE SURFACE BEHAVIOR'
          write(*,*) '       cannot be used before the first step'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -65,7 +66,8 @@
          write(*,*) '*ERROR reading *CHANGE SURFACE BEHAVIOR:',
      &           interactionname
          write(*,*) '       is a nonexistent interaction'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

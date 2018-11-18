@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,77 +51,77 @@
 !
 !     shape functions
 !
-      shp(4, 1)=-0.5*a*(1.0-ze)*(2.0*xi+2.0*et+ze)
-      shp(4, 2)=0.5*xi*(1.0-ze)*(2.0*xi-2.0-ze)
-      shp(4, 3)=0.5*et*(1.0-ze)*(2.0*et-2.0-ze)
-      shp(4, 4)=-0.5*a*(1.0+ze)*(2.0*xi+2.0*et-ze)
-      shp(4, 5)=0.5*xi*(1.0+ze)*(2.0*xi-2.0+ze)
-      shp(4, 6)=0.5*et*(1.0+ze)*(2.0*et-2.0+ze)
-      shp(4, 7)=2.0*xi*a*(1.0-ze)
-      shp(4, 8)=2.0*xi*et*(1.0-ze)
-      shp(4, 9)=2.0*et*a*(1.0-ze)
-      shp(4, 10)=2.0*xi*a*(1.0+ze)
-      shp(4, 11)=2.0*xi*et*(1.0+ze) 
-      shp(4, 12)=2.0*et*a*(1.0+ze)
-      shp(4, 13)= a*(1.0-ze*ze)
-      shp(4, 14)=xi*(1.0-ze*ze)
-      shp(4, 15)=et*(1.0-ze*ze)
+      shp(4,1)=-0.5d0*a*(1.d0-ze)*(2.d0*xi+2.d0*et+ze)
+      shp(4,2)=0.5d0*xi*(1.d0-ze)*(2.d0*xi-2.d0-ze)
+      shp(4,3)=0.5d0*et*(1.d0-ze)*(2.d0*et-2.d0-ze)
+      shp(4,4)=-0.5d0*a*(1.d0+ze)*(2.d0*xi+2.d0*et-ze)
+      shp(4,5)=0.5d0*xi*(1.d0+ze)*(2.d0*xi-2.d0+ze)
+      shp(4,6)=0.5d0*et*(1.d0+ze)*(2.d0*et-2.d0+ze)
+      shp(4,7)=2.d0*xi*a*(1.d0-ze)
+      shp(4,8)=2.d0*xi*et*(1.d0-ze)
+      shp(4,9)=2.d0*et*a*(1.d0-ze)
+      shp(4,10)=2.d0*xi*a*(1.d0+ze)
+      shp(4,11)=2.d0*xi*et*(1.d0+ze) 
+      shp(4,12)=2.d0*et*a*(1.d0+ze)
+      shp(4,13)= a*(1.d0-ze*ze)
+      shp(4,14)=xi*(1.d0-ze*ze)
+      shp(4,15)=et*(1.d0-ze*ze)
 !
       if(iflag.eq.1) return
 !
 !     local derivatives of the shape functions: xi-derivative
 !
-      shp(1, 1)=  0.5*(1.0-ze)*(4.0*xi+4.0*et+ze-2.0)
-      shp(1, 2)=  0.5*(1.0-ze)*(4.0*xi-ze-2.0)
-      shp(1, 3)=  0.d0
-      shp(1, 4)=  0.5*(1.0+ze)*(4.0*xi+4.0*et-ze-2.0)
-      shp(1, 5)=  0.5*(1.0+ze)*(4.0*xi+ze-2.0)
-      shp(1, 6)=  0.d0      
-      shp(1, 7)=  2.0*(1.0-ze)*(1.0-2.0*xi-et)
-      shp(1, 8)=  2.0*et*(1.0-ze)  
-      shp(1, 9)= -2.0*et*(1.0-ze) 
-      shp(1, 10)= 2.0*(1.0+ze)*(1.0-2.0*xi-et)
-      shp(1, 11)= 2.0*et*(1.0+ze)
-      shp(1, 12)= -2.0*et*(1.0+ze)
-      shp(1, 13)= -(1.0-ze*ze) 
-      shp(1, 14)=  (1.0-ze*ze)
-      shp(1, 15)=  0.d0      
+      shp(1,1)=  0.5d0*(1.d0-ze)*(4.0d0*xi+4.0d0*et+ze-2.d0)
+      shp(1,2)=  0.5d0*(1.d0-ze)*(4.0d0*xi-ze-2.d0)
+      shp(1,3)=  0.d0
+      shp(1,4)=  0.5d0*(1.d0+ze)*(4.0d0*xi+4.0d0*et-ze-2.d0)
+      shp(1,5)=  0.5d0*(1.d0+ze)*(4.0d0*xi+ze-2.d0)
+      shp(1,6)=  0.d0      
+      shp(1,7)=  2.d0*(1.d0-ze)*(1.d0-2.d0*xi-et)
+      shp(1,8)=  2.d0*et*(1.d0-ze)  
+      shp(1,9)= -2.d0*et*(1.d0-ze) 
+      shp(1,10)= 2.d0*(1.d0+ze)*(1.d0-2.d0*xi-et)
+      shp(1,11)= 2.d0*et*(1.d0+ze)
+      shp(1,12)= -2.d0*et*(1.d0+ze)
+      shp(1,13)= -(1.d0-ze*ze) 
+      shp(1,14)=  (1.d0-ze*ze)
+      shp(1,15)=  0.d0      
 !
 !     local derivatives of the shape functions: eta-derivative
 !
-      shp(2, 1)=  0.5*(1.0-ze)*(4.0*xi+4.0*et+ze-2.0) 
-      shp(2, 2)= 0.d0
-      shp(2, 3)= 0.5*(1.0-ze)*(4.0*et-ze-2.0)     
-      shp(2, 4)= 0.5*(1.0+ze)*(4.0*xi+4.0*et-ze-2.0)
-      shp(2, 5)= 0.d0
-      shp(2, 6)= 0.5*(1.0+ze)*(4.0*et+ze-2.0)     
-      shp(2, 7)=-2.0*xi*(1.0-ze)
-      shp(2, 8)= 2.0*xi*(1.0-ze)
-      shp(2, 9)= 2.0*(1.0-ze)*(1.0-xi-2.0*et)    
-      shp(2, 10)=-2.0*xi*(1.0+ze)
-      shp(2, 11)= 2.0*xi*(1.0+ze)
-      shp(2, 12)= 2.0*(1.0+ze)*(1.0-xi-2.0*et)
-      shp(2, 13)=-(1.0-ze*ze) 
-      shp(2, 14)= 0.0d0
-      shp(2, 15)= (1.0-ze*ze)
+      shp(2,1)=  0.5d0*(1.d0-ze)*(4.0d0*xi+4.0d0*et+ze-2.d0) 
+      shp(2,2)= 0.d0
+      shp(2,3)= 0.5d0*(1.d0-ze)*(4.0d0*et-ze-2.d0)     
+      shp(2,4)= 0.5d0*(1.d0+ze)*(4.0d0*xi+4.0d0*et-ze-2.d0)
+      shp(2,5)= 0.d0
+      shp(2,6)= 0.5d0*(1.d0+ze)*(4.0d0*et+ze-2.d0)     
+      shp(2,7)=-2.d0*xi*(1.d0-ze)
+      shp(2,8)= 2.d0*xi*(1.d0-ze)
+      shp(2,9)= 2.d0*(1.d0-ze)*(1.d0-xi-2.d0*et)    
+      shp(2,10)=-2.d0*xi*(1.d0+ze)
+      shp(2,11)= 2.d0*xi*(1.d0+ze)
+      shp(2,12)= 2.d0*(1.d0+ze)*(1.d0-xi-2.d0*et)
+      shp(2,13)=-(1.d0-ze*ze) 
+      shp(2,14)= 0.0d0
+      shp(2,15)= (1.d0-ze*ze)
 !
 !     local derivatives of the shape functions: zeta-derivative
 !
-      shp(3, 1)=  a*(xi+et+ze-0.5)
-      shp(3, 2)= xi*(-xi+ze+0.5)
-      shp(3, 3)= et*(-et+ze+0.5)
-      shp(3, 4)=  a*(-xi-et+ze+0.5)
-      shp(3, 5)= xi*(xi+ze-0.5)  
-      shp(3, 6)= et*(et+ze-0.5)
-      shp(3, 7)= -2*xi*a
-      shp(3, 8)= -2*xi*et
-      shp(3, 9)= -2*et*a
-      shp(3, 10)= 2*xi*a
-      shp(3, 11)= 2*xi*et
-      shp(3, 12)= 2*et*a
-      shp(3, 13)=-2*a*ze
-      shp(3, 14)=-2*xi*ze
-      shp(3, 15)=-2*et*ze          
+      shp(3,1)=  a*(xi+et+ze-0.5d0)
+      shp(3,2)= xi*(-xi+ze+0.5d0)
+      shp(3,3)= et*(-et+ze+0.5d0)
+      shp(3,4)=  a*(-xi-et+ze+0.5d0)
+      shp(3,5)= xi*(xi+ze-0.5d0)  
+      shp(3,6)= et*(et+ze-0.5d0)
+      shp(3,7)= -2*xi*a
+      shp(3,8)= -2*xi*et
+      shp(3,9)= -2*et*a
+      shp(3,10)= 2*xi*a
+      shp(3,11)= 2*xi*et
+      shp(3,12)= 2*et*a
+      shp(3,13)=-2*a*ze
+      shp(3,14)=-2*xi*ze
+      shp(3,15)=-2*et*ze          
 !
 !     computation of the local derivative of the global coordinates
 !     (xs)

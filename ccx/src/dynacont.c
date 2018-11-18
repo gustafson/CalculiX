@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -103,7 +103,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       *ikactcont=NULL,*ilactcont=NULL,*ikactcont1=NULL,nactcont1=0,
       i1,icutb=0,iconvergence=0,idivergence=0,mt=mi[1]+1,
       nactcont1_=100,*ikactmech=NULL,iabsload=0,im,nasym=0,mortar=0,
-      ialeatoric=0,*iponoel=NULL,*inoel=NULL;
+      ialeatoric=0,*iponoel=NULL,*inoel=NULL,*nshcon=NULL;
 
   long long i2;
 
@@ -116,7 +116,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       *bjincp=NULL,sump,h14,*dbjp=NULL,senergy=0.0,*xforcdiff=NULL,
       df,i0,ic,ia,dbjmaxOLD1,dbjmaxOLD2,*xloaddiff=NULL,*dbcont=NULL,
       zl=0.0,*xbodydiff=NULL,*t1diff=NULL,*xboundiff=NULL,*bdiff=NULL,
-      *pslavsurf=NULL,*pmastsurf=NULL,*clearini=NULL,venergy=0.0;
+      *pslavsurf=NULL,*pmastsurf=NULL,*clearini=NULL,venergy=0.0,
+      *shcon=NULL;
 
   ikactcont=*ikactcontp;ikactmech=*ikactmechp;
   
@@ -326,7 +327,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		nelemload,sideload,mi,
 		xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,&iabsload,
 		iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,
-                fn,ipobody,iponoel,inoel));
+                fn,ipobody,iponoel,inoel,ipkon,kon,lakon,ielprop,prop,ielmat,
+                shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon));
 	      
       /* calculating the instantaneous loading vector */
       
@@ -341,7 +343,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		   nplicon,plkcon,nplkcon,
 		   npmat_,ttime,time,istep,iinc,dtime,physcon,ibody,
 		   xbodyold,reltime,veold,matname,mi,ikactmech,nactmech,
-                   ielprop,prop,sti,xstateini,xstate,nstate_));
+                   ielprop,prop,sti,xstateini,xstate,nstate_,ntrans,inotr,
+                   trab));
       }else{
 	  FORTRAN(rhs,(co,nk,kon,ipkon,lakon,ne,
 		   ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
@@ -353,7 +356,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		   nplicon,plkcon,nplkcon,
 		   npmat_,ttime,time,istep,iinc,dtime,physcon,ibody,
 		   xbodyold,reltime,veold,matname,mi,ikactmech,nactmech,
-                   ielprop,prop,sti,xstateini,xstate,nstate_));
+                   ielprop,prop,sti,xstateini,xstate,nstate_,ntrans,inotr,
+                   trab));
       }
       
       /* correction for nonzero SPC's */
@@ -364,7 +368,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 		  xbounact,iamboun,nboun,nodeboun,ndirboun,ad,au,adb,
 		  aub,icol,irow,neq,nzs,&sigma,b,isolver,
 		  &alpham,&betam,nzl,&init,bact,bmin,jq,amname,bv,
-  	          bprev,bdiff,nactmech,&iabsload,iprev);
+  	          bprev,bdiff,nactmech,&iabsload,iprev,reltime);
       }
 
       /* correcting aamech */

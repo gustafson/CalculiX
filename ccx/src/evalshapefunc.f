@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 !     
       iflag=1
       do j=1,3
-         p(j)=0.0
+         p(j)=0.d0
       enddo 
       if(nopes.eq.8)then
          call shape8q(xil,etl,xl2,xsj2,xs2,shp2,iflag)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &        ipkon,nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,
      &        shcon,nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,
-     &        iaxial)
+     &        iaxial,iplausi)
 !     
 !     pipe with friction losses (Fanno Formulas) GAPF 
 !
@@ -36,7 +36,7 @@
      &     ielprop(*),nodef(*),idirf(*),index,iflag,
      &     inv,ipkon(*),kon(*),icase,k_oil
      &     ,nshcon(*),nrhcon(*),ntmat_,mi(*),nodea,nodeb,
-     &     nodec,iaxial
+     &     nodec,iaxial,iplausi
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,r,A,d,l,
      &     T1,T2,Tt1,Tt2,pt1,pt2,cp,physcon(*),p2p1,km1,dvi,
@@ -148,7 +148,7 @@ c         write(*,*) 'gaspipe_fanno a',nelem,pt1,pt2
 !
 !        calculation of the dynamic viscosity 
 !     
-         if(dabs(dvi).lt.1E-30) then
+         if(dabs(dvi).lt.1d-30) then
             write(*,*) '*ERROR in gaspipe_fanno: '
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
@@ -174,12 +174,12 @@ c         write(*,*) 'gaspipe_fanno a',nelem,pt1,pt2
 !
 !           the flow is set to half the critical value
 !
-            xflow=0.5*inv*Qred1_crit*pt1*A/dsqrt(Tt1)
+            xflow=0.5d0*inv*Qred1_crit*pt1*A/dsqrt(Tt1)
          elseif(Qred.gt.Qred1_crit) then
 !
 !           the flow is set to half the critical value
 !
-            xflow=0.5*inv*Qred1_crit*pt1*A/dsqrt(Tt1)
+            xflow=0.5d0*inv*Qred1_crit*pt1*A/dsqrt(Tt1)
          endif
 c         write(*,*) 'gaspipe_fanno a',nelem,xflow
 !
@@ -317,7 +317,7 @@ c         write(*,*) 'gaspipe_fanno1 ',nelem,xflow,inv
 !     
 !     calculation of the dynamic viscosity
 !     
-         if(dabs(dvi).lt.1E-30) then
+         if(dabs(dvi).lt.1d-30) then
             write(*,*) '*ERROR in gaspipe_fanno: '
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
@@ -345,7 +345,7 @@ c         endif
 !     
 !           two-phase-flow
 !     
-            call two_phase_flow(Tt1,pt1,T1,pt2,xflow,
+            call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &           xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &           v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
      &           shcon,rhcon,ntmat_,mi)
@@ -576,7 +576,7 @@ c         write(*,*) 'gaspipe f,df ',f,df(1),df(2),df(3)
          d=prop(index+2)    
          l=prop(index+3)
 !
-         lambda=0.5
+         lambda=0.5d0
 !
          ks=prop(index+4)
          if(lakon(nelem)(2:6).eq.'GAPFA') then
@@ -631,7 +631,7 @@ c            call ts_calc(xflow,Tt2,pt2,kappa,r,A,T2,icase)
 !     
 !     calculation of the dynamic viscosity 
 !     
-         if(dabs(dvi).lt.1E-30) then
+         if(dabs(dvi).lt.1d-30) then
             write(*,*) '*ERROR in gaspipe_fanno: '
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
@@ -647,7 +647,7 @@ c            call ts_calc(xflow,Tt2,pt2,kappa,r,A,T2,icase)
 !     definition of the friction coefficient for 2 phase flows and pure air
 !     
          if(xflow_oil.ne.0d0) then
-            call two_phase_flow(Tt1,pt1,T1,pt2,xflow,
+            call two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow,
      &           xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,
      &           v,dvi,cp,r,k_oil,phi,lambda,nshcon,nrhcon,
      &           shcon,rhcon,ntmat_,mi)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine deformationplasticitys(inpc,textpart,elcon,nelcon,
      &  nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iperturb,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc)
+     &  inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *DEFORMATION PLASTICITY
 !
@@ -27,8 +27,8 @@
       character*1 inpc(*)
       character*132 textpart(16)
 !
-      integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,
-     &  n,key,i,iperturb(2),iend,ncmat_,irstrt,iline,ipol,inl,
+      integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ier,
+     &  n,key,i,iperturb(2),iend,ncmat_,irstrt(*),iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*)
 !
       real*8 elcon(0:ncmat_,ntmat_,*)
@@ -40,18 +40,20 @@
       write(*,*) '      geometric effects are turned on'
       write(*,*)
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
          write(*,*) '       *DEFORMATION PLASTICITY'
          write(*,*) '  should be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
          write(*,*) '       *DEFORMATION PLASTICITY'
          write(*,*) '  should bepreceded by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -76,18 +78,25 @@
          if(ntmat.gt.ntmat_) then
             write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
             write(*,*) '       increase ntmat_'
-            call exit(201)
+            ier=1
+            return
          endif
          do i=1,iend
             read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &              elcon(i,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"DEFORMATION PLASTICITY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "DEFORMATION PLASTICITY%",ier)
+               return
+            endif
          enddo
          read(textpart(6)(1:20),'(f20.0)',iostat=istat) 
      &              elcon(0,ntmat,nmat)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"DEFORMATION PLASTICITY%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "DEFORMATION PLASTICITY%",ier)
+            return
+         endif
       enddo
 !
       return

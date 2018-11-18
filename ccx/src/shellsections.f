@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine shellsections(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  thicke,kon,ipkon,offset,irstrt,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,lakon,iaxial,ipoinpc,mi,icomposite,nelcon)
+     &  inl,ipoinp,inp,lakon,iaxial,ipoinpc,mi,icomposite,nelcon,ier)
 !
 !     reading the input deck: *SHELL SECTION
 !
@@ -34,18 +34,19 @@
       character*132 textpart(16)
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,
-     &  norien,nlayer,iset,icomposite,nelcon(2,*),
+     &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt(*),nset,nmat,
+     &  norien,nlayer,iset,icomposite,nelcon(2,*),ier,
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),iaxial,ipoinpc(0:*)
 !
       real*8 thicke(mi(3),*),thickness,offset(2,*),offset1
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) 
      &        '*ERROR reading *SHELL SECTION: *SHELL SECTION should'
          write(*,*) '  be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nodalthickness=.false.
@@ -68,8 +69,11 @@
             nodalthickness=.true.
          elseif(textpart(i)(1:7).eq.'OFFSET=') then
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) offset1
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SHELL SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*SHELL SECTION%",ier)
+               return
+            endif
          elseif(textpart(i)(1:9).eq.'COMPOSITE') then
             composite=.true.
          else
@@ -92,14 +96,15 @@
             write(*,*) 
      &        '*ERROR reading *SHELL SECTION: nonexistent material'
             call inputerror(inpc,ipoinpc,iline,
-     &"*SHELL SECTION%")
-            call exit(201)
+     &           "*SHELL SECTION%",ier)
+            return
          endif
          imaterial=i
       elseif(material(1:1).ne.' ') then
          write(*,*) '*ERROR reading *SHELL SECTION: COMPOSITE and'
          write(*,*) '       MATERIAL are mutually exclusive parameters'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     check for the existence of the orientation, if any
@@ -120,8 +125,8 @@
             write(*,*)
      &         '*ERROR reading *SHELL SECTION: nonexistent orientation'
             call inputerror(inpc,ipoinpc,iline,
-     &"*SHELL SECTION%")
-            call exit(201)
+     &           "*SHELL SECTION%",ier)
+            return
          endif
          iorientation=i
       endif
@@ -136,8 +141,8 @@
          write(*,*) '*ERROR reading *SHELL SECTION: element set ',elset
          write(*,*) '       has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*SHELL SECTION%")
-         call exit(201)
+     &        "*SHELL SECTION%",ier)
+         return
       endif
       iset=i
 !
@@ -153,7 +158,8 @@
                write(*,*) 
      &    '*ERROR reading *SHELL SECTION: shell thickness is lacking'
                call inputerror(inpc,ipoinpc,iline,
-     &"*SHELL SECTION%")
+     &              "*SHELL SECTION%",ier)
+               return
             endif
             if(iaxial.eq.180) thickness=thickness/iaxial
             do j=istartset(iset),iendset(iset)
@@ -165,7 +171,8 @@
      &                 '       only be used for shell elements.'
                      write(*,*) '       Element ',ialset(j),
      &                 ' is not a shell element.'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   indexe=ipkon(ialset(j))
                   do l=1,8
@@ -186,7 +193,8 @@
      &                    '       only be used for shell elements.'
                         write(*,*) '       Element ',k,
      &                    ' is not a shell element.'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      indexe=ipkon(k)
                      do l=1,8
@@ -207,7 +215,8 @@
             write(*,*) '*ERROR reading shellsections: for composite'
             write(*,*) '       materials is the parameter NODAL'
             write(*,*) '       THICKNESS not allowed'
-            call exit(201)
+            ier=1
+            return
          endif
 !
 c         icomposite=1
@@ -218,7 +227,8 @@ c         icomposite=1
                write(*,*) 
      &     '*ERROR reading *SHELL SECTION: shell thickness is lacking'
                call inputerror(inpc,ipoinpc,iline,
-     &"*SHELL SECTION%")
+     &              "*SHELL SECTION%",ier)
+               return
             endif
             if(iaxial.eq.180) thickness=thickness/iaxial
 !     
@@ -229,7 +239,8 @@ c         icomposite=1
                write(*,*) 
      &              '*ERROR reading *SHELL SECTION: no material defined'
                call inputerror(inpc,ipoinpc,iline,
-     &"*SHELL SECTION%")
+     &              "*SHELL SECTION%",ier)
+               return
             endif
 !     
 !     check for the existence of the material
@@ -241,8 +252,8 @@ c         icomposite=1
                write(*,*) 
      &      '*ERROR reading *SHELL SECTION: nonexistent material'
                call inputerror(inpc,ipoinpc,iline,
-     &"*SHELL SECTION%")
-               call exit(201)
+     &              "*SHELL SECTION%",ier)
+               return
             endif
             imaterial=i
 !     
@@ -264,8 +275,8 @@ c            else
      &        '*ERROR reading *SHELL SECTION: nonexistent orientation'
                   write(*,*) '  '
                   call inputerror(inpc,ipoinpc,iline,
-     &"*SHELL SECTION%")
-                  call exit(201)
+     &                 "*SHELL SECTION%",ier)
+                  return
                endif
                iorientation=i
             endif
@@ -284,7 +295,8 @@ c            else
      &               '       only be used for S8R or S6 shell elements.'
                      write(*,*) '       Element ',ialset(j),
      &                 ' is not a S8R nor a S6 shell element.'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   indexe=ipkon(ialset(j))
                   do l=1,8
@@ -309,7 +321,8 @@ c            else
      &               '       only be used for S8R or S6 shell elements.'
                         write(*,*) '       Element ',k,
      &                    ' is not a S8R nor a S6 shell element.'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      indexe=ipkon(k)
                      do l=1,8

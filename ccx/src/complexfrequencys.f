@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,8 @@
 !
       subroutine complexfrequencys(inpc,textpart,nmethod,
      &  mei,iperturb,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,ithermal,xboun,nboun,ipoinpc,mcs,cs,cyclicsymmetry)
+     &  ipoinp,inp,ithermal,xboun,nboun,ipoinpc,mcs,cs,cyclicsymmetry,
+     &  ier)
 !
 !     reading the input deck: *COMPLEX FREQUENCY
 !
@@ -29,7 +30,7 @@
 !
       integer nmethod,mei(4),istep,istat,iperturb(2),i,nboun,
      &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal,
-     &  ipoinpc(0:*),mcs,cyclicsymmetry
+     &  ipoinpc(0:*),mcs,cyclicsymmetry,ier
 !
       real*8 xboun(*),cs(17,*)
 !
@@ -39,7 +40,8 @@
          write(*,*) '*ERROR reading *COMPLEX FREQUENCY:'
          write(*,*) '       *COMPLEX FREQUENCY can only be used'
          write(*,*) '       within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     no heat transfer analysis
@@ -78,11 +80,10 @@
          write(*,*) '       either parameter CORIOLIS'
          write(*,*) '       or parameter FLUTTER is required'
          call inputerror(inpc,ipoinpc,iline,
-     &"*COMPLEX FREQUENCY%")
-         call exit(201)
+     &        "*COMPLEX FREQUENCY%",ier)
+         return
       endif
 !
-c      nmethod=6
       if(iperturb(1).gt.1) iperturb(1)=0
       iperturb(2)=0
 !
@@ -93,16 +94,20 @@ c      nmethod=6
          write(*,*) '       definition not complete'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
-     &"*COMPLEX FREQUENCY%")
-         call exit(201)
+     &        "*COMPLEX FREQUENCY%",ier)
+         return
       endif
       read(textpart(1)(1:10),'(i10)',iostat=istat) nev
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*COMPLEX FREQUENCY%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*COMPLEX FREQUENCY%",ier)
+         return
+      endif
       if(nev.le.0) then
          write(*,*) '*ERROR reading *COMPLEX FREQUENCY:'
          write(*,*) '       less than 1 eigenvalue requested'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       mei(1)=nev

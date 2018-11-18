@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ifabou,xbounact,nef,gradkel,gradkfa,neifa,rf,area,volume,
      &  xle,xxi,icyclic,xxn,ipnei,ifatie,xlet,xxj,
      &  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh,
-     &  umfa,physcon)
+     &  umfa,physcon,iitg)
 !
 !     extrapolation of temperature values to the faces
 !
@@ -28,7 +28,7 @@
 !
       character*20 labmpc(*)
 !
-      integer nface,ielfa(4,*),ifabou(*),i,iel1,iel2,nef,
+      integer nface,ielfa(4,*),ifabou(*),i,iel1,iel2,nef,iitg,
      &  neifa(*),icyclic,ifa,indexf,k,l,m,ipnei(*),ifatie(*),ipointer,
      &  is,ie,nmpc,ipompc(*),nodempc(3,*),ifaext(*),nfaext,nactdoh(*)
 !
@@ -49,11 +49,11 @@
 !
       constant=1.7393d-3*physcon(5)/(physcon(7)*physcon(8))
 !     
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,vfap,vel,ifabou,xbounact,constant,
-!c$omp&        umfa)
-!c$omp& private(i,iel1,xl1,iel2,ibou)
-!c$omp do
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,xrlfa,vfap,vel,ifabou,xbounact,constant,
+c$omp&        umfa)
+c$omp& private(i,iel1,xl1,iel2,ipointer)
+c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -103,8 +103,8 @@ c               write(*,*) umfa(i)
             vfap(6,i)=vel(iel1,6)
          endif
       enddo
-!c$omp end do
-!c$omp end parallel
+c$omp end do
+c$omp end parallel
 !
 !     Multiple point constraints
 !
@@ -119,10 +119,10 @@ c               write(*,*) umfa(i)
 !     calculate the gradient of the temperature at the center of
 !     the elements
 !
-!c$omp parallel default(none)
-!c$omp& shared(nef,ipnei,neifa,gradkel,vfap,area,xxn,volume)
-!c$omp& private(i,indexf,ifa)
-!c$omp do
+c$omp parallel default(none)
+c$omp& shared(nef,ipnei,neifa,gradkel,vfap,area,xxn,volume)
+c$omp& private(i,indexf,ifa)
+c$omp do
       do i=1,nef
 !
 !        initialization
@@ -145,17 +145,17 @@ c               write(*,*) umfa(i)
             gradkel(l,i)=gradkel(l,i)/volume(i)
          enddo
       enddo
-!c$omp end do
-!c$omp end parallel
+c$omp end do
+c$omp end parallel
 ! 
 !     interpolate/extrapolate the temperature gradient from the
 !     center of the elements to the center of the faces
 !           
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,gradkfa,gradkel,icyclic,c,ifatie,
-!c$omp&        ipnei,xxn,ifabou)
-!c$omp& private(i,iel1,xl1,iel2,l,xl2,indexf,gradnor)
-!c$omp do
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,xrlfa,gradkfa,gradkel,icyclic,c,ifatie,
+c$omp&        ipnei,xxn,ifabou,xxi)
+c$omp& private(i,iel1,xl1,iel2,l,xl2,indexf,gradnor)
+c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -212,20 +212,26 @@ c               write(*,*) umfa(i)
             enddo
          endif
       enddo
-!c$omp end do
-!c$omp end parallel
+c$omp end do
+c$omp end parallel
 !
 !     correction loops
 !
-      do m=1,2
+      if(iitg.eq.0) then
+         do i=1,nface
+            vfa(6,i)=vfap(6,i)
+         enddo
+      endif
+!
+      do m=1,iitg
 !
 !        Moukalled et al. p 279
 !
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,vfa,vfap,gradkfa,rf,ifabou,xxi,xle,
-!c$omp&        vel,ipnei)
-!c$omp& private(i,iel1,iel2,xl1,indexf)
-!c$omp do
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,xrlfa,vfa,vfap,gradkfa,rf,ifabou,xxi,xle,
+c$omp&        vel,ipnei)
+c$omp& private(i,iel1,iel2,xl1,indexf,ipointer)
+c$omp do
          do i=1,nface
             iel1=ielfa(1,i)
             iel2=ielfa(2,i)
@@ -275,8 +281,8 @@ c               write(*,*) umfa(i)
      &                   gradkfa(3,i)*xxi(3,indexf))*xle(indexf)
             endif
          enddo
-!c$omp end do
-!c$omp end parallel
+c$omp end do
+c$omp end parallel
 !
 !     Multiple point constraints
 !
@@ -291,10 +297,10 @@ c               write(*,*) umfa(i)
 !        calculate the gradient of the temperature at the center of
 !        the elements
 !
-!c$omp parallel default(none)
-!c$omp& shared(nef,ipnei,neifa,gradkel,vfa,area,xxn,volume)
-!c$omp& private(i,indexf,ifa)
-!c$omp do
+c$omp parallel default(none)
+c$omp& shared(nef,ipnei,neifa,gradkel,vfa,area,xxn,volume)
+c$omp& private(i,indexf,ifa)
+c$omp do
          do i=1,nef
 !
 !           initialization
@@ -317,17 +323,17 @@ c               write(*,*) umfa(i)
                gradkel(l,i)=gradkel(l,i)/volume(i)
             enddo
          enddo
-!c$omp end do
-!c$omp end parallel
+c$omp end do
+c$omp end parallel
 ! 
 !        interpolate/extrapolate the temperature gradient from the
 !        center of the elements to the center of the faces
 !           
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,gradkfa,gradkel,icyclic,c,ifatie,
-!c$omp&        ipnei,xxn,ifabou)
-!c$omp& private(i,iel1,xl1,iel2,l,xl2,indexf,gradnor)
-!c$omp do
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,xrlfa,gradkfa,gradkel,icyclic,c,ifatie,
+c$omp&        ipnei,xxn,ifabou,xxi)
+c$omp& private(i,iel1,xl1,iel2,l,xl2,indexf,gradnor)
+c$omp do
          do i=1,nface
             iel1=ielfa(1,i)
             xl1=xrlfa(1,i)
@@ -379,18 +385,18 @@ c               write(*,*) umfa(i)
                enddo
             endif
          enddo
-!c$omp end do
-!c$omp end parallel
+c$omp end do
+c$omp end parallel
 !
       enddo
 !
 !     correct the facial temperature gradients:
 !     Moukalled et al. p 289
 !
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,ipnei,vel,xlet,gradkfa,xxj)
-!c$omp& private(i,iel2,iel1,indexf,dd,k)
-!c$omp do
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,ipnei,vel,xlet,gradkfa,xxj)
+c$omp& private(i,iel2,iel1,indexf,dd,k)
+c$omp do
       do i=1,nface
          iel2=ielfa(2,i)
          if(iel2.gt.0) then
@@ -405,8 +411,8 @@ c               write(*,*) umfa(i)
             enddo
          endif
       enddo
-!c$omp end do
-!c$omp end parallel
+c$omp end do
+c$omp end parallel
 !            
       return
       end

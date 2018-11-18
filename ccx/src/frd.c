@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -38,7 +38,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	 char *set,ITG *nset,ITG *istartset,ITG *iendset,ITG *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
 	 double *thicke,char *jobnamec,char *output,double *qfx,
-         double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat){
+         double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat,
+         ITG *ielprop,double *prop){
 
      /* stores the results in frd format
 
@@ -85,7 +86,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   float ifl;
 
-  double pi,oner,*vold=NULL;
+  double pi,oner;
 
   strcpy(fneig,jobnamec);
   strcat(fneig,".frd");
@@ -187,8 +188,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1,"%5sUTIME              %8s                                        \n",p1,newclock);
     fprintf(f1,"%5sUHOST                                                              \n",p1);
     fprintf(f1,"%5sUPGM               CalculiX                                        \n",p1);
-    fprintf(f1,"%5sUVERSION           Version 2.13                             \n",p1);
-    fprintf(f1,"%5sUCOMPILETIME       So 8. Okt 22:10:07 CEST 2017                    \n",p1);
+    fprintf(f1,"%5sUVERSION           Version 2.14                             \n",p1);
+    fprintf(f1,"%5sUCOMPILETIME       Sa 28. Apr 16:09:10 CEST 2018                    \n",p1);
     fprintf(f1,"%5sUDIR                                                               \n",p1);
     fprintf(f1,"%5sUDBN                                                               \n",p1);
     
@@ -247,11 +248,38 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	for(i=0;i<*ne0;i++){
 	    if(ipkon[i]<=-1){
 		continue;
+
+	    /* the following elements are not stored in the .frd file: */
+
+            /* contact spring element */
+
 	    }else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
 		continue;
+
+	    /* film advection element */
+
 	    }else if(strcmp1(&lakon[8*i],"ESPRNGF")==0){
 		continue;
+
+	    /* one-noded spring element */
+
+	    }else if((strcmp1(&lakon[8*i],"E")==0)&&
+		     (strcmp1(&lakon[8*i+6],"1")==0)){
+		continue;
+
+	    /* coupling element */
+
             }else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
+		continue;
+
+	    /* mass element */
+
+            }else if(strcmp1(&lakon[8*i],"MASS")==0){
+		continue;
+
+	    /* user element */
+
+            }else if(strcmp1(&lakon[8*i],"U")==0){
 		continue;
 	    }
 	    nelout++;
@@ -272,13 +300,23 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     for(i=0;i<*ne0;i++){
       if(ipkon[i]<=-1){
 	  continue;
+
+	  /* next element types are not stored */
+
       }else if(strcmp1(&lakon[8*i],"F")==0){
 	  continue;
       }else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
 	  continue;
       }else if(strcmp1(&lakon[8*i],"ESPRNGF")==0){
 	  continue;
+      }else if((strcmp1(&lakon[8*i],"E")==0)&&
+               (strcmp1(&lakon[8*i+6],"1")==0)){
+	  continue;
       }else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
+	  continue;
+      }else if(strcmp1(&lakon[8*i],"MASS")==0){
+	  continue;
+      }else if(strcmp1(&lakon[8*i],"U")==0){
 	  continue;
       }else{
 	  indexe=ipkon[i];
@@ -692,7 +730,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	      }
 	  }
       }else if((strcmp1(&lakon[8*i],"E")==0)&&
-               (strcmp1(&lakon[8*i+6],"A")==0)){
+               ((strcmp1(&lakon[8*i+6],"A")==0)||
+                (strcmp1(&lakon[8*i+6],"2")==0))){
 
 	  /* 2-node 1d element (spring element) */
 
@@ -707,6 +746,18 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  iw=(int)kon[indexe];fwrite(&iw,sizeof(int),1,f1);
 	  iw=(int)kon[indexe+1];fwrite(&iw,sizeof(int),1,f1);
 	}
+//      }else if(strcmp1(&lakon[8*i],"MASS")==0){
+
+//	  /* MASS: store nothing */
+
+      }else{
+
+          /* not treated element type: may lead to an inconsistency
+             in the element count and element output, which may 
+             cause a crash while reading a binary output file */
+
+	  FORTRAN(writeelem,(&i,lakon));
+
       }
     }
     if(strcmp1(output,"asc")==0)fprintf(f1,"%3s\n",m3);
@@ -1208,23 +1259,25 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   /* storing the energy in the nodes */
   
-  if((strcmp1(&filab[522],"ENER")==0)&&(*ithermal!=2)){
-    iselect=1;
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[522],"ENER")==0)&&(*ithermal!=2)){
+	  iselect=1;
     
-    frdset(&filab[522],set,&iset,istartset,iendset,ialset,
-	   inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	   ngraph);
+	  frdset(&filab[522],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
     
-    frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
-	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  ENER        1    1\n");
-    fprintf(f1," -5  ENER        1    1    0    0\n");
+	  fprintf(f1," -4  ENER        1    1\n");
+	  fprintf(f1," -5  ENER        1    1    0    0\n");
 
-    frdselect(enern,enern,&iset,&nkcoords,inum,m1,istartset,iendset,
-                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+	  frdselect(enern,enern,&iset,&nkcoords,inum,m1,istartset,iendset,
+		ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
                 nfieldscalar,&iselect,m2,f1,output,m3);
 
+      }
   }
   
   /* storing the contact displacements and stresses at the slave nodes */
@@ -1526,7 +1579,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  
 	  nterms=6;
 	  FORTRAN(errorestimator,(stx,stn,ipkon,kon,lakon,nk,ne,
-		  mi,ielmat,&nterms,inum,co,vold,&filab[1048]));
+				  mi,ielmat,&nterms,inum,co,v,&filab[1048],
+				  ielprop,prop));
 	  
 	  iselect=1;
 	  
@@ -1537,13 +1591,18 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 	  
-	  fprintf(f1," -4  ERROR       2    1\n");
+	  fprintf(f1," -4  ERROR       1    1\n");
+	  fprintf(f1," -5  STR(%%)      1    1    0    0\n");
+/*	  fprintf(f1," -4  ERROR       2    1\n");
 	  fprintf(f1," -5  STR(%%)      1    1    1    0\n");
 	  fprintf(f1," -5  REL         1    2    2    0\n");
 	  
 	  ncomp=2;
 	  ifield[0]=1;ifield[1]=1;
-	  icomp[0]=0;icomp[1]=1;
+	  icomp[0]=0;icomp[1]=1;*/
+	  ncomp=1;
+	  ifield[0]=1;
+	  icomp[0]=0;
 	  
 	  frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
@@ -1560,7 +1619,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
       nterms=6;
       FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,kon,lakon,nk,ne,
-	      mi,ielmat,&nterms,inum,co,vold,&filab[1048]));
+			      mi,ielmat,&nterms,inum,co,v,&filab[1048],
+			      ielprop,prop));
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
@@ -1587,7 +1647,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  
 	  nterms=3;
 	  FORTRAN(errorestimator,(qfx,qfn,ipkon,kon,lakon,nk,ne,
-		  mi,ielmat,&nterms,inum,co,vold,&filab[2788]));
+				  mi,ielmat,&nterms,inum,co,v,&filab[2788],
+				  ielprop,prop));
 	  
 	  iselect=1;
 	  
@@ -1598,8 +1659,9 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 	  
-	  fprintf(f1," -4  HERROR      1    1\n");
-	  fprintf(f1," -5  HFLSTD      1    1    1    0\n");
+	  fprintf(f1," -4  HERROR      2    1\n");
+	  fprintf(f1," -5  TEM(%%)      1    1    1    0\n");
+	  fprintf(f1," -5  REL         1    2    2    0\n");
 	  
 	  ncomp=1;
 	  ifield[0]=1;
@@ -1620,13 +1682,15 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
       nterms=3;
       FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,kon,lakon,nk,ne,
-	      mi,ielmat,&nterms,inum,co,vold,&filab[2788]));
+			      mi,ielmat,&nterms,inum,co,v,&filab[2788],
+			      ielprop,prop));
       
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-      fprintf(f1," -4  HERRORI     1    1\n");
-      fprintf(f1," -5  HFLSTD      1    1    1    0\n");
+      fprintf(f1," -4  HERRORI     2    1\n");
+      fprintf(f1," -5  TEM(%%)      1    1    1    0\n");
+      fprintf(f1," -5  REL         1    2    2    0\n");
       
       ncomp=1;
       ifield[0]=1;

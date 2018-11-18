@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -108,7 +108,7 @@
 !     determination of cd with the caracteristics
 !     
          call ident(cdx,dab,index,id)
-         if(id.eq.1) then
+         if(id.eq.0) then
             cd=cdy(1)
          elseif(id.ge.index) then
             cd=cdy(index)
@@ -127,7 +127,7 @@
          endif
 
          call ident(x_tab,dab,nummer,id)
-         if(id.le.1d0) then
+         if(id.eq.0) then
             cd=y_tab(1)
          elseif(id.ge.nummer) then
             cd=y_tab(nummer)

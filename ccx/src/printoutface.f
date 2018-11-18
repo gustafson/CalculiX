@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,6 +46,11 @@
      &  xlocal15(3,4,5),xlocal8(3,4,6),xlocal8r(3,1,6),ttime,pres,
      &  tf(0:3),tn,tt,dd,coords(3),cond,stn(6,*),xm(3),df(3),cg(3),
      &  area,xn(3),xnormforc,shearforc
+!
+      intent(in) co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
+     &  cocon,ncocon,icompressible,istartset,iendset,ipkonf,lakonf,konf,
+     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,
+     &  ithermal,nactdoh,icfd,time,stn
 !
       include "gauss.f"
       include "xlocal.f"

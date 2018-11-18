@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine noelsets(inpc,textpart,set,istartset,iendset,ialset,
      &  nset,nset_,nalset,nalset_,nk,ne,irstrt,istep,istat,n,iline,
-     &  ipol,inl,ipoinp,inp,ipoinpc)
+     &  ipol,inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *NSET and *ELSET
 !
@@ -31,13 +31,16 @@
       character*132 textpart(16)
 !
       integer nset,nset_,nalset,nalset_,istep,istat,n,key,i,nk,ne,
-     &  kode,ipos,j,k,m,iset,nn,irstrt,istartset(*),iendset(*),
-     &  ialset(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  kode,ipos,j,k,m,iset,nn,irstrt(*),istartset(*),iendset(*),
+     &  ialset(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+     &  ier
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in noelsets: *NSET/*ELSET should be placed'
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
+         write(*,*) 
+     &     '*ERROR reading *NSET/ELSET: *NSET/*ELSET should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       igen=.false.
@@ -49,10 +52,12 @@
             if(textpart(i)(1:5).eq.'NSET=') then
                noelset(1:80)=textpart(i)(6:85)
                if(textpart(i)(86:86).ne.' ') then
-                  write(*,*) '*ERROR in noelsets: set name too long'
+                  write(*,*) 
+     &              '*ERROR reading *NSET/ELSET: set name too long'
                   write(*,*) '       (more than 80 characters)'
                   write(*,*) '       set name:',textpart(2)(1:132)
-                  call exit(201)
+                  ier=1
+                  return
                endif
                noelset(81:81)=' '
                ipos=index(noelset,' ')
@@ -62,7 +67,7 @@
                igen=.true.
             else
                write(*,*) 
-     &              '*WARNING in noelsets: parameter not recognized:'
+     &         '*WARNING reading *NSET/ELSET: parameter not recognized:'
                write(*,*) '         ',
      &              textpart(i)(1:index(textpart(i),' ')-1)
                call inputwarning(inpc,ipoinpc,iline,
@@ -74,20 +79,23 @@
             if(textpart(i)(1:6).eq.'ELSET=') then
                noelset(1:80)=textpart(i)(7:86)
                if(textpart(i)(87:87).ne.' ') then
-                  write(*,*) '*ERROR in noelsets: set name too long'
+                  write(*,*) 
+     &              '*ERROR reading *NSET/ELSET: set name too long'
                   write(*,*) '       (more than 80 characters)'
                   write(*,*) '       set name',textpart(2)(1:132)
-                  call exit(201)
+                  ier=1
+                  return
                endif
                noelset(81:81)=' '
                ipos=index(noelset,' ')
                noelset(ipos:ipos)='E'
                kode=1
+c               write(*,*) noelset(1:ipos)
             elseif(textpart(i)(1:8).eq.'GENERATE') then
                igen=.true.
             else
                write(*,*) 
-     &              '*WARNING in noelsets: parameter not recognized:'
+     &         '*WARNING reading *NSET/ELSET: parameter not recognized:'
                write(*,*) '         ',
      &              textpart(i)(1:index(textpart(i),' ')-1)
                call inputwarning(inpc,ipoinpc,iline,
@@ -111,8 +119,10 @@
 !
                nn=iendset(iset)-istartset(iset)+1
                if(nalset+nn.gt.nalset_) then
-                  write(*,*)'*ERROR in noelsets: increase nalset_'
-                  call exit(201)
+                  write(*,*)
+     &               '*ERROR reading *NSET/ELSET: increase nalset_'
+                  ier=1
+                  return
                endif
                do k=1,nn
                   ialset(nalset+k)=ialset(istartset(iset)+k-1)
@@ -135,8 +145,9 @@
       if(iset.gt.nset) then
          nset=nset+1
          if(nset.gt.nset_) then
-            write(*,*) '*ERROR in noelsets: increase nset_'
-            call exit(201)
+            write(*,*) '*ERROR reading *NSET/ELSET: increase nset_'
+            ier=1
+            return
          endif
          set(nset)=noelset
          istartset(nset)=nalset+1
@@ -155,8 +166,9 @@
          endif
          if(igen) n=3
          if(nalset+n.gt.nalset_) then
-            write(*,*) '*ERROR in noelsets: increase nalset_'
-            call exit(201)
+            write(*,*) '*ERROR reading *NSET/ELSET: increase nalset_'
+            ier=1
+            return
          endif
 !
          if(igen) then
@@ -168,38 +180,49 @@
             do i=1,3
                read(textpart(i)(1:10),'(i10)',iostat=istat) 
      &                   ialset(nalset+i)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NSET or *ELSET%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*NSET or *ELSET%",ier)
+                  return
+               endif
             enddo
             if(kode.eq.0) then
                if(ialset(nalset+1).gt.nk) then
-                  write(*,*) '*ERROR in noelsets: starting value in'
+                  write(*,*) 
+     &               '*ERROR reading *NSET/ELSET: starting value in'
                   write(*,*) '       set ',set(iset),' > nk'
-                  call exit(201)
+                  ier=1
+                  return
                elseif(ialset(nalset+2).gt.nk) then
-                  write(*,*) '*WARNING in noelsets: end value in'
+                  write(*,*) 
+     &               '*WARNING reading *NSET/ELSET: end value in'
                   write(*,*) '         set ',set(iset),' > nk;'
                   write(*,*) '         replaced by nk'
                   ialset(nalset+2)=nk
                elseif(ialset(nalset+3).le.0) then
-                  write(*,*) '*ERROR in noelsets: increment in'
+                  write(*,*) '*ERROR reading *NSET/ELSET: increment in'
                   write(*,*) '       set ',set(iset),' <=0'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             else
                if(ialset(nalset+1).gt.ne) then
-                  write(*,*) '*ERROR in noelsets: starting value in'
+                  write(*,*) 
+     &              '*ERROR reading *NSET/ELSET: starting value in'
                   write(*,*) '       set ',set(iset),' > ne'
-                  call exit(201)
+                  ier=1
+                  return
                elseif(ialset(nalset+2).gt.ne) then
-                  write(*,*) '*WARNING in noelsets: end value in'
+                  write(*,*) 
+     &             '*WARNING reading *NSET/ELSET: end value in'
                   write(*,*) '         set ',set(iset),' > ne;'
                   write(*,*) '         replaced by ne'
                   ialset(nalset+2)=nk
                elseif(ialset(nalset+3).le.0) then
-                  write(*,*) '*ERROR in noelsets: increment in'
+                  write(*,*) '*ERROR reading *NSET/ELSET: increment in'
                   write(*,*) '       set ',set(iset),' <=0'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             endif
             if(ialset(nalset+1).eq.ialset(nalset+2)) then
@@ -241,14 +264,17 @@
                   if(noelset.ne.set(j)) then
                      noelset(ipos:ipos)=' '
                      if(kode.eq.0) then
-                        write(*,*) '*ERROR in noelsets: node set ',
+                        write(*,*) 
+     &                      '*ERROR reading *NSET/ELSET: node set ',
      &                    noelset
                      else
-                        write(*,*) '*ERROR in noelsets: element set ',
+                        write(*,*) 
+     &                    '*ERROR reading *NSET/ELSET: element set ',
      &                    noelset
                      endif
                      write(*,*) '       has not been defined yet'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                else
 !
@@ -256,7 +282,8 @@
 !                
                   if(kode.eq.0) then
                      if(ialset(nalset+1).gt.nk) then
-                        write(*,*) '*WARNING in noelsets: value ',
+                        write(*,*) 
+     &                     '*WARNING reading *NSET/ELSET: value ',
      &                       ialset(nalset+1)
                         write(*,*) '         in set ',set(iset),' > nk'
                      else
@@ -264,7 +291,8 @@
                      endif
                   else
                      if(ialset(nalset+1).gt.ne) then
-                        write(*,*) '*WARNING in noelsets: value ',
+                        write(*,*) 
+     &                       '*WARNING reading *NSET/ELSET: value ',
      &                       ialset(nalset+1)
                         write(*,*) '         in set ',set(iset),' > ne;'
                         write(*,*) '         This is only allowed for'

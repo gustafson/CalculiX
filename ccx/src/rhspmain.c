@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -29,7 +29,7 @@ static ITG num_cpus,*nef1,*ipnei1,*neifa1,*neiel1,*jq1,*irow1,*ielfa1,
 
 static double *vfa1,*area1,*advfa1,*xlet1,*cosa1,*volume1,*au1,*ad1,
     *ap1,*xle1,*b1,*xxn1,*hfa1,*gradpel1,*bp1,*xxi1,*xlen1,*cosb1,
-    *xxicn1;
+    *xxicn1,*flux1,*xxnj1,*gradpcfa1;
 
 void rhspmain(ITG *nef,char *lakonf,ITG *ipnei,
              ITG *neifa,ITG *neiel,double *vfa,double *area,double *advfa,
@@ -38,7 +38,8 @@ void rhspmain(ITG *nef,char *lakonf,ITG *ipnei,
 	     double *xle,double *b,double *xxn,ITG *neq,
 	     ITG *nzs,double *hfa,double *gradpel,
 	     double *bp,double *xxi,ITG *neij,double *xlen,
-	     ITG *iatleastonepressurebc,double *xxicn){
+	     ITG *iatleastonepressurebc,double *xxicn,
+	      double *flux,double *xxnj,double *gradpcfa,double *cosb){
 
     ITG i,j;
       
@@ -104,7 +105,8 @@ void rhspmain(ITG *nef,char *lakonf,ITG *ipnei,
     vfa1=vfa;area1=area;advfa1=advfa;xlet1=xlet,cosa1=cosa;volume1=volume;
     jq1=jq;irow1=irow;ap1=ap;ielfa1=ielfa;ifabou1=ifabou;xle1=xle;
     xxn1=xxn;neq1=neq;nzs1=nzs;hfa1=hfa;gradpel1=gradpel;bp1=bp;xxi1=xxi;
-    neij1=neij;xlen1=xlen;ad1=ad;au1=au;b1=b;xxicn1=xxicn;
+    neij1=neij;xlen1=xlen;ad1=ad;au1=au;b1=b;xxicn1=xxicn;flux1=flux;
+    xxnj1=xxnj;gradpcfa1=gradpcfa;cosb1=cosb;
     
     /* create threads and wait */
     
@@ -153,7 +155,7 @@ void *rhspmt(ITG *i){
 		  jq1,irow1,ap1,ielfa1,ifabou1,xle1,b1,xxn1,
 		  neq1,nzs1,
 		  hfa1,gradpel1,bp1,xxi1,neij1,xlen1,&nefa,&nefb,
-		  xxicn1));
+		  xxicn1,flux1,xxnj1,gradpcfa1,cosb1));
 
     return NULL;
 }

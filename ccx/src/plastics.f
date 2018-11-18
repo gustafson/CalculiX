@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine plastics(inpc,textpart,nelcon,nmat,ntmat_,npmat_,
      &        plicon,nplicon,plkcon,nplkcon,iplas,iperturb,nstate_,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
-     &        inl,ipoinp,inp,ipoinpc,ianisoplas)
+     &        inl,ipoinp,inp,ipoinpc,ianisoplas,ier)
 !
 !     reading the input deck: *PLASTIC
 !
@@ -34,8 +34,8 @@
       integer nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,
      &  n,key,i,nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),ncmat_,
      &  iplas,iperturb(*),istat,nstate_,kin,itemp,ndata,ndatamax,id,
-     &  irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
-     &  ianisoplas
+     &  irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+     &  ianisoplas,ier
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      & temperature,plconloc(802),t1l,elcon(0:ncmat_,ntmat_,*)
@@ -45,17 +45,19 @@
       ntmat=0
       npmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *PLASTIC: *PLASTIC should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*) 
      &      '*ERROR reading *PLASTIC: *PLASTIC should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if((nelcon(1,nmat).ne.2).and.(nelcon(1,nmat).ne.9)) then
@@ -63,7 +65,8 @@
      &        '*ERROR reading *PLASTIC: *PLASTIC should be preceded'
          write(*,*) '  by an *ELASTIC,TYPE=ISO card or'
          write(*,*) '  by an *ELASTIC,TYPE=ORTHO card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       iperturb(1)=3
@@ -93,7 +96,8 @@ c      write(*,*)
                   write(*,*) '*ERROR reading *PLASTIC: user defined '
                   write(*,*) '       hardening is not allowed for '
                   write(*,*) '       elastically anisotropic materials'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &              ipoinp,inp,ipoinpc)
@@ -119,8 +123,11 @@ c      write(*,*)
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) exit
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*PLASTIC%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*PLASTIC%",ier)
+               return
+            endif
 !
 !           first temperature
 !
@@ -129,7 +136,8 @@ c      write(*,*)
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -141,7 +149,8 @@ c      write(*,*)
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -149,13 +158,17 @@ c      write(*,*)
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &              plicon(2*npmat+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*PLASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*PLASTIC%",ier)
+                  return
+               endif
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then
                write(*,*) '*ERROR reading *PLASTIC: increase npmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             nplicon(ntmat,nmat)=npmat
          enddo
@@ -168,8 +181,11 @@ c      write(*,*)
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) exit
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*PLASTIC%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*PLASTIC%",ier)
+               return
+            endif
 !
 !           first temperature
 !
@@ -178,7 +194,8 @@ c      write(*,*)
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplkcon(0,nmat)=ntmat
                plkcon(0,ntmat,nmat)=temperature
@@ -190,7 +207,8 @@ c      write(*,*)
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *PLASTIC: increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplkcon(0,nmat)=ntmat
                plkcon(0,ntmat,nmat)=temperature
@@ -198,13 +216,17 @@ c      write(*,*)
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &              plkcon(2*npmat+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*PLASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*PLASTIC%",ier)
+                  return
+               endif
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then
                write(*,*) '*ERROR reading *PLASTIC: increase npmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             nplkcon(ntmat,nmat)=npmat
          enddo
@@ -213,7 +235,8 @@ c      write(*,*)
       if(ntmat.eq.0) then
          write(*,*) 
      &       '*ERROR reading *PLASTIC: *PLASTIC card without data'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     elastically anisotropic materials: recasting the input data
@@ -226,7 +249,8 @@ c      write(*,*)
             write(*,*) '       elastically anisotropic material with'
             write(*,*) '       isotropic plasticity must not exceed 70'
             write(*,*) '       characters'
-            call exit(201)
+            ier=1
+            return
          else
             do i=80,11,-1
                matname(nmat)(i:i)=matname(nmat)(i-10:i-10)

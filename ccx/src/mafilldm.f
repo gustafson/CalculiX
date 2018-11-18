@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,7 +43,7 @@
      &  irow(*),nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),ipkon(*),ipobody(2,*),nbody,ibody(3,*),
      &  nk,ne,nboun,nmpc,nforc,nload,neq(2),nzl,nmethod,icolumn,
-     &  ithermal,iprestr,iperturb,nzs(3),i,j,k,l,m,idist,jj,iloc,
+     &  ithermal,iprestr,iperturb,nzs(3),i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,ne0,igauss,imat,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
@@ -149,12 +149,11 @@ c      enddo
      &                 springarea(1,konl(nope+1)),nmethod,
      &                 mi,reltime,nasym)
                elseif(mortar.eq.1) then
-                  iloc=kon(indexe+nope+1)
                   jfaces=kon(indexe+nope+2)
                   igauss=kon(indexe+nope+1) 
                   call springdamp_f2f(xl,elas,voldl,s,imat,elcon,
      &                 ncmat_,ntmat_,nope,lakon(i),iperturb,
-     &                 springarea(1,iloc),
+     &                 springarea(1,igauss),
      &                 nmethod,mi,reltime,nasym,jfaces,igauss,pslavsurf,
      &                 pmastsurf,clearini)
                endif

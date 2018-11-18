@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine viewfactors(textpart,iviewfile,istep,inpc,
-     &  istat,n,key,iline,ipol,inl,ipoinp,inp,jobnamec,ipoinpc)
+     &  istat,n,key,iline,ipol,inl,ipoinp,inp,jobnamec,ipoinpc,ier)
 !
 !     reading the input deck: *VIEWFACTOR 
 !
@@ -27,12 +27,13 @@
       character*132 textpart(16),jobnamec(*)
 !
       integer i,iviewfile,istep,n,istat,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),key,j,k,l,ipoinpc(0:*)
+     &  inp(3,*),key,j,k,l,ipoinpc(0:*),ier
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *VIEWFACTOR: *VIEWFACTOR can '
          write(*,*) '       only be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -43,7 +44,8 @@
                write(*,*) '*ERROR reading *VIEWFACTOR: READ and WRITE/'
                write(*,*) '       WRITE ONLY are mutually exclusive'
                call inputerror(inpc,ipoinpc,iline,
-     &"*VIEWFACTOR%")
+     &              "*VIEWFACTOR%",ier)
+               return
             endif
          elseif(textpart(i)(1:8).eq.'NOCHANGE') then
             if(istep.eq.1) then
@@ -58,7 +60,8 @@
                write(*,*) '       WRITE/WRITE ONLY are mutually'
                write(*,*) '       exclusive'
                call inputerror(inpc,ipoinpc,iline,
-     &"*VIEWFACTOR%")
+     &              "*VIEWFACTOR%",ier)
+               return
             endif
          elseif(textpart(i)(1:9).eq.'WRITEONLY') then
             if(iviewfile.eq.0) then
@@ -68,7 +71,8 @@
                write(*,*) '       WRITE ONLY and READ/NO CHANGE'
                write(*,*) '       are mutually exclusive'
                call inputerror(inpc,ipoinpc,iline,
-     &"*VIEWFACTOR%")
+     &              "*VIEWFACTOR%",ier)
+               return
             endif
          elseif(textpart(i)(1:5).eq.'WRITE') then
             if(iviewfile.eq.0) then
@@ -78,7 +82,8 @@
                write(*,*) '       and READ/NO CHANGE'
                write(*,*) '       are mutually exclusive'
                call inputerror(inpc,ipoinpc,iline,
-     &"*VIEWFACTOR%")
+     &              "*VIEWFACTOR%",ier)
+               return
             endif
          elseif(textpart(i)(1:6).eq.'INPUT=') then
             jobnamec(2)(1:126)=textpart(i)(7:132)

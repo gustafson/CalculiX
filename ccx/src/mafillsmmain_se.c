@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -35,7 +35,8 @@ static ITG *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,
     *integerglob1,*istartset1,*iendset1,*ialset1,*ntie1,*nasym1,
     *mortar1,*ielprop1,*ne01,num_cpus,*ndesi1,*nodedesi1,
     *nzss1,*jqs1,*irows1,*icoordinate1,*istartelem1,*ialelem1,
-    *cyclicsymmetry1,*ics1,*mcs1,*ieigenfrequency1;
+    *cyclicsymmetry1,*ics1,*mcs1,*ieigenfrequency1,*neapar=NULL,
+    *nebpar=NULL;
 
 static double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*cgr1,
     *elcon1,*rhcon1,*alcon1,*alzero1,*xdesi1,*v1,*sigma1,
@@ -111,7 +112,7 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
     /* local declaration prevails, if strictly positive */
 
-    envloc = getenv("CCX_NPROC_STIFFNESS");
+    envloc = getenv("CCX_NPROC_SENS");
     if(envloc){
 	num_cpus=atoi(envloc);
 	if(num_cpus<0){
@@ -140,14 +141,22 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     if(*ne<num_cpus) num_cpus=*ne;
     
     pthread_t tid[num_cpus];
+    
+    /* determining the element bounds in each thread */
+
+    NNEW(neapar,ITG,num_cpus);
+    NNEW(nebpar,ITG,num_cpus);
+    elementcpuload(neapar,nebpar,ne,ipkon,&num_cpus);
 
     /* allocating fields for mass and stiffness matrix and sensitivity matrix */
     
+    /* maximum 20 design variables per element (20-node element) */
+
     if(!*cyclicsymmetry){
-	NNEW(dfl1,double,num_cpus*60**ndesi);
+	NNEW(dfl1,double,num_cpus*60*20);
 	NNEW(df1,double,num_cpus**nzss);
     }else{
-	NNEW(dfl1,double,num_cpus*120**ndesi);
+	NNEW(dfl1,double,num_cpus*120*20);
 	NNEW(df1,double,num_cpus*2**nzss);
     }
 
@@ -208,7 +217,7 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     }
     for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
     
-    SFREE(ithread);
+    SFREE(ithread);SFREE(neapar);SFREE(nebpar);
 
     for(j=0;j<num_cpus;j++){
 	if(nmethod1[j]==0){
@@ -260,20 +269,25 @@ void mafillsmmain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
 void *mafillsmsemt(ITG *i){
 
-    ITG indexdf,indexdfl,nea,neb,nedelta;
+    ITG indexdf,indexdfl,nea,neb;
 
     if(!*cyclicsymmetry1){
 	indexdf=*i**nzss1;
-	indexdfl=*i*60**ndesi1;
+	indexdfl=*i*60*20;
+//	indexdfl=*i*60**ndesi1;
     }else{
 	indexdf=*i*2**nzss1;
-	indexdfl=*i*120**ndesi1;
+	indexdfl=*i*120*20;
+//	indexdfl=*i*120**ndesi1;
     }
 
-    nedelta=(ITG)floor(*ne1/(double)num_cpus);
+/*    nedelta=(ITG)floor(*ne1/(double)num_cpus);
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
-    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;*/
+
+    nea=neapar[*i]+1;
+    neb=nebpar[*i]+1;
 
     if(!*cyclicsymmetry1){
 	FORTRAN(mafillsmse,(co1,kon1,ipkon1,lakon1,ne1,ipompc1,nodempc1,

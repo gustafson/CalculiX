@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,13 +18,14 @@
 !
       subroutine modelchanges(inpc,textpart,tieset,istat,n,iline,
      &           ipol,inl,ipoinp,inp,ntie,ipoinpc,istep,ipkon,nset,
-     &           istartset,iendset,set,ialset,ne)
+     &           istartset,iendset,set,ialset,ne,mi,ielmat,iprestr,
+     &           iperturb,ier)
 !
 !     reading the input deck: *MODEL CHANGE
 !
       implicit none
 !
-      logical contactpair,add,remove,element 
+      logical contactpair,add,remove,element,strainfree 
 !
       character*1 inpc(*)
       character*81 tieset(3,*),noelset,set(*)
@@ -32,26 +33,35 @@
 !
       integer istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),ipkon(*),
      &  inp(3,*),ntie,ipoinpc(0:*),iposslave,iposmaster,itie,istep,
-     &  iset,j,k,m,nset,ne,istartset(*),iendset(*),ialset(*),nelem
+     &  j,k,m,nset,ne,istartset(*),iendset(*),ialset(*),nelem,
+     &  mi(*),ielmat(mi(3),*),iprestr,iperturb(*),ier
 !
       if(istep.eq.0) then
          write(*,*) '*ERROR reading *MODEL CHANGE: *MODEL CHANGE'
          write(*,*) '       cannot be used before the first step'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       contactpair=.false.
       add=.false.
       remove=.false.
       element=.false.
+      strainfree=.false.
 !
       do i=2,n
          if(textpart(i)(1:16).eq.'TYPE=CONTACTPAIR') then
             contactpair=.true.
          elseif(textpart(i)(1:12).eq.'TYPE=ELEMENT') then
             element=.true.
+         elseif(textpart(i)(1:14).eq.'ADD=STRAINFREE') then
+            add=.true.
+            strainfree=.true.
+         elseif(textpart(i)(1:14).eq.'ADD=WITHSTRAIN') then
+            add=.true.
          elseif(textpart(i)(1:3).eq.'ADD') then
             add=.true.
+            strainfree=.true.
          elseif(textpart(i)(1:6).eq.'REMOVE') then
             remove=.true.
          else
@@ -69,26 +79,43 @@
       if((.not.contactpair).and.(.not.element)) then
          write(*,*) '*ERROR reading *MODEL CHANGE: model change can'
          write(*,*) '       only be used for contact pairs or elements'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if((contactpair).and.(element)) then
          write(*,*) '*ERROR reading *MODEL CHANGE: model change cannot'
          write(*,*) '       be used for contact pairs and elements at'
          write(*,*) '       the same time'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if((.not.add).and.(.not.remove)) then
          write(*,*) '*ERROR reading *MODEL CHANGE: at least ADD or'
          write(*,*) '        REMOVE has to be selected'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(add.and.remove) then
          write(*,*) '*ERROR reading *MODEL CHANGE: ADD and REMOVE'
          write(*,*) '       cannot both be selected'
-         call exit(201)
+         ier=1
+         return
+      endif
+!
+      if((element).and.(strainfree)) then
+         if(iperturb(1).gt.1) then
+            iprestr=2
+         else
+            write(*,*) '*ERROR reading *MODEL CHANGE'
+            write(*,*) '       a strain-free addition of elements'
+            write(*,*) '       is only possible for nonlinear'
+            write(*,*) '       calculations'
+            ier=1
+            return
+         endif
       endif
 !
 !     reading the slave and the master surface
@@ -99,7 +126,8 @@
          if((istat.lt.0).or.(key.eq.1)) then
             write(*,*)'*ERROR reading *MODEL CHANGE: definition of the '
             write(*,*) '      contact pair is not complete.'
-            call exit(201)
+            ier=1
+            return
          endif
 !
 !     selecting the appropriate action
@@ -147,22 +175,24 @@
                   ipos=index(noelset,' ')
                   noelset(ipos:ipos)='E'
                   do j=1,nset
-                     if(j.eq.iset)cycle
                      if(noelset.eq.set(j)) then
                         m=iendset(j)-istartset(j)+1
                         do k=1,m
                            nelem=ialset(istartset(j)+k-1)
                            ipkon(nelem)=-2-ipkon(nelem)
+                           if(strainfree) ielmat(1,nelem)=
+     &                                   -ielmat(1,nelem)
                         enddo
                         exit
                      endif
                   enddo
                   if(noelset.ne.set(j)) then
                      noelset(ipos:ipos)=' '
-                     write(*,*) '*ERROR in noelsets: element set ',
-     &                    noelset
+                     write(*,*) '*ERROR reading *MODEL CHANGE:',
+     &                  ' element set ',noelset
                      write(*,*) '       has not been defined yet'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                else
 !     
@@ -174,6 +204,7 @@
                      write(*,*) '          > ne;'
                   else
                      ipkon(nelem)=-2-ipkon(nelem)
+                     if(strainfree) ielmat(1,nelem)=-ielmat(1,nelem)
                   endif
                endif
             enddo

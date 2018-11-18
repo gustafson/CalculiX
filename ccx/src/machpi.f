@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,26 +40,26 @@
 !-----------------------------------------------------------------------
 !
       kappax = (kappa-1)/kappa
-      KAPPAM = 2. / (KAPPA - 1.)
-      PIKRIT = (2./(KAPPA+1.)) ** (KAPPA/(KAPPA-1.))
+      KAPPAM = 2.d0 / (KAPPA - 1.d0)
+      PIKRIT = (2.d0/(KAPPA+1.d0)) ** (KAPPA/(KAPPA-1.d0))
 !
-      IF (PI.GE.1.) THEN
+      IF (PI.GE.1.d0) THEN
 !       Druckverhaeltnis groesser gleich 1
-        MACH = 0.
+        MACH = 0.d0
       ELSEIF (PI.GT.PIKRIT) THEN
 !       Druckverhaeltnis unterkritisch
-        MA2  = KAPPAM * (PI**(-KAPPAX) - 1.)
-        IF (MA2.GT.0) THEN
+        MA2  = KAPPAM * (PI**(-KAPPAX) - 1.d0)
+        IF (MA2.GT.0.d0) THEN
           MACH = SQRT (MA2)
         ELSE
-          MACH = 0.
+          MACH = 0.d0
         ENDIF
-      ELSEIF (PI.GT.0.) THEN
+      ELSEIF (PI.GT.0.d0) THEN
 !       Druckverhaeltnis ueberkritisch
-        MACH = 1.
+        MACH = 1.d0
       ELSE
 !       Druckverhaeltnis ungueltig
-        MACH = 1.E20
+        MACH = 1.d20
       ENDIF
 !
       RETURN

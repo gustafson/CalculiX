@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine physicalconstantss(inpc,textpart,physcon,
-     &  istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &  istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *PHYSICAL CONSTANTS
 !
@@ -37,29 +37,40 @@
       character*132 textpart(16)
 !
       integer i,istep,istat,n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),ier
 !
       real*8 physcon(*)
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in physicalconstants: *PHYSICAL CONSTANTS'
+         write(*,*) 
+     &      '*ERROR reading *PHYSICAL CONSTANTS: *PHYSICAL CONSTANTS'
          write(*,*) '        should only be used before the first STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
          if(textpart(i)(1:13).eq.'ABSOLUTEZERO=') then
             read(textpart(i)(14:33),'(f20.0)',iostat=istat) physcon(1)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*PHYSICAL CONSTANTS%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*PHYSICAL CONSTANTS%",ier)
+               return
+            endif
          elseif(textpart(i)(1:16).eq.'STEFANBOLTZMANN=') then
             read(textpart(i)(17:36),'(f20.0)',iostat=istat) physcon(2)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*PHYSICAL CONSTANTS%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*PHYSICAL CONSTANTS%",ier)
+               return
+            endif
          elseif(textpart(i)(1:14).eq.'NEWTONGRAVITY=') then
             read(textpart(i)(15:24),'(f20.0)',iostat=istat) physcon(3)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*PHYSICAL CONSTANTS%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*PHYSICAL CONSTANTS%",ier)
+               return
+            endif
          else
             write(*,*) 
      &        '*WARNING in physicalconstants: parameter not recognized:'

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
      &  nplicon,npmat_,iperturb,springarea,nmethod,mi,ne0,
      &  nstate_,xstateini,xstate,reltime,nasym,
-     &  iloc,jfaces,igauss,pslavsurf,pmastsurf,clearini,kscale)
+     &  jfaces,igauss,pslavsurf,pmastsurf,clearini,kscale)
 !
 !     calculates the stiffness of a spring (face-to-face penalty)
 !
@@ -31,7 +31,7 @@
       integer i,j,imat,ncmat_,ntmat_,k,l,nope,iflag,
      &  kode,niso,id,nplicon(0:ntmat_,*),npmat_,nelcon(2,*),
      &  iperturb(*),nmethod,mi(*),ne0,nstate_,nasym,
-     &  iloc,jfaces,igauss,nopem,nopes,nopep,kscale
+     &  jfaces,igauss,nopem,nopes,nopep,kscale
 !
       real*8 xl(3,19),elas(21),pproj(3),val,shp2m(7,9),
      &  al(3),s(60,60),voldl(0:mi(2),19),pl(3,19),xn(3),
@@ -50,7 +50,7 @@
      &  ncmat_,ntmat_,nope,lakonl,t1l,kode,plicon,
      &  nplicon,npmat_,iperturb,springarea,nmethod,mi,ne0,
      &  nstate_,xstateini,reltime,nasym,
-     &  iloc,jfaces,igauss,pslavsurf,pmastsurf,clearini
+     &  jfaces,igauss,pslavsurf,pmastsurf,clearini
 !
       intent(inout) s,xstate,elas,voldl,elconloc
 !
@@ -94,16 +94,16 @@ c      nopes = nope - nopem
       et=pslavsurf(2,igauss)
       weight=pslavsurf(3,igauss)
 !
-      if(nopes.eq.9) then
-          call shape9q(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
-      elseif(nopes.eq.8) then
+c      if(nopes.eq.9) then
+c          call shape9q(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
+      if(nopes.eq.8) then
           call shape8q(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
       elseif(nopes.eq.4) then
           call shape4q(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
       elseif(nopes.eq.6) then
           call shape6tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
-      elseif(nopes.eq.7) then
-          call shape7tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
+c      elseif(nopes.eq.7) then
+c          call shape7tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
       else
           call shape3tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
       endif
@@ -127,16 +127,16 @@ c      nopes = nope - nopem
 !
 !     determining the jacobian vector on the surface 
 !
-      if(nopem.eq.9) then
-         call shape9q(xi,et,pl,xm,xs2,shp2m,iflag)
-      elseif(nopem.eq.8) then
+c      if(nopem.eq.9) then
+c         call shape9q(xi,et,pl,xm,xs2,shp2m,iflag)
+      if(nopem.eq.8) then
          call shape8q(xi,et,pl,xm,xs2,shp2m,iflag)
       elseif(nopem.eq.4) then
          call shape4q(xi,et,pl,xm,xs2,shp2m,iflag)
       elseif(nopem.eq.6) then
          call shape6tri(xi,et,pl,xm,xs2,shp2m,iflag)
-      elseif(nopem.eq.7) then
-         call shape7tri(xi,et,pl,xm,xs2,shp2m,iflag)
+c      elseif(nopem.eq.7) then
+c         call shape7tri(xi,et,pl,xm,xs2,shp2m,iflag)
       else
          call shape3tri(xi,et,pl,xm,xs2,shp2m,iflag)
       endif
@@ -275,7 +275,7 @@ c      nopes = nope - nopem
 !     the start of the increment = lamda^*
 !           
             do i=1,3
-               al(i)=alnew(i)-xstateini(3+i,1,ne0+iloc)
+               al(i)=alnew(i)-xstateini(3+i,1,ne0+igauss)
             enddo
 !     
 !     ||lambda^*||
@@ -285,15 +285,15 @@ c      nopes = nope - nopem
 !     update the relative tangential displacement
 !     
             do i=1,3
-               t(i)=xstateini(6+i,1,ne0+iloc)+al(i)-val*xn(i)
+               t(i)=xstateini(6+i,1,ne0+igauss)+al(i)-val*xn(i)
             enddo
 !     
 !     store the actual relative displacement and
 !     the actual relative tangential displacement
 !     
             do i=1,3
-               xstate(3+i,1,ne0+iloc)=alnew(i)
-               xstate(6+i,1,ne0+iloc)=t(i)
+               xstate(3+i,1,ne0+igauss)=alnew(i)
+               xstate(6+i,1,ne0+igauss)=t(i)
             enddo
 !     
 !     d t/d u_k
@@ -321,7 +321,7 @@ c            dfshear=um*dfnl
 !     plastic and elastic slip
 !     
             do i=1,3
-               tp(i)=xstateini(i,1,ne0+iloc)
+               tp(i)=xstateini(i,1,ne0+igauss)
                te(i)=t(i)-tp(i)
             enddo
 !     
@@ -342,7 +342,7 @@ c            dfshear=um*dfnl
 !     
                do i=1,3
                   fnl(i)=fnl(i)+ftrial(i)
-                  xstate(i,1,ne0+iloc)=tp(i)
+                  xstate(i,1,ne0+igauss)=tp(i)
                enddo
 !     
 !     stick stiffness
@@ -360,7 +360,7 @@ c            dfshear=um*dfnl
                do i=1,3
                   ftrial(i)=te(i)/dte
                   fnl(i)=fnl(i)+dfshear*ftrial(i)
-                  xstate(i,1,ne0+iloc)=tp(i)+dg*ftrial(i)
+                  xstate(i,1,ne0+igauss)=tp(i)+dg*ftrial(i)
                enddo
 !     
 !     slip stiffness

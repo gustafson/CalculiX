@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine cross_split(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
-     &     iaxial)
+     &     iaxial,iplausi)
 !
 !     A cross split element(zeta calculation according to Idel'chik)
 !     Written by Yavor Dobrev
@@ -35,12 +35,19 @@
       integer
      &nelem,nactdog(0:3,*),node1,node2,nodem,numf,kon(*),ipkon(*),
      &ielprop(*),nodef(*),idirf(*),iflag,inv,mi(2),nodem1,nelem1,
-     &ichan_num,ider,icase,iaxial,index
+     &ichan_num,ider,icase,iaxial,index,iplausi
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,Tt1,Tt2,pt1,
      &pt2,cp,physcon(*),km1,kp1,kdkm1,pt2pt1,pt1pt2,pt2pt1_crit,
      &tdkp1,A,A1,A2,calc_residual_cross_split,dh1,dh2,alpha,xflow1,
      &xflow2,zeta_fac,A_s,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time
+!
+      intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,ielprop,prop,iflag,v,
+     &     cp,r,physcon,set,mi,ttime,time,
+     &     iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi,ider
 !
       index=ielprop(nelem)
 !
@@ -264,7 +271,7 @@
      &        ' to node ', node2,':   air massflow rate= ',xflow
 !     
          write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &        ', Ts1= ',Ts0,', Pt1= ',Pt1,
+     &        ', Ts1= ',Ts0,', Pt1= ',pt1,
      &        ', M1= ',M1
          write(1,*)'             Element ',nelem,lakon(nelem)
      &        ,', Branch ',ichan_num
@@ -281,7 +288,7 @@
      &        kappa,R,ider,iflag)
 !     
          write(1,56)'      Outlet node ',node2,':   Tt2= ',Tt2,
-     &        ' , Ts2= ',Ts2,' , Pt2= ',Pt2,
+     &        ' , Ts2= ',Ts2,' , Pt2= ',pt2,
      &        ', M2= ',M2
 !     
       endif

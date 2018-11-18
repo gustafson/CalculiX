@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,6 +33,9 @@
      &  shcon(0:3,ntmat_,*),physcon(*),xturb(2,*)
 !
       do i=1,nk
+!
+!        athermal calculations
+!
          if(ithermal.eq.0) then
             do l=1,4
                v(l,i)=0.d0
@@ -54,6 +57,10 @@
                enddo
             endif
          else
+!
+!           1) thermal incompressible calculations 
+!           2) compressible calculations
+!
             do l=0,4
                v(l,i)=0.d0
             enddo

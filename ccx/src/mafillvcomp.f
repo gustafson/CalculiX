@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -58,13 +58,18 @@
 !
 !              outflowing flux
 !
-               adv(i)=adv(i)+xflux
-ccccc retarded central differences
-c                  do k=1,3
-c                     bv(i,k)=bv(i,k)-gamma(ifa)*
-c     &                          (vfa(k,ifa)-vel(i,k))*xflux
-c                  enddo
-ccccc
+               if(iel.eq.0) then
+                  adv(i)=adv(i)+xflux
+               else
+                  adv(i)=adv(i)+xflux
+                  do k=1,3
+c  retarded gamma
+c                    bv(i,k)=bv(i,k)-gamma(ifa)*(vfa(k,ifa)
+c     &                       -vel(i,k))*xflux
+                    bv(i,k)=bv(i,k)-(vfa(k,ifa)
+     &                       -vel(i,k))*xflux
+                  enddo
+               endif
             else
                if(iel.gt.0) then
 !     
@@ -72,29 +77,16 @@ ccccc
 !
                   if((icyclic.eq.0).or.(ifatie(ifa).eq.0)) then
                      auv(indexf)=auv(indexf)+xflux
-ccccc retarded central differences
-c                   do k=1,3
-c                      bv(i,k)=bv(i,k)-gamma(ifa)*
-c     &                        (vfa(k,ifa)-vel(iel,k))*xflux
-c                   enddo
-ccccc
-                  elseif(ifatie(ifa).gt.0) then
-!
-!                    for cyclic symmetry the term is retarded, since
-!                    otherwise the x-, y- and z- components are linked
-!                    (i.e. the x-, y- and z- momentum equations cannot
-!                    be solved separately any more)
-!
                      do k=1,3
+c   retarded gamma
+c                        bv(i,k)=bv(i,k)-gamma(ifa)*
+c     &                          (vfa(k,ifa)-vel(iel,k))*xflux
                         bv(i,k)=bv(i,k)-
-     &                       (c(k,1)*vel(iel,1)+c(k,2)*vel(iel,2)+
-     &                        c(k,3)*vel(iel,3))*xflux
+     &                          (vfa(k,ifa)-vel(iel,k))*xflux
                      enddo
                   else
                      do k=1,3
-                        bv(i,k)=bv(i,k)-
-     &                       (c(1,k)*vel(iel,1)+c(2,k)*vel(iel,2)+
-     &                        c(3,k)*vel(iel,3))*xflux
+                        bv(i,k)=bv(i,k)-vfa(k,ifa)*xflux
                      enddo
                   endif
                else
@@ -110,19 +102,7 @@ ccccc
                         do k=1,3
                            bv(i,k)=bv(i,k)-vfa(k,ifa)*xflux
                         enddo
-                     else
-                        write(*,*) '*ERROR in mafillv: not all'
-                        write(*,*) '       components of an incoming'
-                        write(*,*) '       flux through face ',j
-                        write(*,*)'       of element ',nactdohinv(i),
-     &                        ' are given'
                      endif
-                  else
-                     write(*,*) '*ERROR in mafillv: not all'
-                     write(*,*) '       components of an incoming'
-                     write(*,*) '       flux through face ',j
-                     write(*,*)'       of element ',nactdohinv(i),
-     &                     ' are given'
                   endif
                endif
             endif
@@ -176,15 +156,10 @@ ccccc
                if(ipointer.gt.0) then
                   iwall=ifabou(ipointer+5)
                endif
-c               if(iwall.lt.1) then
                if(iwall.eq.0) then
 !
 !                 external face, but no wall
 !
-c                  if((ifabou(ipointer+1).ne.0).or.
-c     &                 (ifabou(ipointer+2).ne.0).or.
-c     &                 (ifabou(ipointer+3).ne.0)) then
-c
                   if(ielfa(3,ifa).gt.0) then
 !
 !                    no outlet: face velocity fixed
@@ -208,7 +183,6 @@ c
      &                  gradvfa(k,2,ifa)*xxni(2,indexf)+
      &                  gradvfa(k,3,ifa)*xxni(3,indexf))
                   enddo
-c               else
                elseif(iwall.gt.0) then
 !     
 !                 wall
@@ -227,9 +201,9 @@ c               else
      &                 coef2*xxn(k,indexf)
                   enddo
                else
-!     
+!
 !                 sliding conditions (no shear stress)
-!     
+!
                   coef=umfa(ifa)*area(ifa)/(xle(indexf)*cosa(indexf))
 !
 !                 correction for non-orthogonal grid
@@ -240,6 +214,7 @@ c               else
                   do k=1,3
                      bv(i,k)=bv(i,k)-coef2*xxn(k,indexf)
                   enddo
+!
                endif
             endif
 !     
@@ -269,26 +244,12 @@ c               else
 !
 !           transient term
 !
-c         a1=1.d0/dtimef
-c         a2=-1.d0/dtimef
-c         a3=0.d0/dtimef
-c         constant=rhovel
-         constant=rhovel/dtimef
-c         bv(i,1)=bv(i,1)-(a2*velo(i,1)+a3*veloo(i,1))*constant
-c         bv(i,2)=bv(i,2)-(a2*velo(i,2)+a3*veloo(i,2))*constant
-c         bv(i,3)=bv(i,3)-(a2*velo(i,3)+a3*veloo(i,3))*constant
+         constant=rhovel
          do k=1,3
-            bv(i,k)=bv(i,k)+velo(i,k)*constant
+            bv(i,k)=bv(i,k)-(a2*velo(i,k)+a3*veloo(i,k))*constant
          enddo
-c         constant=a1*constant
-c         call add_sm_fl(auv,adv,jq,irow,i,i,constant,nzs)
+         constant=a1*constant
          adv(i)=adv(i)+constant
-!
-!        copying b into sel (rhs without pressure)
-!
-         do j=1,3
-            sel(j,i)=bv(i,j)
-         enddo
 !
 !           pressure contribution to b
 !

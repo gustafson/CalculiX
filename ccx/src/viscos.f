@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine viscos(inpc,textpart,nmethod,iperturb,isolver,istep,
      &  istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc,nelcon,nmat,ncmat_,ctrl)
+     &  inp,ipoinpc,nelcon,nmat,ncmat_,ctrl,ier)
 !
 !     reading the input deck: *VISCO (provided for compatibility
 !     reasons with ABAQUS)
@@ -38,7 +38,7 @@
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),nelcon(2,*),
-     &  nmat,ncmat_
+     &  nmat,ncmat_,ier
 !
       real*8 tinc,tper,tmin,tmax,ctrl(*)
 !
@@ -51,13 +51,15 @@
          write(*,*) '       not provided in a *VISCO step. Perform'
          write(*,*) '       a genuine nonlinear geometric calculation'
          write(*,*) '       instead (parameter NLGEOM)'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *VISCO: *VISCO can only be used'
          write(*,*) '  within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     default solver
@@ -85,8 +87,11 @@
             idrct=1
          elseif(textpart(i)(1:6).eq.'CETOL=') then
             read(textpart(i)(7:26),'(f20.0)',iostat=istat) ctrl(40)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*VISCO%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*VISCO%",ier)
+               return
+            endif
          else
             write(*,*) 
      &        '*WARNING reading *VISCO: parameter not recognized:'
@@ -101,8 +106,15 @@
          write(*,*) '*ERROR reading *VISCO:'
          write(*,*) '       no strictly positive value'
          write(*,*) '       for the parameter CETOL given'
-         call exit(201)
+         ier=1
+         return
       endif
+      write(*,*) 'INFO reading *VISCO:'
+      write(*,*) '     although the specification of CETOL for a'
+      write(*,*) '     *VISCO procedure is mandatory, it is only'
+      write(*,*) '     used for creep in materials with a linear'
+      write(*,*) '     elastic behavior which is ISOTROPIC'
+      write(*,*)
 !
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
@@ -141,17 +153,29 @@
       endif
 !
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*VISCO%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*VISCO%",ier)
+         return
+      endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*VISCO%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*VISCO%",ier)
+         return
+      endif
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*VISCO%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*VISCO%",ier)
+         return
+      endif
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*VISCO%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*VISCO%",ier)
+         return
+      endif
 !
       if(tinc.le.0.d0) then
          write(*,*) '*ERROR reading *VISCO: initial increment size is ne

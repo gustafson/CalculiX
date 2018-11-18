@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine networkmpcs(inpc,textpart,ipompc,nodempc,coefmpc,
      &  nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
-     &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *NETWORK MPC
 !
@@ -31,7 +31,8 @@
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,istep,istat,
      &  n,i,j,ii,key,nterm,nk,node,ndir,mpcfreeold,ikmpc(*),ilmpc(*),
-     &  id,idof,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),m
+     &  id,idof,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),m,
+     &  ier
 !
       real*8 coefmpc(*),x
 !
@@ -58,7 +59,8 @@
          write(*,*) 
      &     '*ERROR reading *NETWORK MPC: *NETWORK MPC should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do
@@ -70,7 +72,8 @@
          nmpc=nmpc+1
          if(nmpc.gt.nmpc_) then
             write(*,*) '*ERROR reading *NETWORK MPC: increase nmpc_'
-            call exit(201)
+            ier=1
+            return
          endif
 !
          labmpc(nmpc)(1:7)='NETWORK'
@@ -86,24 +89,31 @@
      &           '*ERROR reading *NETWORK MPC: mpc definition ',nmpc
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*NETWORK MPC%")
-               call exit(201)
+     &              "*NETWORK MPC%",ier)
+               return
             endif
 !
             do i=1,n/3
 !
                read(textpart((i-1)*3+1)(1:10),'(i10)',iostat=istat) node
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NETWORK MPC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*NETWORK MPC%",ier)
+                  return
+               endif
                if((node.gt.nk).or.(node.le.0)) then
                   write(*,*) '*ERROR reading *NETWORK MPC:'
                   write(*,*) '       node ',node,' is not defined'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !
                read(textpart((i-1)*3+2)(1:10),'(i10)',iostat=istat) ndir
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NETWORK MPC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*NETWORK MPC%",ier)
+                  return
+               endif
                if(ndir.le.6) then
                elseif(ndir.eq.8) then
                   ndir=4
@@ -112,12 +122,16 @@
                else
                   write(*,*) '*ERROR reading *NETWORK MPC:'
                   write(*,*) '       direction',ndir,' is not defined'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !
                read(textpart((i-1)*3+3)(1:20),'(f20.0)',iostat=istat) x
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NETWORK MPC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*NETWORK MPC%",ier)
+                  return
+               endif
 !
                nodempc(1,mpcfree)=node
                nodempc(2,mpcfree)=ndir
@@ -132,7 +146,8 @@
                      if(ikmpc(id).eq.idof) then
                         write(*,100)
      &                       (ikmpc(id))/8+1,ikmpc(id)-8*((ikmpc(id))/8)
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                   endif
                   do j=nmpc,id+2,-1
@@ -148,7 +163,8 @@
                if(mpcfree.eq.0) then
                   write(*,*) 
      &                  '*ERROR reading *NETWORK MPC: increase memmpc_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !
                ii=ii+1

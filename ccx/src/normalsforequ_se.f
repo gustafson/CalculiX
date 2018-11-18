@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,29 +17,55 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine normalsforequ_se(nk,co,iponoelfa,inoelfa,konfa,
-     &  ipkonfa,lakonfa,ne,iponor,xnor,nodedesiinv,jobnamef)
+     &  ipkonfa,lakonfa,ne,iponor,xnor,nodedesiinv,jobnamef,
+     &  iponexp,nmpc,labmpc,ipompc,nodempc,ipretinfo)
 !
-!     calculates normals on surface
+!     calculates normals on surface for mesh modification
+!     purposes in an optimization loop
+!
+!     during optimization the coordinates of the design variables
+!     are changed leading to a changed geometry. In order to keep
+!     a good quality mesh the other nodes may have to be moved as
+!     well. The external shape in these nodes has to be kept, which
+!     can be guaranteed by MPC's. These MPC's are based on the local
+!     normal(s) in a node. At sharp corners more than one normal 
+!     may be necessary.
+!
+!     the equations are stored in file jobname.equ
+!
+!     the user can use this file for the appropriate mesh
+!     modifications. 
 !
       implicit none
 !
       character*132 jobnamef,fnequ
       character*8 lakonfa(*),lakonfaloc
+      character*20 labmpc(*)
 !
       integer nk,iponoelfa(*),inoelfa(3,*),konfa(*),ipkonfa(*),ne,
-     &  i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),
+     &  i,ndepnodes,index,nexp,nel,ielem,indexe,j,iel(100),
      &  jl(100),ial(100),ifi(100),indexx,k,l,ifix,nemin,jact,ixfree,
-     &  node,idim,iponor(*),nodedesiinv(*),len,ndet(3),nsort(3)
+     &  node,iponor(*),nodedesiinv(*),len,ndet(3),nsort(3),two,
+     &  three,iponexp(2,*),nmpc,ipompc(*),nodempc(3,*),preflag,
+     &  node1,node2,node3,ipretinfo(*),ieq,pretflag,
+     &  nodepret,ixfreei,ixfreej
 !
       real*8 co(3,*),xnor(*),xno(3,100),xi,et,coloc6(2,6),coloc8(2,8),
-     &  xl(3,8),dd,xnoref(3),dot,xnorloc(3,3),det(3),sort(3)
+     &  xl(3,8),dd,xnoref(3),dot,xnorloc(3,3),det(3),sort(3),xdir,
+     &  ydir,zdir
+!
+      intent(in) nk,co,iponoelfa,inoelfa,konfa,
+     &  ipkonfa,lakonfa,ne,nodedesiinv,jobnamef
+!
+      intent(out) iponor,xnor
 !
       data coloc6 /0.d0,0.d0,1.d0,0.d0,0.d0,1.d0,0.5d0,0.d0,
      &             0.5d0,0.5d0,0.d0,0.5d0/
       data coloc8 /-1.d0,-1.d0,1.d0,-1.d0,1.d0,1.d0,-1.d0,1.d0,
      &            0.d0,-1.d0,1.d0,0.d0,0.d0,1.d0,-1.d0,0.d0/
 !
-!     calculating the normals in nodes belonging to shells
+      two=2
+      three=3
 !
       do len=1,132
          if(jobnamef(len:len).eq.' ') exit
@@ -52,17 +78,13 @@
       open(20,file=fnequ(1:len+4),status='unknown',err=100)
       write(20,102)
       write(20,103)
- 102  format('**SUMMARY OF EUQATIONS FOR MESH-UPDATE ')
+ 102  format('**SUMMARY OF EQUATIONS FOR MESH-UPDATE ')
  103  format('*EQUATION')
 !     
       ixfree=0
 !     
       do i=1,nk
-         if(i.eq.1699) then 
-            ndepnodes=0
-         endif
          ndepnodes=0
-         idim=0
          index=iponoelfa(i)
          if(index.eq.0) cycle
 !     
@@ -70,19 +92,12 @@
 !     
          nexp=0
 !     
-!     nnor indicates whether the expanded nodes lie on a point
-!     (nnor=0, only for plane stress, plane strain or axisymmetric
-!     elements), on a line (nnor=1) or in a plane (nnor=2)
-!     
-         nnor=0
-!     
 !     locating the shell elements to which node i belongs
 !     
          nel=0
          do
             if(index.eq.0) exit
             ielem=inoelfa(1,index)
-            if(lakonfa(ielem)(1:1).eq.'S') nnor=1
             indexe=ipkonfa(ielem)
             nel=nel+1
             if(nel.gt.100) then
@@ -235,9 +250,6 @@
      &                          ((lakonfa(iel(j))(1:1).eq.'S').and.
      &                          (lakonfa(iel(jact))(1:1).eq.'S')))
      &                          ial(j)=1
-c     
-                           if(dot.lt.0.999962d0) nnor=2
-c     
                         else
                            if((lakonfa(iel(j))(1:1).eq.'S').and.
      &                          (lakonfa(iel(jact))(1:1).eq.'S')) then
@@ -246,9 +258,7 @@ c
 !     direction, the expanded nodes are on a
 !     straight line
 !     
-                              if(dot.gt.-0.999962) then
-                                 nnor=2
-                              else
+                              if(dot.le.-0.999962d0) then
                                  write(*,*) '*INFO in gen3dnor: in some 
      &nodes opposite normals are defined'
                               endif
@@ -270,9 +280,7 @@ c
 !     direction, the expanded nodes are on a
 !     straight line
 !     
-                              if(dot.gt.-0.999962) then
-                                 nnor=2
-                              else
+                              if(dot.le.-0.999962d0) then
                                  write(*,*) '*INFO in gen3dnor: in some
      &nodes opposite normals are defined'
                               endif
@@ -334,12 +342,89 @@ c
 !     
             enddo
          endif
+!
+!     save nexp and ixfree
+!
+      iponexp(1,i)=nexp
+      iponexp(2,i)=ixfree
+!
+      enddo     
+!
+!     find nodes created by "*PRETENSION SECTION"
+!
+!
+!     find pretension node if existing
+!
+      pretflag=0
+      do i=1,nmpc
+         if(labmpc(i)(1:10).eq.'PRETENSION') then
+            pretflag=1
+	    index=ipompc(i)
+	    index=nodempc(3,index)
+            index=nodempc(3,index)
+	    nodepret=nodempc(1,index)
+	    pretflag=1
+	    exit
+	 endif
+      enddo
+!
+      if(pretflag.eq.1) then
+         do i=1,nmpc
+	    if(labmpc(i)(1:11).eq.'THERMALPRET') cycle
+!
+            ieq=0
+	    index=ipompc(i)
+	    if(index.eq.0) cycle	    
+            node1=nodempc(1,index)          
+	    index=nodempc(3,index)
+	    node2=nodempc(1,index)  	           
+            index=nodempc(3,index)
+	    node3=nodempc(1,index)
+	    if(node3.eq.nodepret) then
+	       ipretinfo(node2)=node1 
+	       ipretinfo(node1)=-1	    
+            endif        
+         enddo
+      endif
+!
+!     correct nodes on free pretension surface"
+!
+      do i=1,nk
+         if(ipretinfo(i).le.0) cycle 
+!	 
+	 nexp=iponexp(1,i)
+	 ixfreei=iponexp(2,i)
+	 ixfreej=iponexp(2,ipretinfo(i))
+!	 
+	 do j=1,nexp
+            k=j*3-3
+            zdir=xnor(ixfreei+1-1-k)+xnor(ixfreej+1-1-k)
+	    ydir=xnor(ixfreei+1-2-k)+xnor(ixfreej+1-2-k)
+	    xdir=xnor(ixfreei+1-3-k)+xnor(ixfreej+1-3-k)	    
+            dd=(xdir)**2+(ydir)**2+(zdir)**2
+!	
+            if(dd.gt.1.0e-12) then	    
+	       ipretinfo(i)=0
+	    endif
+!
+	 enddo	 
+!
+      enddo
 !     
 !     write equations in file "jobname.equ"
 !     
+      do i=1,nk
+!
+!     check for additional pretension nodes
+!
+         if(ipretinfo(i).ne.0) cycle
+!
 !     check if node is a designvariable
 !     
-         if(nodedesiinv(i).eq.0) then
+         if(nodedesiinv(i).eq.0) then	 
+!
+            nexp=iponexp(1,i)
+	    ixfree=iponexp(2,i)
 !     
 !     write equations in case nexp is greater or equal 3
 !     
@@ -358,7 +443,7 @@ c
                   sort(4-l)=dabs(xnor(ixfree+1-l))
                   nsort(4-l)=4-l            
                enddo
-               call dsort(sort,nsort,3,2)
+               call dsort(sort,nsort,three,two)
                write(20,106) 3  
                write(20,104) i,nsort(3),xnorloc(nsort(3),1),
      &              i,nsort(2),xnorloc(nsort(2),1),
@@ -373,9 +458,6 @@ c
                      xnorloc(4-l,j)=xnor(ixfree+1-l-k)
                   enddo
                enddo
-               if(i.eq.5457) then
-                  ndet(1)=1
-               endif
                ndet(1)=1
                ndet(2)=2
                ndet(3)=3
@@ -385,64 +467,64 @@ c
      &              xnorloc(1,2)*xnorloc(3,1))
                det(3)=dabs(xnorloc(2,1)*xnorloc(3,2)-
      &              xnorloc(2,2)*xnorloc(3,1))
-               call dsort(det,ndet,3,2)
+               call dsort(det,ndet,three,two)
                
                if(ndet(3).eq.1) then
 !     if((dabs(xnorloc(1,1)).ge.dabs(xnorloc(2,1))).and.
 !     &               (dabs(xnorloc(2,2)).gt.1.d-5)) then
                   if((dabs(xnorloc(1,1)).gt.1.d-5).and.
      &                 (dabs(xnorloc(2,2)).gt.1.d-5)) then
-                     write(20,106) 2  
-                     write(20,107) i,1,xnorloc(1,1),
-     &                    i,2,xnorloc(2,1)
-                     write(20,106) 2  
-                     write(20,107) i,2,xnorloc(2,2),
-     &                    i,1,xnorloc(1,2)
+                     write(20,106) 3  
+                     write(20,104) i,1,xnorloc(1,1),
+     &                    i,2,xnorloc(2,1),i,3,xnorloc(3,1)
+                     write(20,106) 3  
+                     write(20,104) i,2,xnorloc(2,2),
+     &                    i,1,xnorloc(1,2),i,3,xnorloc(3,2)
                   else
-                     write(20,106) 2  
-                     write(20,107) i,2,xnorloc(2,1),
-     &                    i,1,xnorloc(1,1)
-                     write(20,106) 2  
-                     write(20,107) i,1,xnorloc(1,2),
-     &                    i,2,xnorloc(2,2)
+                     write(20,106) 3  
+                     write(20,104) i,2,xnorloc(2,1),
+     &                    i,1,xnorloc(1,1),i,3,xnorloc(3,1)
+                     write(20,106) 3  
+                     write(20,104) i,1,xnorloc(1,2),
+     &                    i,2,xnorloc(2,2),i,3,xnorloc(3,2)
                   endif
                elseif(ndet(3).eq.2) then
 !     if((dabs(xnorloc(1,1)).ge.dabs(xnorloc(3,1))).and.
 !     &                (dabs(xnorloc(3,2)).gt.1.d-5)) then
                   if((dabs(xnorloc(1,1)).gt.1.d-5).and.
      &                 (dabs(xnorloc(3,2)).gt.1.d-5)) then
-                     write(20,106) 2  
-                     write(20,107) i,1,xnorloc(1,1),
-     &                    i,3,xnorloc(3,1)
-                     write(20,106) 2  
-                     write(20,107) i,3,xnorloc(3,2),
-     &                    i,1,xnorloc(1,2)
+                     write(20,106) 3  
+                     write(20,104) i,1,xnorloc(1,1),
+     &                    i,3,xnorloc(3,1),i,2,xnorloc(2,1)
+                     write(20,106) 3  
+                     write(20,104) i,3,xnorloc(3,2),
+     &                    i,1,xnorloc(1,2),i,2,xnorloc(2,2)
                   else
-                     write(20,106) 2  
-                     write(20,107) i,3,xnorloc(3,1),
-     &                    i,1,xnorloc(1,1)
-                     write(20,106) 2  
-                     write(20,107) i,1,xnorloc(1,2),
-     &                    i,3,xnorloc(3,2)
+                     write(20,106) 3  
+                     write(20,104) i,3,xnorloc(3,1),
+     &                    i,1,xnorloc(1,1),i,2,xnorloc(2,1)
+                     write(20,106) 3  
+                     write(20,104) i,1,xnorloc(1,2),
+     &                    i,3,xnorloc(3,2),i,2,xnorloc(2,2)
                   endif
                elseif(ndet(3).eq.3) then
 !     if((dabs(xnorloc(2,1)).ge.dabs(xnorloc(3,1))).and.
 !     &                (dabs(xnorloc(3,2)).gt.1.d-5)) then
                   if((dabs(xnorloc(2,1)).gt.1.d-5).and.
      &                 (dabs(xnorloc(3,2)).gt.1.d-5)) then
-                     write(20,106) 2  
-                     write(20,107) i,2,xnorloc(2,1),
-     &                    i,3,xnorloc(3,1)
-                     write(20,106) 2  
-                     write(20,107) i,3,xnorloc(3,2),
-     &                    i,2,xnorloc(2,2)
+                     write(20,106) 3  
+                     write(20,104) i,2,xnorloc(2,1),
+     &                    i,3,xnorloc(3,1),i,1,xnorloc(1,1)
+                     write(20,106) 3  
+                     write(20,104) i,3,xnorloc(3,2),
+     &                    i,2,xnorloc(2,2),i,1,xnorloc(1,2)
                   else
-                     write(20,106) 2  
-                     write(20,107) i,3,xnorloc(3,1),
-     &                    i,2,xnorloc(2,1)
-                     write(20,106) 2  
-                     write(20,107) i,2,xnorloc(2,2),
-     &                    i,3,xnorloc(3,2)
+                     write(20,106) 3  
+                     write(20,104) i,3,xnorloc(3,1),
+     &                    i,2,xnorloc(2,1),i,1,xnorloc(1,1)
+                     write(20,106) 3  
+                     write(20,104) i,2,xnorloc(2,2),
+     &                    i,3,xnorloc(3,2),i,1,xnorloc(1,2)
                   endif     
                endif
             endif          
@@ -466,4 +548,3 @@ c
       call exit(201)
 !     
       end
-      

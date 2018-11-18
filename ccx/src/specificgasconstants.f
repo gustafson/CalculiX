@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine specificgasconstants(inpc,textpart,shcon,nshcon,
      &  nmat,ntmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc)
+     &  inp,ipoinpc,ier)
 !
 !     reading the input deck: *SPECIFIC GAS CONSTANT
 !
@@ -28,20 +28,24 @@
       character*132 textpart(16)
 !
       integer nshcon(*),nmat,ntmat_,istep,istat,n,ipoinpc(0:*),
-     &  key,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),i
+     &  key,irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),i,ier
 !
       real*8 shcon(0:3,ntmat_,*)
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in specificheats: *SPECIFIC GAS CONSTANT'
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
+         write(*,*) 
+     &   '*ERROR reading *SPECIFIC GAS CONSTANT: *SPECIFIC GAS CONSTANT'
          write(*,*) '  should be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in specificheats: *SPECIFIC GAS CONSTANT'
+         write(*,*) 
+     &   '*ERROR reading *SPECIFIC GAS CONSTANT: *SPECIFIC GAS CONSTANT'
          write(*,*) '  should be preceded by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -59,8 +63,11 @@
          if((istat.lt.0).or.(key.eq.1)) return
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
      &        shcon(3,1,nmat)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SPECIFIC GAS CONSTANT%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*SPECIFIC GAS CONSTANT%",ier)
+            return
+         endif
       enddo
 !
       return

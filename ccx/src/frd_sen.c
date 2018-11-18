@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -257,13 +257,17 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
 	  fprintf(f1," -4  SENFREQ     2    1\n");
       }else if(strcmp1(&objectset[*iobject*324],"THICKNESS")==0){
 	  fprintf(f1," -4  SENTHCK     2    1\n");
+      }else if(strcmp1(&objectset[*iobject*324],"FIXGROWTH")==0){
+	  fprintf(f1," -4  SENGROW     2    1\n");
+      }else if(strcmp1(&objectset[*iobject*324],"FIXSHRINKAGE")==0){
+	  fprintf(f1," -4  SENSHRN     2    1\n");
       }else if(strcmp1(&objectset[*iobject*324],"PROJECTGRAD")==0){
 	  fprintf(f1," -4  PRJGRAD     2    1\n");
       }
       
       fprintf(f1," -5  DFDN        1    1    1    0\n");
       fprintf(f1," -5  DFDNFIL     1    1    2    0\n");
-      
+
       frdselect(&v[2**nk**iobject],v,&iset,&nkcoords,inum,m1,istartset,
 	    iendset,ialset,ngraph,&ncomptensord,ifieldtensord,icomptensord,
 	    nfieldtensord,&iselect,m2,f1,output,m3);

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -64,6 +64,17 @@
          write(5,*)
          write(5,'(7x,e14.7)') g0(i)
 !
+      elseif(objectset(1,i)(1:9).eq.'FIXGROWTH') then
+         write(5,*)
+         write(5,*)'OBJECTIVE: FIX GROWTH'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
+!
+      elseif(objectset(1,i)(1:12).eq.'FIXSHRINKAGE') then
+         write(5,*)
+         write(5,*)'OBJECTIVE: FIX SHRINKAGE'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
       endif
 !      
       return

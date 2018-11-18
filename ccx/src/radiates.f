@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ialset,nset,nelemload,sideload,xload,nload,nload_,
      &  ielmat,ntmat_,iamload,amname,nam,lakon,ne,radiate_flag,
      &  istep,istat,n,iline,ipol,inl,ipoinp,inp,physcon,nam_,namtot_,
-     &  namta,amta,ipoinpc,mi)
+     &  namta,amta,ipoinpc,mi,iamplitudedefault,namtot,ier)
 !
 !     reading the input deck: *RADIATE
 !
@@ -41,11 +41,11 @@
      &  i,j,l,key,iload,
      &  iamload(2,*),nam,iamptemp,ipos,ne,node,iampradi,iline,ipol,
      &  inl,ipoinp(2,*),inp(3,*),nam_,namtot,namtot_,namta(3,*),
-     &  idelay1,idelay2,ipoinpc(0:*)
+     &  idelay1,idelay2,ipoinpc(0:*),iamplitudedefault,ier
 !
       real*8 xload(2,*),xmagradi,xmagtemp,physcon(*),amta(2,*)
 !
-      iamptemp=0
+      iamptemp=iamplitudedefault
       iampradi=0
       idelay1=0
       idelay2=0
@@ -55,15 +55,19 @@
       surface=.false.
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in radiates: *RADIATE should only be used'
+         write(*,*) 
+     &      '*ERROR reading *RADIATE: *RADIATE should only be used'
          write(*,*) '  within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(physcon(2).le.0.d0) then
-         write(*,*) '*ERROR in radiates: *RADIATE card was selected'
+         write(*,*) 
+     &     '*ERROR reading *RADIATE: *RADIATE card was selected'
          write(*,*) '       but no *PHYSICAL CONSTANTS card encountered'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -82,54 +86,63 @@
                endif
             enddo
             if(j.eq.0) then
-               write(*,*)'*ERROR in radiates: nonexistent amplitude'
+               write(*,*)
+     &           '*ERROR reading *RADIATE: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
-               call exit(201)
+     &              "*RADIATE%",ier)
+               return
             endif
             iamptemp=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
             if(idelay1.ne.0) then
-               write(*,*) '*ERROR in radiates: the parameter TIME DELAY'
+               write(*,*) 
+     &          '*ERROR reading *RADIATE: the parameter TIME DELAY'
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
                call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
-               call exit(201)
+     &              "*RADIATE%",ier)
+               return
             else
                idelay1=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
-               write(*,*) '*ERROR in radiates: increase nam_'
-               call exit(201)
+               write(*,*) '*ERROR reading *RADIATE: increase nam_'
+               ier=1
+               return
             endif
             amname(nam)='
      &                                 '
             if(iamptemp.eq.0) then
-               write(*,*) '*ERROR in radiates: time delay must be'
+               write(*,*) '*ERROR reading *RADIATE: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(3,nam)=sign(iamptemp,namta(3,iamptemp))
             iamptemp=nam
-            if(nam.eq.1) then
-               namtot=0
-            else
-               namtot=namta(2,nam-1)
-            endif
+c            if(nam.eq.1) then
+c               namtot=0
+c            else
+c               namtot=namta(2,nam-1)
+c            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR radiates: increase namtot_'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
+c            call reorderampl(amname,namta,nam)
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RADIATE%",ier)
+               return
+            endif
          elseif(textpart(i)(1:19).eq.'RADIATIONAMPLITUDE=') then
             read(textpart(i)(20:99),'(a80)') amplitude
             do j=nam,1,-1
@@ -139,62 +152,72 @@
                endif
             enddo
             if(j.eq.0) then
-               write(*,*)'*ERROR in radiates: nonexistent amplitude'
+               write(*,*)
+     &           '*ERROR reading *RADIATE: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
-               call exit(201)
+     &              "*RADIATE%",ier)
+               return
             endif
             iampradi=j
          elseif(textpart(i)(1:19).eq.'RADIATIONTIMEDELAY=') THEN
             if(idelay2.ne.0) then
-               write(*,*) '*ERROR in radiates: the parameter RADIATION'
+               write(*,*) 
+     &          '*ERROR reading *RADIATE: the parameter RADIATION'
                write(*,*) '       TIME DELAY is used twice in the'
                write(*,*) '       same keyword; '
                call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
-               call exit(201)
+     &              "*RADIATE%",ier)
+               return
             else
                idelay2=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
-               write(*,*) '*ERROR in radiates: increase nam_'
-               call exit(201)
+               write(*,*) '*ERROR reading *RADIATE: increase nam_'
+               ier=1
+               return
             endif
             amname(nam)='
      &                                 '
             if(iampradi.eq.0) then
-               write(*,*) '*ERROR in radiates: radiation time delay'
+               write(*,*) 
+     &          '*ERROR reading *RADIATE: radiation time delay'
                write(*,*) '       must be preceded by the radiation'
                write(*,*) '       amplitude parameter'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(3,nam)=sign(iampradi,namta(3,iampradi))
             iampradi=nam
-            if(nam.eq.1) then
-               namtot=0
-            else
-               namtot=namta(2,nam-1)
-            endif
+c            if(nam.eq.1) then
+c               namtot=0
+c            else
+c               namtot=namta(2,nam-1)
+c            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR radiates: increase namtot_'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
+c            call reorderampl(amname,namta,nam)
             read(textpart(i)(20:39),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RADIATE%",ier)
+               return
+            endif
          elseif(textpart(i)(1:7).eq.'ENVNODE') THEN
             environmentnode=.true.
          elseif(textpart(i)(1:7).eq.'CAVITY=') THEN
             read(textpart(i)(8:10),'(a3)',iostat=istat) cavlabel
          else
             write(*,*) 
-     &        '*WARNING in radiates: parameter not recognized:'
+     &        '*WARNING reading *RADIATE: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -215,6 +238,10 @@
 !
          if(label(2:4).eq.'NEG') label(2:4)='1  '
          if(label(2:4).eq.'POS') label(2:4)='2  '
+!
+!        for plane stress elements: 'N' and 'P' are converted
+!        into '5' and '6' and farther down in '1' and '2'
+!
          if(label(2:2).eq.'N') label(2:2)='5'
          if(label(2:2).eq.'P') label(2:2)='6'
 !
@@ -228,11 +255,17 @@
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmagtemp
                node=0
             endif
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RADIATE%",ier)
+               return
+            endif
             read(textpart(4)(1:20),'(f20.0)',iostat=istat) xmagradi
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RADIATE%",ier)
+               return
+            endif
          else
             if(environmentnode) then
                read(textpart(3)(1:10),'(i10)',iostat=istat) node
@@ -240,8 +273,11 @@
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmagtemp
                node=0
             endif
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RADIATE%",ier)
+               return
+            endif
          endif
          if(((label(1:2).ne.'R1').and.(label(1:2).ne.'R2').and.
      &       (label(1:2).ne.'R0').and.
@@ -250,15 +286,17 @@
      &      ((label(3:5).ne.'   ').and.(label(3:5).ne.'NU ').and.
      &       (label(3:5).ne.'CR ').and.(label(3:5).ne.'CRN'))) then
             call inputerror(inpc,ipoinpc,iline,
-     &"*RADIATE%")
+     &           "*RADIATE%",ier)
+            return
          endif
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if(l.gt.ne) then
-               write(*,*) '*ERROR in radiates: element ',l
+               write(*,*) '*ERROR reading *RADIATE: element ',l
                write(*,*) '       is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             if((lakon(l)(1:2).eq.'CP').or.
@@ -302,12 +340,12 @@
                enddo
                if(i.gt.nset) then
                   elset(ipos:ipos)=' '
-                  write(*,*) '*ERROR in radiates: element set '
+                  write(*,*) '*ERROR reading *RADIATE: element set '
                   write(*,*) '       or facial surface ',elset
                   write(*,*) '       has not yet been defined. '
                   call inputerror(inpc,ipoinpc,iline,
-     &                 "*RADIATE%")
-                  call exit(201)
+     &                                  "*RADIATE%",ier)
+                  return
                endif
             endif
 !

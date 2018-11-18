@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine changesolidsections(inpc,textpart,set,istartset,
      &  iendset,ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,nelcon)
+     &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,nelcon,ier)
 !
 !     reading the input deck: *CHANGE SOLID SECTION
 !
@@ -32,8 +32,8 @@
       character*132 textpart(16)
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,
-     &  norien,nelcon(2,*),
+     &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt(*),nset,nmat,
+     &  norien,nelcon(2,*),ier,
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),mcs,iaxial,ipoinpc(0:*)
 !
@@ -43,7 +43,8 @@
          write(*,*) '*ERROR reading *CHANGE SOLID SECTION:'
          write(*,*) '       *CHANGE SOLID SECTION should'
          write(*,*) '       be placed within a step definition'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       pi=4.d0*datan(1.d0)
@@ -93,8 +94,8 @@
      &     '*ERROR reading *CHANGE SOLID SECTION: nonexistent material'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
-     &"*CHANGE SOLID SECTION%")
-         call exit(201)
+     &        "*CHANGE SOLID SECTION%",ier)
+         return
       endif
       imaterial=i
 !
@@ -115,8 +116,8 @@
             write(*,*) '       nonexistent orientation'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*CHANGE SOLID SECTION%")
-            call exit(201)
+     &           "*CHANGE SOLID SECTION%",ier)
+            return
          endif
          iorientation=i
       endif
@@ -126,8 +127,8 @@
      &    '*ERROR reading *CHANGE SOLID SECTION: no element set ',elset
          write(*,*) '       was been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*CHANGE SOLID SECTION%")
-         call exit(201)
+     &        "*CHANGE SOLID SECTION%",ier)
+         return
       endif
       do i=1,nset
          if(set(i).eq.elset) exit
@@ -138,8 +139,8 @@
          write(*,*) '       element set ',elset
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*CHANGE SOLID SECTION%")
-         call exit(201)
+     &        "*CHANGE SOLID SECTION%",ier)
+         return
       endif
 !
 !     assigning the elements of the set the appropriate material
@@ -154,7 +155,8 @@
                write(*,*) '       not be used for beam or shell elements
      &'
                write(*,*) '       Faulty element: ',ialset(j)
-               call exit(201)
+               ier=1
+               return
             endif
             ielmat(1,ialset(j))=imaterial
             if(norien.gt.0) ielorien(1,ialset(j))=iorientation
@@ -170,7 +172,8 @@
                   write(*,*) '       not be used for beam or shell eleme
      &nts'
                   write(*,*) '       Faulty element: ',k
-                  call exit(201)
+                  ier=1
+                  return
                endif
                ielmat(1,k)=imaterial
                if(norien.gt.0) ielorien(1,k)=iorientation
@@ -188,7 +191,8 @@
          write(*,*) '*ERROR reading *CHANGE SOLID SECTION'
          write(*,*) '       no second line allowed'
          call inputerror(inpc,ipoinpc,iline,
-     &"*CHANGE SOLID SECTION%")
+     &        "*CHANGE SOLID SECTION%",ier)
+         return
       endif
 !
       return

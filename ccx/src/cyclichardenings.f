@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,8 @@
 !
       subroutine cyclichardenings(inpc,textpart,nelcon,nmat,ntmat_,
      &        npmat_,plicon,nplicon,ncmat_,elcon,matname,
-     &        irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &        irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
+     &        ier)
 !
 !     reading the input deck: *CYCLIC HARDENING
 !
@@ -28,9 +29,9 @@
       character*80 matname(*)
       character*132 textpart(16)
 !
-      integer nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,
+      integer nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,ier,
      &  n,key,i,nplicon(0:ntmat_,*),istat,ncmat_,itemp,id,ipoinpc(0:*),
-     &  ndata,ndatamax,kin,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
+     &  ndata,ndatamax,kin,irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),temperature,
      &  elcon(0:ncmat_,ntmat_,*),plconloc(802),t1l
@@ -38,31 +39,37 @@
       ntmat=0
       npmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in cychards: *CYCLIC HARDENING'
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
+         write(*,*) 
+     &      '*ERROR reading *CYCLIC HARDENING: *CYCLIC HARDENING'
          write(*,*) '       should be placed before all step'
          write(*,*) '       definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in cychards: *CYCLIC HARDENING'
+         write(*,*) 
+     &      '*ERROR reading *CYCLIC HARDENING: *CYCLIC HARDENING'
          write(*,*) '       should be preceded'
          write(*,*) '       by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(((nelcon(1,nmat).ne.-51).and.(nelcon(1,nmat).ne.-114)).or.
      &   (nplicon(0,nmat).ne.0)) then
-         write(*,*) '*ERROR in cychards: *CYCLIC HARDENING'
+         write(*,*) 
+     &       '*ERROR reading *CYCLIC HARDENING: *CYCLIC HARDENING'
          write(*,*) '       should be preceded'
          write(*,*) '  by an *PLASTIC,HARDENING=COMBINED card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
          write(*,*) 
-     &        '*WARNING in cychards: parameter not recognized:'
+     &   '*WARNING reading *CYCLIC HARDENING: parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
          call inputwarning(inpc,ipoinpc,iline,
@@ -76,8 +83,11 @@
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) exit
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CYCLIC HARDENING%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*CYCLIC HARDENING%",ier)
+            return
+         endif
 !
 !           first temperature
 !
@@ -85,8 +95,10 @@
             npmat=0
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in cychards: increase ntmat_'
-               call exit(201)
+               write(*,*) 
+     &           '*ERROR reading *CYCLIC HARDENING: increase ntmat_'
+               ier=1
+               return
             endif
             nplicon(0,nmat)=ntmat
             plicon(0,ntmat,nmat)=temperature
@@ -97,8 +109,10 @@
             npmat=0
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
-               write(*,*) '*ERROR in cychards: increase ntmat_'
-               call exit(201)
+               write(*,*) 
+     &           '*ERROR reading *CYCLIC HARDENING: increase ntmat_'
+               ier=1
+               return
             endif
             nplicon(0,nmat)=ntmat
             plicon(0,ntmat,nmat)=temperature
@@ -106,21 +120,28 @@
          do i=1,2
             read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &           plicon(2*npmat+i,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CYCLIC HARDENING%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CYCLIC HARDENING%",ier)
+               return
+            endif
          enddo
          npmat=npmat+1
          if(npmat.gt.npmat_) then
-            write(*,*) '*ERROR in cychards: increase npmat_'
-            call exit(201)
+            write(*,*) 
+     &         '*ERROR reading *CYCLIC HARDENING: increase npmat_'
+            ier=1
+            return
          endif
          nplicon(ntmat,nmat)=npmat
       enddo
 !
       if(ntmat.eq.0) then
-         write(*,*) '*ERROR in cychards: *CYCLIC HARDENING card'
+         write(*,*) 
+     &       '*ERROR reading *CYCLIC HARDENING: *CYCLIC HARDENING card'
          write(*,*) '       without data encountered'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     elastically anisotropic materials: recasting the input data

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,7 +51,7 @@
       character*81 tieset(3,*)
 !
       integer konl(26),ifaceq(8,6),nelemload(2,*),nbody,nelem,
-     &  mi(*),iloc,jfaces,igauss,mortar,kon(*),ielprop(*),null,
+     &  mi(*),jfaces,igauss,mortar,kon(*),ielprop(*),null,
      &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),six,
@@ -435,14 +435,13 @@ c     Bernhardi end
      &              xstateini,xstate,reltime,nasym,ielorien,orab,norien,
      &              nelem)
             elseif(mortar.eq.1) then
-               iloc=kon(indexe+nope+1)
                jfaces=kon(indexe+nope+2)
                igauss=kon(indexe+nope+1) 
                call springstiff_f2f(xl,elas,voldl,s,imat,elcon,nelcon,
      &              ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
-     &              nplicon,npmat_,iperturb,springarea(1,iloc),nmethod,
-     &              mi,ne0,nstate_,xstateini,xstate,reltime,
-     &              nasym,iloc,jfaces,igauss,pslavsurf,
+     &              nplicon,npmat_,iperturb,springarea(1,igauss),
+     &              nmethod,mi,ne0,nstate_,xstateini,xstate,reltime,
+     &              nasym,jfaces,igauss,pslavsurf,
      &              pmastsurf,clearini,kscale)
             endif
          elseif(lakonl(1:4).eq.'MASS') then
@@ -1349,16 +1348,16 @@ c             if(iperturb(1).eq.0) then
              endif
 !
              if(rhsi.eq.1) then
-                if(nopes.eq.9) then
-                   call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
-                elseif(nopes.eq.8) then
+c                if(nopes.eq.9) then
+c                   call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+                if(nopes.eq.8) then
                    call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.4) then
                    call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.6) then
                    call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
-                elseif(nopes.eq.7) then
-                   call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+c                elseif(nopes.eq.7) then
+c                   call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 else
                    call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 endif
@@ -1451,16 +1450,16 @@ c    Bernhardi end
 c             elseif((mass.eq.1).and.(iperturb(1).ne.0)) then
              elseif((mass.eq.1).and.
      &            ((iperturb(1).eq.1).or.(iperturb(2).eq.1))) then
-                if(nopes.eq.9) then
-                   call shape9q(xi,et,xl1,xsj2,xs2,shp2,iflag)
-                elseif(nopes.eq.8) then
+c                if(nopes.eq.9) then
+c                   call shape9q(xi,et,xl1,xsj2,xs2,shp2,iflag)
+                if(nopes.eq.8) then
                    call shape8q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.4) then
                    call shape4q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.6) then
                    call shape6tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
-                elseif(nopes.eq.7) then
-                   call shape7tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
+c                elseif(nopes.eq.7) then
+c                   call shape7tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 else
                    call shape3tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 endif
@@ -1709,16 +1708,19 @@ c            alp=.2215d0
             alp=0.1203d0
          elseif(nope.eq.15) then
             alp=0.2141d0
+         elseif(nope.eq.11) then
+            alp=0.1852d0
          endif
 !
          if((nope.eq.20).or.(nope.eq.10).or.
-     &      (nope.eq.15)) then
+     &      (nope.eq.15).or.(nope.eq.11)) then
             factore=summass*alp/(1.d0+alp)/sume
             factorm=summass/(1.d0+alp)/summ
          else
             factore=summass/sume
          endif
 !
+c        write(6,*) alp, sume, summ, factore, factorm
          do i=1,3*nopev,3
             sm(i,i)=sm(i,i)*factore
             sm(i+1,i+1)=sm(i,i)

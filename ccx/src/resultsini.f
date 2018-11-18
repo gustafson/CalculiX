@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,8 +20,8 @@
      &  nactdof,iout,qa,vold,b,nodeboun,ndirboun,
      &  xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
      &  veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
-     &  intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,nener,
-     &  ikin,intpointvart,xforc,nforc)
+     &  intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,
+     &  ikin,intpointvart)
 !
 !     initialization 
 !
@@ -38,16 +38,24 @@
 !
       integer mi(*),nactdof(0:mi(2),*),nodeboun(*),ndirboun(*),
      &  ipompc(*),nodempc(3,*),mt,nk,ithermal(2),i,j,
-     &  nener,iperturb(*),iout,nboun,nmpc,nmethod,ist,ndir,node,index,
-     &  neq,incrementalmpc,nprint,ikin,calcul_fn,nforc,
+     &  iperturb(*),iout,nboun,nmpc,nmethod,ist,ndir,node,index,
+     &  neq,incrementalmpc,nprint,ikin,calcul_fn,
      &  calcul_f,calcul_cauchy,calcul_qa,intpointvarm,intpointvart,
      &  irefnode,irotnode,iexpnode,irefnodeprev
 !
       real*8 v(0:mi(2),*),vini(0:mi(2),*),f(*),fn(0:mi(2),*),
      &  cam(5),vold(0:mi(2),*),b(*),xboun(*),coefmpc(*),
-     &  veold(0:mi(2),*),accold(0:mi(2),*),xforc(*),
+     &  veold(0:mi(2),*),accold(0:mi(2),*),
      &  qa(*),bet,gam,dtime,scal1,scal2,bnac,
      &  fixed_disp
+!
+      intent(in) nk,ithermal,filab,iperturb,nactdof,iout,vold,b,
+     &  nodeboun,ndirboun,xboun,nboun,ipompc,nodempc,coefmpc,labmpc,
+     &  nmpc,nmethod,neq,bet,gam,dtime,mi,vini,nprint,prlab
+!
+      intent(inout) calcul_fn,calcul_cauchy,calcul_qa,calcul_f,
+     &  ikin,v,accold,veold,intpointvarm,intpointvart,qa,f,fn,
+     &  cam
 !
       mt=mi(2)+1
 !
@@ -210,8 +218,6 @@
 !           discontinuity is not allowed since it leads to
 !           infinite accelerations
 !
-c            if((nmethod.eq.4).and.(iperturb(1).gt.1).and.
-c     &         (nint(dtime*1.d28).ne.123571113)) then
             if((nmethod.eq.4).and.(iperturb(1).gt.1)) then
                ndir=ndirboun(i)
                node=nodeboun(i)
@@ -364,9 +370,7 @@ c                     endif
 !     dat-output
 !   
       do i=1,nprint
-         if((prlab(i)(1:4).eq.'ENER').or.(prlab(i)(1:4).eq.'ELSE').or.
-     &        (prlab(i)(1:4).eq.'CELS')) then
-         elseif(prlab(i)(1:4).eq.'ELKE') then
+         if(prlab(i)(1:4).eq.'ELKE') then
             ikin=1
          endif
       enddo

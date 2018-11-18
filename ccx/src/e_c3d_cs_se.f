@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -52,7 +52,7 @@
       character*81 tieset(3,*)
 !
       integer konl(26),ifaceq(8,6),nelemload(2,*),nbody,nelem,
-     &  mi(*),iloc,jfaces,igauss,mortar,kon(*),ielprop(*),null,
+     &  mi(*),jfaces,igauss,mortar,kon(*),ielprop(*),null,
      &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),six,
@@ -66,7 +66,7 @@
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,nopered,
      &  ndesi,nodedesi(*),idesvar,node,kscale,iactive,ij,
      &  mass,stiffness,buckling,rhsi,coriolis,icoordinate,idir,ne,
-     &  istartelem(*),ialelem(*),nk
+     &  istartelem(*),ialelem(*),nk,idesloc
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xs2(3,7),veold(0:mi(2),*),
      &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),sigma,
@@ -87,7 +87,7 @@
      &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
      &  sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3),
      &  pslavsurf(3,*),pmastsurf(6,*),distmin,s0(60,60),xdesi(3,*),
-     &  ds1(60,60),ff0(60),dfl(ndesi,120),dxstiff(27,mi(1),ne,*),
+     &  ds1(60,60),ff0(60),dfl(20,120),dxstiff(27,mi(1),ne,*),
      &  vl(0:mi(2),52),v(0:mi(2),*)
 !
       intent(in) co,kon,lakonl,p1,p2,omx,bodyfx,nbody,
@@ -372,6 +372,7 @@ c     Bernhardi end
 !
       do ij=istartelem(nelem),istartelem(nelem+1)-1
          idesvar=ialelem(ij)
+         idesloc=ij+1-istartelem(nelem)
 !
 !     check whether a design variable belongs to the element
 !
@@ -386,7 +387,7 @@ c     Bernhardi end
                if(node.eq.nodedesi(idesvar)) then
                   iactive=i
                   do j=1,120
-                     dfl(idesvar,j)=0.d0
+                     dfl(idesloc,j)=0.d0
                   enddo
                   exit
                endif
@@ -396,7 +397,7 @@ c     Bernhardi end
 !           the orientations are the design variables
 !
             do j=1,120
-               dfl(idesvar,j)=0.d0
+               dfl(idesloc,j)=0.d0
             enddo
          endif
       endif
@@ -490,14 +491,13 @@ c     Bernhardi end
      &              xstateini,xstate,reltime,nasym,ielorien,orab,norien,
      &              nelem)
             elseif(mortar.eq.1) then
-               iloc=kon(indexe+nope+1)
                jfaces=kon(indexe+nope+2)
                igauss=kon(indexe+nope+1) 
                call springstiff_f2f(xl,elas,voldl,s,imat,elcon,nelcon,
      &              ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
-     &              nplicon,npmat_,iperturb,springarea(1,iloc),nmethod,
-     &              mi,ne0,nstate_,xstateini,xstate,reltime,
-     &              nasym,iloc,jfaces,igauss,pslavsurf,
+     &              nplicon,npmat_,iperturb,springarea(1,igauss),
+     &              nmethod,mi,ne0,nstate_,xstateini,xstate,reltime,
+     &              nasym,jfaces,igauss,pslavsurf,
      &              pmastsurf,clearini,kscale)
             endif
          elseif(lakonl(1:4).eq.'MASS') then
@@ -1447,16 +1447,16 @@ c             if(iperturb(1).eq.0) then
              endif
 !
              if(rhsi.eq.1) then
-                if(nopes.eq.9) then
-                   call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
-                elseif(nopes.eq.8) then
+c                if(nopes.eq.9) then
+c                   call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+                if(nopes.eq.8) then
                    call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.4) then
                    call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.6) then
                    call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
-                elseif(nopes.eq.7) then
-                   call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+c                elseif(nopes.eq.7) then
+c                   call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 else
                    call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                 endif
@@ -1549,16 +1549,16 @@ c    Bernhardi end
 c             elseif((mass.eq.1).and.(iperturb(1).ne.0)) then
              elseif((mass.eq.1).and.
      &            ((iperturb(1).eq.1).or.(iperturb(2).eq.1))) then
-                if(nopes.eq.9) then
-                   call shape9q(xi,et,xl1,xsj2,xs2,shp2,iflag)
-                elseif(nopes.eq.8) then
+c                if(nopes.eq.9) then
+c                   call shape9q(xi,et,xl1,xsj2,xs2,shp2,iflag)
+                if(nopes.eq.8) then
                    call shape8q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.4) then
                    call shape4q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.6) then
                    call shape6tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
-                elseif(nopes.eq.7) then
-                   call shape7tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
+c                elseif(nopes.eq.7) then
+c                   call shape7tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 else
                    call shape3tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 endif
@@ -1863,23 +1863,23 @@ c            alp=.2215d0
 !
 !                       real part
 !
-                        dfl(idesvar,i)=dfl(idesvar,i)
+                        dfl(idesloc,i)=dfl(idesloc,i)
      &                       +ds1(i,l)*vl(k,j)
 !
 !                       imaginary part
 !
-                        dfl(idesvar,60+i)=dfl(idesvar,60+i)
+                        dfl(idesloc,60+i)=dfl(idesloc,60+i)
      &                       +ds1(i,l)*vl(k,26+j)
                      else
 !
 !                       real part
 !
-                        dfl(idesvar,i)=dfl(idesvar,i)
+                        dfl(idesloc,i)=dfl(idesloc,i)
      &                       +ds1(l,i)*vl(k,j)
 !
 !                       imaginary part
 !
-                        dfl(idesvar,60+i)=dfl(idesvar,60+i)
+                        dfl(idesloc,60+i)=dfl(idesloc,60+i)
      &                       +ds1(l,i)*vl(k,26+j)
                      endif
                   enddo
@@ -1889,11 +1889,11 @@ c            alp=.2215d0
 !
 !              real part
 !
-               dfl(idesvar,i)=-dfl(idesvar,i)/distmin
+               dfl(idesloc,i)=-dfl(idesloc,i)/distmin
 !
 !              imaginary part
 !
-               dfl(idesvar,60+i)=-dfl(idesvar,60+i)/distmin
+               dfl(idesloc,60+i)=-dfl(idesloc,60+i)/distmin
             enddo
          endif
 !     
@@ -1930,23 +1930,23 @@ c            alp=.2215d0
 !
 !                       real part
 !
-                        dfl(idesvar,i)=dfl(idesvar,i)
+                        dfl(idesloc,i)=dfl(idesloc,i)
      &                       +ds1(i,l)*vl(k,j)
 !
 !                       imaginary part
 !
-                        dfl(idesvar,60+i)=dfl(idesvar,60+i)
+                        dfl(idesloc,60+i)=dfl(idesloc,60+i)
      &                       +ds1(i,l)*vl(k,26+j)
                      else
 !
 !                       real part
 !
-                        dfl(idesvar,i)=dfl(idesvar,i)
+                        dfl(idesloc,i)=dfl(idesloc,i)
      &                       +ds1(l,i)*vl(k,j)
 !
 !                       imaginary part
 !
-                        dfl(idesvar,60+i)=dfl(idesvar,60+i)
+                        dfl(idesloc,60+i)=dfl(idesloc,60+i)
      &                       +ds1(l,i)*vl(k,26+j)
                      endif
                   enddo
@@ -1956,11 +1956,11 @@ c            alp=.2215d0
 !
 !              real part
 !
-               dfl(idesvar,i)=-dfl(idesvar,i)/distmin
+               dfl(idesloc,i)=-dfl(idesloc,i)/distmin
 !
 !              imaginary part
 !
-               dfl(idesvar,60+i)=-dfl(idesvar,60+i)/distmin
+               dfl(idesloc,60+i)=-dfl(idesloc,60+i)/distmin
             enddo
          endif
       endif

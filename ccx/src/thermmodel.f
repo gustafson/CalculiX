@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -144,7 +144,8 @@
             dtemdx(i)=vkl(0,i)
          enddo
 !
-         call umatht(u,dudt,dudg,qflux,dfdt,dfdg,xstate,t1lold,dtemp,
+         call umatht(u,dudt,dudg,qflux,dfdt,dfdg,xstate(1,iint,iel),
+     &     t1lold,dtemp,
      &     dtemdx,abqtime,dtime,predef,dpred,amat,ntgrd,nstate_,
      &     coconloc,ncoconst,pgauss,pnewdt,iel,iint,layer,kspt,
      &     kstep,kinc,vold,co,lakonl,konl,

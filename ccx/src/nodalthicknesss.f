@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine nodalthicknesss(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,thickn,nk,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,iaxial,ipoinpc)
+     &  inp,iaxial,ipoinpc,ier)
 !
 !     reading the input deck: *NODAL THICKNESS
 !
@@ -30,19 +30,20 @@
 !
       integer istartset(*),iendset(*),ialset(*),nset,nk,istep,istat,n,
      &  key,i,j,k,l,ipos,iline,ipol,inl,ipoinp(2,*),inp(3,*),iaxial,
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),ier
 !
       real*8 thickn(2,*),thickness1,thickness2
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in nodalthicknesses: *NODAL THICKNESS'
+         write(*,*) '*ERROR reading *NODAL THICKNESS: *NODAL THICKNESS'
          write(*,*) '      should be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
          write(*,*) 
-     &        '*WARNING in nodalthicknesses: parameter not recognized:'
+     &    '*WARNING reading *NODAL THICKNESS: parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
          call inputwarning(inpc,ipoinpc,iline,
@@ -54,15 +55,21 @@
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) return
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) thickness1
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NODAL THICKNESS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*NODAL THICKNESS%",ier)
+            return
+         endif
          if(iaxial.eq.180) thickness1=thickness1/iaxial
          if(n.eq.2) then
             thickness2=0.d0
          else
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) thickness2
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NODAL THICKNESS%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*NODAL THICKNESS%",ier)
+               return
+            endif
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
@@ -78,11 +85,12 @@
             enddo
             if(i.gt.nset) then
                noset(ipos:ipos)=' '
-               write(*,*) '*ERROR in nodalthicknesses: node set ',noset
+               write(*,*) '*ERROR reading *NODAL THICKNESS: node set ',
+     &                noset
                write(*,*) '  has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*NODAL THICKNESS%")
-               call exit(201)
+     &              "*NODAL THICKNESS%",ier)
+               return
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then

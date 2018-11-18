@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -80,7 +80,7 @@
 !           nope = number of master nodes + 1 (1 slave node)
 !  
             nope=ichar(lakonl(8:8))-47
-            springfac=1.0
+            springfac=1.d0
 !     
             do indexn=1,nope                   
                xmacont=0.0d0

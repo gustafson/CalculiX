@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@
      &     ndirboun(*),nactdog(0:3,*),nboun,nodeboun(*),ntmat_,
      &     idir,ntq,nteq,nacteq(0:3,*),node1,node2,nodem,
      &     ielprop(*),idirf(8),iflag,imat,numf,nrhcon(*),nshcon(*),
-     &     nmpc,nodempc(3,*),ipompc(*),ikboun(*)
+     &     nmpc,nodempc(3,*),ipompc(*),ikboun(*),iplausi
 !     
       real*8 prop(*),f,xflow,nodef(8),df(8),v(0:mi(2),*),g(3),
      &     cp,r,physcon(*),shcon(0:3,ntmat_,*),rho,ttime,time,
@@ -459,6 +459,31 @@
          endif
       enddo
 !
+!     temporarily removing the dependent nodes of the MPC's
+!     only for mass flow and pressure
+!
+!     these are the only dofs for which the corresponding equations
+!     (mass equilibrium in end node and element equation in middle
+!     node) are not applied in the nodes where the dofs are lacking 
+!     (mass flow in middle node and pressure in end node)
+!
+      if(networkmpcs.eq.1) then
+         do i=1,nmpc
+            if(labmpc(i)(1:7).ne.'NETWORK') cycle
+            index=ipompc(i)
+            idir=nodempc(2,index)
+            if((idir.eq.1).or.(idir.eq.2)) then
+               node=nodempc(1,index)
+               call nident(itg,node,ntg,id)
+               if(id.gt.0) then
+                  if(itg(id).eq.node) then
+                     nactdog(idir,node)=0
+                  endif
+               endif
+            endif
+         enddo
+      endif
+!
 !     determining the active equations
 !     
 !     element contributions
@@ -506,7 +531,7 @@
      &           nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
      &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
-     &           ttime,time,iaxial)
+     &           ttime,time,iaxial,iplausi)
 !      
             if (.not.identity) then
                nacteq(2,nodem)=1                       ! momentum equation
@@ -532,6 +557,26 @@
             endif
          endif
       enddo
+!
+!     restoring the dependent nodes of the MPC's
+!     only for mass flow and pressure
+!
+      if(networkmpcs.eq.1) then
+         do i=1,nmpc
+            if(labmpc(i)(1:7).ne.'NETWORK') cycle
+            index=ipompc(i)
+            idir=nodempc(2,index)
+            if((idir.eq.1).or.(idir.eq.2)) then
+               node=nodempc(1,index)
+               call nident(itg,node,ntg,id)
+               if(id.gt.0) then
+                  if(itg(id).eq.node) then
+                     nactdog(idir,node)=1
+                  endif
+               endif
+            endif
+         enddo
+      endif
 !
 !     removing the energy equation from those end nodes for which
 !     the temperature constitutes the first term in a network MPC
@@ -574,8 +619,6 @@
       enddo
 !
 !     check for special cases
-!
-c      network=1
 !
       if(massflowbcall.and.((.not.pressurebc).or.(pressurebcall))) then
 !
@@ -631,6 +674,36 @@ c      network=1
                write(*,*)'*ERROR in envtemp: specific gas',
      &              'constant is close to zero'
                call exit(201)
+            endif
+         enddo
+      endif
+!
+!     check whether the temperature at each inlet or outlet node
+!     is given
+!
+      if(network.lt.4) then
+         do i=1,nflow
+            nelem=ieg(i)
+            index=ipkon(nelem)
+            node1=kon(index+1)
+            node2=kon(index+3)
+            if(node1.eq.0) then
+               if(nactdog(0,node2).ne.0) then
+               write(*,*) '*WARNING in envtemp: it is advised to'
+               write(*,*) '         define the temperature at all'
+               write(*,*) '         inlets and outlets by a boundary'
+               write(*,*) '         condition. This is lacking for'
+               write(*,*) '         node ',node2,' of element ',nelem
+               endif
+            endif
+            if(node2.eq.0) then
+               if(nactdog(0,node1).ne.0) then
+               write(*,*) '*WARNING in envtemp: it is advised to'
+               write(*,*) '         define the temperature at all'
+               write(*,*) '         inlets and outlets by a boundary'
+               write(*,*) '         condition. This is lacking for'
+               write(*,*) '         node ',node1,' of element ',nelem
+               endif
             endif
          enddo
       endif

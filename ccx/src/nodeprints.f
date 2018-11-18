@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine nodeprints(inpc,textpart,set,istartset,iendset,ialset,
      &  nset,nset_,nalset,nprint,nprint_,jout,prlab,prset,
      &  nodeprint_flag,ithermal,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,amname,nam,itpamp,idrct,ipoinpc,cfd)
+     &  inp,amname,nam,itpamp,idrct,ipoinpc,cfd,ier)
 !
 !     reading the *NODE PRINT cards in the input deck
 !
@@ -36,13 +36,14 @@
       integer istartset(*),iendset(*),ialset(*),ii,i,nam,itpamp,
      &  jout(2),joutl,ithermal,nset,nset_,nalset,nprint,nprint_,istep,
      &  istat,n,key,ipos,iline,ipol,inl,ipoinp(2,*),inp(3,*),idrct,
-     &  ipoinpc(0:*),cfd
+     &  ipoinpc(0:*),cfd,ier
 !
       if(istep.lt.1) then
          write(*,*) 
      &        '*ERROR reading *NODE PRINT: *NODE PRINT should only be'
          write(*,*) '  used within a *STEP definition'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nodesys='L'
@@ -100,8 +101,11 @@ c      jout=max(jout,1)
           endif
         elseif(textpart(ii)(1:10).eq.'FREQUENCY=') then
            read(textpart(ii)(11:20),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NODE PRINT%")
+           if(istat.gt.0) then
+              call inputerror(inpc,ipoinpc,iline,
+     &             "*NODE PRINT%",ier)
+              return
+           endif
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -115,8 +119,11 @@ c      jout=max(jout,1)
            endif
         elseif(textpart(ii)(1:11).eq.'FREQUENCYF=') then
            read(textpart(ii)(12:21),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NODE PRINT%")
+           if(istat.gt.0) then
+              call inputerror(inpc,ipoinpc,iline,
+     &             "*NODE PRINT%",ier)
+              return
+           endif
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -149,13 +156,15 @@ c      jout=max(jout,1)
               write(*,*) 
      &          '*ERROR reading *NODE PRINT: time points definition '
      &               ,timepointsname(1:ipos-1),' is unknown or empty'
-              call exit(201)
+              ier=1
+              return
            endif
            if(idrct.eq.1) then
               write(*,*) '*ERROR reading *NODE PRINT: the DIRECT option'
               write(*,*) '       collides with a TIME POINTS '
               write(*,*) '       specification'
-              call exit(201)
+              ier=1
+              return
            endif
            jout(1)=1
            jout(2)=1
@@ -235,7 +244,8 @@ c      jout=max(jout,1)
             nprint=nprint+1
             if(nprint.gt.nprint_) then
                write(*,*) '*ERROR reading *NODE PRINT: increase nprint_'
-               call exit(201)
+               ier=1
+               return
             endif
             prset(nprint)=noset
             prlab(nprint)(1:4)=textpart(ii)(1:4)

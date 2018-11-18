@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,9 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine controlss(inpc,textpart,ctrl,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc)
+     &  inl,ipoinp,inp,ipoinpc,ier)
 !
-!     reading the input deck: *STEP
+!     reading the input deck: *CONTROLS
 !
       implicit none
 !
@@ -27,7 +27,7 @@
       character*132 textpart(16)
 !
       integer i,j,k,istep,istat,n,key,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ipoinpc(0:*)
+     &  inp(3,*),ipoinpc(0:*),ier
 !
       real*8 ctrl(*)
 !
@@ -39,18 +39,18 @@
             ctrl(4)=16.5d0
             ctrl(5)=10.5d0
             ctrl(6)=4.5d0
-            ctrl(7)=0.
+            ctrl(7)=0.d0
             ctrl(8)=5.5d0
-            ctrl(9)=0.
-            ctrl(10)=0.
+            ctrl(9)=0.d0
+            ctrl(10)=0.d0
             ctrl(11)=0.25d0
             ctrl(12)=0.5d0
             ctrl(13)=0.75d0
             ctrl(14)=0.85d0
-            ctrl(15)=0.
-            ctrl(16)=0.
+            ctrl(15)=0.d0
+            ctrl(16)=0.d0
             ctrl(17)=1.5d0
-            ctrl(18)=0.
+            ctrl(18)=0.d0
             ctrl(19)=0.005d0
             ctrl(20)=0.01d0
             ctrl(21)=0.d0
@@ -72,6 +72,21 @@
             ctrl(37)=5.d-7
             ctrl(38)=5.d-7
             ctrl(39)=5.d-7
+!
+!           ctrl(40) is used for the parameter CETOL on *visco
+!
+            ctrl(41)=1.d20
+            ctrl(42)=1.d20
+            ctrl(43)=1.d20
+            ctrl(44)=1.d20
+            ctrl(45)=1.d20
+            ctrl(46)=1.d20
+            ctrl(47)=1.d20
+            ctrl(48)=1.5d0
+            ctrl(49)=0.5d0
+            ctrl(50)=20.5d0
+            ctrl(51)=0.5d0
+            ctrl(52)=1.5d0
             write(*,*)
             write(*,*) 
      &         '*INFO: control parameters reset to default'
@@ -82,17 +97,25 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             do j=1,n
+               if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:10),'(i10)',iostat=istat) k
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CONTROLS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONTROLS%",ier)
+                  return
+               endif
                ctrl(j)=dble(k)+0.5d0
             enddo
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             do j=1,n
+               if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+10)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CONTROLS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONTROLS%",ier)
+                  return
+               endif
             enddo
             write(*,*) '*INFO: time control parameters set to:'
             write(*,*) '       i0 = ',int(ctrl(1))
@@ -119,9 +142,13 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             do j=1,n
+               if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+18)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CONTROLS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONTROLS%",ier)
+                  return
+               endif
             enddo
             write(*,*) '*INFO: field control parameters set to:'
             write(*,*) '       ran = ',ctrl(19)
@@ -138,9 +165,13 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             do j=1,n
+               if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+27)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CONTROLS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONTROLS%",ier)
+                  return
+               endif
             enddo
             write(*,*) '*INFO: line search control parameters set to:'
             write(*,*) '       nls = ',ctrl(28)
@@ -154,9 +185,13 @@
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
             do j=1,n
+               if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+32)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CONTROLS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONTROLS%",ier)
+                  return
+               endif
             enddo
             write(*,*) '*INFO: network control parameters set to:'
             write(*,*) '       c1t = ',ctrl(33)
@@ -166,6 +201,40 @@
             write(*,*) '       c2f = ',ctrl(37)
             write(*,*) '       c2p = ',ctrl(38)
             write(*,*) '       c2a = ',ctrl(39)
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+            do j=1,n
+               if(textpart(j)(1:1).eq.' ') cycle
+               read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+40)
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONTROLS%",ier)
+                  return
+               endif
+            enddo
+            write(*,*) '       a1t = ',ctrl(41)
+            write(*,*) '       a1f = ',ctrl(42)
+            write(*,*) '       a1p = ',ctrl(43)
+            write(*,*) '       a2t = ',ctrl(44)
+            write(*,*) '       a2f = ',ctrl(45)
+            write(*,*) '       a2p = ',ctrl(46)
+            exit
+         elseif(textpart(i)(1:14).eq.'PARAMETERS=CFD') then
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+            do j=1,n
+               if(textpart(j)(1:1).eq.' ') cycle
+               read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+49)
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONTROLS%",ier)
+                  return
+               endif
+            enddo
+            write(*,*) '*INFO: CFD control parameters set to:'
+            write(*,*) '       iitt = ',int(ctrl(50))
+            write(*,*) '       iitg = ',int(ctrl(51))
+            write(*,*) '       iitp = ',int(ctrl(52))
             exit
          else
             write(*,*) 

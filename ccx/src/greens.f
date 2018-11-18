@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine greens(inpc,textpart,nmethod,iperturb,
      &  isolver,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  ithermal,ipoinpc)
+     &  ithermal,ipoinpc,ier)
 !
 !     reading the input deck: *GREEN
 !
@@ -32,21 +32,24 @@
       character*132 textpart(16)
 !
       integer nmethod,iperturb(2),isolver,istep,istat,n,key,i,
-     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ipoinpc(0:*)
+     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ipoinpc(0:*),
+     &  ier
 !
 c      if((iperturb.eq.1).and.(istep.ge.1)) then
 c         write(*,*) '*ERROR reading *GREEN:'
 c         write(*,*) '       perturbation analysis is'
 c         write(*,*) '       not provided in a *GREEN'
 c         write(*,*) '       step.'
-c         call exit(201)
+c         ier=1
+c         return
 c      endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *GREEN:'
          write(*,*) '       *GREEN can only be used'
          write(*,*) '       within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     no heat transfer analysis
@@ -93,7 +96,8 @@ c      endif
          write(*,*) '*ERROR reading *GREEN:'
          write(*,*) '       solver:',solver,'is not allowed.'
          write(*,*) '       please specify SPOOLES or PARDISO'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nmethod=11

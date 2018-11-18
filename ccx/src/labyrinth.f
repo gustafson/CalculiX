@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
       subroutine labyrinth(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,physcon,co,dvi,numf,vold,set,
-     &     kon,ipkon,mi,ttime,time,iaxial)
+     &     kon,ipkon,mi,ttime,time,iaxial,iplausi)
 !     
 !     labyrinth element
 !
@@ -32,7 +32,8 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,mi(*),
-     &     inv,kgas,n,iaxial,nodea,nodeb,ipkon(*),kon(*),i,itype
+     &     inv,kgas,n,iaxial,nodea,nodeb,ipkon(*),kon(*),i,
+     &     itype,iplausi
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,a,d,
      &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(*),p2p1,km1,dvi,
@@ -42,7 +43,14 @@
      &     cd_radius,cst,dh,cd_honeycomb,cd_lab,bdh,
      &     pt0zps1,cd_1spike,cdbragg,rzdh,
      &     cd_correction,p1p2,xflow_oil,T2,vold(0:mi(2),*)
-!     
+!    
+      intent(in) node1,node2,nodem,nelem,lakon,
+     &     nactdog,ielprop,prop,iflag,v,
+     &     cp,R,physcon,co,dvi,vold,set,
+     &     kon,ipkon,mi,ttime,time,iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi
+!
       itype=1
       pi=4.d0*datan(1.d0)
       e=2.718281828459045d0
@@ -263,13 +271,13 @@ c            iaxial=nint(prop(index+3))
          if((n.ge.2).and.(hst.eq.0.d0)) then
             cst=n/(n-1.d0)
             szt=s/t
-            carry_over=cst/dsqrt(cst-szt/(szt+0.02))
+            carry_over=cst/dsqrt(cst-szt/(szt+0.02d0))
             Aeff=Aeff*carry_over
          endif
 !     
 !     calculation of the dynamic viscosity 
 !     
-         if(dabs(dvi).lt.1E-30) then
+         if(dabs(dvi).lt.1d-30) then
             write(*,*) '*ERROR in labyrinth: '
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
@@ -491,13 +499,13 @@ c            iaxial=nint(prop(index+3))
          if((n.gt.1).and.(hst.eq.0.d0)) then
             cst=n/(n-1.d0)
             szt=s/t
-            carry_over=cst/dsqrt(cst-szt/(szt+0.02))
+            carry_over=cst/dsqrt(cst-szt/(szt+0.02d0))
             Aeff=Aeff*carry_over
          endif
 !     
 !     calculation of the dynamic viscosity 
 !     
-         if(dabs(dvi).lt.1E-30) then
+         if(dabs(dvi).lt.1d-30) then
             write(*,*) '*ERROR in labyrinth: '
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
@@ -590,7 +598,7 @@ c            iaxial=nint(prop(index+3))
          
          if(inv.eq.1) then
           write(1,56)'       Inlet node ',node1,':   Tt1=',T1,
-     &           ', Ts1=',T1,', Pt1=',P1
+     &           ', Ts1=',T1,', Pt1=',p1
 
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'             dyn.visc.= ',dvi,', Re= ' ,
@@ -615,12 +623,12 @@ c            iaxial=nint(prop(index+3))
            endif
                  
             write(1,56)'      Outlet node ',node2,':   Tt2= ',T2,
-     &           ', Ts2= ',T2,', Pt2= ',P2
+     &           ', Ts2= ',T2,', Pt2= ',p2
 
 !     
          else if(inv.eq.-1) then
             write(1,56)'       Inlet node ',node2,':    Tt1= ',T1,
-     &           ', Ts1= ',T1,', Pt1= ',P1 
+     &           ', Ts1= ',T1,', Pt1= ',p1 
          
             write(1,*)'             element ',nelem,lakon(nelem)
             write(1,57)'             dyn.visc.=',dvi,', Re= '
@@ -644,7 +652,7 @@ c            iaxial=nint(prop(index+3))
      & cdu,' Cd= ',cdbragg
            endif
            write(1,56)'      Outlet node ',node1,':    Tt2= ',T2,
-     &          ', Ts2= ',T2,', Pt2= ',P2
+     &          ', Ts2= ',T2,', Pt2= ',p2
 
         endif
 !         

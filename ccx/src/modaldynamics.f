@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine modaldynamics(inpc,textpart,nmethod,tinc,tper,iexpl,
      &  istep,istat,n,iline,ipol,inl,ipoinp,inp,iperturb,isolver,
      &  cs,mcs,ipoinpc,idrct,ctrl,tmin,tmax,nforc,nload,nbody,iprestr,
-     &  t0,t1,ithermal,nk,vold,veold,xmodal,set,nset,mi,cyclicsymmetry)
+     &  t0,t1,ithermal,nk,vold,veold,xmodal,set,nset,mi,cyclicsymmetry,
+     &  ier)
 !
 !     reading the input deck: *MODAL DYNAMIC
 !
@@ -35,7 +36,7 @@
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,mcs,ipoinpc(0:*),
      &  idrct,nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,nset,mi(*),
-     &  cyclicsymmetry
+     &  cyclicsymmetry,ier
 !
       real*8 tinc,tper,cs(17,*),ctrl(*),tmin,tmax,t0(*),t1(*),
      &  vold(0:mi(2),*),veold(0:mi(2),*),xmodal(*)
@@ -49,15 +50,15 @@
       steadystate=.false.
       if((mcs.ne.0).and.(cs(2,1).ge.0.d0)) then
          cyclicsymmetry=1
-c      else
-c         cyclicsymmetry=0
       endif
       nodalset=.false.
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in modaldynamics: *MODAL DYNAMIC can only'
+         write(*,*) 
+     &      '*ERROR reading *MODAL DYNAMIC: *MODAL DYNAMIC can only'
          write(*,*) '  be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     default solver
@@ -86,17 +87,9 @@ c         cyclicsymmetry=0
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) ctrl(27)
          elseif(textpart(i)(1:11).eq.'STEADYSTATE') then
             steadystate=.true.
-c         elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
-c            cyclicsymmetry=.true.
-c         elseif(textpart(i)(1:5).eq.'NSET=') then
-c            nodalset=.true.
-c            noset=textpart(i)(6:85)
-c            noset(81:81)=' '
-c            ipos=index(noset,' ')
-c            noset(ipos:ipos)='N'
          else
             write(*,*) 
-     &        '*WARNING in modaldynamics: parameter not recognized:'
+     &      '*WARNING reading *MODAL DYNAMIC: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -107,12 +100,14 @@ c            noset(ipos:ipos)='N'
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
-         write(*,*) '*WARNING in modaldynamics: the iterative scaling'
+         write(*,*) 
+     &      '*WARNING reading *MODAL DYNAMIC: the iterative scaling'
          write(*,*) '         procedure is not available for modal'
          write(*,*) '         dynamic calculations; the default solver'
          write(*,*) '         is used'
       elseif(solver(1:17).eq.'ITERATIVECHOLESKY') then
-         write(*,*) '*WARNING in modaldynamics: the iterative scaling'
+         write(*,*) 
+     &       '*WARNING reading *MODAL DYNAMIC: the iterative scaling'
          write(*,*) '         procedure is not available for modal'
          write(*,*) '         dynamic calculations; the default solver'
          write(*,*) '         is used'
@@ -120,78 +115,74 @@ c            noset(ipos:ipos)='N'
          isolver=4
       elseif(solver(1:5).eq.'TAUCS') then
          isolver=5
-c      elseif(solver(1:13).eq.'MATRIXSTORAGE') then
-c         isolver=6
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else
-         write(*,*) '*WARNING in modaldynamics: unknown solver;'
+         write(*,*) '*WARNING reading *MODAL DYNAMIC: unknown solver;'
          write(*,*) '         the default solver is used'
       endif
 !
       if((isolver.eq.2).or.(isolver.eq.3)) then
-         write(*,*) '*ERROR in modaldynamics: the default solver ',
+        write(*,*) '*ERROR reading *MODAL DYNAMIC: the default solver ',
      & solver
          write(*,*) '       cannot be used for modal dynamic'
          write(*,*) '       calculations '
-         call exit(201)
+         ier=1
+         return
       endif
-!
-c      if(nodalset) then
-c         do i=1,nset
-c            if(set(i).eq.noset) exit
-c         enddo
-c         if(i.gt.nset) then
-c            noset(ipos:ipos)=' '
-c            write(*,*) '*ERROR in modaldynamics: node set ',noset
-c            write(*,*) '  has not yet been defined.'
-c            call exit(201)
-c         endif
-c         xmodal(10)=i+0.5d0
-c      else
-c         if(cyclicsymmetry) then
-c            write(*,*) '*ERROR in modaldynamics: cyclic symmetric'
-c            write(*,*) '       structure, yet no node set defined'
-c            call exit(201)
-c         endif
-c      endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*) '*ERROR in modaldynamics: definition not complete'
+         write(*,*) 
+     &       '*ERROR reading *MODAL DYNAMIC: definition not complete'
          write(*,*) '       '
          call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DYNAMIC%")
-         call exit(201)
+     &        "*MODAL DYNAMIC%",ier)
+         return
       endif
       read(textpart(1)(1:20),'(f20.0)',iostat=istat)tinc
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DYNAMIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*MODAL DYNAMIC%",ier)
+         return
+      endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat)tper
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DYNAMIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*MODAL DYNAMIC%",ier)
+         return
+      endif
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DYNAMIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*MODAL DYNAMIC%",ier)
+         return
+      endif
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MODAL DYNAMIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*MODAL DYNAMIC%",ier)
+         return
+      endif
 !
       if(steadystate) then
 !
 !        modal dynamics calculation till steady state
 !
          if(tper.le.0.d0) then
-            write(*,*) '*ERROR in modaldynamics: relative error'
+            write(*,*) '*ERROR reading *MODAL DYNAMIC: relative error'
             write(*,*) '       is nonpositive'
-            call exit(201)
+            ier=1
+            return
          endif
          tper=-tper
          if(tinc.le.0.d0) then
-            write(*,*) '*ERROR in modaldynamics: initial increment'
+            write(*,*) 
+     &         '*ERROR reading *MODAL DYNAMIC: initial increment'
             write(*,*) '       size is nonpositive'
-            call exit(201)
+            ier=1
+            return
          endif
          if(tmin.lt.0.d0) then
             tmin=1.d-10
@@ -204,22 +195,28 @@ c      endif
 !        transient modal dynamics calculation
 !
          if(tper.lt.0.d0) then
-            write(*,*) '*ERROR in modaldynamics: step size is negative'
-            call exit(201)
+            write(*,*) 
+     &        '*ERROR reading *MODAL DYNAMIC: step size is negative'
+            ier=1
+            return
          elseif(tper.le.0.d0) then
             tper=1.d0
          endif
          if(tinc.lt.0.d0) then
-            write(*,*) '*ERROR in modaldynamics: initial increment size 
+            write(*,*) 
+     &            '*ERROR reading *MODAL DYNAMIC: initial increment size 
      &is negative'
-            call exit(201)
+            ier=1
+            return
          elseif(tinc.le.0.d0) then
             tinc=tper
          endif
          if(tinc.gt.tper) then
-            write(*,*) '*ERROR in modaldynamics: initial increment size 
+            write(*,*) 
+     &            '*ERROR reading *MODAL DYNAMIC: initial increment size 
      &exceeds step size'
-            call exit(201)
+            ier=1
+            return
          endif
 !      
          if(idrct.ne.1) then
@@ -234,15 +231,15 @@ c      endif
 !
 !     removing the present loading
 !
-      nforc=0
-      nload=0
-      nbody=0
-      iprestr=0
-      if((ithermal.eq.1).or.(ithermal.eq.3)) then
-         do j=1,nk
-            t1(j)=t0(j)
-         enddo
-      endif
+c      nforc=0
+c      nload=0
+c      nbody=0
+c      iprestr=0
+c      if((ithermal.eq.1).or.(ithermal.eq.3)) then
+c         do j=1,nk
+c            t1(j)=t0(j)
+c         enddo
+c      endif
 !
 !     resetting fields vold and veold after a frequency or
 !     buckling step

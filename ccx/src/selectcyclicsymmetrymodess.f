@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  tieset,istartset,
      &  iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,ilmpc,
      &  mpcfree,mcs,set,nset,labmpc,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,nmethod,key,ipoinpc)
+     &  ipoinp,inp,nmethod,key,ipoinpc,ier)
 !
 !     reading the input deck: *SELECT CYCLIC SYMMETRY MODES
 !
@@ -31,7 +31,7 @@
       character*81 set(*),leftset,tieset(3,*)
       character*132 textpart(16)
 !
-      integer istep,istat,n,key,i,ns(5),ics(*),istartset(*),
+      integer istep,istat,n,key,i,ns(5),ics(*),istartset(*),ier,
      &  iendset(*),ialset(*),id,ipompc(*),nodempc(3,*),nmpc,nmpc_,
      &  ikmpc(*),ilmpc(*),mpcfree,i1(2),i2(2),i3,i4,i5,j,k,
      &  mpcfreeold,idof,node,ileft,nset,irepeat,ipoinpc(0:*),
@@ -47,20 +47,23 @@
       save irepeat
 !
       if(istep.eq.0) then
-         write(*,*)'*ERROR in selcycsymmods:'
+         write(*,*)'*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
          write(*,*)'       *SELECT CYCLIC SYMMETRY MODES'
          write(*,*)'       should be placed within a step definition'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     check whether in case of cyclic symmetry the frequency procedure
 !     is chosen
 !
       if(nmethod.ne.2) then
-         write(*,*) '*ERROR in selcycsymmods: the only valid procedure'
+         write(*,*) '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
+         write(*,*) '       the only valid procedure'
          write(*,*) '       for cyclic symmetry calculations'
          write(*,*) '       with nodal diameters is *FREQUENCY'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ns(2)=0
@@ -69,15 +72,21 @@
       do i=2,n
          if(textpart(i)(1:5).eq.'NMIN=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) ns(2)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SELECT CYCLIC SYMMETRY MODES%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*SELECT CYCLIC SYMMETRY MODES%",ier)
+               return
+            endif
          elseif(textpart(i)(1:5).eq.'NMAX=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) ns(3)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SELECT CYCLIC SYMMETRY MODES%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*SELECT CYCLIC SYMMETRY MODES%",ier)
+               return
+            endif
          else
-            write(*,*) 
-     &        '*WARNING in selcycsymmods: parameter not recognized:'
+            write(*,*) '*WARNING reading *SELECT CYCLIC SYMMETRY MODES:'
+            write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -89,13 +98,16 @@
 !
       if(ns(2).lt.0) then
          ns(2)=0
-         write(*,*) '*WARNING in selcycsymmods: minimum nodal'
+         write(*,*) '*WARNING reading *SELECT CYCLIC SYMMETRY MODES:'
+         write(*,*) '         minimum nodal'
          write(*,*) '         diameter must be nonnegative'
       endif
       if(ns(3).lt.ns(2)) then
-         write(*,*) '*ERROR in selcycsymmods: maximum nodal'
+         write(*,*) '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
+         write(*,*) '       maximum nodal'
          write(*,*) '       diameter should not exceed minimal one'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     loop over all cyclic symmetry parts
@@ -152,7 +164,8 @@ c                           write(*,*) 'removing MPC',node,k
                      write(*,*) '        nodal diameters 0, 1, and'
                      write(*,*) '        those above must be each in'
                      write(*,*) '        separate steps.'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                endif
 !     
@@ -209,11 +222,13 @@ c                           write(*,*) 'removing MPC',node,k
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.gt.0) then
                         if(ikmpc(id).eq.idof) then
-                           write(*,*) '*ERROR in selcycsymmods:'
+                           write(*,*) 
+     &                 '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
                            write(*,*) '       node',node,
      &                          ' on cyclic symmetry'
                            write(*,*) '       axis is used in other MPC'
-                           call exit(201)
+                           ier=1
+                           return
                         endif
                      endif
                      nmpc=nmpc+1
@@ -234,9 +249,11 @@ c                           write(*,*) 'removing MPC',node,k
                      coefmpc(mpcfree)=x1(k)
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
-                        write(*,*) '*ERROR in selcycsymmods:'
+                        write(*,*) 
+     &                  '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
                         write(*,*) '       increase memmpc_'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      nodempc(1,mpcfree)=node
                      nodempc(2,mpcfree)=i2(k)
@@ -244,9 +261,11 @@ c                           write(*,*) 'removing MPC',node,k
                      mpcfreeold=mpcfree
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
-                        write(*,*) '*ERROR in selcycsymmods:'
+                        write(*,*) 
+     &                  '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
                         write(*,*) '       increase memmpc_'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      nodempc(3,mpcfreeold)=0
                   enddo
@@ -284,11 +303,13 @@ c                           write(*,*) 'removing MPC',node,k
                   call nident(ikmpc,idof,nmpc,id)
                   if(id.gt.0) then
                      if(ikmpc(id).eq.idof) then
-                        write(*,*) '*ERROR in selcycsymmods:'
+                        write(*,*) 
+     &                  '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
                         write(*,*) '       node',node,
      &                       ' on cyclic symmetry'
                         write(*,*) '       axis is used in other MPC'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                   endif
                   nmpc=nmpc+1
@@ -309,18 +330,22 @@ c                           write(*,*) 'removing MPC',node,k
                   coefmpc(mpcfree)=x3
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
-                     write(*,*) '*ERROR in selcycsymmods:'
+                     write(*,*) 
+     &               '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
                      write(*,*) '       increase memmpc_'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=i4
                   coefmpc(mpcfree)=x4
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
-                     write(*,*) '*ERROR in selcycsymmods:'
+                     write(*,*) 
+     &               '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
                      write(*,*) '       increase memmpc_'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   nodempc(1,mpcfree)=node
                   nodempc(2,mpcfree)=i5
@@ -328,9 +353,11 @@ c                           write(*,*) 'removing MPC',node,k
                   mpcfreeold=mpcfree
                   mpcfree=nodempc(3,mpcfree)
                   if(mpcfree.eq.0) then
-                     write(*,*) '*ERROR in selcycsymmods:'
+                     write(*,*) 
+     &               '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
                      write(*,*) '       increase memmpc_'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   nodempc(3,mpcfreeold)=0
                else
@@ -339,11 +366,13 @@ c                           write(*,*) 'removing MPC',node,k
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.gt.0) then
                         if(ikmpc(id).eq.idof) then
-                           write(*,*) '*ERROR in selcycsymmods:'
+                           write(*,*) 
+     &                   '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
                            write(*,*) '       node',node,
      &                          ' on cyclic symmetry'
                            write(*,*) '       axis is used in other MPC'
-                           call exit(201)
+                           ier=1
+                           return
                         endif
                      endif
                      nmpc=nmpc+1
@@ -365,9 +394,11 @@ c                           write(*,*) 'removing MPC',node,k
                      mpcfreeold=mpcfree
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
-                        write(*,*) '*ERROR in selcycsymmods:'
+                        write(*,*) 
+     &                  '*ERROR reading *SELECT CYCLIC SYMMETRY MODES:'
                         write(*,*) '       increase memmpc_'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      nodempc(3,mpcfreeold)=0
                   enddo
@@ -375,8 +406,8 @@ c                           write(*,*) 'removing MPC',node,k
             endif
          enddo
 !     
-         cs(2,ij)=ns(2)+0.5
-         cs(3,ij)=ns(3)+0.5
+         cs(2,ij)=ns(2)+0.5d0
+         cs(3,ij)=ns(3)+0.5d0
       enddo
 !     
       if(irepeat.eq.0) irepeat=1

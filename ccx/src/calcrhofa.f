@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,18 +27,23 @@
       integer nface,i,nrhcon(*),imat,ithermal,ntmat_,mi(*),
      &  ielmat(mi(3),*),ielfa(4,*)
 !
-      real*8 t1l,vfa(0:7,*),rho,rhcon(0:1,ntmat_,*) 
+      real*8 t1l,vfa(0:7,*),rhcon(0:1,ntmat_,*) 
 !     
+c$omp parallel default(none)
+c$omp& shared(nface,vfa,ielmat,ielfa,rhcon,nrhcon,ntmat_,ithermal)
+c$omp& private(i,t1l,imat)
+c$omp do
       do i=1,nface
          t1l=vfa(0,i)
 !
 !        take the material of the first adjacent element
 !
          imat=ielmat(1,ielfa(1,i))
-         call materialdata_rho(rhcon,nrhcon,imat,rho,t1l,ntmat_,
+         call materialdata_rho(rhcon,nrhcon,imat,vfa(5,i),t1l,ntmat_,
      &            ithermal)
-         vfa(5,i)=rho
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

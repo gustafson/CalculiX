@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,22 +18,34 @@
 !
       subroutine gen3dconnect(kon,ipkon,lakon,ne,iponoel,inoel,
      &  iponoelmax,rig,iponor,xnor,knor,ipompc,nodempc,coefmpc,nmpc,
-     &  nmpc_,mpcfree,ikmpc,ilmpc,labmpc)
+     &  nmpc_,mpcfree,ikmpc,ilmpc,labmpc,vold,ikboun,ilboun,nboun,
+     &  nboun_,nodeboun,ndirboun,xboun,iamboun,typeboun,ithermal,
+     &  mi,trab,ntrans,nmethod,nk,nk_,nam,inotr,iperturb,co)
 !
 !     connects expanded 1-D and 2-D elements with genuine 3D elements
 !     or spring elements or mass elements
 !
       implicit none
 !
+      logical fixed
+!
+      character*1 type,typeboun(*)
       character*8 lakon(*)
-      character*20 labmpc(*)
+      character*20 labmpc(*),label
 !
       integer kon(*),ipkon(*),ne,iponoel(*),inoel(3,*),iponoelmax,
      &  rig(*),iponor(2,*),knor(*),ipompc(*),nodempc(3,*),nmpc,nmpc_,
      &  mpcfree,ikmpc(*),ilmpc(*),i,indexes,nope,l,node,index2,ielem,
-     &  indexe,j,indexk,newnode,idir,idof,id,mpcfreenew,k
+     &  indexe,j,indexk,newnode,idir,idof,id,mpcfreenew,k,inotr(2,*),
+     &  ikboun(*),ilboun(*),nboun,nboun_,nodeboun(*),ndirboun(*),
+     &  iamboun(*),ithermal(2),mi(*),ntrans,nmethod,nk,nk_,nam,
+     &  iperturb,idummy,iamplitude
 !
-      real*8 xnor(*),coefmpc(*)
+      real*8 xnor(*),coefmpc(*),vold(0:mi(2),*),val,xboun(*),
+     &  trab(7,*),co(3,*)
+!
+      label='                    '
+      fixed=.false.
 !
 !     generating MPC's to connect shells and beams with solid
 !     elements or spring elements or mass elements
@@ -240,6 +252,30 @@
                            mpcfree=mpcfreenew
                         endif
                      enddo
+!
+!                    fixing the original node in z-direction
+!
+!                    since the original node belongs to a 3-D element
+!                    (or a spring...) all dofs in this node are
+!                    active and the dof in the z-direction has to be
+!                    fixed (can lead to a singular matrix, e.g. is all
+!                    elements are plane strain and there is one spring1
+!                    element).
+!
+                     if(ithermal(2).ne.2) then
+                        val=0.d0
+                        k=3
+                        if(nam.gt.0) iamplitude=0
+                        type='M'
+                        call bounadd(node,k,k,val,nodeboun,
+     &                       ndirboun,xboun,nboun,nboun_,iamboun,
+     &                       iamplitude,nam,ipompc,nodempc,coefmpc,
+     &                       nmpc,nmpc_,mpcfree,inotr,trab,ntrans,
+     &                       ikboun,ilboun,ikmpc,ilmpc,co,nk,nk_,
+     &                       labmpc,type,typeboun,nmethod,iperturb,
+     &                       fixed,vold,idummy,mi,label)
+                     endif
+!     
                   endif
                endif
             endif

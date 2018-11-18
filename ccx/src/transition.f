@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,6 +69,8 @@
 !        scale=1/(1+dexp(-actdist/trans*10+5))
          do m=1,nobject
             if(objectset(1,m)(1:9).eq.'THICKNESS') cycle
+            if(objectset(1,m)(1:9).eq.'FIXGROWTH') cycle
+            if(objectset(1,m)(1:12).eq.'FIXSHRINKAGE') cycle
             dgdxglob(2,iactnode,m)=dgdxglob(2,iactnode,m)*scale
          enddo
       enddo

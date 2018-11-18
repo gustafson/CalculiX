@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine normals(inpc,textpart,iponor,xnor,ixfree,
      &  ipkon,kon,nk,nk_,ne,lakon,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,ipoinpc)
+     &  ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *NORMAL
 !
@@ -29,20 +29,21 @@
       character*132 textpart(16)
 !
       integer iponor(2,*),ixfree,ipkon(*),kon(*),nk,ipoinpc(0:*),
-     &  nk_,ne,istep,istat,n,ielement,node,j,indexe,i,
+     &  nk_,ne,istep,istat,n,ielement,node,j,indexe,i,ier,
      &  key,iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
       real*8 xnor(*),x,y,z,dd
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in normals: *NORMAL should be placed'
+         write(*,*) '*ERROR reading *NORMAL: *NORMAL should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
          write(*,*) 
-     &        '*WARNING in normals: parameter not recognized:'
+     &        '*WARNING reading *NORMAL: parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
          call inputwarning(inpc,ipoinpc,iline,
@@ -55,27 +56,42 @@
          if((istat.lt.0).or.(key.eq.1)) exit
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) ielement
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NORMAL%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*NORMAL%",ier)
+            return
+         endif
          read(textpart(2)(1:10),'(i10)',iostat=istat) node
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NORMAL%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*NORMAL%",ier)
+            return
+         endif
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) x
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NORMAL%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*NORMAL%",ier)
+            return
+         endif
          if(n.le.3) then
             y=0.d0
          else
             read(textpart(4)(1:20),'(f20.0)',iostat=istat) y
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NORMAL%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*NORMAL%",ier)
+               return
+            endif
          endif
          if(n.le.4) then
             z=0.d0
          else
             read(textpart(5)(1:20),'(f20.0)',iostat=istat) z
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*NORMAL%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*NORMAL%",ier)
+               return
+            endif
          endif
 !
 !        normalizing the normal
@@ -86,9 +102,10 @@
          z=z/dd
 !
          if(ielement.gt.ne) then
-            write(*,*) '*ERROR in normals: element number',ielement
+            write(*,*) '*ERROR reading *NORMAL: element number',ielement
             write(*,*) '       exceeds ne'
-            call exit(201)
+            ier=1
+            return
          endif
 !
          indexe=ipkon(ielement)
@@ -106,7 +123,8 @@
                   xnor(ixfree+3)=z
                   ixfree=ixfree+3
                else
-                  write(*,*) '*WARNING in normals: specifying a normal'
+                  write(*,*) 
+     &               '*WARNING reading *NORMAL: specifying a normal'
                   write(*,*) '         3-D element does not make sense'
                endif
                cycle loop

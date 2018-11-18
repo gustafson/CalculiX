@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,8 @@
      &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
      &  xforcdiff,xloaddiff,xbodydiff,t1diff,xboundiff,iabsload,
      &  iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,fn,
-     &  ipobody,iponoel,inoel)
+     &  ipobody,iponoel,inoel,ipkon,kon,lakon,ielprop,prop,ielmat,
+     &  shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
 !
 !     calculates the loading at a given time and the difference with
 !     the last call of temploaddiff: is needed in the modal dynamic
@@ -35,6 +36,7 @@
 !
       logical gasnode
 !
+      character*8 lakon(*)
       character*20 sideload(*)
       character*80 amname(*)
 !
@@ -45,7 +47,9 @@
      &  nbody,iambodyi,nodeboun(*),ndirboun(*),nodeforc(2,*),
      &  ndirforc(*),istep,iinc,msecpt,node,j,ikboun(*),ilboun(*),
      &  ipresboun,mi(*),iabsload,iprescribedboundary,ntrans,inotr(2,*),
-     &  nactdof(0:mi(2),*),ipobody(2,*),iponoel(*),inoel(2,*)
+     &  nactdof(0:mi(2),*),ipobody(2,*),iponoel(*),inoel(2,*),
+     &  ipkon(*),kon(*),ielprop(*),ielmat(mi(3),*),nshcon(*),
+     &  nrhcon(*),ncocon(2,*),ntmat_
 !
       real*8 xforc(*),xforcact(*),xload(2,*),xloadact(2,*),
      &  t1(*),t1act(*),amta(2,*),ampli(*),time,xforcdiff(*),
@@ -53,7 +57,24 @@
      &  xbounold(*),xboun(*),xbounact(*),ttime,dtime,reftime,
      &  xbody(7,*),xbodyold(7,*),xbodydiff(7,*),t1diff(*),
      &  xbodyact(7,*),co(3,*),vold(0:mi(2),*),abqtime(2),coords(3),
-     &  xboundiff(*),trab(7,*), veold(0:mi(2),*),bcont(*),fn(0:mi(2),*)
+     &  xboundiff(*),trab(7,*), veold(0:mi(2),*),bcont(*),fn(0:mi(2),*),
+     &  prop(*),shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),
+     &  cocon(0:6,ntmat_,*)
+!
+      intent(in) xforcold,xforc,iamforc,nforc,
+     &  xloadold,xload,iamload,nload,ibody,xbody,nbody,
+     &  xbodyold,t1old,t1,t1act,iamt1,nk,
+     &  amta,namta,nam,time,reltime,ttime,dtime,ithermal,nmethod,
+     &  xbounold,xboun,iamboun,nboun,
+     &  nodeboun,ndirboun,nodeforc,ndirforc,istep,iinc,
+     &  co,vold,itg,ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
+     &  t1diff,
+     &  iprescribedboundary,ntrans,trab,inotr,veold,nactdof,bcont,fn,
+     &  ipobody,iponoel,inoel,ipkon,kon,lakon,ielprop,prop,ielmat,
+     &  shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon
+!
+      intent(inout) xforcact,xforcdiff,iabsload,xbounact,xboundiff,
+     &  ampli,xbodyact,xbodydiff,xloadact,xloaddiff
 !
       data msecpt /1/
 !
@@ -142,11 +163,15 @@
                if(ndirboun(i).eq.0) then
                   call utemp(xbounact(i),msecpt,istep,iinc,abqtime,node,
      &                 coords,vold,mi,iponoel,inoel,
-     &                 ipobody,xbodyact,ibody)
+     &                 ipobody,xbodyact,ibody,ipkon,kon,
+     &                 lakon,ielprop,prop,ielmat,
+     &                 shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
                else
                   call uboun(xbounact(i),istep,iinc,abqtime,node,
      &                 ndirboun(i),coords,vold,mi,iponoel,inoel,
-     &                 ipobody,xbodyact,ibody)
+     &                 ipobody,xbodyact,ibody,ipkon,kon,
+     &                 lakon,ielprop,prop,ielmat,
+     &                 shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon)
                endif
                xboundiff(i)=xbounact(i)-xboundiff(i)
                cycle
@@ -164,7 +189,12 @@
                xboundiff(i)=xbounact(i)-xboundiff(i)
             endif
             if(iambouni.gt.0) then
-               xbounact(i)=xboun(i)*ampli(iambouni)
+               if(amname(iambouni).eq.'RAMP12357111317') then
+                  xbounact(i)=xbounold(i)+
+     &                 (xboun(i)-xbounold(i))*reltime
+               else
+                  xbounact(i)=xboun(i)*ampli(iambouni)
+               endif
             elseif(nmethod.eq.1) then
                xbounact(i)=xbounold(i)+
      &              (xboun(i)-xbounold(i))*reltime
@@ -219,7 +249,9 @@
                   xforcdiff(i)=xforcact(i)-xforcdiff(i)
                endif
                call cflux(xforcact(i),msecpt,istep,iinc,abqtime,node,
-     &              coords,vold,mi)
+     &              coords,vold,mi,ipkon,kon,lakon,iponoel,inoel,
+     &              ielprop,prop,ielmat,shcon,nshcon,rhcon,nrhcon,
+     &              ntmat_,cocon,ncocon)
                xforcdiff(i)=xforcact(i)-xforcdiff(i)
                cycle
             endif
@@ -262,7 +294,12 @@
             xforcdiff(i)=xforcact(i)-xforcdiff(i)
          endif
          if(iamforci.gt.0) then
-            xforcact(i)=xforc(i)*ampli(iamforci)
+            if(amname(iamforci).eq.'RAMP12357111317') then
+               xforcact(i)=xforcold(i)+
+     &              (xforc(i)-xforcold(i))*reltime
+            else
+               xforcact(i)=xforc(i)*ampli(iamforci)
+            endif
          elseif(nmethod.eq.1) then
             xforcact(i)=xforcold(i)+
      &           (xforc(i)-xforcold(i))*reltime
@@ -318,7 +355,12 @@
                xloaddiff(1,i)=xloadact(1,i)-xloaddiff(1,i)
             endif
             if(iamloadi1.gt.0) then
-               xloadact(1,i)=xload(1,i)*ampli(iamloadi1)
+               if(amname(iamloadi1).eq.'RAMP12357111317') then
+                  xloadact(1,i)=xloadold(1,i)+
+     &                 (xload(1,i)-xloadold(1,i))*reltime
+               else
+                  xloadact(1,i)=xload(1,i)*ampli(iamloadi1)
+               endif
             elseif(nmethod.eq.1) then
                xloadact(1,i)=xloadold(1,i)+
      &              (xload(1,i)-xloadold(1,i))*reltime
@@ -356,7 +398,12 @@
             xbodydiff(1,i)=xbodyact(1,i)-xbodydiff(1,i)
          endif
          if(iambodyi.gt.0) then
-            xbodyact(1,i)=xbody(1,i)*ampli(iambodyi)
+            if(amname(iambodyi).eq.'RAMP12357111317') then
+               xbodyact(1,i)=xbodyold(1,i)+
+     &              (xbody(1,i)-xbodyold(1,i))*reltime
+            else
+               xbodyact(1,i)=xbody(1,i)*ampli(iambodyi)
+            endif
          elseif(nmethod.eq.1) then
             xbodyact(1,i)=xbodyold(1,i)+
      &           (xbody(1,i)-xbodyold(1,i))*reltime

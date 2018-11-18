@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -279,13 +279,13 @@
          elseif(lakon(nelem)(4:7).eq.'20RB') then
             if((lakon(nelem)(8:8).eq.'R').or.
      &         (lakon(nelem)(8:8).eq.'C')) then
-               xi=gauss3d13(1,kk)
-               et=gauss3d13(2,kk)
-               ze=gauss3d13(3,kk)
-               weight=weight3d13(kk)
+               xi=gauss3d13(1,jj)
+               et=gauss3d13(2,jj)
+               ze=gauss3d13(3,jj)
+               weight=weight3d13(jj)
             else
                call beamintscheme(lakon(nelem),mint3d,ielprop(nelem),
-     &              prop,kk,xi,et,ze,weight)
+     &              prop,jj,xi,et,ze,weight)
             endif
          elseif((lakon(nelem)(4:4).eq.'8').or.
      &           (lakon(nelem)(4:6).eq.'20R'))

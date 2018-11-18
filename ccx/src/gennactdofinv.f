@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,6 +32,10 @@
       integer mi(*),nactdof(0:mi(2),*),nactdofinv(*),nk,nodorig(*),
      &  ipkon(*),i,j,l,ne,indexe,node2d,node3d,indexe2d,node2(4,2),
      &  node3(8,3),node6(3,6),node8(3,8),kon(*),mt,jmax
+!
+      intent(in) nactdof,nk,mi,ipkon,lakon,kon,ne
+!
+      intent(inout) nactdofinv,nodorig
 !
       data node3 /1,4,8,5,12,20,16,17,9,11,15,13,
      &            0,0,0,0,2,3,7,6,10,19,14,18/

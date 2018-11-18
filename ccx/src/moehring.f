@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,8 @@
 !     
       subroutine moehring (node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,ttime,time,iaxial)
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,ttime,time,
+     &     iaxial,iplausi)
 !     
 !     moehring element
 !     This subroutines computes the evolution of the core swirl ratio 
@@ -42,7 +43,7 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,iaxial,
      &     ipkon(*),kon(*),kgas,key,neval,ier,limit,lenw,last,
-     &     iwork2(400),node_up,node_down,mi(*)
+     &     iwork2(400),node_up,node_down,mi(*),iplausi
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),r,dvi,pi,
      &     R_min, R_max,cr, R_shroud,rsrmax,gap,swirl_up,
@@ -54,6 +55,13 @@
      &     pdiff,pdiff_min,xflow_0,Cq_0,phi_0
 !     
       external dKdX,dKdP,dkdT,dKdm,f_k,f_t,f_p,f_m,f_cm
+!
+      intent(in) nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,ielprop,prop,iflag,v,cp,R,dvi,set,mi,ttime,time,
+     &     iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi,
+     &  node1,node2
 !     
 !      numf=4
 !     
@@ -74,7 +82,7 @@
          kappa=(cp/(cp-R))
          index=ielprop(nelem)
          qred_crit=dsqrt(kappa/R)*
-     &        (1+0.5d0*(kappa-1))**(-0.5*(kappa+1)/(kappa-1))
+     &     (1.d0+0.5d0*(kappa-1.d0))**(-0.5d0*(kappa+1.d0)/(kappa-1.d0))
 !     
 !     Because there is no explicit expression relating massflow
 !     to pressure loss for möhrings
@@ -89,7 +97,7 @@
          T2=v(0,node2)
 !     
 !     fictious cross section
-!         A=1E-5
+!         A=1d-5
          if(p1.gt.p2) then
             xflow=1/dsqrt(T1)*P1*qred_crit*0.5d0
          else
@@ -103,7 +111,7 @@
          pi=4.d0*datan(1.d0)
 !     
 !     Cr
-         Cr=0.315
+         Cr=0.315d0
 !     
 !     minimal disc radius
          R_min=prop(index+1)
@@ -191,22 +199,18 @@
          swirl_up=prop(index+8)
 !     
 !     core swirl ratio when xflow=0
-         K0=1/(1+(rsrmax**3.6*
-     &        (rsrmax+4.6*gap/R_max))**(4.d0/7.d0))
+         K0=1.d0/(1.d0+(rsrmax**3.6d0*
+     &        (rsrmax+4.6d0*gap/R_max))**(4.d0/7.d0))
 !     
 !     core swirl ratio at R_inlet
          Kup=swirl_up/(omega*Rup)
 !     
 !     dynamic_viscosity
-!         kgas=0
-!         call dynamic_viscosity(kgas,Tup,dvi)
-         if(dabs(dvi).lt.1E-30) then
+         if(dabs(dvi).lt.1d-30) then
             write(*,*) '*ERROR in moehring: '
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
             call exit(201)
-c            kgas=0
-c            call dynamic_viscosity(kgas,Tup,dvi)
          endif 
 !     
 !     defining common coefficients
@@ -251,10 +255,10 @@ c            call dynamic_viscosity(kgas,Tup,dvi)
 !         endif         
 !     
 !     absolute error
-         epsabs=1E-7
+         epsabs=1d-7
 !     
 !     relative error
-         epsrel=1E-7
+         epsrel=1d-7
 !     
 !     choice for local integration rule
          key=1
@@ -262,9 +266,9 @@ c            call dynamic_viscosity(kgas,Tup,dvi)
 !     determining minimal pressure difference for xflow<<1
 !
          if(lakon(nelem)(2:5).eq.'MRGF')then
-            xflow_0=-0.00000003E-3
+            xflow_0=-0.00000003d-3
          elseif(lakon(nelem)(2:5).eq.'MRGP') then
-            xflow_0=0.00000003E-3
+            xflow_0=0.00000003d-3
          endif
 !
          Cq_0=xflow_0*R*Tup/(Pup*omega*(R_max)**3)
@@ -402,7 +406,7 @@ c            call dynamic_viscosity(kgas,Tup,dvi)
 !     solving the differential equation Möhring 3.35
 !     dK/dX=f(K(X))
 !
-         if(dabs(xflow).gt.1E-6) then
+         if(dabs(xflow).gt.1d-6) then
             call ddeabm(dKdX,neq,t,y,x,info,rtol,atol,idid,
      &        rwork,lrw,iwork,liw,rpar,ipar)
          else

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                     */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -104,7 +104,7 @@ void thicknessmain(double *co, double *dgdx, ITG *nobject, ITG *nk,
     
     /* local declaration prevails, if strictly positive */
     
-    envloc = getenv("CCX_NPROC_FILTER");
+    envloc = getenv("CCX_NPROC_SENS");
     if(envloc){
        num_cpus=atoi(envloc);
        if(num_cpus<0){

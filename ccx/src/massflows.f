@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine massflows(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,nelemload,sideload,xload,nload,nload_,iamload,
      &  lakon,ne,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,ipoinpc,idefload,nam)
+     &  ipoinp,inp,ipoinpc,idefload,nam,ier)
 !
 !     reading the input deck: *MASS FLOW
 !
@@ -36,8 +36,7 @@
       integer istartset(*),iendset(*),ialset(*),nelemload(2,*),
      &  nset,nload,nload_,istep,istat,n,i,j,l,key,idefload(*),
      &  iamload(2,*),nam,iamplitude,ipos,ne,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),idelay,isector,
-     &  ipoinpc(0:*)
+     &  inp(3,*),idelay,isector,ipoinpc(0:*),ier
 !
       real*8 xload(2,*),xmagnitude
 !
@@ -50,7 +49,8 @@
          write(*,*) 
      &     '*ERROR reading *MASS FLOW: *MASS FLOW should only be used'
          write(*,*) '  in the first STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -79,14 +79,18 @@
             xmagnitude=0.d0
          endif
 !
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MASS FLOW%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*MASS FLOW%",ier)
+            return
+         endif
          if((label(1:2).ne.'M1').and.(label(1:2).ne.'M2').and.
      &           (label(1:2).ne.'M ').and.
      &           (label(1:2).ne.'M3').and.(label(1:2).ne.'M4').and.
      &           (label(1:2).ne.'M5').and.(label(1:2).ne.'M6')) then
             call inputerror(inpc,ipoinpc,iline,
-     &"*MASS FLOW%")
+     &           "*MASS FLOW%",ier)
+            return
          endif
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
@@ -94,13 +98,15 @@
             if(l.gt.ne) then
                write(*,*) '*ERROR reading *MASS FLOW: element ',l
                write(*,*) '       is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             if(lakon(l)(1:1).ne.'F') then
                write(*,*) '*ERROR reading *MASS FLOW: element ',l
                write(*,*) '       is not a fluid element*'
-               call exit(201)
+               ier=1
+               return
             endif
             call loadadd(l,label,xmagnitude,nelemload,sideload,
      &           xload,nload,nload_,iamload,iamplitude,
@@ -128,8 +134,8 @@
                   write(*,*) '       or facial surface ',elset
                   write(*,*) '       has not yet been defined. '
                   call inputerror(inpc,ipoinpc,iline,
-     &                 "*MASS FLOW%")
-                  call exit(201)
+     &                                  "*MASS FLOW%",ier)
+                  return
                endif
             endif
 !
@@ -138,13 +144,15 @@
                if(lakon(l)(1:1).ne.'F') then
                   write(*,*) '*ERROR reading *MASS FLOW: element ',l
                   write(*,*) '       is not a fluid element*'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             else
                if(lakon(l/10)(1:1).ne.'F') then
                   write(*,*) '*ERROR reading *MASS FLOW: element ',l/10
                   write(*,*) '       is not a fluid element*'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             endif
 !

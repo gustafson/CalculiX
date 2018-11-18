@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,ipol,inl,
      &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,co,ixfree,xnor,iponor,
-     &  nelcon)
+     &  nelcon,ier)
 !
 !     reading the input deck: *SOLID SECTION
 !
@@ -33,19 +33,20 @@
       character*132 textpart(16)
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,
+     &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt(*),nset,nmat,
      &  norien,ielem,node1,node2,m,indexx,ixfree,iponor(2,*),
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),mcs,iaxial,ipoinpc(0:*),
-     &  nelcon(2,*)
+     &  nelcon(2,*),ier
 !
       real*8 thicke(mi(3),*),thickness,pi,cs(17,*),xn(3),co(3,*),p(3),
      &  dd,xnor(*)
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *SOLID SECTION: *SOLID SECTION'
          write(*,*)'       should be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       pi=4.d0*datan(1.d0)
@@ -95,8 +96,8 @@
      &      '*ERROR reading *SOLID SECTION: nonexistent material'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
-     &"*SOLID SECTION%")
-         call exit(201)
+     &        "*SOLID SECTION%",ier)
+         return
       endif
       imaterial=i
 !
@@ -122,8 +123,8 @@ c         iorientation=0
      &       '*ERROR reading *SOLID SECTION: nonexistent orientation'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*SOLID SECTION%")
-            call exit(201)
+     &           "*SOLID SECTION%",ier)
+            return
          endif
          iorientation=i
       endif
@@ -133,8 +134,8 @@ c         iorientation=0
      &        elset
          write(*,*) '       was been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*SOLID SECTION%")
-         call exit(201)
+     &        "*SOLID SECTION%",ier)
+         return
       endif
       do i=1,nset
          if(set(i).eq.elset) exit
@@ -144,8 +145,8 @@ c         iorientation=0
          write(*,*) '*ERROR reading *SOLID SECTION: element set ',elset
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*SOLID SECTION%")
-         call exit(201)
+     &        "*SOLID SECTION%",ier)
+         return
       endif
 !
 !     assigning the elements of the set the appropriate material
@@ -160,7 +161,8 @@ c         iorientation=0
                write(*,*) '       not be used for beam or shell elements
      &'
                write(*,*) '       Faulty element: ',ialset(j)
-               call exit(201)
+               ier=1
+               return
             endif
             ielmat(1,ialset(j))=imaterial
             ielorien(1,ialset(j))=iorientation
@@ -176,7 +178,8 @@ c         iorientation=0
                   write(*,*) '       not be used for beam or shell eleme
      &nts'
                   write(*,*) '       Faulty element: ',k
-                  call exit(201)
+                  ier=1
+                  return
                endif
                ielmat(1,k)=imaterial
                ielorien(1,k)=iorientation
@@ -193,8 +196,11 @@ c         iorientation=0
 cccc      if((key.eq.0).or.(lakon(ialset(istartset(i)))(1:2).eq.'CA')) then
          if(key.eq.0) then
             read(textpart(1)(1:20),'(f20.0)',iostat=istat) thickness
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*SOLID SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*SOLID SECTION%",ier)
+               return
+            endif
 !
 !        for axial symmetric structures:
 !           thickness for axial symmetric elements: 2 degrees
@@ -267,7 +273,8 @@ cccc         endif
                      write(*,*) 
      &                    '*ERROR reading *SOLID SECTION: normal'
                      write(*,*) '       in direction 1 has zero size'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   do l=1,3
                      p(l)=p(l)/dd
@@ -332,7 +339,8 @@ cccc         endif
                         write(*,*) 
      &                       '*ERROR reading *SOLID SECTION: normal'
                         write(*,*) '       in direction 1 has zero size'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      do l=1,3
                         p(l)=p(l)/dd
@@ -399,7 +407,8 @@ c     &               ialset(j),lakon(ialset(j)),thickness
                      write(*,*) '*ERROR reading *SOLID SECTION: '
                      write(*,*) '       axisymmetric elements cannot be
      &combined with cyclic symmetry'
-                     call exit(201)
+                     ier=1
+                     return
                   elseif(mcs.eq.1) then
                      if(int(cs(1,1)).ne.int(2.d0*pi/thickness+0.5d0)) 
      &                 then
@@ -408,7 +417,8 @@ c     &               ialset(j),lakon(ialset(j)),thickness
      &wo different'
                         write(*,*) '       angles for an axisymmetric st
      &ructure'
-                        call exit(201)
+                        ier=1
+                        return
                      else
                         exit
                      endif
@@ -424,7 +434,7 @@ c     &               ialset(j),lakon(ialset(j)),thickness
                   cs(10,1)=1.d0
                   cs(11,1)=0.d0
                   cs(12,1)=-1.d0
-                  cs(14,1)=0.5
+                  cs(14,1)=0.5d0
                   cs(15,1)=dcos(thickness)
                   cs(16,1)=dsin(thickness)
                   exit
@@ -440,7 +450,8 @@ c                  if(lakon(ialset(j))(1:2).eq.'CA') then
                         write(*,*) '*ERROR reading *SOLID SECTION: '
                         write(*,*) '       axisymmetric elements cannot 
      &be combined with cyclic symmetry'
-                        call exit(201)
+                        ier=1
+                        return
                      elseif(mcs.eq.1) then
                         if(int(cs(1,1)).ne.int(2.d0*pi/thickness+0.5d0)) 
      &                       then
@@ -449,7 +460,8 @@ c                  if(lakon(ialset(j))(1:2).eq.'CA') then
      &e two different'
                            write(*,*) '       angles for an axisymmetric
      & structure'
-                           call exit(201)
+                           ier=1
+                           return
                         else
                            exit
                         endif
@@ -465,7 +477,7 @@ c                  if(lakon(ialset(j))(1:2).eq.'CA') then
                      cs(10,1)=1.d0
                      cs(11,1)=0.d0
                      cs(12,1)=-1.d0
-                     cs(14,1)=0.5
+                     cs(14,1)=0.5d0
                      cs(15,1)=dcos(thickness)
                      cs(16,1)=dsin(thickness)
                      exit

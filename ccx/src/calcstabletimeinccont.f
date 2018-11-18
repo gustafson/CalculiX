@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,19 +41,19 @@
 !
       xmacont=0.0d0
 !
-      damping=0
+      damping=0.d0
 !      
-      bet=(1.-alpha)*(1.-alpha)/4.
-      gam=0.5-alpha
+      bet=(1.d0-alpha)*(1.d0-alpha)/4.d0
+      gam=0.5d0-alpha
 !      
 !     Omega Critical
 !     Om_cr=dt*freq_max
 !
-      critom=dsqrt(damping*damping*(1+2*alpha*(1-gam))
-     &     *(1+2*alpha*(1-gam))
-     &    +   2*(gam+2*alpha*(gam-bet)))
-      critom=0.98*(-damping*(1+2*alpha*(1-gam))+critom)
-     &     /(gam+2*alpha*(gam-bet)) !eq 25 miranda
+      critom=dsqrt(damping*damping*(1.d0+2.d0*alpha*(1.d0-gam))
+     &     *(1.d0+2.d0*alpha*(1.d0-gam))
+     &    +   2.d0*(gam+2.d0*alpha*(gam-bet)))
+      critom=0.98d0*(-damping*(1.d0+2.d0*alpha*(1.d0-gam))+critom)
+     &     /(gam+2.d0*alpha*(gam-bet)) !eq 25 miranda
 !     
 !     ** DO per element 
 !     

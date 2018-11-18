@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine valuesatinfinitys(inpc,textpart,physcon,
-     &  istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &  istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *VALUES AT INFINITY
 !
@@ -33,19 +33,21 @@
       character*132 textpart(16)
 !
       integer i,istep,istat,n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),ier
 !
       real*8 physcon(*)
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in valuesatinf: *VALUES AT INFINITY'
+         write(*,*) 
+     &   '*ERROR reading *VALUES AT INFINITY: *VALUES AT INFINITY'
          write(*,*) '        should only be used before the first STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
          write(*,*) 
-     &        '*WARNING in valuesatinf: parameter not recognized:'
+     &  'WARNING reading *VALUES AT INFINITY: parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
          call inputwarning(inpc,ipoinpc,iline,
@@ -57,8 +59,11 @@
 !
       do i=1,5
          read(textpart(i),'(f20.0)',iostat=istat) physcon(3+i)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*VALUES AT INFINITY%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*VALUES AT INFINITY%",ier)
+            return
+         endif
       enddo
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

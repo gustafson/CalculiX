@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine noanalysiss(inpc,textpart,nmethod,iperturb,istep,
-     &  istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,tper)
+     &  istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,tper,ier)
 !
 !     reading the input deck: *NO ANALYSIS
 !
@@ -27,14 +27,16 @@
       character*132 textpart(16)
 !
       integer nmethod,iperturb,istep,istat,n,key,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),ier
 !
       real*8 tper
 !
       if(istep.lt.1) then
-         write(*,*)'*ERROR in noanalysis: *NO ANALYSIS can only be used'
+         write(*,*)
+     &      '*ERROR reading *NO ANALYSIS: *NO ANALYSIS can only be used'
          write(*,*) '  within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       write(*,*) '*WARNING: no analysis option was chosen'

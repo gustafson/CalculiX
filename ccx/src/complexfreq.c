@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -1357,7 +1357,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,shcon,nshcon,
+            &ne0,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
@@ -1377,7 +1377,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,shcon,nshcon,
+            &ne0,thicke,shcon,nshcon,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
@@ -1789,7 +1789,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stxt,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,ielprop,prop);
     if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
   }
 

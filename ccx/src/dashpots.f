@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &        plicon,nplicon,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
-     &        nset,ielmat,ielorien,ipoinpc,mi)
+     &        nset,ielmat,ielorien,ipoinpc,mi,ier)
 !
 !     reading the input deck: *DASHPOT
 !
@@ -35,9 +35,9 @@
 !
       integer nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,mi(*),
      &  n,key,i,nplicon(0:ntmat_,*),ncmat_,istat,istartset(*),
-     &  iendset(*),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
+     &  iendset(*),irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
      &  ialset(*),ipos,nset,j,k,ielmat(mi(3),*),ielorien(mi(3),*),
-     &  ipoinpc(0:*)  
+     &  ipoinpc(0:*),ier 
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),xfreq,temperature,
      &  elcon(0:ncmat_,ntmat_,*)
@@ -47,16 +47,18 @@
       ntmat=0
       npmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *DASHPOT: *DASHPOT should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
          write(*,*) '*ERROR reading *DASHPOT: increase nmat_'
-         call exit(201)
+         ier=1
+         return
       endif
       matname(nmat)(1:7)='DASHPOT'
       do i=8,80
@@ -87,8 +89,11 @@
       if((istat.lt.0).or.(key.eq.1)) return
       read(textpart(2)(1:20),'(f20.0)',iostat=istat)
      &     xfreq
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DASHPOT%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*DASHPOT%",ier)
+         return
+      endif
       if(xfreq.gt.0.d0) frequency=.true.
       iline=iline-1
 !
@@ -105,19 +110,26 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *DASHPOT: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                 elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DASHPOT%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*DASHPOT%",ier)
+                  return
+               endif
             enddo
             if(textpart(3)(1:1).ne.' ') then
                read(textpart(3)(1:20),'(f20.0)',iostat=istat)
      &                   elcon(0,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DASHPOT%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*DASHPOT%",ier)
+                  return
+               endif
             else
                elcon(0,ntmat,nmat)=0.d0
             endif
@@ -132,8 +144,11 @@
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) exit
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DASHPOT%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DASHPOT%",ier)
+               return
+            endif
 !
 !           first temperature
 !
@@ -142,7 +157,8 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *DASHPOT: increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -154,7 +170,8 @@
                ntmat=ntmat+1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *DASHPOT: increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplicon(0,nmat)=ntmat
                plicon(0,ntmat,nmat)=temperature
@@ -162,13 +179,17 @@
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &              plicon(2*npmat+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DASHPOT%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*DASHPOT%",ier)
+                  return
+               endif
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then
                write(*,*) '*ERROR reading *DASHPOT: increase npmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             nplicon(ntmat,nmat)=npmat
          enddo
@@ -176,7 +197,8 @@
 !
       if(ntmat.eq.0) then
          write(*,*)'*ERROR reading *DASHPOT: *DASHPOT card without data'
-         call exit(201)
+         ier=1
+         return
       endif
       do i=1,nset
          if(set(i).eq.elset) exit
@@ -186,8 +208,8 @@
          write(*,*) '*ERROR reading *DASHPOT: element set ',elset
          write(*,*) '       has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*DASHPOT%")
-         call exit(201)
+     &        "*DASHPOT%",ier)
+         return
       endif
 !
 !     assigning the elements of the set the appropriate material

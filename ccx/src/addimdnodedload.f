@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -118,7 +118,8 @@
             endif
 !
          enddo
-      elseif(sideload(iload)(1:1).eq.'B') then
+      elseif((sideload(iload)(1:1).eq.'B').and.
+     &       (sideload(iload)(3:4).eq.'NU')) then
 !
 !        volumetric load; number of nodes in the element
 !   
@@ -141,7 +142,7 @@
 !     
 !     user-defined load
 !     
-            if(sideload(iload)(3:4).eq.'NU') then
+c            if(sideload(iload)(3:4).eq.'NU') then
                call addimd(imdnode,nmdnode,node)
 !     
 !     add the degrees of freedom corresponding to the node
@@ -160,7 +161,7 @@
      &                 nactdof,mi,imdmpc,nmdmpc,imdboun,nmdboun,ikboun,
      &                 nboun,ilboun)
                endif
-            endif
+c            endif
          enddo
 !
       endif

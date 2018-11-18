@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -97,7 +97,8 @@
             ielem=inoel(1,index)
             if((lakon(ielem)(1:1).ne.'B').and.
      &         (lakon(ielem)(1:1).ne.'T')) then
-               if(lakon(ielem)(1:1).eq.'S') nnor=1
+               if((lakon(ielem)(1:1).eq.'S').or.
+     &            (lakon(ielem)(1:1).eq.'M')) nnor=1
                indexe=ipkon(ielem)
                nel=nel+1
                if(nel.gt.100) then
@@ -144,7 +145,7 @@
 !
 !              local normal on the element (Jacobian)
 !
-               if((lakon(iel(j))(2:2).eq.'3').or.
+               if((lakon(iel(j))(1:2).eq.'S3').or.
      &              (lakon(iel(j))(4:4).eq.'3')) then
                   xi=coloc6(1,jl(j))
                   et=coloc6(2,jl(j))
@@ -279,7 +280,7 @@ c
 !                                direction, the expanded nodes are on a
 !                                straight line
 !
-                              if(dot.gt.-0.999962) then
+                              if(dot.gt.-0.999962d0) then
                                  nnor=2
                               else
                                  write(*,*) '*INFO in gen3dnor: in some 
@@ -311,7 +312,7 @@ c
 !                                direction, the expanded nodes are on a
 !                                straight line
 !
-                              if(dot.gt.-0.999962) then
+                              if(dot.gt.-0.999962d0) then
                                  nnor=2
                               else
                                  write(*,*) '*INFO in gen3dnor: in some

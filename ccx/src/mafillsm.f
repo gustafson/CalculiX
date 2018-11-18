@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -198,9 +198,9 @@ c           ndof=ichar(lakon(i)(6:6))-48
 !
 !          assigning centrifugal forces
 !
-           bodyf(1)=0.
-           bodyf(2)=0.
-           bodyf(3)=0.
+           bodyf(1)=0.d0
+           bodyf(2)=0.d0
+           bodyf(3)=0.d0
 !
            index=i
            do

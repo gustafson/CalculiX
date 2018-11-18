@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine acctube(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider,
-     &        ttime,time,iaxial)
+     &        ttime,time,iaxial,iplausi)
 !
 !     An element representing an ACC tube
 !     The holes in the PDM are handled here
@@ -33,10 +33,17 @@
       character*81 set(*)
 !
       integer node1,node2,nodem,nelem,kon(*),ipkon(*),nactdog(0:3,*),
-     &  ielprop(*),iflag,nodef(5),idirf(5),numf,mi(*),ider,iaxial
+     &  ielprop(*),iflag,nodef(5),idirf(5),numf,mi(*),ider,iaxial,
+     &  iplausi
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(5),cp,r,physcon(*),dvi,
      &  ttime,time
+!
+      intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,ielprop,prop,iflag,v,cp,r,physcon,dvi,set,mi,ider,
+     &        ttime,time,iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi
 !
       return
       end

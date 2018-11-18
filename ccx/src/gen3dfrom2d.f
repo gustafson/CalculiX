@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,7 +69,7 @@
 !           localizing the nodes, thicknesses and normals for the
 !           2-D element
 !            
-      if((lakon(i)(2:2).eq.'3').or.
+      if((lakon(i)(1:2).eq.'S3').or.
      &     (lakon(i)(4:4).eq.'3')) then
          quadratic=.false.
          nedge=3
@@ -81,7 +81,7 @@
          nedge=4
          nope=4
 !
-!        CPE4R,CPS4R, CAX4R and S4R elements are expanded into C3D8R
+!        CPE4R, CPS4R, CAX4R and S4R elements are expanded into C3D8R
 !
          if((lakon(i)(3:3).eq.'R').or.
      &      (lakon(i)(5:5).eq.'R')) then
@@ -89,10 +89,10 @@
 !
 !           S4 elements are expanded into C3D8I
 !
-         elseif((lakon(i)(1:1).eq.'S').or.(lakon(i)(1:1).eq.'M')) then
+         elseif(lakon(i)(1:1).eq.'S') then
             ishift=11
 !
-!           CPE4, CPS4 and CAX4 elements are expanded into C3D8
+!           CPE4, CPS4, CAX4 and M3D4 elements are expanded into C3D8
 !
          else
             ishift=8

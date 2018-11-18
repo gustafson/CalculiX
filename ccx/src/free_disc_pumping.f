@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine free_disc_pumping(node1,node2,nodem,nelem,lakon,kon,
      &        ipkon,nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,
+     &        iaxial,iplausi)
 !     
 !     Free-Disc-Pump-Flow
 !     
@@ -31,11 +32,18 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,iaxial,
-     &     ipkon(*),kon(*),mi(*),nrhcon(*),ntmat_,nshcon(*)
+     &     ipkon(*),kon(*),mi(*),nrhcon(*),ntmat_,nshcon(*),iplausi
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),ttime,time,
      &     physcon(*),co(3,*),vold(0:mi(2),*),r,cp,dvi,
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*)
+!
+      intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,ielprop,prop,iflag,v,
+     &        cp,r,physcon,dvi,set,mi,
+     &        ttime,time,iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi
 !
       if (iflag.eq.0) then
          identity=.true.

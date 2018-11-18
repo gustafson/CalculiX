@@ -14,16 +14,17 @@
 /*     along with this program; if not, write to the Free Software       */
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
-void pardiso_main(double *ad, double *au, double *adb, double *aub, double *sigma,
-         double *b, ITG *icol, ITG *irow, 
-	 ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,ITG *jq,ITG *nzs3);
+void pardiso_main(double *ad, double *au, double *adb, double *aub, 
+         double *sigma,double *b, ITG *icol, ITG *irow, 
+	 ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,ITG *jq,
+	 ITG *nzs3,ITG *nrhs);
 
 void pardiso_factor(double *ad, double *au, double *adb, double *aub, 
                 double *sigma,ITG *icol, ITG *irow, 
 		ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,
 		ITG *jq,ITG *nzs3);
 
-void pardiso_solve(double *b,ITG *neq,ITG *symmetryflag);
+void pardiso_solve(double *b,ITG *neq,ITG *symmetryflag,ITG *nrhs);
 
 void pardiso_cleanup(ITG *neq,ITG *symmetryflag);
 

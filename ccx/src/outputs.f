@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine outputs(inpc,textpart,jout,itpamp,istep,istat,n,iline,
-     &  ipol,inl,ipoinp,inp,ipoinpc)
+     &  ipol,inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the *OUTPUT card in the input deck
 !
@@ -27,21 +27,25 @@
       character*132 textpart(16)
 !
       integer istep,istat,n,key,ii,jout(2),joutl,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),itpamp
+     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),itpamp,ier
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *OUTPUT'
          write(*,*) '       *OUTPUT'
          write(*,*) '       should only be used within a *STEP' 
          write(*,*) '       definition'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do ii=2,n
         if(textpart(ii)(1:10).eq.'FREQUENCY=') then
            read(textpart(ii)(11:20),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*OUTPUT %")
+           if(istat.gt.0) then
+              call inputerror(inpc,ipoinpc,iline,
+     &             "*OUTPUT %",ier)
+              return
+           endif
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -55,8 +59,11 @@
            endif
         elseif(textpart(ii)(1:11).eq.'FREQUENCYF=') then
            read(textpart(ii)(12:21),'(i10)',iostat=istat) joutl
-           if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*OUTPUT %")
+           if(istat.gt.0) then
+              call inputerror(inpc,ipoinpc,iline,
+     &             "*OUTPUT %",ier)
+              return
+           endif
            if(joutl.eq.0) then
               do
                  call getnewline(inpc,textpart,istat,n,key,iline,ipol,

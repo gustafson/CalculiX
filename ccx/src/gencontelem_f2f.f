@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
       character*132 jobnamef(*)
 !
       integer ntie,ifree,nasym,nstate_,ne0,
-     &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,
+     &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,nel,
      &  neigh(1),iflag,kneigh,i,j,k,l,jj,nn,isol,icutb,
      &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),
      &  nz(*),nstart,ielmat(mi(3),*),imat,ifaceq(8,6),ifacet(6,4),
@@ -43,7 +43,7 @@
      &  iteller,ifaces,jfaces,ifacem,indexel,iloop,iprev,iact,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,islavsurf(2,*),itiefac(2,*),nelems,m,mint2d,nopes,
-     &  iloc,nopem,nodefs(9),indexf,ialeatoric,nmethod
+     &  igauss,nopem,nodefs(9),indexf,ialeatoric,nmethod
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),clearini(3,9,*),
@@ -145,7 +145,7 @@
          enddo
       endif
 !
-      iloc=0
+      igauss=0
 !
 !     loop over all active contact ties
 !
@@ -296,22 +296,36 @@
                if(mint2d.eq.0) cycle
                indexf=islavsurf(2,jj)
 !
+c$omp parallel default(none)
+c$omp& shared(mint2d,indexf,pslavsurf,nopes,xl2,iflag,iit,pmastsurf,
+c$omp&        xo,yo,zo,x,y,z,nx,ny,nz,n,kneigh,itietri,i,straight,
+c$omp&        imastop,springarea,koncont,ipkon,lakon,kon,ifacet,
+c$omp&        ifacew1,ifacew2,ifaceq,co,vold,nmethod,elcon,
+c$omp&        imat,istep,theta,reltime,iloop,iinc,ncmat_,xstateini,
+c$omp&        ne0,iprev,ialeatoric,icutb,iact,ne,ifree,nasym,indexel,
+c$omp&        xstate,nstate_,ielmat,nodefs,jj,filab,lenset,setname)
+c$omp& private(igauss,xi,et,weight,m,xsj2,xs2,shp2,area,k,p,j,isol,
+c$omp&         neigh,itriold,itri,ntriangle,ntriangle_,l,ll,dist,
+c$omp&         itrinew,itriangle,id,ifacem,nelemm,jfacem,indexe,
+c$omp&         nopem,nface,nodefm,nope,pl,nn,pproj,ratio,xm,al,dm,
+c$omp&         xn,clear,harvest,nel)
+c$omp do
                do m=1,mint2d
-                  iloc=indexf+m
+                  igauss=indexf+m
                   xi=pslavsurf(1,indexf+m)
                   et=pslavsurf(2,indexf+m)
                   weight=pslavsurf(3,indexf+m)
 !     
-                  if(nopes.eq.9) then
-                     call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
-                  elseif(nopes.eq.8) then
+c                  if(nopes.eq.9) then
+c                     call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+                  if(nopes.eq.8) then
                      call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                   elseif(nopes.eq.4) then
                      call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                   elseif(nopes.eq.6) then
                      call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
-                  elseif(nopes.eq.7) then
-                     call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+c                  elseif(nopes.eq.7) then
+c                     call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                   else
                      call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                   endif
@@ -329,7 +343,7 @@
                      enddo
                   enddo
                   if(iit.gt.0) then
-                     if(int(pmastsurf(3,iloc)).eq.0) then
+                     if(int(pmastsurf(3,igauss)).eq.0) then
                         isol=0
                      else
                         isol=1
@@ -411,22 +425,22 @@ c     write(*,*) '**regular solution'
 !     
                   if(isol.eq.0) then
                      if(iit.le.0) then
-                        pmastsurf(3,iloc)=0.5d0
+                        pmastsurf(3,igauss)=0.5d0
                      endif
                   else
 !
-!                 determining the clearance
+!                    determining the clearance
 !
-!                 identifying the element face to which the
-!                 triangle belongs
+!                    identifying the element face to which the
+!                    triangle belongs
 !
                      if(iit.le.0) then
-                        springarea(1,iloc)=area
-                        springarea(2,iloc)=0.d0
+                        springarea(1,igauss)=area
+                        springarea(2,igauss)=0.d0
                         ifacem=koncont(4,itri)
-                        pmastsurf(3,iloc)=ifacem+0.5d0
+                        pmastsurf(3,igauss)=ifacem+0.5d0
                      else
-                        ifacem=int(pmastsurf(3,iloc))
+                        ifacem=int(pmastsurf(3,igauss))
                      endif
                      nelemm=int(ifacem/10.d0)
                      jfacem=ifacem-10*nelemm
@@ -464,7 +478,7 @@ c     write(*,*) '**regular solution'
                         cycle
                      endif
 !
-!                 determining the nodes of the master face
+!                    determining the nodes of the master face
 !
                      if(nface.eq.4) then
                         do k=1,nopem
@@ -486,12 +500,12 @@ c     write(*,*) '**regular solution'
                         enddo
                      endif
 !
-!                 total number of nodes belonging to the contact 
-!                 element
+!                    total number of nodes belonging to the contact 
+!                    element
 !
                      nope=nopem+nopes
 !
-!                 orthogonal projection on the master element face
+!                    orthogonal projection on the master element face
 !
                      do k=1,nopem
                         do nn=1,3
@@ -511,16 +525,16 @@ c     write(*,*) '**regular solution'
                         et=pmastsurf(2,indexf+m)
                      endif
 !
-                     if(nopem.eq.9) then
-                        call shape9q(xi,et,pl,xm,xs2,shp2,iflag)
-                     elseif(nopem.eq.8) then
+c                     if(nopem.eq.9) then
+c                        call shape9q(xi,et,pl,xm,xs2,shp2,iflag)
+                     if(nopem.eq.8) then
                         call shape8q(xi,et,pl,xm,xs2,shp2,iflag)
                      elseif(nopem.eq.4) then
                         call shape4q(xi,et,pl,xm,xs2,shp2,iflag)
                      elseif(nopem.eq.6) then
                         call shape6tri(xi,et,pl,xm,xs2,shp2,iflag)
-                     elseif(nopem.eq.7) then
-                        call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
+c                     elseif(nopem.eq.7) then
+c                        call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
                      else
                         call shape3tri(xi,et,pl,xm,xs2,shp2,iflag)
                      endif
@@ -538,28 +552,27 @@ c     write(*,*) '**regular solution'
                         al(nn)=p(nn)-pproj(nn)
                      enddo
 !
-!                 normal on the surface
+!                    normal on the surface
 !
                      if(iit.le.0) then
                         dm=dsqrt(xm(1)*xm(1)+xm(2)*xm(2)+xm(3)*xm(3))
                         do nn=1,3
                            xn(nn)=xm(nn)/dm
                         enddo
-                        pmastsurf(4,iloc)=xn(1)
-                        pmastsurf(5,iloc)=xn(2)
-                        pmastsurf(6,iloc)=xn(3)
+                        pmastsurf(4,igauss)=xn(1)
+                        pmastsurf(5,igauss)=xn(2)
+                        pmastsurf(6,igauss)=xn(3)
                      else
-                        xn(1)=pmastsurf(4,iloc)
-                        xn(2)=pmastsurf(5,iloc)
-                        xn(3)=pmastsurf(6,iloc)
+                        xn(1)=pmastsurf(4,igauss)
+                        xn(2)=pmastsurf(5,igauss)
+                        xn(3)=pmastsurf(6,igauss)
                      endif
 !     
-!                 distance from surface along normal (= clearance)
+!                    distance from surface along normal (= clearance)
 !
                      clear=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
 !
                      if((nmethod.eq.4).or.(nmethod.eq.2)) then
-c                     if(nmethod.eq.4) then
 !
 !                       dynamic calculation
 !
@@ -572,14 +585,14 @@ c                     if(nmethod.eq.4) then
 !                       static calculation: more sophisticated
 !                       algorithm to detect contact
 !
-                     if((istep.eq.1).and.(iit.le.0.d0)) then
-                        if(clear.lt.0.d0) then
-                           springarea(2,iloc)=clear/(1.d0-theta)
-                        elseif(clear.lt.1.d0/elcon(2,1,imat)) then
-                           clear=0.d0
+                        if((istep.eq.1).and.(iit.le.0.d0)) then
+                           if(clear.lt.0.d0) then
+                              springarea(2,igauss)=clear/(1.d0-theta)
+                           elseif(clear.lt.1.d0/elcon(2,1,imat)) then
+                              clear=0.d0
+                           endif
                         endif
-                     endif
-                     clear=clear-springarea(2,iloc)*(1.d0-reltime)
+                        clear=clear-springarea(2,igauss)*(1.d0-reltime)
 !
 !                    if iloop=1 AND a new increment was started the
 !                    number of contact elements at the end of the
@@ -588,59 +601,67 @@ c                     if(nmethod.eq.4) then
 !                    furthermore, the regular penetration criterion is
 !                    used to decide on the creation of a contact element
 !
-                     if(iloop.eq.1) then
-                        if((isol.ne.0).and.(int(elcon(3,1,imat)).ne.4))
-     &                     then
-                           if(((istep.gt.1).or.(iinc.gt.1)).and.
-     &                          (iit.le.0).and.(ncmat_.ge.7).and.
-     &                          (elcon(6,1,imat).gt.0.d0)) then
-                              if(dsqrt(xstateini(4,1,ne0+iloc)**2+
-     &                             xstateini(5,1,ne0+iloc)**2+
-     &                             xstateini(6,1,ne0+iloc)**2)
-     &                             .ge.1.d-30) iprev=iprev+1
-                           endif
-!
-!                          if a local minimum was detected in checkconvergence:
-!                          remove in an aleatoric way 10 % of the contact elements
-!
-                           if(ialeatoric.eq.1) then
-                              call random_number(harvest)
-                              if(harvest.gt.0.9) isol=0
-                           endif
+                        if(iloop.eq.1) then
+                           if((isol.ne.0).and.
+     &                        (int(elcon(3,1,imat)).ne.4))then
+                              if(((istep.gt.1).or.(iinc.gt.1)).and.
+     &                             (iit.le.0).and.(ncmat_.ge.7).and.
+     &                             (elcon(6,1,imat).gt.0.d0)) then
+                                 if(dsqrt(xstateini(4,1,ne0+igauss)**2+
+     &                                xstateini(5,1,ne0+igauss)**2+
+     &                                xstateini(6,1,ne0+igauss)**2)
+     &                                .ge.1.d-30) then
+c$omp atomic
+                                    iprev=iprev+1
+                                 endif
+                              endif
+!     
+!     if a local minimum was detected in checkconvergence:
+!     remove in an aleatoric way 10 % of the contact elements
+!     
+                              if(ialeatoric.eq.1) then
+                                 call random_number(harvest)
+                                 if(harvest.gt.0.9d0) isol=0
+                              endif
 ! 
-                           if(isol.ne.0) then
-                              if((icutb.eq.0).or.(ncmat_.lt.7).or.
-     &                           (elcon(6,1,imat).le.0.)) then
+                              if(isol.ne.0) then
+                                 if((icutb.eq.0).or.(ncmat_.lt.7).or.
+     &                                (elcon(6,1,imat).le.0.d0)) then
 !
 !                             this is no cut-back: only use a negative
 !                             clearance as contact criterion
 !                             (this also applies if no friction is
 !                              defined)
 !
-                                 if(clear.gt.0.d0) then
-                                    isol=0
+                                    if(clear.gt.0.d0) then
+                                       isol=0
+                                    else
+c$omp critical(c2)
+                                       iact=iact+1
+c$omp end critical(c2)
+                                    endif
                                  else
-                                    iact=iact+1
-                                 endif
-                              else
 !
 !                             this is the first iteration in a cut-back:
 !                             all contact elements from the end of the
 !                             previous increment are included as well
 !
-                                 if((dsqrt(xstateini(4,1,ne0+iloc)**2+
-     &                                xstateini(5,1,ne0+iloc)**2+
-     &                                xstateini(6,1,ne0+iloc)**2)
-     &                                .lt.1.d-30).and.(clear.gt.0.d0)) 
-     &                                then
-                                    isol=0
-                                 else
-                                    iact=iact+1
+                                    if((dsqrt(
+     &                                    xstateini(4,1,ne0+igauss)**2+
+     &                                    xstateini(5,1,ne0+igauss)**2+
+     &                                    xstateini(6,1,ne0+igauss)**2)
+     &                                   .lt.1.d-30).and.
+     &                                   (clear.gt.0.d0)) then
+                                       isol=0
+                                    else
+c$omp critical(c2)
+                                       iact=iact+1
+c$omp end critical(c2)
+                                    endif
                                  endif
                               endif
                            endif
-                        endif
-                     else
+                        else
 !
 !                       if iloop=2 it means that at the start of a new
 !                       increment no contact elements were generated
@@ -649,15 +670,15 @@ c                     if(nmethod.eq.4) then
 !                       case the contact elements from the end of the last
 !                       increment are taken.
 !
-                        if((isol.ne.0).and.(int(elcon(3,1,imat)).ne.4))
-     &                     then
-                           if(dsqrt(xstateini(4,1,ne0+iloc)**2+
-     &                          xstateini(5,1,ne0+iloc)**2+
-     &                          xstateini(6,1,ne0+iloc)**2)
-     &                          .lt.1.d-30) isol=0
+                           if((isol.ne.0).and.
+     &                        (int(elcon(3,1,imat)).ne.4)) then
+                              if(dsqrt(xstateini(4,1,ne0+igauss)**2+
+     &                             xstateini(5,1,ne0+igauss)**2+
+     &                             xstateini(6,1,ne0+igauss)**2)
+     &                             .lt.1.d-30) isol=0
+                           endif
                         endif
-                     endif
-!
+!     
                      endif
 !     
                   endif
@@ -666,10 +687,18 @@ c                     if(nmethod.eq.4) then
 !     
 !                 generation of a contact spring element
 !     
+c$omp critical(c3)
                      ne=ne+1
-                     ipkon(ne)=ifree+1
-                     lakon(ne)='ESPRNGC '
-                     ielmat(1,ne)=imat
+                     nel=ne
+!
+                     id=ifree+1
+                     ifree=ifree+nopem+nopes+4
+c$omp end critical(c3)
+!
+                     ipkon(nel)=id
+                     lakon(nel)(1:7)='ESPRNGC'
+                     lakon(nel)(8:8)=char(nopem+48)
+                     ielmat(1,nel)=imat
 !
 !                 nasym indicates whether at least one contact
 !                 spring elements exhibits friction in the present
@@ -679,81 +708,89 @@ c                     if(nmethod.eq.4) then
                      if(ncmat_.ge.7) then
                         if((elcon(6,1,imat).gt.0).and.
      &                     (int(elcon(3,1,imat)).ne.4)) then
+c$omp critical(c5)
                            nasym=1
+c$omp end critical(c5)
                         endif
                      endif
                      if(ncmat_.ge.8) then
                         if(elcon(8,1,imat).gt.0) then
+c$omp critical(c5)
                            nasym=1
+c$omp end critical(c5)
                         endif
                      endif
 !     
-                     kon(ifree+1)=nopes+nopem
-                     ifree=ifree+1
+                     kon(id)=nopes+nopem
 !     
                      do k=1,nopem
-                        kon(ifree+k)=nodefm(k) 
+                        kon(id+k)=nodefm(k) 
                      enddo
-                     ifree=ifree+nopem
+                     id=id+nopem
                      do k=1,nopes
-                        kon(ifree+k)=nodefs(k)
+                        kon(id+k)=nodefs(k)
                      enddo
-                     ifree=ifree+nopes
-                     kon(ifree+1)=iloc
-                     kon(ifree+2)=jj
-                     kon(ifree+3)=indexf+m
+                     id=id+nopes
+                     kon(id+1)=igauss
+                     kon(id+2)=jj
+                     kon(id+3)=indexf+m
 !
-                     ifree=ifree+3
+c                     write(lakon(ne)(8:8),'(i1)') nopem
+c                     lakon(ne)(8:8)=char(nopem+48)
 !
-                     write(lakon(ne)(8:8),'(i1)') nopem
+c                     indexel=indexel+1
 !
-                     indexel=indexel+1
-!
-                     if((nopem.eq.4).or.(nopem.eq.8)) then
-                        if((nopes.eq.4).or.(nopes.eq.8)) then
-                           if(filab(1)(3:3).eq.'C') then
+                     if(filab(1)(3:3).eq.'C') then
+c$omp critical(c4)
+                        indexel=indexel+1
+                        if((nopem.eq.4).or.(nopem.eq.8)) then
+                           if((nopes.eq.4).or.(nopes.eq.8)) then
+c     if(filab(1)(3:3).eq.'C') then
                               write(27,100) setname(1:lenset)
  100                          format('*ELEMENT,TYPE=C3D8,ELSET=',A)
                               write(27,*) ne0+indexel,',',nodefm(1),',',
-     &                           nodefm(2),',',nodefm(3),',',nodefm(4),
-     &                           ',',nodefs(2),',',nodefs(1),',',
-     &                           nodefs(4),',',nodefs(3)
+     &                            nodefm(2),',',nodefm(3),',',nodefm(4),
+     &                             ',',nodefs(2),',',nodefs(1),',',
+     &                             nodefs(4),',',nodefs(3)
+c     endif
                            endif
-                        endif
-                        if((nopes.eq.3).or.(nopes.eq.6)) then
-                           if(filab(1)(3:3).eq.'C') then
+                           if((nopes.eq.3).or.(nopes.eq.6)) then
+c     if(filab(1)(3:3).eq.'C') then
                               write(27,101) setname(1:lenset)
  101                          format('*ELEMENT,TYPE=C3D8,ELSET=',A)
                               write(27,*) ne0+indexel,',',nodefm(1),',',
-     &                           nodefm(2),',',nodefm(3),',',nodefm(4),
-     &                           ',',nodefs(2),',',nodefs(1),',',
-     &                           nodefs(3),',',nodefs(3)
+     &                            nodefm(2),',',nodefm(3),',',nodefm(4),
+     &                             ',',nodefs(2),',',nodefs(1),',',
+     &                             nodefs(3),',',nodefs(3)
+c     endif
                            endif
                         endif
-                     endif
-                     if((nopem.eq.3).or.(nopem.eq.6)) then
-                        if((nopes.eq.4).or.(nopes.eq.8)) then
-                           if(filab(1)(3:3).eq.'C') then
+                        if((nopem.eq.3).or.(nopem.eq.6)) then
+                           if((nopes.eq.4).or.(nopes.eq.8)) then
+c     if(filab(1)(3:3).eq.'C') then
                               write(27,102) setname(1:lenset)
  102                          format('*ELEMENT,TYPE=C3D8,ELSET=',A)
                               write(27,*) ne0+indexel,',',nodefm(1),',',
-     &                           nodefm(2),',',nodefm(3),',',nodefm(3),
-     &                           ',',nodefs(2),',',nodefs(1),',',
-     &                           nodefs(4),',',nodefs(3)
+     &                            nodefm(2),',',nodefm(3),',',nodefm(3),
+     &                             ',',nodefs(2),',',nodefs(1),',',
+     &                             nodefs(4),',',nodefs(3)
+c     endif
                            endif
-                        endif
-                        if((nopes.eq.3).or.(nopes.eq.6)) then
-                           if(filab(1)(3:3).eq.'C') then
+                           if((nopes.eq.3).or.(nopes.eq.6)) then
+c     if(filab(1)(3:3).eq.'C') then
                               write(27,103) setname(1:lenset)
  103                          format('*ELEMENT,TYPE=C3D6,ELSET=',A)
                               write(27,*) ne0+indexel,',',nodefm(1),',',
-     &                           nodefm(2),',',nodefm(3),',',nodefs(2),
-     &                           ',',nodefs(1),',',nodefs(3)
+     &                            nodefm(2),',',nodefm(3),',',nodefs(2),
+     &                             ',',nodefs(1),',',nodefs(3)
+c     endif
                            endif
                         endif
+c$omp end critical(c4)
                      endif
+ccc$omp end critical(c3)
                   else
-!
+!     
 !              no contact: set internal variables at end of increment
 !              to zero 
 !
@@ -762,14 +799,16 @@ c                     if(nmethod.eq.4) then
 !
                      if(iit.gt.0) then
                         do k=1,nstate_
-                           xstate(k,1,ne0+iloc)=0.d0
+                           xstate(k,1,ne0+igauss)=0.d0
                         enddo
                      endif
 !     
                   endif
 !     
-               enddo
-            enddo
+               enddo ! m
+c$omp end do
+c$omp end parallel
+            enddo ! jj
             if((iact.ne.0).or.(iprev.eq.0).or.(nmethod.eq.4)) exit
             write(*,*)'*INFO in gencontelem_f2f: contact lost at the'
             write(*,*)'      start of a new increment; contact'
@@ -777,8 +816,8 @@ c                     if(nmethod.eq.4) then
             write(*,*)'      are kept.'
             write(*,*)'      number of previous contact elements:',iprev
             write(*,*)'      number of actual contact elements:',iact
-         enddo
-      enddo
+         enddo ! iloop
+      enddo ! ntie
 !
 !     closing the file containing the contact elements
 !     

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  amname,nam,ntrans,trab,inotr,co,ikforc,ilforc,nk,
      &  cflux_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,nam_,
      &  namtot_,namta,amta,iaxial,ipoinpc,idefforc,ipompc,nodempc,
-     &  nmpc,ikmpc,ilmpc,labmpc)
+     &  nmpc,ikmpc,ilmpc,labmpc,iamplitudedefault,namtot,ier)
 !
 !     reading the input deck: *CFLUX
 !
@@ -41,20 +41,21 @@
      &  ilforc(*),nk,iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,
      &  namtot_,namta(3,*),idelay,ndirforc(*),isector,iaxial,
      &  ipoinpc(0:*),idefforc(*),ipompc(*),
-     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*)
+     &  nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),iamplitudedefault,ier
 !
       real*8 xforc(*),forcval,co(3,*),trab(7,*),amta(2,*)
 !
-      iamplitude=0
+      iamplitude=iamplitudedefault
       idelay=0
       user=.false.
       add=.false.
       isector=0
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in cfluxes: *CFLUX should only be used'
+         write(*,*) '*ERROR reading *CFLUX: *CFLUX should only be used'
          write(*,*) '  within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -71,61 +72,69 @@
                endif
             enddo
             if(j.eq.0) then
-               write(*,*)'*ERROR in cfluxes: nonexistent amplitude'
+               write(*,*)'*ERROR reading *CFLUX: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*CFLUX%")
-               call exit(201)
+     &              "*CFLUX%",ier)
+               return
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
             if(idelay.ne.0) then
-               write(*,*) '*ERROR in cfluxes: the parameter TIME DELAY'
+               write(*,*) 
+     &           '*ERROR reading *CFLUX: the parameter TIME DELAY'
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
                call inputerror(inpc,ipoinpc,iline,
-     &"*CFLUX%")
-               call exit(201)
+     &              "*CFLUX%",ier)
+               return
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
-               write(*,*) '*ERROR in cfluxes: increase nam_'
-               call exit(201)
+               write(*,*) '*ERROR reading *CFLUX: increase nam_'
+               ier=1
+               return
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
-               write(*,*) '*ERROR in cfluxes: time delay must be'
+               write(*,*) '*ERROR reading *CFLUX: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
-            if(nam.eq.1) then
-               namtot=0
-            else
-               namtot=namta(2,nam-1)
-            endif
+c            if(nam.eq.1) then
+c               namtot=0
+c            else
+c               namtot=namta(2,nam-1)
+c            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR cfluxes: increase namtot_'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
+c            call reorderampl(amname,namta,nam)
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CFLUX%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CFLUX%",ier)
+               return
+            endif
          elseif(textpart(i)(1:4).eq.'USER') then
             user=.true.
          elseif(textpart(i)(1:3).eq.'ADD') then
             add=.true.
          else
             write(*,*) 
-     &        '*WARNING in cfluxes: parameter not recognized:'
+     &        '*WARNING reading *CFLUX: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -146,14 +155,17 @@
          if((istat.lt.0).or.(key.eq.1)) return
 !
          read(textpart(2)(1:10),'(i10)',iostat=istat) iforcdir
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CFLUX%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*CFLUX%",ier)
+            return
+         endif
          if((iforcdir.ne.0).and.(iforcdir.ne.11)) then
-            write(*,*) '*ERROR in cfluxes: nonexistent degree of '
+            write(*,*) '*ERROR reading *CFLUX: nonexistent degree of '
             write(*,*) '       freedom. '
             call inputerror(inpc,ipoinpc,iline,
-     &"*CFLUX%")
-            call exit(201)
+     &           "*CFLUX%",ier)
+            return
          endif
          iforcdir=0
 !
@@ -161,8 +173,11 @@
             forcval=0.d0
          else
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) forcval
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CFLUX%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CFLUX%",ier)
+               return
+            endif
             if(iaxial.eq.180) forcval=forcval/iaxial
          endif
 !
@@ -173,9 +188,10 @@
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if(l.gt.nk) then
-               write(*,*) '*ERROR in cfluxes: node ',l
+               write(*,*) '*ERROR reading *CFLUX: node ',l
                write(*,*) '       is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
             call forcadd(l,iforcdir,forcval,
      &        nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
@@ -192,11 +208,11 @@
             enddo
             if(i.gt.nset) then
                noset(ipos:ipos)=' '
-               write(*,*) '*ERROR in cfluxes: node set ',noset
+               write(*,*) '*ERROR reading *CFLUX: node set ',noset
                write(*,*) '  has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*CFLUX%")
-               call exit(201)
+     &              "*CFLUX%",ier)
+               return
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then

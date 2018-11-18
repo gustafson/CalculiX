@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,10 +22,12 @@
 !
       implicit none
 !
-      character*1 inpc(*)
       character*(*) text
 !
-      integer ipoinpc(0:*),iline,i
+      character*1 inpc(*)
+      character*132 textpart(16)
+!
+      integer ipoinpc(0:*),iline,i,ier
 !
       write(*,*) '*ERROR reading ',text(1:index(text,'%')-1),
      &      '. Card image:'
@@ -33,5 +35,18 @@
      &    (inpc(i),i=ipoinpc(iline-1)+1,ipoinpc(iline))
       write(*,*)
 !
-      call exit(201)
+!     set error flag to 1
+!
+      ier=1
+!
+!     look for the next keyword
+!
+c      do
+c         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+c     &        ipoinp,inp,ipoinpc)
+c         if(key.eq.1) exit
+c      enddo
+!
+c      call exit(201)
+      return
       end

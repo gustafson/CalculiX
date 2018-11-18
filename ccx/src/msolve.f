@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,15 +26,9 @@
 !
       real*8 r(*),z(*),a(*),rwork(*)
 !
-c$omp parallel default(none)
-c$omp& shared(n,z,r,rwork)
-c$omp& private(i)
-c$omp do
       do i=1,n
          z(i)=r(i)*rwork(i)
       enddo
-c$omp end do
-c$omp end parallel
 !
       return
       end

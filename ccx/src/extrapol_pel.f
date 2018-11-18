@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine extrapol_pel(nface,ielfa,xrlfa,vel,vfa,
      &  ifabou,xbounact,nef,gradpel,gradpfa,neifa,rf,area,volume,
      &  xle,xxi,icyclic,xxn,ipnei,ifatie,
-     &  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh)
+     &  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh,
+     &  iitg)
 !
 !     extrapolation of pressure element values to the faces
 !
@@ -28,7 +29,7 @@
       character*20 labmpc(*)
 !
       integer nface,ielfa(4,*),ifabou(*),i,iel1,iel2,nef,ibou,
-     &  neifa(*),icyclic,ifa,indexf,l,m,ipnei(*),ifatie(*),
+     &  neifa(*),icyclic,ifa,indexf,l,m,ipnei(*),ifatie(*),iitg,
      &  is,ie,nmpc,ipompc(*),nodempc(3,*),ifaext(*),nfaext,nactdoh(*)
 !
       real*8 xrlfa(3,*),vel(nef,0:7),vfa(0:7,*),xbounact(*),xl1,xl2,
@@ -42,10 +43,6 @@
 !
       intent(inout) vfa,gradpel,gradpfa
 !     
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,vfap,vel,ifabou,xbounact)
-!c$omp& private(i,iel1,xl1,iel2,ibou)
-!c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -85,8 +82,6 @@
             vfap(4,i)=vel(iel1,4)
          endif
       enddo
-!c$omp end do
-!c$omp end parallel
 !
 !     Multiple point constraints
 !
@@ -101,10 +96,6 @@
 !     calculate the gradient of the pressure at the center of
 !     the elements
 !
-!c$omp parallel default(none)
-!c$omp& shared(nef,ipnei,neifa,gradpel,vfap,area,xxn,volume)
-!c$omp& private(i,indexf,ifa)
-!c$omp do
       do i=1,nef
 !
 !        initialization
@@ -127,17 +118,10 @@
             gradpel(l,i)=gradpel(l,i)/volume(i)
          enddo
       enddo
-!c$omp end do
-!c$omp end parallel
 ! 
 !     interpolate/extrapolate the pressure gradient from the
 !     center of the elements to the center of the faces
 !           
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,gradpfa,gradpel,icyclic,c,ifatie,
-!c$omp&        ipnei,xxn)
-!c$omp& private(i,iel1,xl1,iel2,l,xl2,indexf,gradnor)
-!c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -189,69 +173,56 @@
             enddo
          endif
       enddo
-!c$omp end do
-!c$omp end parallel
-!
-!     correction loops
-!
-      do m=1,2
 !
 !        Moukalled et al. p 279
 !
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,vfa,vfap,gradpfa,rf,ifabou,ipnei,
-!c$omp&        xxi,xle,vel)
-!c$omp& private(i,iel1,iel2,xl1,ibou,indexf)
-!c$omp do
-         do i=1,nface
-            iel1=ielfa(1,i)
-            iel2=ielfa(2,i)
-            xl1=xrlfa(1,i)
-            if(iel2.gt.0) then
+      do i=1,nface
+         iel1=ielfa(1,i)
+         iel2=ielfa(2,i)
+         xl1=xrlfa(1,i)
+         if(iel2.gt.0) then
 !
-!              face between two elements
+!           face between two elements
 !
-               vfa(4,i)=vfap(4,i)+gradpfa(1,i)*rf(1)
-     &                         +gradpfa(2,i)*rf(2)
-     &                         +gradpfa(3,i)*rf(3)
-            elseif(ielfa(3,i).ne.0) then
+            vfa(4,i)=vfap(4,i)+gradpfa(1,i)*rf(1)
+     &           +gradpfa(2,i)*rf(2)
+     &           +gradpfa(3,i)*rf(3)
+         elseif(ielfa(3,i).ne.0) then
 !
-!              boundary face; more than one layer
+!           boundary face; more than one layer
 !
-               ibou=0
-               if(iel2.lt.0) then
-                  if(ifabou(-iel2+4).gt.0) then
-                     ibou=ifabou(-iel2+4)
-                  endif
+            ibou=0
+            if(iel2.lt.0) then
+               if(ifabou(-iel2+4).gt.0) then
+                  ibou=ifabou(-iel2+4)
                endif
-!
-               if(ibou.gt.0) then
-!
-!                 pressure given
-!
-                  vfa(4,i)=vfap(4,i)
-               else
-!
-!                 extrapolation
-!
-                  vfa(4,i)=vfap(4,i)+gradpfa(1,i)*rf(1)
-     &                            +gradpfa(2,i)*rf(2)
-     &                            +gradpfa(3,i)*rf(3)
-               endif
-            else
-!
-!              boundary face; one layer
-!
-               indexf=ipnei(iel1)+ielfa(4,i)
-               vfa(4,i)=vel(iel1,4)
-     &                 +(gradpfa(1,i)*xxi(1,indexf)+
-     &                   gradpfa(2,i)*xxi(2,indexf)+
-     &                   gradpfa(3,i)*xxi(3,indexf))*xle(indexf)
             endif
-         enddo
-!c$omp end do
-!c$omp end parallel
-!
+!     
+            if(ibou.gt.0) then
+!     
+!              pressure given
+!     
+               vfa(4,i)=vfap(4,i)
+            else
+!     
+!              extrapolation
+!     
+               vfa(4,i)=vfap(4,i)+gradpfa(1,i)*rf(1)
+     &              +gradpfa(2,i)*rf(2)
+     &              +gradpfa(3,i)*rf(3)
+            endif
+         else
+!     
+!           boundary face; one layer
+!     
+            indexf=ipnei(iel1)+ielfa(4,i)
+            vfa(4,i)=vel(iel1,4)
+     &           +(gradpfa(1,i)*xxi(1,indexf)+
+     &           gradpfa(2,i)*xxi(2,indexf)+
+     &           gradpfa(3,i)*xxi(3,indexf))*xle(indexf)
+         endif
+      enddo
+!     
 !     Multiple point constraints
 !
       if(nmpc.gt.0) then
@@ -262,13 +233,13 @@
      &        ifaext,nfaext)
       endif
 !
+!     correction loops
+!
+      do m=1,iitg
+!
 !        calculate the gradient of the pressure at the center of
 !        the elements
 !
-!c$omp parallel default(none)
-!c$omp& shared(nef,ipnei,neifa,gradpel,vfa,area,xxn,volume)
-!c$omp& private(i,indexf,ifa)
-!c$omp do
          do i=1,nef
 !
 !           initialization
@@ -291,17 +262,10 @@
                gradpel(l,i)=gradpel(l,i)/volume(i)
             enddo
          enddo
-!c$omp end do
-!c$omp end parallel
 ! 
 !        interpolate/extrapolate the pressure gradient from the
 !        center of the elements to the center of the faces
 !           
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,gradpfa,gradpel,icyclic,c,ifatie,
-!c$omp&        ipnei,xxn)
-!c$omp& private(i,iel1,xl1,iel2,l,xl2,indexf,gradnor)
-!c$omp do
          do i=1,nface
             iel1=ielfa(1,i)
             xl1=xrlfa(1,i)
@@ -353,8 +317,65 @@
                enddo
             endif
          enddo
-!c$omp end do
-!c$omp end parallel
+!
+!        Moukalled et al. p 279
+!
+         do i=1,nface
+            iel1=ielfa(1,i)
+            iel2=ielfa(2,i)
+            xl1=xrlfa(1,i)
+            if(iel2.gt.0) then
+!
+!              face between two elements
+!
+               vfa(4,i)=vfap(4,i)+gradpfa(1,i)*rf(1)
+     &                         +gradpfa(2,i)*rf(2)
+     &                         +gradpfa(3,i)*rf(3)
+            elseif(ielfa(3,i).ne.0) then
+!
+!              boundary face; more than one layer
+!
+               ibou=0
+               if(iel2.lt.0) then
+                  if(ifabou(-iel2+4).gt.0) then
+                     ibou=ifabou(-iel2+4)
+                  endif
+               endif
+!
+               if(ibou.gt.0) then
+!
+!                 pressure given
+!
+                  vfa(4,i)=vfap(4,i)
+               else
+!
+!                 extrapolation
+!
+                  vfa(4,i)=vfap(4,i)+gradpfa(1,i)*rf(1)
+     &                            +gradpfa(2,i)*rf(2)
+     &                            +gradpfa(3,i)*rf(3)
+               endif
+            else
+!
+!              boundary face; one layer
+!
+               indexf=ipnei(iel1)+ielfa(4,i)
+               vfa(4,i)=vel(iel1,4)
+     &                 +(gradpfa(1,i)*xxi(1,indexf)+
+     &                   gradpfa(2,i)*xxi(2,indexf)+
+     &                   gradpfa(3,i)*xxi(3,indexf))*xle(indexf)
+            endif
+         enddo
+!
+!        Multiple point constraints
+!
+         if(nmpc.gt.0) then
+            is=4
+            ie=4
+            call applympc(nface,ielfa,is,ie,ifabou,ipompc,vfa,coefmpc,
+     &           nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
+     &           ifaext,nfaext)
+         endif
 !
       enddo
 !            

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -258,19 +258,6 @@ c            endif
                      irotnode=nodempc(1,nodempc(3,nodempc(3,
      &                    nodempc(3,nodempc(3,nodempc(3,ipompc(i)))))))
                   endif
-c                  write(5,*)
-c                  write(5,'(a5)') labmpc(i)(1:5)
-c                  write(5,'("tra",i5,3(1x,e11.4))')
-c     &                 irefnode,(v(j,irefnode),j=1,3)
-c                  write(5,'("rot",i5,3(1x,e11.4))')
-c     &                 irotnode,(v(j,irotnode),j=1,3)
-c                  if(labmpc(i)(5:5).eq.'2') then
-c                     write(5,'("exp",i5,3(1x,e11.4))')
-c     &                    iexpnode,(v(j,iexpnode),j=1,3)
-c                  else
-c                     write(5,'("exp",i5,3(1x,e11.4))')
-c     &                    iexpnode,v(1,iexpnode)
-c                  endif
                endif
             endif
          endif

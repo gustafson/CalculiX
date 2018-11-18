@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine depvars(inpc,textpart,nelcon,nmat,
      &        nstate_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &        ncocon,ipoinpc)
+     &        ncocon,ipoinpc,ier)
 !
 !     reading the input deck: *DEPVAR
 !
@@ -28,29 +28,26 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,istep,nstate_,ncocon(2,*),ipoinpc(0:*),
-     &  n,key,istat,nstate,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),i
+     &  n,key,istat,nstate,irstrt(*),iline,ipol,inl,ipoinp(2,*),
+     &  inp(3,*),i,ier
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in depvars: *DEPVAR should be placed'
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
+         write(*,*) '*ERROR reading *DEPVAR: *DEPVAR should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in depvars: *DEPVAR should be preceded'
+         write(*,*) '*ERROR reading *DEPVAR: *DEPVAR should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
-!
-c      if((nelcon(1,nmat).gt.-100).and.(ncocon(1,nmat).gt.-100)) then
-c         write(*,*) '*ERROR in depvars: *DEPVAR should be preceded'
-c         write(*,*) '  by an *USER MATERIAL card'
-c         call exit(201)
-c      endif
 !
       do i=2,n
          write(*,*) 
-     &        '*WARNING in depvars: parameter not recognized:'
+     &        '*WARNING reading *DEPVAR: parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
          call inputwarning(inpc,ipoinpc,iline,
@@ -60,12 +57,16 @@ c      endif
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*) '*ERROR in depvars: incomplete definition'
-         call exit(201)
+         write(*,*) '*ERROR reading *DEPVAR: incomplete definition'
+         ier=1
+         return
       endif
       read(textpart(1)(1:10),'(i10)',iostat=istat) nstate
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DEPVAR%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*DEPVAR%",ier)
+         return
+      endif
       nstate_=max(nstate_,nstate)
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

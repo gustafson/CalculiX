@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
 !
       integer ntie,itietri(2,ntie),node,neigh(1),iflag,kneigh,i,j,k,l,
      &  isol,itri,ll,kflag,n,nx(*),ny(*),mi(*),nz(*),nstart,
-     &  ifacew1(4,5),iloc,ifacew2(8,5),imastop(3,*),
+     &  ifacew1(4,5),ifacew2(8,5),imastop(3,*),
      &  itriangle(100),ntriangle,ntriangle_,itriold,itrinew,id,
      &  nslavnode(*),islavnode(*),islavact(*),ifaceq(8,6),
      &  ifacet(6,4)
@@ -73,8 +73,6 @@
       data iflag /2/
 !
 !     ***ISLAVACT***
-!
-      iloc = 0
 !
       do i=1,ntie
          if(tieset(1,i)(81:81).ne.'C') cycle

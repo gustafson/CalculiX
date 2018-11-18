@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -81,11 +81,11 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       *islavsurf=NULL,nretain,*iretain=NULL,*noderetain=NULL,*ndirretain=NULL,
       nmethodl,nintpoint,ifacecount,memmpc_,mpcfree,icascade,maxlenmpc,
       ncont=0,*itietri=NULL,*koncont=NULL,nslavs=0,ismallsliding=0,
-      *itiefac=NULL,*imastnode=NULL,*nmastnode=NULL,*imastop=NULL,
+      *itiefac=NULL,*imastnode=NULL,*nmastnode=NULL,*imastop=NULL,iitsta,
       *iponoels=NULL,*inoels=NULL,*ipe=NULL,*ime=NULL,iit=-1,iflagact=0,
       icutb=0,*kon=NULL,*ipkon=NULL,*ielmat=NULL,ialeatoric=0,kscale=1,
       *iponoel=NULL,*inoel=NULL,zero=0,nherm=1,nev=*nforc,node,idir,
-      *ielorien=NULL,network=0;
+      *ielorien=NULL,network=0,nrhs=1;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,*tper,
          *f=NULL,*fn=NULL,qa[4],*fext=NULL,*epn=NULL,*xstateini=NULL,
@@ -306,7 +306,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
               ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
               iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
-              ipobody,iponoel,inoel));
+              ipobody,iponoel,inoel,ipkon,kon,ielprop,prop,ielmat,
+              shcon,nshcon,rhcon,nrhcon,cocon,ncocon,ntmat_,lakon));
 
   /* determining the internal forces and the stiffness coefficients */
 
@@ -334,7 +335,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
 	  iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	  fmpc,nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,
-	  &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
+	  &reltime,&ne0,thicke,shcon,nshcon,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	  mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -412,7 +413,11 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             xstateini,xstate,thicke,integerglob,doubleglob,
 	    tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 	    pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-	    iponoel,inoel,&network);
+	    iponoel,inoel,&network,ntrans,inotr,trab);
+
+  /* check for negative Jacobians */
+
+  if(nmethodl==0) *nmethod=0;
 
   if(nasym==1){
       RENEW(au,double,2*nzs[1]);
@@ -504,7 +509,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  }
 		  else if(*isolver==7){
 #ifdef PARDISO
-		      pardiso_solve(b,neq,&symmetryflag);
+		      pardiso_solve(b,neq,&symmetryflag,&nrhs);
 #endif
 		      
 		  }
@@ -546,7 +551,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		   xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 		   ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 		   nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-		   &ne0,xforc,nforc,thicke,shcon,nshcon,
+		   &ne0,thicke,shcon,nshcon,
 		   sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		   mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 		   islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -618,7 +623,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      exit(0);
 	  }
 	  
-	  /* the eigenfrequencies are stores as radians/time */
+	  /* the eigenfrequencies are stored as radians/time */
 	  
 	  if(fwrite(d,sizeof(double),nev,f2)!=nev){
 	      printf("*ERROR saving the eigenfrequencies to the eigenvalue file...");
@@ -677,7 +682,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  }
 		  else if(*isolver==7){
 #ifdef PARDISO
-		      pardiso_solve(b,neq,&symmetryflag);
+		      pardiso_solve(b,neq,&symmetryflag,&nrhs);
 #endif
 		      
 		  }
@@ -724,7 +729,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		   xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 		   ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 		   nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-		   &ne0,xforc,nforc,thicke,shcon,nshcon,
+		   &ne0,thicke,shcon,nshcon,
 		   sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		   mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 		   islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -734,8 +739,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      if(*nener==1){
 		  SFREE(stiini);SFREE(emeini);SFREE(enerini);}
 	      
-	      memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
-	      memcpy(&sti[0],&stx[0],sizeof(double)*6*mi[0]*ne0);
+/*	      memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
+	      memcpy(&sti[0],&stx[0],sizeof(double)*6*mi[0]*ne0);*/
 	      
 	      ++*kode;
 	      time=1.*i;
@@ -749,7 +754,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			 nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,
 			 qfn,ialset,istartset,iendset,trab,inotr,ntrans,orab,
 			 ielorien,norien,sti,veold,&noddiam,set,nset,emn,thicke,
-			 jobnamec,&ne0,cdn,mortar,nmat,qfx);
+			 jobnamec,&ne0,cdn,mortar,nmat,qfx,ielprop,prop);
 	      }
 	      else{
 		  if(strcmp1(&filab[1044],"ZZS")==0){
@@ -763,7 +768,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 		      mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 		      cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-		      thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat);
+		      thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat,
+                      ielprop,prop);
 		  if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
 	      }
 	      
@@ -839,7 +845,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     else if(*isolver==7){
 #ifdef PARDISO
       pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,
-		   &symmetryflag,&inputformat,jq,&nzs[2]);
+		   &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
             printf("*ERROR in linstatic: the PARDISO library is not linked\n\n");
             FORTRAN(stop,());
@@ -935,7 +941,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
             ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-            &ne0,xforc,nforc,thicke,shcon,nshcon,
+            &ne0,thicke,shcon,nshcon,
             sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
             mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -959,7 +965,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
                    nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,
                    qfn,ialset,istartset,iendset,trab,inotr,ntrans,orab,
 	           ielorien,norien,sti,veold,&noddiam,set,nset,emn,thicke,
-	           jobnamec,&ne0,cdn,mortar,nmat,qfx);
+	           jobnamec,&ne0,cdn,mortar,nmat,qfx,ielprop,prop);
     }
     else{
 	if(strcmp1(&filab[1044],"ZZS")==0){
@@ -973,9 +979,14 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat);
+	    thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat,ielprop,prop);
 	if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
     }
+
+    /* updating the .sta file */
+
+    iitsta=1;
+    FORTRAN(writesta,(istep,&iinc,&icutb,&iitsta,ttime,&time,&dtime));
 
     SFREE(v);SFREE(stn);SFREE(inum);
     SFREE(b);SFREE(stx);SFREE(fn);
@@ -1003,7 +1014,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat);
+	    thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat,ielprop,prop);
     if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
     SFREE(inum);FORTRAN(stop,());
 

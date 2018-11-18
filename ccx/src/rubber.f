@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -412,7 +412,7 @@ c      if(icmd.eq.1) then
                         d2ldc2(k,l,m,n,i)=(dcos(tt+(i-1)*2.d0*pi/3.d0)*
      &                   (-(2.d0*v1*didc(k,l,1)-3.d0*didc(k,l,2))*
      &                    (2.d0*v1*didc(m,n,1)-3.d0*didc(m,n,2))/
-     &                    (6.d0*(v1*v1-3.d0*v2)**1.5)+
+     &                    (6.d0*(v1*v1-3.d0*v2)**1.5d0)+
      &                    (2.d0*didc(k,l,1)*didc(m,n,1)+2.d0*v1*
      &                     d2idc2(k,l,m,n,1)-3.d0*d2idc2(k,l,m,n,2))/
      &                     (3.d0*dsqrt(v1*v1-3.d0*v2)))

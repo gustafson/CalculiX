@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine contactdampings(inpc,textpart,elcon,nelcon,
      &  nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc,imat)
+     &  inp,ipoinpc,imat,ier)
 !
 !     reading the input deck: *CONTACT DAMPING
 !
@@ -28,23 +28,25 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat_,istep,istat,ipoinpc(0:*),
-     &  n,key,i,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  imat
+     &  n,key,i,ncmat_,irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),
+     &  imat,ier
 !
       real*8 elcon(0:ncmat_,ntmat_,*)
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*) '*ERROR in contactdampings:'
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
+         write(*,*) '*ERROR reading *CONTACT DAMPING:'
          write(*,*) '       *CONTACT DAMPING should be placed'
          write(*,*) '       before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(imat.eq.0) then
-         write(*,*) '*ERROR in contactdampings:'
+         write(*,*) '*ERROR reading *CONTACT DAMPING:'
          write(*,*) '       *CONTACT DAMPING should be preceded'
          write(*,*) '       by a *SURFACE INTERACTION card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     default: no tangential damping
@@ -55,8 +57,11 @@
          if(textpart(i)(1:16).eq.'TANGENTFRACTION=') then
             read(textpart(i)(17:36),'(f20.0)',iostat=istat) 
      &               elcon(8,1,imat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CONTACT DAMPING%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CONTACT DAMPING%",ier)
+               return
+            endif
          else
             write(*,*) 
      &   '*WARNING reading *CONTACT DAMPING: parameter not recognized:'
@@ -78,7 +83,11 @@
          if((istat.lt.0).or.(key.eq.1)) return
          read(textpart(1)(1:20),'(f20.0)',iostat=istat)
      &        elcon(5,1,imat)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &        "*CONTACT DAMPING%",ier)
+            return
+         endif
          elcon(0,1,imat)=0.d0
       enddo
 !     

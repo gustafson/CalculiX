@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
       phi=rpar(1)
       zk0=rpar(3)
 
-      uprime(1)=datan(1.d0)*0.315/(phi)*x**1.6*
+      uprime(1)=datan(1.d0)*0.315d0/(phi)*x**1.6d0*
      &    ((zk0*u(1))**1.75d0-
      &    (dabs(1.d0-u(1)))**1.75d0*(1.d0-u(1))/dabs(1.d0-u(1)))
      &    -2.d0*u(1)/x

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,11 +18,18 @@
 !
       subroutine getdesiinfo(set,istartset,iendset,ialset,nset,
      &  mi,nactdof,ndesi,nodedesi,ntie,tieset,itmp,nmpc,nodempc,
-     &  ipompc,nodedesiinv,iponoel,inoel,lakon,ipkon,kon,noregion,
+     &  ipompc,nodedesiinv,iponoel,inoel,lakon,ipkon,kon,iregion,
      &  ipoface,nodface,nk)    
 !
 !     storing the design variables in nodedesi
-!     marking which nodes are design variables in nodedeiinv
+!     marking which nodes are design variables in nodedesiinv
+!
+!     a node is a design variable if:
+!     1) it belongs to the design variable set AND
+!     2) not all dofs in the node are defined by SPC's AND
+!     3) no MPC is applied to any of its dofs AND
+!     4) it belongs to at least one face whose number of
+!        design variables exceeds half its nodes
 !
       implicit none
 !
@@ -36,9 +43,16 @@
      &  node,nodedesi(*),nset,ntie,i,j,k,l,m,nmpc,nodempc(3,*),
      &  nactdof(0:mi(2),*),itmp(*),ntmp,index,id,ipompc(*),
      &  nodedesiinv(*),iponoel(*),inoel(2,*),nelem,nope,nopedesi,
-     &  ipkon(*),nnodes,kon(*),noregion,konl(26),
+     &  ipkon(*),nnodes,kon(*),iregion,konl(26),iaux,kflag,
      &  ipoface(*),nodface(5,*),jfacem,nopesurf(9),ifaceq(8,6),
      &  ifacet(6,4),ifacew1(4,5),ifacew2(8,5),nopem,nk
+!
+      intent(in) set,istartset,iendset,ialset,nset,
+     &  mi,nactdof,ntie,tieset,nmpc,nodempc,
+     &  ipompc,iponoel,inoel,lakon,ipkon,kon,iregion,
+     &  ipoface,nodface,nk
+!
+      intent(inout) ndesi,nodedesi,nodedesiinv,itmp
 !
       setname(1:1)=' '
       ndesi=0
@@ -75,7 +89,7 @@
      &             2,3,6,5,8,15,11,14,
      &             3,1,4,6,9,13,12,15/
 !
-!     Search for the set name
+!     Search for the set name of the set with the design variables
 !      
       do i=1,ntie
          if(tieset(1,i)(81:81).eq.'D') then
@@ -92,7 +106,7 @@
       endif
 !
 !     catalogue all nodes (dependent and independent) which
-!     belong to MPC's
+!     belong to MPC's and sort them in increasing order
 !
       ntmp=0
       do i=1,nmpc
@@ -222,15 +236,15 @@
 !
       do i=1,ndesi
          index=nodedesi(i)
-         nodedesiinv(index)=1
-      enddo
-!
-      do i=1,ndesi
-         index=nodedesi(i)
          nodedesiinv(index)=-1
       enddo
 !     
-!     check if sufficient nodes are defined on the surfaces of the element
+      kflag=1
+      call isortii(nodedesi,iaux,ndesi,kflag)
+!
+!     A design node is also removed from nodedesi if it does not
+!     belong to a face whose number of design variables exceeds half
+!     of its nodes
 !   
       do i=1,nk  
 !     node=nodedesi(i)
@@ -276,7 +290,7 @@
                   nopedesi=5
                endif
             endif
-            if(noregion.eq.1) nopedesi=0
+            if(iregion.eq.0) nopedesi=0
 !     
 !     actual position of the nodes belonging to the
 !     master surface
@@ -345,7 +359,12 @@
             enddo
             ndesi=ndesi-1    
          endif
-      enddo    
+      enddo 
+!
+c      write(*,*) 'getdesiinfo'
+c      do i=1,ndesi
+c         write(*,*) i,nodedesi(i)
+c       enddo
 !
       close(40)
 !

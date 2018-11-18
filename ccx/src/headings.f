@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine headings(inpc,textpart,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc,heading,istep,irstrt)
+     &  inp,ipoinpc,heading,istep,irstrt,ier)
 !
 !     reading the input deck: *HEADING
 !
@@ -29,12 +29,13 @@
       character*1320 text
 !
       integer istat,n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  ipoinpc(0:*),i,j,nentries,nheading,istep,irstrt
+     &  ipoinpc(0:*),i,j,nentries,nheading,istep,irstrt(*),ier
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *HEADING: *HEADING should be placed'
          write(*,*) '       before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n

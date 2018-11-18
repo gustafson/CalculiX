@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ialset,nset,t0,t1,prestr,iprestr,ithermal,veold,inoelfree,nk_,
      &  mi,istep,istat,n,iline,ipol,inl,ipoinp,inp,lakon,kon,co,ne,
      &  ipkon,vold,ipoinpc,xstate,nstate_,nk,t0g,t1g,iaxial,ielprop,
-     &  prop)
+     &  prop,ier)
 !
 !     reading the input deck: *INITIAL CONDITIONS
 !
@@ -39,7 +39,7 @@
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ij,jj,ntens,ncrds,layer,
      &  kspt,lrebar,iflag,i1,mint3d,nope,kon(*),konl(20),indexe,
      &  ipkon(*),ne,ipoinpc(0:*),nstate_,nk,jmax,ntot,numberoflines,
-     &  iaxial,null,ielprop(*)
+     &  iaxial,null,ielprop(*),ier
 !
       real*8 t0(*),t1(*),beta(8),prestr(6,mi(1),*),veold(0:mi(2),*),
      &  temperature,velocity,tempgrad1,tempgrad2,pgauss(3),
@@ -55,7 +55,8 @@
          write(*,*) 
      &     '*ERROR reading *INITIAL CONDITIONS: *INITIAL CONDITIONS'
          write(*,*) '  should be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do ij=2,n
@@ -68,8 +69,11 @@
                if((istat.lt.0).or.(key.eq.1)) return
                read(textpart(2)(1:20),'(f20.0)',iostat=istat) 
      &                    temperature
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                temperature=1.d-6*int(1.d6*temperature+0.5d0)
 !
                if(inoelfree.ne.0) then
@@ -78,14 +82,20 @@
                   if(n.gt.2) then
                      read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &                           tempgrad1
-                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+                     if(istat.gt.0) then
+                        call inputerror(inpc,ipoinpc,iline,
+     &                       "*INITIAL CONDITIONS%",ier)
+                        return
+                     endif
                   endif
                   if(n.gt.3) then
                      read(textpart(4)(1:20),'(f20.0)',iostat=istat) 
      &                          tempgrad2
-                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+                     if(istat.gt.0) then
+                        call inputerror(inpc,ipoinpc,iline,
+     &                       "*INITIAL CONDITIONS%",ier)
+                        return
+                     endif
                   endif
                endif
 !
@@ -122,8 +132,8 @@
      &                       ,noset
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
-                     call exit(201)
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -314,12 +324,18 @@
                do j=1,6
                   read(textpart(j+2)(1:20),'(f20.0)',iostat=istat) 
      &                    beta(j)
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+                  if(istat.gt.0) then
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
+                  endif
                enddo
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
-               if(istat.ne.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.ne.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                if(l.gt.ne) then
                   write(*,*) 
      &                '*WARNING reading *INITIAL CONDITIONS: element ',l
@@ -334,7 +350,8 @@
                   enddo
                else
                   call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
                endif
             enddo
             return
@@ -348,12 +365,18 @@
                do j=1,6
                   read(textpart(j+2)(1:20),'(f20.0)',iostat=istat) 
      &                    beta(j)
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+                  if(istat.gt.0) then
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
+                  endif
                enddo
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
-               if(istat.ne.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.ne.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                if(l.gt.ne) then
                   write(*,*) 
      &                '*WARNING reading *INITIAL CONDITIONS: element ',l
@@ -368,7 +391,8 @@
                   enddo
                else
                   call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
                endif
             enddo
             return
@@ -380,11 +404,17 @@
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) return
                read(textpart(2)(1:10),'(i10)',iostat=istat) idir
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) dispvelo
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
                if(istat.eq.0) then
                   if(l.gt.nk) then
@@ -410,8 +440,8 @@
      &                 ,noset
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
-                     call exit(201)
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -435,11 +465,17 @@
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) return
                read(textpart(2)(1:10),'(i10)',iostat=istat) idir
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) velocity
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
                if(istat.eq.0) then
                   if(l.gt.nk) then
@@ -465,8 +501,8 @@
      &                 ,noset
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
-                     call exit(201)
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -490,8 +526,11 @@
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) return
                read(textpart(2)(1:20),'(f20.0)',iostat=istat) pressure
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
                if(istat.eq.0) then
                   if(l.gt.nk) then
@@ -517,8 +556,8 @@
      &                 ,noset
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
-                     call exit(201)
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -542,8 +581,11 @@
      &              ipoinp,inp,ipoinpc)
                if((istat.lt.0).or.(key.eq.1)) return
                read(textpart(2)(1:20),'(f20.0)',iostat=istat) totpres
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
                if(istat.eq.0) then
                   if(l.gt.nk) then
@@ -569,8 +611,8 @@
      &                 ,noset
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
-                     call exit(201)
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -595,8 +637,11 @@
                if((istat.lt.0).or.(key.eq.1)) return
                read(textpart(2)(1:20),'(f20.0)',iostat=istat) xmassflow
                if(iaxial.eq.180) xmassflow=xmassflow/iaxial
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*INITIAL CONDITIONS%",ier)
+                  return
+               endif
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
                if(istat.eq.0) then
                   if(l.gt.nk) then
@@ -622,8 +667,8 @@
      &                 ,noset
                      write(*,*)'  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
-                     call exit(201)
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
                   endif
                   do j=istartset(ii),iendset(ii)
                      if(ialset(j).gt.0) then
@@ -651,7 +696,8 @@ c               write(*,*)
 c     &            '*ERROR reading *INITIAL CONDITIONS: TYPE=SOLUTION'
 c               write(*,*) '       can only be used in combination with'
 c               write(*,*) '       USER'
-c               call exit(201)
+c               ier=1
+c               return
 c            endif
             if(user) then
 !
@@ -789,12 +835,18 @@ c            endif
                   do j=1,ntot
                      read(textpart(j+2)(1:20),'(f20.0)',iostat=istat) 
      &                    beta(j)
-                     if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+                     if(istat.gt.0) then
+                        call inputerror(inpc,ipoinpc,iline,
+     &                       "*INITIAL CONDITIONS%",ier)
+                        return
+                     endif
                   enddo
                   read(textpart(1)(1:10),'(i10)',iostat=istat) l
-                  if(istat.ne.0) call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+                  if(istat.ne.0) then
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
+                  endif
                   if(l.gt.ne) then
                      write(*,*) 
      &                '*WARNING reading *INITIAL CONDITIONS: element ',l
@@ -809,7 +861,8 @@ c            endif
                      enddo
                   else
                      call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+     &                    "*INITIAL CONDITIONS%",ier)
+                     return
                   endif
 !     
                   if(nstate_.gt.6) then
@@ -828,7 +881,8 @@ c            endif
      &                          iostat=istat) beta(j)
                            if(istat.gt.0) 
      &                         call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+     &                              "*INITIAL CONDITIONS%",ier)
+                               return
                            xstate(ntot+j,k,l)=beta(j)
                         enddo
                         ntot=ntot+jmax
@@ -852,7 +906,7 @@ c            endif
       write(*,*) '*ERROR reading *INITIAL CONDITIONS: unknown type'
       write(*,*) '  '
       call inputerror(inpc,ipoinpc,iline,
-     &"*INITIAL CONDITIONS%")
+     &     "*INITIAL CONDITIONS%",ier)
 !
       return
       end

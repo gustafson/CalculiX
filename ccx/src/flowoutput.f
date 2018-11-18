@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,12 +39,18 @@
      &     ntmat_,nteq,nshcon(*),nelem,index,ipkon(*),kon(*),iin,
      &     nactdog(0:3,*),nacteq(0:3,*),ielprop(*),node1,nodem,node2,
      &     istartset(*),iendset(*),ialset(*),nset,nodef(8),numf,
-     &     istep,iit
+     &     istep,iit,iplausi
 !     
       real*8 physcon(*),v(0:mi(2),*),shcon(0:3,ntmat_,*),co(3,*),
-     &     prop(*),dtime,ttime,time,xflow,camt(*),camf(*),camp(*),
-     &     rhcon(0:1,ntmat_,*),vold(0:mi(2),*),uamt,uamf,uamp,eta,
-     &     bc(*),cp,dvi,df(8),gastemp,f,g(3),r,rho,ts1,ts2,tg1,tg2
+     &     prop(*),dtime,ttime,time,xflow,camp(*),camt(*),camf(*),
+     &     rhcon(0:1,ntmat_,*),vold(0:mi(2),*),eta,
+     &     bc(*),cp,dvi,df(8),gastemp,f,g(3),r,rho,ts1,ts2
+!
+      intent(in) itg,ieg,ntg,nteq,bc,lakon,ntmat_,
+     &     v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
+     &     ielmat,prop,ielprop,nactdog,nacteq,iin,physcon,
+     &     camt,camf,camp,rhcon,nrhcon,vold,jobnamef,set,istartset,
+     &     iendset,ialset,nset,mi,iaxial,istep,iit
 !     
       do i=1,132
          if(jobnamef(1)(i:i).eq.' ') exit
@@ -75,18 +81,12 @@
 !              incompressible
 !
                if(node1.eq.0) then
-c                  tg1=v(0,node2)
-c                  tg2=tg1
                   ts1=v(3,node2)
                   ts2=ts1
                elseif(node2.eq.0) then
-c                  tg1=v(0,node1)
-c                  tg2=tg1
                   ts1=v(3,node1)
                   ts2=ts1
                else
-c                  tg1=v(0,node1)
-c                  tg2=v(0,node2)
                   ts1=v(3,node1)
                   ts2=v(3,node2)
                endif
@@ -96,18 +96,8 @@ c                  tg2=v(0,node2)
 !              compressible
 !
                if(xflow.gt.0) then
-c                  tg1=v(0,node1)
-c                  ts1=v(3,node1)
-c                  tg2=v(0,node2)
-c                  ts2=v(3,node2)
-c                  gastemp=ts1
                   gastemp=v(3,node1)
                else
-c                  tg2=v(0,node1)
-c                  ts2=v(3,node1)
-c                  tg1=v(0,node2)
-c                  ts1=v(3,node2)
-c                  gastemp=ts2
                   gastemp=v(3,node2)
                endif
             endif
@@ -119,7 +109,6 @@ c                  gastemp=ts2
 !
             if(nacteq(2,nodem).ne.0) then
                ieq=nacteq(2,nodem)
-c               xflow=v(1,nodem)
 !
 !              dummy set number
 !
@@ -130,7 +119,7 @@ c               xflow=v(1,nodem)
      &              ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &              cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
      &              nshcon,rhcon,nrhcon,ntmat_,mi,ider,ttime,time,
-     &              iaxial)
+     &              iaxial,iplausi)
             endif
          endif
 !            

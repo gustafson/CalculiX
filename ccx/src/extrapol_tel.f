@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine extrapol_tel(nface,ielfa,xrlfa,vel,vfa,
      &  ifabou,xbounact,nef,gradtel,gradtfa,neifa,rf,area,volume,
      &  xle,xxi,icyclic,xxn,ipnei,ifatie,xload,xlet,xxj,
-     &  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh)
+     &  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh,
+     &  iitg)
 !
 !     extrapolation of temperature values to the faces
 !
@@ -33,7 +34,7 @@
       character*20 labmpc(*)
 !
       integer nface,ielfa(4,*),ifabou(*),i,iel1,iel2,nef,ibou,
-     &  neifa(*),icyclic,ifa,indexf,k,l,m,ipnei(*),ifatie(*),
+     &  neifa(*),icyclic,ifa,indexf,k,l,m,ipnei(*),ifatie(*),iitg,
      &  is,ie,nmpc,ipompc(*),nodempc(3,*),ifaext(*),nfaext,nactdoh(*)
 !
       real*8 xrlfa(3,*),vel(nef,0:7),vfa(0:7,*),xbounact(*),xl1,xl2,
@@ -48,10 +49,6 @@
 !
       intent(inout) vfa,gradtel,gradtfa
 !     
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,vfap,vel,ifabou,xbounact)
-!c$omp& private(i,iel1,xl1,iel2,ibou)
-!c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -83,8 +80,6 @@
             vfap(0,i)=vel(iel1,0)
          endif
       enddo
-!c$omp end do
-!c$omp end parallel
 !
 !     Multiple point constraints
 !
@@ -99,10 +94,6 @@
 !     calculate the gradient of the temperature at the center of
 !     the elements
 !
-!c$omp parallel default(none)
-!c$omp& shared(nef,ipnei,neifa,gradtel,vfap,area,xxn,volume)
-!c$omp& private(i,indexf,ifa)
-!c$omp do
       do i=1,nef
 !
 !        initialization
@@ -125,17 +116,10 @@
             gradtel(l,i)=gradtel(l,i)/volume(i)
          enddo
       enddo
-!c$omp end do
-!c$omp end parallel
 ! 
 !     interpolate/extrapolate the temperature gradient from the
 !     center of the elements to the center of the faces
 !           
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,gradtfa,gradtel,icyclic,c,ifatie,
-!c$omp&        ipnei,xxn,ifabou,xload)
-!c$omp& private(i,iel1,xl1,iel2,l,xl2,indexf,gradnor)
-!c$omp do
       do i=1,nface
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
@@ -195,7 +179,6 @@
                gradnor=gradtel(1,iel1)*xxn(1,indexf)
      &                +gradtel(2,iel1)*xxn(2,indexf)
      &                +gradtel(3,iel1)*xxn(3,indexf)-q
-c     &                -xload(1,ifabou(-iel2+6))
                do l=1,3
                   gradtfa(l,i)=gradtel(l,iel1)
      &                        -gradnor*xxn(l,indexf)
@@ -215,72 +198,50 @@ c     &                -xload(1,ifabou(-iel2+6))
             enddo
          endif
       enddo
-!c$omp end do
-!c$omp end parallel
 !
-!     correction loops
+!     Moukalled et al. p 279
 !
-c      do i=1,nface
-c         vfa(0,i)=vfap(0,i)
-c      enddo
-      do m=1,2
-c      do m=1,1
-!
-!        Moukalled et al. p 279
-!
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,vfa,vfap,gradtfa,rf,ifabou,xxi,xle,
-!c$omp&        vel,ipnei)
-!c$omp& private(i,iel1,iel2,xl1,indexf)
-!c$omp do
-         do i=1,nface
-            iel1=ielfa(1,i)
-            iel2=ielfa(2,i)
-            xl1=xrlfa(1,i)
-            if(iel2.gt.0) then
-!
-!              interpolation
-!
-               vfa(0,i)=vfap(0,i)+gradtfa(1,i)*rf(1)
-     &                         +gradtfa(2,i)*rf(2)
-     &                         +gradtfa(3,i)*rf(3)
-            elseif(ielfa(3,i).gt.0) then
-!
-!              no implicit zero gradient
-!
-               if(ifabou(-iel2).gt.0) then
-!
-!                 temperature given
-!
-                  vfa(0,i)=vfap(0,i)
-               else
-!
-!                 flux given: gradient=flux
-!
-                  indexf=ipnei(iel1)+ielfa(4,i)
-                  vfa(0,i)=vel(iel1,0)
-     &                    +(gradtfa(1,i)*xxi(1,indexf)+
-     &                      gradtfa(2,i)*xxi(2,indexf)+
-     &                      gradtfa(3,i)*xxi(3,indexf))*xle(indexf)
-               endif
+      do i=1,nface
+         iel1=ielfa(1,i)
+         iel2=ielfa(2,i)
+         xl1=xrlfa(1,i)
+         if(iel2.gt.0) then
+!     
+!     interpolation
+!     
+            vfa(0,i)=vfap(0,i)+gradtfa(1,i)*rf(1)
+     &           +gradtfa(2,i)*rf(2)
+     &           +gradtfa(3,i)*rf(3)
+         elseif(ielfa(3,i).gt.0) then
+!     
+!     no implicit zero gradient
+!     
+            if(ifabou(-iel2).gt.0) then
+!     
+!     temperature given
+!     
+               vfa(0,i)=vfap(0,i)
             else
-!
-!                 zero gradient
-!
-c               write(*,*) 'extrapol_tel ',iel1,iel2
-c               write(*,*) 'extrapol_tel ',vel(iel1,0)
-c               write(*,*) 'extrapol_tel ',gradtfa(1,i),xxi(1,indexf)
-c               write(*,*) 'extrapol_tel ',gradtfa(2,i),xxi(2,indexf)
-c               write(*,*) 'extrapol_tel ',gradtfa(3,i),xxi(3,indexf)
+!     
+!     flux given: gradient=flux
+!     
                indexf=ipnei(iel1)+ielfa(4,i)
                vfa(0,i)=vel(iel1,0)
-     &                 +(gradtfa(1,i)*xxi(1,indexf)+
-     &                   gradtfa(2,i)*xxi(2,indexf)+
-     &                   gradtfa(3,i)*xxi(3,indexf))*xle(indexf)
+     &              +(gradtfa(1,i)*xxi(1,indexf)+
+     &              gradtfa(2,i)*xxi(2,indexf)+
+     &              gradtfa(3,i)*xxi(3,indexf))*xle(indexf)
             endif
-         enddo
-!c$omp end do
-!c$omp end parallel
+         else
+!     
+!     zero gradient
+!     
+            indexf=ipnei(iel1)+ielfa(4,i)
+            vfa(0,i)=vel(iel1,0)
+     &           +(gradtfa(1,i)*xxi(1,indexf)+
+     &           gradtfa(2,i)*xxi(2,indexf)+
+     &           gradtfa(3,i)*xxi(3,indexf))*xle(indexf)
+         endif
+      enddo
 !
 !     Multiple point constraints
 !
@@ -292,13 +253,13 @@ c               write(*,*) 'extrapol_tel ',gradtfa(3,i),xxi(3,indexf)
      &        ifaext,nfaext)
       endif
 !
+!     correction loops
+!
+      do m=1,iitg
+!
 !        calculate the gradient of the temperature at the center of
 !        the elements
 !
-!c$omp parallel default(none)
-!c$omp& shared(nef,ipnei,neifa,gradtel,vfa,area,xxn,volume)
-!c$omp& private(i,indexf,ifa)
-!c$omp do
          do i=1,nef
 !
 !           initialization
@@ -321,17 +282,10 @@ c               write(*,*) 'extrapol_tel ',gradtfa(3,i),xxi(3,indexf)
                gradtel(l,i)=gradtel(l,i)/volume(i)
             enddo
          enddo
-!c$omp end do
-!c$omp end parallel
 ! 
 !        interpolate/extrapolate the temperature gradient from the
 !        center of the elements to the center of the faces
 !           
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,xrlfa,gradtfa,gradtel,icyclic,c,ifatie,
-!c$omp&        ipnei,xxn,ifabou,xload)
-!c$omp& private(i,iel1,xl1,iel2,l,xl2,indexf,gradnor)
-!c$omp do
          do i=1,nface
             iel1=ielfa(1,i)
             xl1=xrlfa(1,i)
@@ -408,18 +362,66 @@ c     &                 -xload(1,ifabou(-iel2+6))
                enddo
             endif
          enddo
-!c$omp end do
-!c$omp end parallel
+!
+!        Moukalled et al. p 279
+!
+         do i=1,nface
+            iel1=ielfa(1,i)
+            iel2=ielfa(2,i)
+            xl1=xrlfa(1,i)
+            if(iel2.gt.0) then
+!
+!              interpolation
+!
+               vfa(0,i)=vfap(0,i)+gradtfa(1,i)*rf(1)
+     &                         +gradtfa(2,i)*rf(2)
+     &                         +gradtfa(3,i)*rf(3)
+            elseif(ielfa(3,i).gt.0) then
+!
+!              no implicit zero gradient
+!
+               if(ifabou(-iel2).gt.0) then
+!
+!                 temperature given
+!
+                  vfa(0,i)=vfap(0,i)
+               else
+!
+!                 flux given: gradient=flux
+!
+                  indexf=ipnei(iel1)+ielfa(4,i)
+                  vfa(0,i)=vel(iel1,0)
+     &                    +(gradtfa(1,i)*xxi(1,indexf)+
+     &                      gradtfa(2,i)*xxi(2,indexf)+
+     &                      gradtfa(3,i)*xxi(3,indexf))*xle(indexf)
+               endif
+            else
+!
+!                 zero gradient
+!
+               indexf=ipnei(iel1)+ielfa(4,i)
+               vfa(0,i)=vel(iel1,0)
+     &                 +(gradtfa(1,i)*xxi(1,indexf)+
+     &                   gradtfa(2,i)*xxi(2,indexf)+
+     &                   gradtfa(3,i)*xxi(3,indexf))*xle(indexf)
+            endif
+         enddo
+!
+!        Multiple point constraints
+!
+         if(nmpc.gt.0) then
+            is=0
+            ie=0
+            call applympc(nface,ielfa,is,ie,ifabou,ipompc,vfa,coefmpc,
+     &           nodempc,ipnei,neifa,labmpc,xbounact,nactdoh,
+     &           ifaext,nfaext)
+         endif
 !
       enddo
 !
 !     correct the facial temperature gradients:
 !     Moukalled et al. p 289
 !
-!c$omp parallel default(none)
-!c$omp& shared(nface,ielfa,ipnei,vel,xlet,gradtfa,xxj)
-!c$omp& private(i,iel2,iel1,indexf,dd,k)
-!c$omp do
       do i=1,nface
          iel2=ielfa(2,i)
          if(iel2.gt.0) then
@@ -434,8 +436,6 @@ c     &                 -xload(1,ifabou(-iel2+6))
             enddo
          endif
       enddo
-!c$omp end do
-!c$omp end parallel
 !            
       return
       end

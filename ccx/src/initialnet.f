@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,9 +28,9 @@
      &     nactdog,ndirboun,nodeboun,xbounact,
      &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
      &     rhcon,nrhcon,ipobody,ibody,xbodyact,co,nbody,network,
-     &     iin_abs,vold,set,istep,iit,mi,ineighe,ilboun,channel,
+     &     iin_abs,vold,set,istep,iit,mi,ineighe,ilboun,ichannel,
      &     iaxial,nmpc,labmpc,ipompc,nodempc,coefmpc,ttime,time,
-     &     iponoel,inoel)
+     &     iponoel,inoel,voldwithspc)
 !     
       implicit none
      
@@ -48,24 +48,37 @@
      &     nrhs,info,idof1,idof2,nteq,nrhcon(*),ipobody(2,*),ibody(3,*),
      &     nbody,numf,network,iin_abs,icase,index2,index1,nelem1,nelem2,
      &     node11,node21,node12,node22,istep,iit,ineighe(*),iponoel(*),
-     &     ilboun(*),idir,channel,inoel(2,*),indexe,iel
+     &     ilboun(*),idir,ichannel,inoel(2,*),indexe,iel,iplausi
 !     
       real*8 ac(nteq,nteq), bc(nteq),prop(*),shcon(0:3,ntmat_,*),
      &     f,df(8),xflow,xbounact(*),v(0:mi(2),*),cp,r,tg1,
      &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),z1,z2,
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
-     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),
-     &     coefmpc(*),ttime,time,xflow360
+     &     A,Tt,pt,Ts,pressmax,constant,vold(0:mi(2),*),
+     &     coefmpc(*),ttime,time,xflow360,A2,d,l,s,
+     &     voldwithspc(0:mi(2),*)
+!
+      intent(in) itg,ieg,ntg,lakon,
+     &     ipkon,kon,nflow,ikboun,nboun,prop,ielprop,
+     &     nactdog,ndirboun,nodeboun,xbounact,
+     &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
+     &     rhcon,nrhcon,ipobody,ibody,xbodyact,co,nbody,network,
+     &     iin_abs,vold,set,istep,iit,mi,ilboun,
+     &     iaxial,nmpc,labmpc,ipompc,nodempc,coefmpc,ttime,time,
+     &     iponoel,inoel
+!
+      intent(inout) ichannel,v,ac,bc,ineighe,voldwithspc
 !
       kflag=1
       ider=0
-      channel=0
+      ichannel=0
       gaspipe=.false.
 !
 !     applying the boundary conditions
 !
       do j=1,nboun
          v(ndirboun(j),nodeboun(j))=xbounact(j)
+         voldwithspc(ndirboun(j),nodeboun(j))=xbounact(j)
       enddo
 !
 !     check for channel elements
@@ -73,7 +86,7 @@
       do i=1,nflow
          nelem=ieg(i)
          if(lakon(nelem)(2:5).eq.'LICH') then
-            channel=1
+            ichannel=1
             return
          endif
       enddo
@@ -650,7 +663,7 @@ c      if(network.le.2) then
                   write(*,*) '          is changed '
                   write(*,*) '          node1',node1,
      &                 ' given initial pressure',v(2,node1)
-                  v(2,node1)=1.1*v(2,node1)
+                  v(2,node1)=1.1d0*v(2,node1)
                   write(*,*) '          node1',node1,
      &                 ' new initial pressure',v(2,node1)
                   write(*,*) '          node2',node2,' pressure',
@@ -672,7 +685,7 @@ c      if(network.le.2) then
                   write(*,*) '          node2',node2,
      &                 'given intial pressure',
      &                 v(2,node2)
-                  v(2,node2)=0.9*v(2,node2)
+                  v(2,node2)=0.9d0*v(2,node2)
                   write(*,*) '          node2',node2,
      &                 ' new initial pressure',v(2,node2)
 !     
@@ -688,12 +701,12 @@ c      if(network.le.2) then
                   write(*,*) '          initial condition are changed '
                   write(*,*) '          node1',node1,
      &                 ' given initial pressure',v(2,node1)  
-                  v(2,node1)=1.05*v(2,node2)
+                  v(2,node1)=1.05d0*v(2,node2)
                   write(*,*) '          node1',node1,
      &                 ' new intial pressure',v(2,node1)
                   write(*,*) '          node2',node2,
      &                 ' given initial pressure',v(2,node2)
-                  v(2,node2)=0.95*v(2,node2)
+                  v(2,node2)=0.95d0*v(2,node2)
                   write(*,*) '          node2',node2,
      &                 ' new intial pressure',v(2,node2)
                endif
@@ -707,7 +720,7 @@ c      if(network.le.2) then
      &           nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &           nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
      &           vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
-     &           ttime,time,iaxial)
+     &           ttime,time,iaxial,iplausi)
                v(1,nodem)=xflow
             endif
 !     
@@ -826,10 +839,24 @@ c      if(network.le.2) then
                kappa=cp/(cp-R)
                xflow=v(1,nodem)
                Tt=v(0,node)
-               Pt=v(2,node)
+               pt=v(2,node)
 !     
                if(lakon(nelem)(2:5).eq.'GAPF') then
-                  A=prop(index+1)
+!
+!                 distinguish between standard pipes and flexible
+!                 pipes
+! 
+                  if((lakon(nelem)(6:8).eq.'AFR').or.
+     &               (lakon(nelem)(6:8).eq.'ARL').or.
+     &               (lakon(nelem)(6:8).eq.'ARG').or.
+     &               (lakon(nelem)(6:8).eq.'IFR').or.
+     &               (lakon(nelem)(6:8).eq.'IRL')) then
+                     call calcgeomelemnet(vold,co,prop,lakon,nelem,
+     &                   ttime,time,ielprop,mi,A,A2,d,l,s)
+                  else
+                     A=prop(index+1)
+                  endif
+!
                   if(lakon(nelem)(2:6).eq.'GAPFA') then
                      icase=0
                   elseif(lakon(nelem)(2:6).eq.'GAPFI') then
@@ -854,7 +881,7 @@ c      if(network.le.2) then
                   endif
 !     
                   if(lakon(nelem)(4:5).eq.'BE') then
-                     a=prop(index+1)
+                     A=prop(index+1)
 !     
                   elseif(lakon(nelem)(4:5).eq.'BR') then
                      if(lakon(nelem)(4:6).eq.'BRJ') then
@@ -872,25 +899,35 @@ c      if(network.le.2) then
                      endif
 !     
                   else
-                     if(node.eq.node1) then
-                        a=prop(index+1)
-                     elseif(node.eq.node2) then
-                        a=prop(index+2)
+!
+                     if((lakon(nelem)(2:5).eq.'RBSF')) then
+                        call calcgeomelemnet(vold,co,prop,lakon,nelem,
+     &                       ttime,time,ielprop,mi,A,A2,d,l,s)
+                        if(node.eq.node2) then
+                           A=A2
+                        endif
+                     else
+                        if(node.eq.node1) then
+                           A=prop(index+1)
+                        elseif(node.eq.node2) then
+                           A=prop(index+2)
+                        endif
                      endif
                   endif
                elseif(lakon(nelem)(2:3).eq.'UP') then
 !
 !                 user elements whose names start with UP are assumed
 !                 to be Pipe-like (static and total temperatures differ)
-!                 The cross area is assumed to be the first property
 !
-                  a=prop(index+1)
+                  call calcgeomelemnet(vold,co,prop,lakon,nelem,
+     &                       ttime,time,ielprop,mi,A,A2,d,l,s)
+c                  A=prop(index+1)
                   icase=0
                endif
 !     
                if(v(3,node).eq.0.d0) then
                   xflow360=xflow*iaxial
-                  call ts_calc(xflow360,Tt,Pt,kappa,r,a,Ts,icase)
+                  call ts_calc(xflow360,Tt,pt,kappa,r,A,Ts,icase)
                   v(3,node)=Ts
                endif
 !     

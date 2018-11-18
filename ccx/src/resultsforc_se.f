@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,6 +31,12 @@
 !
       real*8 dfn(0:mi(2),*),coefmpc(*),fmpc(*),forcempc,distmin,
      &  df(*),val
+!
+      intent(in) nk,nactdofinv,ipompc,nodempc,
+     &  coefmpc,nmpc,mi,calcul_fn,calcul_f,idesvar,df,
+     &  jqs,irows,distmin
+!
+      intent(inout) dfn,fmpc
 !
       mt=mi(2)+1
 !

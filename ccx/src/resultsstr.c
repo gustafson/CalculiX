@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -72,7 +72,7 @@ void resultsstr(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        char *orname,ITG *network,ITG *neapar,ITG *nebpar){
 
     ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,ikin,
-        intpointvart,mt=mi[1]+1,i,j;
+        mt=mi[1]+1,i,j;
 
     /*
 
@@ -106,7 +106,7 @@ void resultsstr(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
     /* local declaration prevails, if strictly positive */
 
-    envloc = getenv("CCX_NPROC_RESULTS");
+    envloc = getenv("CCX_NPROC_SENS");
     if(envloc){
 	num_cpus=atoi(envloc);
 	if(num_cpus<0){
@@ -141,7 +141,7 @@ void resultsstr(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
     calcul_fn=0;
     calcul_f=0;
     calcul_qa=0;
-    calcul_cauchy=1;
+    if(iperturb[1]==1){calcul_cauchy=1;}else{calcul_cauchy=0;}
 
     qa[0]=0.e0;
     qa[1]=0.e0;
@@ -260,24 +260,20 @@ void resultsstr(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
 void *resultsmechmtstr(ITG *i){
 
-    ITG indexfn,indexqa,indexnal,nea,neb,nedelta;
+    ITG indexfn,indexqa,indexnal,nea,neb,nedelta,list,*ilist=NULL;
 
     indexfn=*i*mt1**nk1;
     indexqa=*i*4;
     indexnal=*i;
-    
-// ceil -> floor
 
     nedelta=(ITG)floor(*ne1/(double)num_cpus);
-    //nea=*i*nedelta+1;
-    //neb=(*i+1)*nedelta;
     
     nea=neapar1[*i]+1;
     neb=nebpar1[*i]+1;
     
-// next line! -> all parallel sections
     if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
 
+    list=0;
     FORTRAN(resultsmech,(co1,kon1,ipkon1,lakon1,ne1,v1,
           stx1,elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,
           ielmat1,ielorien1,norien1,orab1,ntmat1_,t01,t11,ithermal1,prestr1,
@@ -288,7 +284,8 @@ void *resultsmechmtstr(ITG *i){
           ncmat1_,nstate1_,stiini1,vini1,ener1,eei1,enerini1,istep1,iinc1,
           springarea1,reltime1,&calcul_fn1,&calcul_qa1,&calcul_cauchy1,nener1,
 	  &ikin1,&nal[indexnal],ne01,thicke1,emeini1,
-	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb,ielprop1,prop1,kscale1));
+	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb,ielprop1,prop1,
+	  kscale1,&list,ilist));
 
     return NULL;
 }

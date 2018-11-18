@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -84,7 +84,7 @@
                elseif(cdabs(eigb(1)).lt.1.d-10) then
                   write(*,*) '*ERROR in coriolissolve: eigenvalue'
                   write(*,*) '       out of bounds'
-                  deig=0.
+                  deig=0.d0
                else
                   size=1.d30
                   do k=1,nev

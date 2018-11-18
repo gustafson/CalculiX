@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -66,7 +66,9 @@
 !
 !     catalogueing the nodes belonging to "Dx"-elements (specific
 !     network elements, for which "D" is followed by some
-!     specification such as restrictor or vortex)
+!     specification such as restrictor or vortex) unless the
+!     network is declared by the user as a thermal network
+!     (parameter THERMAL NETWORK on the *STEP card; network=1)
 !
       nnodesd=0
       do i=1,ne

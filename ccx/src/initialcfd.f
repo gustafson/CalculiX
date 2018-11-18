@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -690,7 +690,7 @@ c      endif
      &                        +cc*co(3,node)+dd))
             endif
 !
-!           60.d0/(0.075*delta(y)**2)
+!           60.d0/(0.075d0*delta(y)**2)
 !
             dy(i)=800.d0/(dist*dist)
          enddo
@@ -700,7 +700,9 @@ c      endif
          do k=1,3
             xxni(k,i)=xxn(k,i)-xxi(k,i)
             xxnj(k,i)=xxn(k,i)-xxj(k,i)
-            xxicn(k,i)=xxi(k,i)-cosa(i)*xxn(k,i)
+c            xxnj(k,i)=xxn(k,i)-xxj(k,i)/cosb(i)
+c            xxicn(k,i)=xxi(k,i)-cosa(i)*xxn(k,i)
+            xxicn(k,i)=xxn(k,i)-xxj(k,i)/cosb(i)
          enddo
       enddo
 c      write(*,*) 'initialcfd neifa,neiel'

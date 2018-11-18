@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -210,7 +210,7 @@
 !     
       if(iavflag.eq.0) then
          do j=1,iterms
-            if(pwrk(j).lt.1.E-22) then
+            if(pwrk(j).lt.1.d-22) then
                pwrk(j)=0.d0
             else 
                pwrk(j)=1.d0/pwrk(j)

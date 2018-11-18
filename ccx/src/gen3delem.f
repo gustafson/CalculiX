@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,8 +43,8 @@
       character*81 set(*)
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,ikmpc(*),
-     &  ilmpc(*),kon(*),ipkon(*),ne,indexe,i,j,node,
-     &  ikboun(*),ilboun(*),nboun,nboun_,
+     &  ilmpc(*),kon(*),ipkon(*),ne,indexe,i,j,node,index,
+     &  ikboun(*),ilboun(*),nboun,nboun_,ishift,iexpand,
      &  neigh(7,8),nodeboun(*),ndirboun(*),nk,
      &  nk_,iponoel(*),inoel(3,*),inoelfree,istep,nmpcold,
      &  ikforc(*),ilforc(*),nodeforc(2,*),ndirforc(*),iamforc(*),
@@ -66,8 +66,10 @@
      &            5,13,6,16,8,17,1,6,13,5,14,7,18,2,
      &            7,15,8,14,6,19,3,8,15,7,16,5,20,4/
 !
-      data coloc /-1.,-1.,-1.,1.,-1.,-1.,1.,1.,-1.,-1.,1.,-1.,
-     &            -1.,-1.,1.,1.,-1.,1.,1.,1.,1.,-1.,1.,1./
+      data coloc /-1.d0,-1.d0,-1.d0,1.d0,-1.d0,-1.d0,1.d0,1.d0,-1.d0,
+     &            -1.d0,1.d0,-1.d0,
+     &            -1.d0,-1.d0,1.d0,1.d0,-1.d0,1.d0,1.d0,1.d0,1.d0,-1.d0,
+     &             1.d0,1.d0/
 !
       pi=4.d0*datan(1.d0)
 !
@@ -101,7 +103,7 @@
                elseif((lakon(i)(1:1).eq.'B').or.
      &                (lakon(i)(1:1).eq.'T')) then
                   numnod=3
-               elseif((lakon(i)(2:2).eq.'3').or.
+               elseif((lakon(i)(1:2).eq.'S3').or.
      &                (lakon(i)(4:4).eq.'3')) then
                   numnod=3
                elseif((lakon(i)(2:2).eq.'4').or.
@@ -156,6 +158,33 @@
             endif
          enddo
 !
+!        checking whether any rotational degrees of freedom are fixed
+!        by SPC's, MPC's or loaded by bending moments or torques
+!        in the end, rig(i)=0 if no rigid knot is defined in node i,
+!        else rig(i)=the rotational node of the knot. The value -1 is
+!        a dummy. 
+!
+c!        only for nonlinear dynamic calculations
+!
+c         if((nmethod.eq.4).and.(iperturb.gt.1)) then
+c            do i=1,nboun
+c               if(ndirboun(i).gt.4) rig(nodeboun(i))=-1
+c            enddo
+c            do i=1,nforc
+c               if(ndirforc(i).gt.4) rig(nodeforc(1,i))=-1
+c            enddo
+c            do i=1,nmpc
+c               index=ipompc(i)
+c               do
+c                  if(index.eq.0) exit
+c                  if(nodempc(2,index).gt.4) then
+c                     rig(nodempc(1,index))=-1
+c                  endif
+c                 index=nodempc(3,index)
+c              enddo
+c            enddo
+c         endif
+!
 !     calculating the normals in nodes belonging to shells/beams
 !
          nmpcold=nmpc
@@ -209,6 +238,7 @@
      &              (lakon(i)(1:2).eq.'M3').or.
      &              (lakon(i)(1:2).eq.'CA')) then
 !
+                 iexpand=1
                  call gen3dfrom2d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
      &           thicke,offset,ntrans,inotr,trab,ikboun,ilboun,nboun,
      &           nboun_,nodeboun,ndirboun,xboun,iamboun,typeboun,ipompc,
@@ -219,74 +249,123 @@
 !            
               elseif((lakon(i)(1:1).eq.'B').or.
      &               (lakon(i)(1:1).eq.'T')) then
+                 iexpand=1
                  call gen3dfrom1d(i,kon,ipkon,lakon,ne,iponor,xnor,knor,
      &                thicke,ntrans,inotr,trab,nk,nk_,co,offset,mi)
+              else
+                 iexpand=0
               endif
 !     
+              if(iexpand.eq.1) then
+                 write(*,*) 'Element ',i,'with label "',lakon(i),
+     &              '" and with nodes:'
+              endif
               if(lakon(i)(1:4).eq.'CPE3') then
                  lakon(i)(1:7)='C3D6  E'
+                 nope=3
               elseif(lakon(i)(1:5).eq.'CPE4R') then
                  lakon(i)(1:7)='C3D8R E'
+                 nope=4
               elseif(lakon(i)(1:4).eq.'CPE4') then
                  lakon(i)(1:7)='C3D8  E'
+                 nope=4
               elseif(lakon(i)(1:4).eq.'CPE6') then
                  lakon(i)(1:7)='C3D15 E'
+                 nope=6
               elseif(lakon(i)(1:5).eq.'CPE8R') then
                  lakon(i)(1:7)='C3D20RE'
+                 nope=8
               elseif(lakon(i)(1:4).eq.'CPE8') then
                  lakon(i)(1:7)='C3D20 E'
+                 nope=8
               elseif(lakon(i)(1:4).eq.'CPS3') then
                  lakon(i)(1:7)='C3D6  S'
+                 nope=3
               elseif(lakon(i)(1:5).eq.'CPS4R') then
                  lakon(i)(1:7)='C3D8R S'
+                 nope=4
               elseif(lakon(i)(1:4).eq.'CPS4') then
                  lakon(i)(1:7)='C3D8  S'
+                 nope=4
               elseif(lakon(i)(1:4).eq.'CPS6') then
                  lakon(i)(1:7)='C3D15 S'
+                 nope=6
               elseif(lakon(i)(1:5).eq.'CPS8R') then
                  lakon(i)(1:7)='C3D20RS'
+                 nope=8
               elseif(lakon(i)(1:4).eq.'CPS8') then
                  lakon(i)(1:7)='C3D20 S'
+                 nope=8
               elseif(lakon(i)(1:4).eq.'CAX3') then
                  lakon(i)(1:7)='C3D6  A'
+                 nope=3
               elseif(lakon(i)(1:5).eq.'CAX4R') then
                  lakon(i)(1:7)='C3D8R A'
+                 nope=4
               elseif(lakon(i)(1:4).eq.'CAX4') then
                  lakon(i)(1:7)='C3D8  A'
+                 nope=4
               elseif(lakon(i)(1:4).eq.'CAX6') then
                  lakon(i)(1:7)='C3D15 A'
+                 nope=6
               elseif(lakon(i)(1:5).eq.'CAX8R') then
                  lakon(i)(1:7)='C3D20RA'
+                 nope=8
               elseif(lakon(i)(1:4).eq.'CAX8') then
                  lakon(i)(1:7)='C3D20 A'
+                 nope=8
               elseif((lakon(i)(1:2).eq.'S3').or.
      &               (lakon(i)(1:4).eq.'M3D3')) then
                  lakon(i)(1:7)='C3D6  L'
+                 nope=3
               elseif((lakon(i)(1:3).eq.'S4R').or.
      &               (lakon(i)(1:5).eq.'M3D4R')) then
                  lakon(i)(1:7)='C3D8R L'
-              elseif((lakon(i)(1:2).eq.'S4').or.
-     &               (lakon(i)(1:4).eq.'M3D4')) then
+                 nope=4
+              elseif(lakon(i)(1:2).eq.'S4') then
                  lakon(i)(1:7)='C3D8I L'
+                 nope=4
+              elseif(lakon(i)(1:4).eq.'M3D4') then
+                 lakon(i)(1:7)='C3D8  L'
+                 nope=4
               elseif((lakon(i)(1:2).eq.'S6').or.
      &               (lakon(i)(1:4).eq.'M3D6')) then
                  lakon(i)(1:7)='C3D15 L'
+                 nope=6
               elseif((lakon(i)(1:3).eq.'S8R').or.
      &               (lakon(i)(1:5).eq.'M3D8R')) then
                  lakon(i)(1:7)='C3D20RL'
+                 nope=8
               elseif((lakon(i)(1:2).eq.'S8').or.
      &               (lakon(i)(1:4).eq.'M3D8')) then
                  lakon(i)(1:7)='C3D20 L'
+                 nope=8
               elseif(lakon(i)(1:4).eq.'B31R') then
                  lakon(i)(1:7)='C3D8R B'
+                 nope=2
               elseif((lakon(i)(1:3).eq.'B31').or.
      &               (lakon(i)(1:4).eq.'T3D2')) then
                  lakon(i)(1:7)='C3D8I B'
+                 nope=2
               elseif(lakon(i)(1:4).eq.'B32R') then
                  lakon(i)(1:7)='C3D20RB'
+                 nope=3
               elseif((lakon(i)(1:3).eq.'B32').or.
      &               (lakon(i)(1:4).eq.'T3D3')) then
                  lakon(i)(1:7)='C3D20 B'
+                 nope=3
+              endif
+              if(iexpand.eq.1) then
+                 read(lakon(i)(4:4),'(i1)') ishift
+                 if(lakon(i)(5:5).eq.'8I') ishift=11
+                 if(ishift.le.2) then
+                    read(lakon(i)(4:5),'(i2)') ishift
+                 endif
+                 write(*,'(10(1x,i5))')(kon(ipkon(i)+ishift+j),j=1,nope)
+                 write(*,*) ' is expanded into a "',lakon(i),
+     &          '" element with topology:'
+                 write(*,'(10(1x,i5))') (kon(ipkon(i)+j),j=1,ishift)
+                 write(*,*)
               endif
            enddo
 c     Bernhardi start
@@ -314,7 +393,9 @@ c     Bernhardi end
       if((inoelfree.ne.0).and.(istep.eq.1)) then
          call gen3dconnect(kon,ipkon,lakon,ne,iponoel,inoel,
      &     iponoelmax,rig,iponor,xnor,knor,ipompc,nodempc,coefmpc,nmpc,
-     &     nmpc_,mpcfree,ikmpc,ilmpc,labmpc)
+     &     nmpc_,mpcfree,ikmpc,ilmpc,labmpc,vold,ikboun,ilboun,nboun,
+     &     nboun_,nodeboun,ndirboun,xboun,iamboun,typeboun,ithermal,
+     &     mi,trab,ntrans,nmethod,nk,nk_,nam,inotr,iperturb,co)
       endif
 !
       if(inoelfree.ne.0) then

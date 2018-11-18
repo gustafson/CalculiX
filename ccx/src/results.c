@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -30,7 +30,8 @@ static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *istep1,*iinc1,calcul_fn1,calcul_qa1,calcul_cauchy1,*nener1,ikin1,
     *nal=NULL,*ipompc1,*nodempc1,*nmpc1,*ncocon1,*ikmpc1,*ilmpc1,
     num_cpus,mt1,*nk1,*ne01,*nshcon1,*nelemload1,*nload1,*mortar1,
-    *ielprop1,*kscale1,*iponoel1,*inoel1,*network1,*ipobody1,*ibody1;
+    *ielprop1,*kscale1,*iponoel1,*inoel1,*network1,*ipobody1,*ibody1,
+    *neapar=NULL,*nebpar=NULL;
 
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*qa1=NULL,*vold1,*veold1,*dtime1,*time1,
@@ -64,7 +65,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        ITG *inotr,ITG *ntrans,double *fmpc,ITG *nelemload,ITG *nload,
        ITG *ikmpc,ITG *ilmpc,
        ITG *istep,ITG *iinc,double *springarea,double *reltime, ITG *ne0,
-       double *xforc, ITG *nforc, double *thicke,
+       double *thicke,
        double *shcon,ITG *nshcon,char *sideload,double *xload,
        double *xloadold,ITG *icfd,ITG *inomat,double *pslavsurf,
        double *pmastsurf,ITG *mortar,ITG *islavact,double *cdn,
@@ -161,8 +162,8 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        nactdof,iout,qa,vold,b,nodeboun,ndirboun,
        xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
        veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
-       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,nener,
-       &ikin,&intpointvart,xforc,nforc));
+       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
+       &ikin,&intpointvart));
 
    /* next statement allows for storing the displacements in each
       iteration: for debugging purposes */
@@ -176,6 +177,12 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        integration points; calculating the internal forces */
 
     if(((ithermal[0]<=1)||(ithermal[0]>=3))&&(intpointvarm==1)){
+    
+        /* determining the element bounds in each thread */
+
+	NNEW(neapar,ITG,num_cpus);
+	NNEW(nebpar,ITG,num_cpus);
+	elementcpuload(neapar,nebpar,ne,ipkon,&num_cpus);
 
 	NNEW(fn1,double,num_cpus*mt**nk);
 	NNEW(qa1,double,num_cpus*4);
@@ -223,7 +230,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 		fn[i]+=fn1[i+j*mt**nk];
 	    }
 	}
-	SFREE(fn1);SFREE(ithread);
+	SFREE(fn1);SFREE(ithread);SFREE(neapar);SFREE(nebpar);
 	
         /* determine the internal force */
 
@@ -278,6 +285,12 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        integration points; calculating the internal point flux */
 
     if((ithermal[0]>=2)&&(intpointvart==1)){
+    
+        /* determining the element bounds in each thread */
+
+	NNEW(neapar,ITG,num_cpus);
+	NNEW(nebpar,ITG,num_cpus);
+	elementcpuload(neapar,nebpar,ne,ipkon,&num_cpus);
 
 	NNEW(fn1,double,num_cpus*mt**nk);
 	NNEW(qa1,double,num_cpus*4);
@@ -323,7 +336,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 		fn[mt*i]+=fn1[mt*i+j*mt**nk];
 	    }
 	}
-	SFREE(fn1);SFREE(ithread);
+	SFREE(fn1);SFREE(ithread);SFREE(neapar);SFREE(nebpar);
 	
         /* determine the internal concentrated heat flux */
 
@@ -375,20 +388,16 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
 void *resultsmechmt(ITG *i){
 
-    ITG indexfn,indexqa,indexnal,nea,neb,nedelta;
+    ITG indexfn,indexqa,indexnal,nea,neb,list1,*ilist1=NULL;
 
     indexfn=*i*mt1**nk1;
     indexqa=*i*4;
     indexnal=*i;
-    
-// ceil -> floor
 
-    nedelta=(ITG)floor(*ne1/(double)num_cpus);
-    nea=*i*nedelta+1;
-    neb=(*i+1)*nedelta;
-// next line! -> all parallel sections
-    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+    nea=neapar[*i]+1;
+    neb=nebpar[*i]+1;
 
+    list1=0;
     FORTRAN(resultsmech,(co1,kon1,ipkon1,lakon1,ne1,v1,
           stx1,elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,
           ielmat1,ielorien1,norien1,orab1,ntmat1_,t01,t11,ithermal1,prestr1,
@@ -399,7 +408,8 @@ void *resultsmechmt(ITG *i){
           ncmat1_,nstate1_,stiini1,vini1,ener1,eei1,enerini1,istep1,iinc1,
           springarea1,reltime1,&calcul_fn1,&calcul_qa1,&calcul_cauchy1,nener1,
 	  &ikin1,&nal[indexnal],ne01,thicke1,emeini1,
-	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb,ielprop1,prop1,kscale1));
+	  pslavsurf1,pmastsurf1,mortar1,clearini1,&nea,&neb,ielprop1,prop1,
+	  kscale1,&list1,ilist1));
 
     return NULL;
 }
@@ -408,16 +418,14 @@ void *resultsmechmt(ITG *i){
 
 void *resultsthermmt(ITG *i){
 
-    ITG indexfn,indexqa,indexnal,nea,neb,nedelta;
+    ITG indexfn,indexqa,indexnal,nea,neb;
 
     indexfn=*i*mt1**nk1;
     indexqa=*i*4;
     indexnal=*i;
-    
-    nedelta=(ITG)floor(*ne1/(double)num_cpus);
-    nea=*i*nedelta+1;
-    neb=(*i+1)*nedelta;
-    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+
+    nea=neapar[*i]+1;
+    neb=nebpar[*i]+1;
 
     FORTRAN(resultstherm,(co1,kon1,ipkon1,lakon1,v1,
 	   elcon1,nelcon1,rhcon1,nrhcon1,ielmat1,ielorien1,norien1,orab1,

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -103,7 +103,7 @@
      &               straight(3,i)*cg(3,i)+
      &               straight(4,i))
       enddo
-      tolloc=0.025*tolloc/ncont
+      tolloc=0.025d0*tolloc/ncont
 !
 !     maximum number of neighboring master triangles for a slave node
 !
@@ -214,8 +214,6 @@
 !   
                call near3d(xo,yo,zo,x,y,z,nx,ny,nz,p(1),p(2),p(3),
      &             n,neigh,kneigh)
-!     
-               isol=0
 !     
                isol=0
 !
@@ -467,8 +465,6 @@ c     &                       tietol(1,i)
                   call near3d(xo,yo,zo,x,y,z,nx,ny,nz,p(1),p(2),p(3),
      &                 n,neigh,kneigh)
 !     
-                  isol=0
-!     
                isol=0
 !
                itriold=0
@@ -540,26 +536,26 @@ c                              write(*,*) '**regular solution'
 !     check whether distance is larger than tietol(1,i):
 !     no element is generated
 !     
-                  if(isol.eq.0) then
-!
-!                 no MPC is generated
-!
-                     write(*,*) '*WARNING in gentiedmpc: no tied MPC'
-                     write(*,*) '         generated for node ',node
-                     if(isol.eq.0) then
-                        write(*,*) '         master face too far away'
-                        write(*,*) '         distance: ',dist
-                        write(*,*) '         tolerance: ',tietol(1,i)
-                     else
-                      write(*,*) '         no corresponding master face'
-                      write(*,*) '         found; tolerance: ',
-     &                                tolloc
-c     &                                tietol(1,i)
-                     endif
-                     write(40,*) node
-                  else
+               if(isol.le.0) then
 !     
-                     nelem=int(koncont(4,itri)/10.d0)
+!     no MPC is generated
+!     
+                  write(*,*) '*WARNING in gentiedmpc: no tied MPC'
+                  write(*,*) '         generated for node ',node
+                  if(isol.eq.0) then
+                     write(*,*) '         master face too far away'
+                     write(*,*) '         distance: ',dist
+                     write(*,*) '         tolerance: ',tietol(1,i)
+                  else
+                     write(*,*) '         no corresponding master face'
+                     write(*,*) '         found; tolerance: ',
+     &                    tolloc
+c     &                                tietol(1,i)
+                  endif
+                  write(40,*) node
+               else
+!     
+                  nelem=int(koncont(4,itri)/10.d0)
                      jface=koncont(4,itri)-10*nelem
 !     
                      indexe=ipkon(nelem)

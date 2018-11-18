@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,26 +17,21 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine projectgrad(vector,ndesi,nodedesi,dgdxglob,nactive,
-     &   nobject,nnlconst,ipoacti,nk,rhs,iconst,objectset)         
+     &   nobject,nnlconst,ipoacti,nk,rhs,iconst,objectset,xlambd,xtf,
+     &   objnorm)         
 !
-!     calculates the projected gradient
+!     calculates the projected gradient, the lagrange multipliers and 
+!     the correction term due to nonlinear constraints
 !
       implicit none
 !
       character*81 objectset(4,*)
 !
       integer ndesi,nodedesi(*),irow,icol,nactive,nobject,nnlconst,
-     &   ipoacti(*),nk,ipos,node,iconst 
+     &   ipoacti(*),nk,ipos,node,iconst,i
 !
-      real*8 dgdxglob(2,nk,nobject),vector(ndesi),rhs(*),scalar,dd
-!
-!     initialization of enlarged field dgdxglob
-!
-      if(iconst.eq.1) then
-         do irow=1,nk
-	    dgdxglob(2,irow,nobject)=0.d0
-	 enddo
-      endif
+      real*8 dgdxglob(2,nk,nobject),vector(ndesi),rhs(*),scalar,dd,
+     &   len,xlambd(*),xtf(*),objnorm(nobject)
 !
 !     calculation of the vector
 !
@@ -77,26 +72,27 @@
      &                            +vector(irow)*scalar
       enddo
 !
-!     calculation of final projected gradient in last iteration
+!     calculation of lagrange multiplier
+! 
+      do icol=1,nactive
+         xlambd(icol)=xlambd(icol)+(-1)*rhs(icol)*xtf(iconst)
+      enddo
 !
-      if(iconst.eq.nactive) then
-         dd=0.d0
+!     calculation of correction term
+!
+      if(iconst.le.nnlconst) then
          do irow=1,ndesi
             node=nodedesi(irow)
-            dgdxglob(2,node,nobject)=dgdxglob(2,node,1)
-     &                               -dgdxglob(2,node,nobject)
-	    dd=max(dd,abs(dgdxglob(2,node,nobject)))
+             if(abs(objnorm(iconst)).gt.0.d0) then
+                dgdxglob(1,node,nobject)=dgdxglob(1,node,nobject)
+     &                   +vector(irow)*objnorm(iconst)
+     &                   /abs(objnorm(iconst))
+             else
+                dgdxglob(1,node,nobject)=dgdxglob(1,node,nobject)
+     &                   +vector(irow)*objnorm(iconst)       
+             endif
          enddo
-         do irow=1,ndesi
-            node=nodedesi(irow)
-            dgdxglob(2,node,nobject)=dgdxglob(2,node,nobject)/dd
-         enddo
-         objectset(1,nobject)(1:11)='PROJECTGRAD'
       endif
 !
       return        
       end
-
-
-
-

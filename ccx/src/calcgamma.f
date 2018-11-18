@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,6 +30,10 @@
       real*8 vel(nef,0:7),gradvel(3,3,*),xxn(3,*),xxj(3,*),vud,vcd,
      &  gamma(*),phic,xlet(*),betam,flux(*),dvel1,dvel2
 !
+c$omp parallel default(none)
+c$omp& shared(nface,ielfa,ipnei,vel,flux,gradvel,xlet,xxj,gamma,betam)
+c$omp& private(i,j,iel1,iel2,indexf,dvel1,dvel2,vcd,vud,phic)
+c$omp do
       do i=1,nface
          iel2=ielfa(2,i)
 !
@@ -44,15 +48,12 @@
          dvel2=dsqrt(vel(iel2,1)**2+vel(iel2,2)**2+vel(iel2,3)**2)
 !
          vcd=dvel2-dvel1
-!to check!
+!
          if(dabs(vcd).lt.1.d-3*dvel1) vcd=0.d0
 !
          if(flux(indexf).ge.0.d0) then
 !
-c            write(*,*) 'calcgamma, positiv',flux(indexf)
-c            write(*,*) (vel(iel1,1)**2+vel(iel1,2)**2+
-c     &                  vel(iel1,3)**2)
-            vud=2.d0*xlet(indexf)*
+            vud=2.d0*xlet(indexf)*(
      &       (vel(iel1,1)*gradvel(1,1,iel1)+
      &        vel(iel1,2)*gradvel(2,1,iel1)+
      &        vel(iel1,3)*gradvel(3,1,iel1))*xxj(1,indexf)+
@@ -61,11 +62,10 @@ c     &                  vel(iel1,3)**2)
      &        vel(iel1,3)*gradvel(3,2,iel1))*xxj(2,indexf)+
      &       (vel(iel1,1)*gradvel(1,3,iel1)+
      &        vel(iel1,2)*gradvel(2,3,iel1)+
-     &        vel(iel1,3)*gradvel(3,3,iel1))*xxj(3,indexf)
+     &        vel(iel1,3)*gradvel(3,3,iel1))*xxj(3,indexf))
             vcd=vcd*dvel1
          else
-c            write(*,*) 'calcgamma, negativ',flux(indexf)
-            vud=2.d0*xlet(indexf)*
+            vud=2.d0*xlet(indexf)*(
      &       (vel(iel2,1)*gradvel(1,1,iel2)+
      &        vel(iel2,2)*gradvel(2,1,iel2)+
      &        vel(iel2,3)*gradvel(3,1,iel2))*xxj(1,indexf)+
@@ -74,7 +74,7 @@ c            write(*,*) 'calcgamma, negativ',flux(indexf)
      &        vel(iel2,3)*gradvel(3,2,iel2))*xxj(2,indexf)+
      &       (vel(iel2,1)*gradvel(1,3,iel2)+
      &        vel(iel2,2)*gradvel(2,3,iel2)+
-     &        vel(iel2,3)*gradvel(3,3,iel2))*xxj(3,indexf)
+     &        vel(iel2,3)*gradvel(3,3,iel2))*xxj(3,indexf))
             vcd=vcd*dvel2
          endif
 !
@@ -82,7 +82,6 @@ c            write(*,*) 'calcgamma, negativ',flux(indexf)
             gamma(i)=0.d0
             cycle
          endif
-c         write(*,*) vcd,vud
 !            
          phic=1.d0-vcd/vud
 !
@@ -95,22 +94,9 @@ c         write(*,*) vcd,vud
          else
             gamma(i)=phic/betam
          endif
-c
-c         enhanced smart
-c
-c         if(phic.lt.0.d0) then
-c            gamma(i)=1.d0
-c         elseif(phic.lt.1.d0/6.d0) then
-c            gamma(i)=3.d0
-c         elseif(phic.lt.0.7d0) then
-c            gamma(i)=0.75d0
-c         elseif(phic.lt.1.d0) then
-c            gamma(i)=1.d0/3.d0
-c         else
-c            gamma(i)=1.d0
-c         endif
-c         write(*,*) 'calcgamma ',i,iel1,iel2,phic,gamma(i)
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

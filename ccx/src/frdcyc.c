@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -32,7 +32,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
 	    double *orab, ITG *ielorien, ITG *norien, double *sti,
             double *veold, ITG *noddiam,char *set,ITG *nset, double *emn,
             double *thicke,char* jobnamec,ITG *ne0,double *cdn,ITG *mortar,
-            ITG *nmat,double *qfx){
+            ITG *nmat,double *qfx,ITG *ielprop,double *prop){
 
   /* duplicates fields for static cyclic symmetric calculations */
 
@@ -381,7 +381,7 @@ void frdcyc(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,double *v
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stit,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	    thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat);
+	    thicke,jobnamec,output,qfx,cdn,mortar,cdnr,cdni,nmat,ielprop,prop);
 
   if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
   

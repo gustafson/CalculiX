@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                     */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -79,7 +79,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       ifreebody,*itg=NULL,ntg=0,ngraph=1,mt=mi[1]+1,ne0,*integerglob=NULL,      
       icfd=0,*inomat=NULL,*islavact=NULL,*islavnode=NULL,*nslavnode=NULL,
       *islavsurf=NULL,nmethodl,*kon=NULL,*ipkon=NULL,*ielmat=NULL,nzss,
-      *mast1=NULL,*irows=NULL,*icols=NULL,*jqs=NULL,*ipointer=NULL,i,
+      *mast1=NULL,*irows=NULL,*jqs=NULL,*ipointer=NULL,i,iread,
       *nactdofinv=NULL,*nodorig=NULL,ndesi,iobject,*iponoel=NULL,node,
       *nodedesi=NULL,*ipoface=NULL,*nodface=NULL,*inoel=NULL,*ipoorel=NULL,
       icoordinate=0,iorientation=0,ishapeenergy=0,imass=0,idisplacement=0,
@@ -87,15 +87,16 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       *istartelem=NULL,*ialelem=NULL,ieigenfrequency=0,cyclicsymmetry=0,
       nherm,nev,iev,inoelsize,*itmp=NULL,nmd,nevd,*nm=NULL,*ielorien=NULL,
       igreen=0,iglob=0,idesvar=0,inorm=0,irand=0,*nodedesiinv=NULL,
-      *nnodes=NULL,index,noregion=0,*konfa=NULL,*ipkonfa=NULL,nsurfs,
-      *iponor=NULL,*iponoelfa=NULL,*inoelfa=NULL,ithickness,nactive=0,nnlconst,
-      *ipoacti=NULL;
+      *nnodes=NULL,index,iregion=0,*konfa=NULL,*ipkonfa=NULL,nsurfs,
+      *iponor=NULL,*iponoelfa=NULL,*inoelfa=NULL,ithickness,iscaleflag,
+      ifreemax,nconstraint,*jqs2=NULL,*irows2=NULL,nzss2,i2ndorder=0,
+      *iponexp=NULL,*ipretinfo=NULL;
       
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,*tper,
          *f=NULL,*fn=NULL,qa[4],*epn=NULL,*xstateini=NULL,*xdesi=NULL,
          *vini=NULL,*stx=NULL,*enern=NULL,*xbounact=NULL,*xforcact=NULL,
          *xloadact=NULL,*t1act=NULL,*ampli=NULL,*xstaten=NULL,*eei=NULL,
-         *enerini=NULL,*cocon=NULL,*shcon=NULL,*qfx=NULL,
+         *enerini=NULL,*cocon=NULL,*shcon=NULL,*qfx=NULL,*df2=NULL,
          *qfn=NULL,*cgr=NULL,*xbodyact=NULL,*springarea=NULL,*emn=NULL,         
          *clearini=NULL,ptime=0.,*emeini=NULL,*doubleglob=NULL,*au=NULL,
          *ad=NULL,*b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,
@@ -103,7 +104,8 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
          *energy=NULL,*ener=NULL,*dxstiff=NULL,*d=NULL,*z=NULL,
          distmin,*df=NULL,*g0=NULL,*dgdx=NULL,sigma=0,*xinterpol=NULL,
          *dgdxglob=NULL,*extnor=NULL,*veold=NULL,*accold=NULL,bet,gam,
-         dtime,time,reltime=1.,*weightformgrad=NULL,*fint=NULL,*xnor=NULL;
+         dtime,time,reltime=1.,*weightformgrad=NULL,*fint=NULL,*xnor=NULL,
+         *dgdxdy=NULL;
 
   FILE *f1;
   
@@ -134,7 +136,9 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       if(strcmp1(&tieset[i*243+80],"D")==0){
 	  if(strcmp1(&tieset[i*243],"COORDINATE")==0){
 	      icoordinate=1;
-	      if(strcmp1(&tieset[i*243],"COORDINATENOREGION")==0){noregion=1;}
+	      if(*nobject>0){
+		  if(strcmp1(&objectset[90],"EDG")==0){iregion=1;}
+	      }
 	      break;
 	  }else if(strcmp1(&tieset[i*243],"ORIENTATION")==0){
 	      if(*norien==0){
@@ -166,6 +170,16 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  idisplacement=1;
       }else if(strcmp1(&objectset[i*324],"THICKNESS")==0){
 	  ithickness=1;
+      }
+  }
+
+  /* check number of constraints */
+
+  nconstraint=0;
+  for(i=0;i<*nobject;i++){
+      if((strcmp1(&objectset[i*324+18],"LE")==0)||
+         (strcmp1(&objectset[i*324+18],"GE")==0)){
+	  nconstraint++;
       }
   }
 
@@ -236,31 +250,36 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   
   NNEW(iponoel,ITG,*nk);
   NNEW(inoel,ITG,2**nkon);
-  FORTRAN(elementpernode,(iponoel,inoel,lakon,ipkon,kon,ne,&inoelsize));
+  FORTRAN(elementpernode,(iponoel,inoel,lakon,ipkon,kon,ne));
 
   if(icoordinate==1){
      
-      /* find the external surfaces */
+      /* find the 
+           - external faces belonging to a given node
+           - nodes belonging to a given external surface */
 
       NNEW(ipoface,ITG,*nk);
       NNEW(nodface,ITG,5*6**ne);
       NNEW(konfa,ITG,8*6**ne);
       NNEW(ipkonfa,ITG,6**ne);
       NNEW(lakonfa,char,8*6**ne);
-      NNEW(iponoelfa,ITG,*nk);
-      NNEW(inoelfa,ITG,3*8*6**ne);
-      
-      FORTRAN(findsurface_se,(nodface,ipoface,ne,ipkon,lakon,kon,
-                              konfa,ipkonfa,nk,lakonfa,&nsurfs));
-      
-      FORTRAN(facepernode,(iponoelfa,inoelfa,lakonfa,ipkonfa,konfa,
-                              &nsurfs,&inoelsize));
-      
+      FORTRAN(findextsurface,(nodface,ipoface,ne,ipkon,lakon,kon,
+                              konfa,ipkonfa,nk,lakonfa,&nsurfs,
+                              &ifreemax));
+      RENEW(nodface,ITG,5*ifreemax);
       RENEW(konfa,ITG,8*nsurfs);
       RENEW(ipkonfa,ITG,nsurfs);
       RENEW(lakonfa,char,8*nsurfs);
+
+      /* find the external faces belonging to a given node */
+
+      NNEW(iponoelfa,ITG,*nk);
+      NNEW(inoelfa,ITG,3*8*6**ne);
+      FORTRAN(extfacepernode,(iponoelfa,inoelfa,lakonfa,ipkonfa,konfa,
+                              &nsurfs,&inoelsize));
+      RENEW(inoelfa,ITG,3*inoelsize);
       
-      /* determining the information of the designvariable set */
+      /* determining the design variables */
       
       NNEW(nodedesi,ITG,*nk);
       NNEW(itmp,ITG,*nk);
@@ -270,7 +289,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			   mi,nactdof,&ndesi,nodedesi,ntie,tieset,
                            itmp,nmpc,nodempc,ipompc,nodedesiinv,
                            iponoel,inoel,lakon,ipkon,
-			   kon,&noregion,ipoface,nodface,nk));  
+			   kon,&iregion,ipoface,nodface,nk));  
       
       SFREE(itmp);
       RENEW(nodedesi,ITG,ndesi);
@@ -280,9 +299,9 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
       NNEW(istartdesi,ITG,ndesi+1);
       NNEW(ialdesi,ITG,*nkon);
-      FORTRAN(createialdesi,(&ndesi,nodedesi,iponoel,inoel,
+      FORTRAN(elemperdesi,(&ndesi,nodedesi,iponoel,inoel,
 			     istartdesi,ialdesi,lakon,ipkon,kon,
-                             nodedesiinv,&icoordinate,&noregion));
+                             nodedesiinv,&icoordinate,&iregion));
       RENEW(ialdesi,ITG,istartdesi[ndesi]-1);
             
       /* calculating the normal direction for every designvariable */
@@ -290,7 +309,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       NNEW(extnor,double,3**nk);
       
       FORTRAN(normalsonsurface_se,(ipkon,kon,lakon,extnor,co,nk,ipoface,
-				   nodface,nactdof,mi,nodedesiinv,&noregion)); 
+				   nodface,nactdof,mi,nodedesiinv,&iregion)); 
       
       /* if the sensitivity calculation is used in a optimization script
          this script usually contains a loop consisting of:
@@ -310,19 +329,23 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       NNEW(iponor,ITG,8*nsurfs);
       for(i=0;i<8*nsurfs;i++) iponor[i]=-1;
       NNEW(xnor,double,24*nsurfs);
+      NNEW(iponexp,ITG,2**nk);
+      NNEW(ipretinfo,ITG,*nk);
       
       FORTRAN(normalsforequ_se,(nk,co,iponoelfa,inoelfa,konfa,ipkonfa,lakonfa,
-                                &nsurfs,iponor,xnor,nodedesiinv,jobnamef));
+                                &nsurfs,iponor,xnor,nodedesiinv,jobnamef,
+				iponexp,nmpc,labmpc,ipompc,nodempc,ipretinfo));
       
       SFREE(konfa);SFREE(ipkonfa);SFREE(lakonfa);SFREE(iponor);SFREE(xnor);
-      SFREE(iponoelfa);SFREE(inoelfa);
+      SFREE(iponoelfa);SFREE(inoelfa);SFREE(iponexp);SFREE(ipretinfo);
 	  
       /* createinum is called in order to determine the nodes belonging
 	 to elements; this information is needed in frd_se */
       
       NNEW(inum,ITG,*nk);
       FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
-	      nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat));
+	      nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat,
+	      ielprop,prop));
 	  				   
       /* storing the normal information in the frd-file for the optimizer */
           
@@ -381,7 +404,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
       NNEW(ipoorel,ITG,*norien);
       NNEW(iorel,ITG,2**ne);
-      FORTRAN(elementperorien,(ipoorel,iorel,ielorien,ne,mi));
+      FORTRAN(elemperorien,(ipoorel,iorel,ielorien,ne,mi));
 
       /* storing the orientation of the design variables
          in nodedesi (per orientation there are three design
@@ -397,13 +420,27 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
       NNEW(istartdesi,ITG,ndesi+1);
       NNEW(ialdesi,ITG,3**ne);
-      FORTRAN(createialdesi,(&ndesi,nodedesi,ipoorel,iorel,
+      FORTRAN(elemperdesi,(&ndesi,nodedesi,ipoorel,iorel,
 			     istartdesi,ialdesi,lakon,ipkon,kon,
-                             nodedesiinv,&icoordinate,&noregion));
+                             nodedesiinv,&icoordinate,&iregion));
       SFREE(ipoorel);SFREE(iorel);SFREE(nodedesi);
       RENEW(ialdesi,ITG,istartdesi[ndesi]-1);
 
   }
+      
+  /* storing the design variables per element
+     (including 0 for the unperturbed state) */
+      
+  NNEW(ipoeldi,ITG,*ne);
+  NNEW(ieldi,ITG,2*(istartdesi[ndesi]-1+*ne));
+  NNEW(istartelem,ITG,*ne+1);
+  NNEW(ialelem,ITG,istartdesi[ndesi]-1+*ne);
+  
+  FORTRAN(desiperelem,(&ndesi,istartdesi,ialdesi,ipoeldi,ieldi,ne,
+		       istartelem,ialelem));
+  
+  SFREE(ipoeldi);SFREE(ieldi);
+  RENEW(ialelem,ITG,istartelem[*ne]-1);
 
   /* allocating fields for the actual external loading */
 
@@ -445,18 +482,18 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
               co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
               ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
               iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
-              ipobody,iponoel,inoel));
+              ipobody,iponoel,inoel,ipkon,kon,ielprop,prop,ielmat,
+              shcon,nshcon,rhcon,nrhcon,cocon,ncocon,ntmat_,lakon));
 
   /* determining the structure of the df matrix */
 
   nzss=20000000;
   NNEW(mast1,ITG,nzss);
   NNEW(irows,ITG,1);
-  NNEW(icols,ITG,ndesi);
   NNEW(jqs,ITG,ndesi+1);
   NNEW(ipointer,ITG,ndesi);
 
-  mastructse(kon,ipkon,lakon,ne,ipompc,nodempc,nmpc,nactdof,icols,jqs,
+  mastructse(kon,ipkon,lakon,ne,ipompc,nodempc,nmpc,nactdof,jqs,
              &mast1,&irows,ipointer,&nzss,mi,mortar,nodedesi,&ndesi,
              &icoordinate,ielorien,istartdesi,ialdesi);
 
@@ -587,10 +624,6 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  exit(0);
 	      }
 	      
-/*	      for(i=nev;i<nev+nevd;i++){
-		  if(d[i]>0){d[i]=sqrt(d[i]);}else{d[i]=0.;}
-		  }*/
-	      
 	      for(i=nev;i<nev+nevd;i++){nm[i]=nmd;}
 	      
 	      if(nev==0){
@@ -709,6 +742,22 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
      loop over just one value */
 
   for(iev=0;iev<nev;iev++){
+      
+      NNEW(g0,double,*nobject);
+      NNEW(dgdx,double,ndesi**nobject);
+      if(icoordinate==1){NNEW(dgdxglob,double,2**nk**nobject);}
+
+	  /* Reading the "raw" sensititities */
+
+      iread=0;
+      if(*nobject>0){
+	  if(strcmp1(&objectset[80],"R")==0){
+	      FORTRAN(readsen,(g0,dgdx,&ndesi,nobject,nodedesi,jobnamef));
+	      iread=1;
+	  }
+      }
+
+      if(iread==0){
 
       /* for cyclic symmetry calculations only the odd modes are calculated
          (modes occur in phase-shifted pairs) */
@@ -736,11 +785,6 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
       NNEW(xstiff,double,(long long)27*mi[0]**ne);
       if(iorientation==1) NNEW(dxstiff,double,(long long)3*27*mi[0]**ne);
-      
-      iout=-1;
-      NNEW(v,double,mt**nk);
-//      memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
-      if(iperturb[1]==1) memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
 
       NNEW(fn,double,mt**nk);  /* FAKE */
       if(!cyclicsymmetry){
@@ -749,6 +793,10 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  NNEW(df,double,2*nzss);
       }
       NNEW(stx,double,6*mi[0]**ne);
+      
+      iout=-1;
+      NNEW(v,double,mt**nk);
+      if(iperturb[1]==1) memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
       
       results_se(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
           elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -772,22 +820,6 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  &ieigenfrequency,fint,&ishapeenergy);
 	  
       iout=1;SFREE(v);
-      
-      /* storing the design variables per element
-	 (including 0 for the unperturbed state) */
-      
-      NNEW(ipoeldi,ITG,*ne);
-      NNEW(ieldi,ITG,2*(istartdesi[ndesi]-1+*ne));
-      
-      FORTRAN(desiperelem,(&ndesi,istartdesi,ialdesi,ipoeldi,ieldi,ne));
-      
-      NNEW(istartelem,ITG,*ne+1);
-      NNEW(ialelem,ITG,istartdesi[ndesi]-1+*ne);
-      
-      FORTRAN(createialelem,(ne,istartelem,ialelem,ipoeldi,ieldi));
-      
-      SFREE(ipoeldi);SFREE(ieldi);
-      RENEW(ialelem,ITG,istartelem[*ne]-1);
       
       nmethodl=*nmethod;
       
@@ -844,16 +876,58 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    &distmin,&ndesi,nodedesi,df,&nzss,jqs,irows,
 	    &icoordinate,dxstiff,xdesi,istartelem,ialelem,v,&sigma,
 	    &cyclicsymmetry,labmpc,ics,cs,mcs,&ieigenfrequency);
+
+      /* second order derivative */
+
+      if(i2ndorder==1){
+	  NNEW(dgdxdy,double,ndesi*ndesi**nobject);
+
+          /* determining the structure of the df2 matrix */
+
+	  nzss2=20000000;
+	  NNEW(mast1,ITG,nzss);
+	  NNEW(irows2,ITG,1);
+	  NNEW(jqs2,ITG,ndesi*(ndesi+1)/2+1);
+	  NNEW(ipointer,ITG,ndesi);
+	  
+	  mastructse2(kon,ipkon,lakon,ne,ipompc,nodempc,nmpc,nactdof,jqs2,
+             &mast1,&irows2,ipointer,&nzss2,mi,mortar,nodedesi,&ndesi,
+	     &icoordinate,ielorien,istartdesi,ialdesi);
+
+	  SFREE(ipointer);SFREE(mast1);
+	  RENEW(irows2,ITG,nzss2);
+
+          /* determining the system matrix and the external forces */
+
+	  if(!cyclicsymmetry){
+	      NNEW(df2,double,nzss2);
+	  }
       
-      SFREE(istartelem);SFREE(ialelem);
+	  mafillsmmain_se2(co,nk,kon,ipkon,lakon,ne,nodeboun,
+            ndirboun,xbounact,nboun,
+            ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
+            nforc,nelemload,sideload,xloadact,nload,xbodyact,ipobody,
+            nbody,cgr,nactdof,neq,&nmethodl,
+            ikmpc,ilmpc,ikboun,ilboun,
+            elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
+            ielorien,norien,orab,ntmat_,
+            t0,t1act,ithermal,prestr,iprestr,vold,iperturb,sti,
+            stx,iexpl,plicon,nplicon,plkcon,nplkcon,
+            xstiff,npmat_,&dtime,matname,mi,
+            ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,physcon,
+            shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,&coriolis,
+            ibody,xloadold,&reltime,veold,springarea,nstate_,
+            xstateini,xstate,thicke,integerglob,doubleglob,
+            tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
+            pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,
+	    &distmin,&ndesi,nodedesi,df2,&nzss2,jqs2,irows2,
+	    &icoordinate,dxstiff,xdesi,istartelem,ialelem,v,&sigma,
+	    &cyclicsymmetry,labmpc,ics,cs,mcs,&ieigenfrequency);
+      }
       
       if(iorientation==1) SFREE(dxstiff);
       
       /* determining the values and the derivatives of the objective functions */
-      
-      NNEW(g0,double,*nobject);
-      NNEW(dgdx,double,ndesi**nobject);
-      if(icoordinate==1){NNEW(dgdxglob,double,2**nk**nobject);}
             
       iout=-1; 
       objectivemain_se(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
@@ -878,20 +952,31 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  isolver,icol,irow,jq,kode,cs,output,istartdesi,ialdesi,
 	  xdesi,orname,&icoordinate,&iev,d,z,au,ad,aub,adb,&cyclicsymmetry,
 	  &nzss,&nev,&ishapeenergy,fint,nlabel,&igreen,&nasym,
-          iponoel,inoel,nodedesiinv,dgdxglob); 
+	  iponoel,inoel,nodedesiinv,dgdxglob,df2,dgdxdy,nkon); 
       iout=1;
 
-      SFREE(v);
+      SFREE(v);SFREE(f);SFREE(xstiff);SFREE(fn);SFREE(df);SFREE(stx);
+      if(i2ndorder==1){SFREE(df2);SFREE(dgdxdy);SFREE(irows2);SFREE(jqs2);}
+      if((iperturb[1]==1)&&(ishapeenergy==1)){SFREE(fint);}
+
+      }
       
       if(icoordinate==1){
+
+	  /* Storing the "raw" sensititities */
+	  if(*nobject>0){
+	      if(strcmp1(&objectset[80],"W")==0){
+		  FORTRAN(writesen,(g0,dgdx,&ndesi,nobject,nodedesi,jobnamef));
+	      }
+	  }
 
           /* Elimination of mesh-dependency and filling of dgdxglob  */
   
 	  NNEW(weightformgrad,double,ndesi);
           
-          FORTRAN(formgradient,(istartdesi,ialdesi,ipkon,lakon,ipoface,
+          FORTRAN(distributesens,(istartdesi,ialdesi,ipkon,lakon,ipoface,
 		  &ndesi,nodedesi,nodface,kon,co,dgdx,nobject,
-		  weightformgrad,nodedesiinv,&noregion,objectset,
+		  weightformgrad,nodedesiinv,&iregion,objectset,
 		  dgdxglob,nk));
 		  
 	  SFREE(weightformgrad);
@@ -902,14 +987,15 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  NNEW(xinterpol,double,*nk**nobject);
 	  NNEW(nnodes,ITG,*nk);
 	  
-          FORTRAN(formgradinterpol,(ipkon,lakon,kon,nobject,dgdxglob,
+          FORTRAN(quadraticsens,(ipkon,lakon,kon,nobject,dgdxglob,
                   xinterpol,nnodes,ne,nk,nodedesiinv,objectset));
 		            
 		  SFREE(nnodes);SFREE(xinterpol);
 
           /* Filtering of sensitivities */
   
-	  filtermain(co,dgdxglob,nobject,nk,nodedesi,&ndesi,objectset);
+	  filtermain(co,dgdxglob,nobject,nk,nodedesi,&ndesi,objectset,
+	             xdesi,&distmin);
 
           /* scaling the designnodes being in the transition between 
              the designspace and the non-designspace */
@@ -922,50 +1008,38 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
 	  NNEW(inum,ITG,*nk);
 	  FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
-		  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat));
+		  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat,
+		  ielprop,prop));
 
           /* calculate projected gradient if:
              - any constraint functions are defined AND
 	     - at least one constraint function is active */
 
-          if(*nobject>1){
+          if(nconstraint>0){   	 
 	  
-	      /* check if any constraints are active */
-
-	      /* in the field "ipoacti" and the variable "nnlconst" the 
-                 characteristics of the N-matrix are stored:
-		 -nnlconst is the number of nonlinear constraints
-	         -in the first nnlconst entries of ipoacti the position of the 
-		  nonlinear constraints (e.g. mass) is inserted
-		 -in the following entries the position of the linear 
-                  constraints (wall thickness constraints) is stored */ 
-	      
-	      NNEW(ipoacti,ITG,*nobject+ndesi);
-	      
-	      FORTRAN(checkconstraint,(nobject,objectset,g0,&nactive,&nnlconst,
-				       ipoacti,&ndesi,dgdxglob,nk,nodedesi));
-	      
-	      RENEW(ipoacti,ITG,nactive);
-	      
-	      if(nactive>0){
-		  
-                  *nobject=*nobject+1;		  
-		  RENEW(dgdxglob,double,2**nk**nobject);
-		  RENEW(objectset,char,324**nobject);
-		  
-	          projectgradmain(nobject,objectset,dgdxglob,g0,&ndesi,nodedesi,
-				  nk,isolver,&nactive,&nnlconst,ipoacti);
-		  
-	      }
-	  } 
+	     /* check if any constraints are active and calculate the projected
+	        gradient if necessary */
+	  		   
+	     projectgradmain(nobject,&objectset,&dgdxglob,g0,&ndesi,nodedesi,
+		  nk,isolver);		        
+	 
+	  }else if(*nobject>0){
+	     
+	     iscaleflag=0;	     	     
+	     FORTRAN(scalesen,(dgdxglob,nobject,nk,nodedesi,&ndesi,
+                     objectset,&iscaleflag));
+	  
+	  }
 	  	 
+	  //++*kode;
+	  
 	  for(iobject=0;iobject<*nobject;iobject++){
 
 	      /* storing the sensitivities in the frd-file for visualization 
 	         and for optimizer */
-          
+
 	      ++*kode;
-	  	      
+          
 	      frd_sen(co,nk,stn,inum,nmethod,kode,filab,&ptime,nstate_,
                  istep,
 		 &iinc,&mode,&noddiam,description,mi,&ngraph,ne,cs,set,nset,
@@ -982,17 +1056,12 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  
       }
       
-      SFREE(fn);SFREE(stx);SFREE(f);SFREE(xstiff);SFREE(g0);SFREE(dgdx);
-      SFREE(df);SFREE(dgdxglob);
-      
-      if(*nobject>1){SFREE(ipoacti);}
-//      if(*nobject>0){SFREE(objectset);}
-      
+      SFREE(g0);SFREE(dgdx);
+      if(icoordinate==1){SFREE(dgdxglob);}
+            
   } // end loop over nev
 
   SFREE(iponoel);SFREE(inoel);SFREE(nodedesiinv);
-
-  if((iperturb[1]==1)&&(ishapeenergy==1)){SFREE(fint);}
 
   if(ieigenfrequency==1){
       if(!cyclicsymmetry){SFREE(d);SFREE(ad);SFREE(adb);SFREE(au);
@@ -1011,12 +1080,13 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       SFREE(enerini);SFREE(emeini);SFREE(stiini);
   }
 
-  SFREE(istartdesi);SFREE(ialdesi);
+  SFREE(istartdesi);SFREE(ialdesi);SFREE(istartelem);SFREE(ialelem);
+
   if(icoordinate==1){
       SFREE(nodedesi);SFREE(xdesi);SFREE(ipoface);SFREE(nodface);
   }
 
-  SFREE(irows);SFREE(icols);SFREE(jqs);
+  SFREE(irows);SFREE(jqs);
 
   *irowp=irow;*enerp=ener;*xstatep=xstate;*ipkonp=ipkon;*lakonp=lakon;
   *konp=kon;*ielmatp=ielmat;*ielorienp=ielorien;*objectsetp=objectset;

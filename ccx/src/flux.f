@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,rho,physcon,g,co,dvi,numf,
      &     vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
-     &     ttime,time,iaxial)
+     &     ttime,time,iaxial,iplausi)
 !
 !     gas element routines 
 !     
@@ -37,7 +37,7 @@
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(8),idirf(8),kflag,ipkon(*),kon(*),
-     &     nshcon(*), nrhcon(*),ntmat_,mi(*),ider,iaxial
+     &     nshcon(*), nrhcon(*),ntmat_,mi(*),ider,iaxial,iplausi
 !      
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(8),R,cp,physcon(*),rho,
      &     g(3),co(3,*),dvi,vold(0:mi(2),*),shcon(0:3,ntmat_,*),
@@ -50,7 +50,8 @@
 !     
          call absolute_relative(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,physcon,numf,set,mi,ttime,time,iaxial)
+     &        nodef,idirf,df,cp,r,physcon,numf,set,mi,ttime,time,iaxial,
+     &        iplausi)
 !     
       elseif(lakon(nelem)(2:8).eq.'ACCTUBO') then
 !
@@ -59,7 +60,7 @@
          call acctube_one(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider,
-     &        ttime,time,iaxial)
+     &        ttime,time,iaxial,iplausi)
 !
       elseif(lakon(nelem)(2:8).eq.'ACCTUBE') then
 !
@@ -68,7 +69,7 @@
          call acctube(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider,
-     &        ttime,time,iaxial)
+     &        ttime,time,iaxial,iplausi)
 !
       elseif(lakon(nelem)(2:6).eq.'CARBS') then  
 !
@@ -76,7 +77,8 @@
 !
          call carbon_seal(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi,ttime,time,iaxial)
+     &     nodef,idirf,df,R,physcon,dvi,numf,set,mi,ttime,time,
+     &     iaxial,iplausi)
 !     
       elseif(lakon(nelem)(2:5).eq.'CHAR') then 
 !
@@ -85,7 +87,7 @@
          call characteristic(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,
-     &        mi,ttime,time,iaxial)
+     &        mi,ttime,time,iaxial,iplausi)
 !
       elseif(lakon(nelem)(2:5).eq.'CROS') then 
 !         
@@ -94,7 +96,7 @@
          call cross_split(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
-     &     iaxial)
+     &     iaxial,iplausi)
 !
 !     proprietary
 !
@@ -102,7 +104,8 @@
          call free_disc_pumping(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,
+     &        iaxial,iplausi)
 !  
 !     proprietary
 ! 
@@ -110,7 +113,8 @@
          call free_convection(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,
+     &        iaxial,iplausi)
 !
 !     gas pipe fanno
 !
@@ -119,7 +123,8 @@
          call gaspipe_fanno(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,
+     &        iaxial,iplausi)
 !
 !     straight and stepped labyrinth
 !
@@ -128,7 +133,7 @@
          call labyrinth(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,physcon,co,dvi,numf,vold,set,
-     &     kon,ipkon,mi,ttime,time,iaxial)
+     &     kon,ipkon,mi,ttime,time,iaxial,iplausi)
 !
 !     liquid pipes including loss elements (hydraulic elements)
 !         
@@ -137,7 +142,7 @@
          call liquidpipe(node1,node2,nodem,nelem,lakon,nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &           rho,g,co,dvi,numf,vold,mi,ipkon,kon,set,ttime,time,
-     &           iaxial)
+     &           iaxial,iplausi)
 !
 !     liquid channel (flow with free surface) including all loss elements
 !
@@ -145,7 +150,7 @@
 !         
          call liquidchannel(node1,node2,nodem,nelem,lakon,nactdog,
      &           identity,ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &           rho,g,co,dvi,numf,mi,ipkon,kon)
+     &           rho,g,co,dvi,numf,mi,ipkon,kon,iplausi)
 !
 !     liquid pipes including loss elements (types derived from their
 !     compressible equivalent)
@@ -155,7 +160,7 @@
          call liquidpipe(node1,node2,nodem,nelem,lakon,nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
      &           rho,g,co,dvi,numf,vold,mi,ipkon,kon,set,ttime,time,
-     &           iaxial)
+     &           iaxial,iplausi)
 !
 !     liquid pump
 !
@@ -163,7 +168,7 @@
 !        
          call liquidpump(node1,node2,nodem,nelem,nactdog,identity,
      &           ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &           rho,g,co,numf,mi,ttime,time,iaxial)
+     &           rho,g,co,numf,mi,ttime,time,iaxial,iplausi)
 !
 !     element that fixes the mass flow as a specific percentage of the
 !     sum of the massflow of up to 10 other elements
@@ -172,7 +177,8 @@
          call massflow_percent(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,
+     &        iaxial,iplausi)
 !     
 !     Moehring
 ! 
@@ -180,7 +186,8 @@
 !     
          call moehring(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,dvi,numf,set,mi,ttime,time,iaxial)
+     &        nodef,idirf,df,cp,r,dvi,numf,set,mi,ttime,time,
+     &        iaxial,iplausi)
 !
 !     Bleed tapping, orifice and pre-swirl nozzle
 !
@@ -189,7 +196,7 @@
          call orifice(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,co,vold,mi,
-     &        ttime,time,iaxial)
+     &        ttime,time,iaxial,iplausi)
 ! 
 !     proprietary
 !
@@ -197,7 +204,8 @@
 !
          call rcavi(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,ttime,time,iaxial)
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,ttime,time,
+     &     iaxial,iplausi)
 !
 !     proprietary
 !
@@ -205,7 +213,8 @@
 !
          call rcavi2(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,ttime,time,iaxial)
+     &     nodef,idirf,df,cp,R,dvi,numf,set,mi,ttime,time,
+     &     iaxial,iplausi)
 !
 !     restrictors
 !
@@ -218,16 +227,17 @@
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
      &        nshcon,rhcon,nrhcon,ntmat_,mi,ttime,time,iaxial,
-     &        co,vold)
+     &        co,vold,iplausi)
 !
 !     proprietary
 !
-      elseif(lakon(nelem)(2:5).eq.'RIMS') then   
+      elseif((lakon(nelem)(2:5).eq.'RIMS').or.
+     &       (lakon(nelem)(2:8).eq.'RIMFLEX')) then   
 !
          call rimseal(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,
-     &        ttime,time,iaxial,co,vold)
+     &        ttime,time,iaxial,co,vold,iplausi)
 !     
 !     proprietary
 !
@@ -236,7 +246,7 @@
         call scavenge_pump(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,ntmat_,mi,
-     &        ttime,time,iaxial)   
+     &        ttime,time,iaxial,iplausi)   
 !   
 !     branch split Idelchik2
 !  
@@ -245,7 +255,7 @@
          call tee(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
-     &     iaxial)
+     &     iaxial,iplausi)
 !
 !     user element
 !
@@ -254,7 +264,7 @@
          call user_network_element(node1,node2,nodem,nelem,lakon,kon,
      &        ipkon,nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,co,vold,mi,
-     &        ttime,time,iaxial)
+     &        ttime,time,iaxial,iplausi)
 !
 !     vortex
 !
@@ -262,7 +272,8 @@
 !     
          call vortex(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &        nactdog,identity,ielprop,prop,kflag,v,xflow,f,
-     &        nodef,idirf,df,cp,r,numf,set,mi,ttime,time,iaxial) 
+     &        nodef,idirf,df,cp,r,numf,set,mi,ttime,time,iaxial,
+     &        iplausi) 
 !
 !     branch split Idelchik1
 !  
@@ -271,7 +282,7 @@
          call wye(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
-     &     iaxial)
+     &     iaxial,iplausi)
 !
       else
          identity=.true.

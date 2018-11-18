@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -29,9 +29,8 @@ static ITG *kon1,*ipkon1,*ne1,*nelcon1,*nrhcon1,*nalcon1,*ielmat1,*ielorien1,
     *norien1,*ntmat1_,*ithermal1,*iprestr1,*iperturb1,*iout1,*nmethod1,
     *nplicon1,*nplkcon1,*npmat1_,*mi1,*ielas1,*icmd1,*ncmat1_,*nstate1_,
     *istep1,*iinc1,calcul_fn1,calcul_cauchy1,nener1,ikin1,
-    num_cpus,mt1,*nk1,*ne01,*mortar1,
-    *ielprop1,idesvar1,*nodedesi1,*nkon1,*icoordinate1,
-    *ialdesi1;
+    num_cpus,mt1,*nk1,*ne01,*mortar1,*ielprop1,idesvar1,*nodedesi1,*nkon1,
+    *icoordinate1,*ialdesi1,*neapar=NULL,*nebpar=NULL;
 
 static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
     *prestr1,*eme1,*fn1=NULL,*vold1,*veold1,*dtime1,*time1,
@@ -111,7 +110,7 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
     /* local declaration prevails, if strictly positive */
 
-    envloc = getenv("CCX_NPROC_RESULTS");
+    envloc = getenv("CCX_NPROC_SENS");
     if(envloc){
         num_cpus=atoi(envloc);
         if(num_cpus<0){
@@ -148,8 +147,8 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        nactdof,iout,qa,vold,b,nodeboun,ndirboun,
        xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
        veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
-       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,&nener,
-       &ikin,&intpointvart,xforc,nforc));
+       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
+       &ikin,&intpointvart));
 
     NNEW(fn0,double,mt**nkon);
     NNEW(dfn,double,mt**nk);
@@ -166,6 +165,12 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        integration points; calculating the internal forces */
     
     if(((ithermal[0]<=1)||(ithermal[0]>=3))&&(intpointvarm==1)){
+    
+        /* determining the element bounds in each thread */
+
+	NNEW(neapar,ITG,num_cpus);
+	NNEW(nebpar,ITG,num_cpus);
+	elementcpuload(neapar,nebpar,ne,ipkon,&num_cpus);
 	
 	NNEW(fn01,double,num_cpus*mt**nkon);
 	
@@ -210,8 +215,7 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	    }
 	}
 	
-	SFREE(fn01);
-	SFREE(ithread); 
+	SFREE(fn01);SFREE(ithread);SFREE(neapar);SFREE(nebpar); 
     }
     
     /* in case of nonlinear geometry calculate vector fint */
@@ -311,7 +315,7 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
 void *resultsmechmt_se(ITG *i){
 
-    ITG indexfn0,indexdfn,nea,neb,nedelta;
+    ITG indexfn0,indexdfn,nea,neb;
 
     if(idesvar1==0){
 	indexfn0=*i*mt1**nkon1;
@@ -320,14 +324,14 @@ void *resultsmechmt_se(ITG *i){
 	indexfn0=0;
 	indexdfn=*i*mt1**nk1;
     }
-    
-// ceil -> floor
 
-    nedelta=(ITG)floor(*ne1/(double)num_cpus);
+/*    nedelta=(ITG)floor(*ne1/(double)num_cpus);
     nea=*i*nedelta+1;
     neb=(*i+1)*nedelta;
-// next line! -> all parallel sections
-    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
+    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;*/
+
+    nea=neapar[*i]+1;
+    neb=nebpar[*i]+1;
 
     FORTRAN(resultsmech_se,(co1,kon1,ipkon1,lakon1,ne1,v1,
           stx1,elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,

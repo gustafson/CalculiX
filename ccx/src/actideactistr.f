@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine actideactistr(set,nset,istartset,iendset,ialset,
      &           objectset,ipkon,iobject,ne,neinset,iponoel,inoel,
-     &           nepar)
+     &           nepar,nkinsetinv,nk)
 !
 !     deactivates the elements which are not adjacent to the nodes in
 !     the STRESS objective function set
@@ -29,7 +29,12 @@
 !
       integer i,j,k,nset,istartset(*),iendset(*),ialset(*),ipkon(*),
      &  iobject,ne,index,nelem,iponoel(*),inoel(2,*),neinset(*),
-     &  nepar
+     &  nepar,nkinsetinv(*),nk
+!
+      intent(in) set,nset,istartset,iendset,ialset,
+     &           objectset,iobject,ne,iponoel,inoel
+!
+      intent(inout) neinset,nepar,ipkon
 !
 !     determining the nodes set corresponding to the STRESS
 !     objective function
@@ -57,6 +62,7 @@
          do j=istartset(i),iendset(i)
             if(ialset(j).gt.0) then
                index=iponoel(ialset(j))
+               nkinsetinv(ialset(j))=1
                do
                   if(index.eq.0) exit 
                   nelem=inoel(1,index)
@@ -72,7 +78,8 @@
                do
                   k=k-ialset(j)
                   if(k.ge.ialset(j-1)) exit
-                  index=iponoel(ialset(k))
+                  index=iponoel(k)
+                  nkinsetinv(k)=1
                   do
                      if(index.eq.0) exit 
                      nelem=inoel(1,index)
@@ -88,14 +95,28 @@
          enddo
       else
 !
-!        all elements are taken into account
+!     all elements are taken into account
 !
          do i=1,ne
             if(ipkon(i).lt.0) cycle
             neinset(i)=1
             nepar=nepar+1
          enddo
+         do i=1,nk
+            nkinsetinv(i)=1
+         enddo
       endif
+!
+!     putting all active elements in ascending order in field
+!     neinset
+!
+      nepar=0
+      do i=1,ne
+         if(neinset(i).eq.1) then
+            nepar=nepar+1
+            neinset(nepar)=i
+         endif
+      enddo
 !
       return
       end

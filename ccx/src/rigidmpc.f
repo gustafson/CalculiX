@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,9 +36,9 @@
 !
       real*8 coefmpc(*),co(3,*),e(3,3,3)
 !
-      data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
-     &        0.,0.,1.,0.,0.,0.,-1.,0.,0.,
-     &        0.,-1.,0.,1.,0.,0.,0.,0.,0./
+      data e /0.d0,0.d0,0.d0,0.d0,0.d0,-1.d0,0.d0,1.d0,0.d0,
+     &        0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,-1.d0,0.d0,0.d0,
+     &        0.d0,-1.d0,0.d0,1.d0,0.d0,0.d0,0.d0,0.d0,0.d0/
 !
       nk=nk+1
       if(nk.gt.nk_) then

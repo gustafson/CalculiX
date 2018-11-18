@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,39 +18,96 @@
 !
       subroutine steps(inpc,textpart,iperturb,iprestr,nbody,
      &  nforc,nload,ithermal,t0,t1,nk,irstrt,istep,istat,n,jmax,ctrl,
-     &  iline,ipol,inl,ipoinp,inp,newstep,ipoinpc,network)
+     &  iline,ipol,inl,ipoinp,inp,newstep,ipoinpc,network,
+     &  iamplitudedefault,amname,nam,nam_,namta,amta,namtot,
+     &  nstam,ier)
 !
 !     reading the input deck: *STEP
 !
       implicit none
 !
       character*1 inpc(*)
+      character*80 amname(*)
       character*132 textpart(16)
 !
       integer iperturb(*),nforc,nload,ithermal,nk,istep,istat,n,key,
-     &  i,j,iprestr,jmax(2),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  newstep,nbody,ipoinpc(0:*),network
+     &  i,j,iprestr,jmax(2),irstrt(*),iline,ipol,inl,ipoinp(2,*),
+     &  inp(3,*),
+     &  newstep,nbody,ipoinpc(0:*),network,iamplitudedefault,nam,
+     &  nam_,namta(3,*),namtot,nstam,ier
 !
-      real*8 t0(*),t1(*),ctrl(*)
+      real*8 t0(*),t1(*),ctrl(*),amta(2,*)
 !
       if(newstep.eq.1) then
          write(*,*) '*ERROR reading *STEP: *STEP statement detected'
          write(*,*) '       within step ',istep
-         call exit(201)
+         ier=1
+         return
       else
          newstep=1
       endif
 !
       if(iperturb(1).lt.2) iperturb(1)=0
-      if(irstrt.lt.0) irstrt=0
+      if(irstrt(1).lt.0) irstrt(1)=0
       istep=istep+1
       jmax(1)=100
       jmax(2)=10000
 !
+!     adding a ramp and a step amplitude if AMPLITUDE is active in
+!     any step
+!
+      if((istep.eq.1).and.(nstam.eq.1)) then
+!
+!        adding a ramp amplitude
+!
+         nam=nam+1
+         if(nam.gt.nam_) then
+            write(*,*) 
+     &           '*ERROR reading *STEP: increase nam_'
+            ier=1
+            return
+         endif
+         namta(3,nam)=nam
+         amname(nam)(1:15)='RAMP12357111317'
+         do j=16,80
+            amname(nam)(j:j)=' '
+         enddo
+         namta(1,nam)=namtot+1
+         namtot=namtot+1
+         amta(1,namtot)=0.d0
+         amta(2,namtot)=0.d0
+         namtot=namtot+1
+         amta(1,namtot)=1.d20
+         amta(2,namtot)=1.d20
+         namta(2,nam)=namtot
+!     
+!        adding a step amplitude
+!     
+         nam=nam+1
+         if(nam.gt.nam_) then
+            write(*,*) 
+     &           '*ERROR reading *STEP: increase nam_'
+            ier=1
+            return
+         endif
+         namta(3,nam)=nam
+         amname(nam)(1:15)='STEP12357111317'
+         do j=16,80
+            amname(nam)(j:j)=' '
+         enddo
+         namta(1,nam)=namtot+1
+         namtot=namtot+1
+         amta(1,namtot)=0.d0
+         amta(2,namtot)=1.d0
+         namtot=namtot+1
+         amta(1,namtot)=1.d20
+         amta(2,namtot)=1.d0
+         namta(2,nam)=namtot
+      endif
+!     
       do i=2,n
          if(textpart(i)(1:12).eq.'PERTURBATION') then
             iperturb(1)=1
-c            iperturb(2)=1
             write(*,*) '*INFO reading *STEP: nonlinear geometric'
             write(*,*) '      effects are turned on'
             write(*,*)
@@ -81,8 +138,8 @@ c            iperturb(2)=1
      &            '*ERROR reading *STEP: PERTURBATION and NLGEOM'
                write(*,*) '       are mutually exclusive; '
                call inputerror(inpc,ipoinpc,iline,
-     &"*STEP%")
-               call exit(201)
+     &              "*STEP%",ier)
+               return
             endif
 !
          elseif(textpart(i)(1:9).eq.'NLGEOM=NO') then
@@ -102,22 +159,29 @@ c            iperturb(2)=1
 !           maximum number of increments
 !
             read(textpart(i)(5:14),'(i10)',iostat=istat) jmax(1)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEP%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*STEP%",ier)
+               return
+            endif
 !
          elseif(textpart(i)(1:5).eq.'INCF=') then
 !
 !           maximum number of fluid increments
 !
             read(textpart(i)(6:15),'(i10)',iostat=istat) jmax(2)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEP%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*STEP%",ier)
+               return
+            endif
          elseif(textpart(i)(1:14).eq.'THERMALNETWORK') then
             if(istep.ne.1) then
                write(*,*) '*ERROR reading *STEP'
                write(*,*) '       THERMAL NETWORK can only be used'
                write(*,*) '       on the first step'
-               call exit(201)
+               ier=1
+               return
             endif
 !
 !           purely thermal network, i.e. Dx-elements are defined
@@ -126,12 +190,21 @@ c            iperturb(2)=1
 !
             network=1
          elseif(textpart(i)(1:9).eq.'AMPLITUDE') then
-            write(*,*) '*ERROR reading *STEP'
-            write(*,*) '       AMPLITUDE cannot be used'
-            write(*,*) '       on a *STEP card.'
-            write(*,*) '       Please apply the amplitude'
-            write(*,*) '       on each loading seperately.'
-            call exit(201)
+            if(textpart(i)(1:14).eq.'AMPLITUDE=RAMP') then
+               do j=1,nam
+                  if(amname(j)(1:15).eq.'RAMP12357111317') then
+                     iamplitudedefault=j
+                     exit
+                  endif
+               enddo
+            elseif(textpart(i)(1:14).eq.'AMPLITUDE=STEP') then
+               do j=1,nam
+                  if(amname(j)(1:15).eq.'STEP12357111317') then
+                     iamplitudedefault=j
+                     exit
+                  endif
+               enddo
+            endif
          else
             write(*,*) 
      &          '*WARNING reading *STEP: parameter not recognized:'

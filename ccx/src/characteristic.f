@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &     kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,dvi,numf,set,
-     &     mi,ttime,time,iaxial)
+     &     mi,ttime,time,iaxial,iplausi)
 !     
 !     This subroutine is used to enables the processing of empiric 
 !     given under the form
@@ -40,12 +40,18 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,kon(*),ipkon(*),
      &     ielprop(*),nodef(*),idirf(*),index,iflag,
-     &     inv,id,numf,npu,i,mi(*),iaxial
+     &     inv,id,numf,npu,i,mi(*),iaxial,iplausi
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),cp,r,dvi,
      &     p1,p2,physcon(*),ttime,time,xmach,kappa,
      &     xpu(100),ypu(100),Qred,p1mp2zp1,T1,scal,T2
 !     
+      intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,ielprop,prop,iflag,v,cp,r,physcon,dvi,set,
+     &     mi,ttime,time,iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi
+! 
       if (iflag.eq.0) then
          identity=.true.
 !     
@@ -87,21 +93,21 @@
             T1=v(0,node2)-physcon(1)
          endif
 !     
-         p1mp2zp1=(P1-P2)/P1
+         p1mp2zp1=(p1-p2)/p1
 !     
          if(iflag.eq.1) then
             
             call ident(xpu,p1mp2zp1,npu,id)
             if(id.eq.0) then
                Qred=scal*ypu(1)
-               xflow=inv*Qred*P1/dsqrt(T1)
+               xflow=inv*Qred*p1/dsqrt(T1)
             elseif(id.ge.npu) then
                Qred=scal*ypu(npu)
-               xflow=inv*Qred*P1/dsqrt(T1)
+               xflow=inv*Qred*p1/dsqrt(T1)
             else
                Qred=scal*(ypu(id)+(ypu(id+1)-ypu(id))
      &             *(p1mp2zp1-xpu(id))/(xpu(id+1)-xpu(id)))
-               xflow=inv*Qred*P1/dsqrt(T1)
+               xflow=inv*Qred*p1/dsqrt(T1)
             endif
 !
          elseif (iflag.eq.2) then
@@ -139,29 +145,29 @@
             idirf(3)=1
             idirf(4)=2
 !     
-            df(2)=xflow/(2.d0*P1*dsqrt(T1))
-            df(3)=inv*dsqrt(T1)/P1
+            df(2)=xflow/(2.d0*p1*dsqrt(T1))
+            df(3)=inv*dsqrt(T1)/p1
 !     
             call ident(xpu,p1mp2zp1,npu,id)
 !     
             if(id.eq.0) then
-               f=dabs(xflow)/P1*dsqrt(T1)-scal*ypu(1)
+               f=dabs(xflow)/p1*dsqrt(T1)-scal*ypu(1)
                df(4)=0.01d0
-               df(1)=-xflow*dsqrt(T1)/P1**2
+               df(1)=-xflow*dsqrt(T1)/p1**2
 !     
             elseif(id.ge.npu) then
-               f=dabs(xflow)/P1*dsqrt(T1)-scal*ypu(npu)
+               f=dabs(xflow)/p1*dsqrt(T1)-scal*ypu(npu)
                df(4)=0.01d0
-               df(1)=-xflow*dsqrt(T1)/P1**2
+               df(1)=-xflow*dsqrt(T1)/p1**2
 !    
             else
-               f=dabs(xflow)/P1*dsqrt(T1)-(scal*ypu(id)
+               f=dabs(xflow)/p1*dsqrt(T1)-(scal*ypu(id)
      &             +scal*(ypu(id+1)-ypu(id))
      &              *(p1mp2zp1-xpu(id))/(xpu(id+1)-xpu(id)))
 !
                df(4)=scal*(ypu(id+1)-ypu(id))/(xpu(id+1)-xpu(id))*1/p1
 !
-               df(1)=-xflow*dsqrt(T1)/P1**2-(P2/P1**2)
+               df(1)=-xflow*dsqrt(T1)/p1**2-(p2/p1**2)
      &              *(scal*(ypu(id+1)-ypu(id))/(xpu(id+1)-xpu(id)))
             endif
          endif
@@ -207,23 +213,23 @@
 !
          if(inv.eq.1) then
             write(1,56)'       Inlet node ',node1,':   Tt1=',T1,
-     &           ', Ts1=',T1,', Pt1=',P1
+     &           ', Ts1=',T1,', Pt1=',p1
          
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57) 'M = ',xmach
 !
             write(1,56)'      Outlet node ',node2,':   Tt2=',T2,
-     &           ', Ts2=',T2,', Pt2=',P2
+     &           ', Ts2=',T2,', Pt2=',p2
 !     
          else if(inv.eq.-1) then
             write(1,56)'       Inlet node ',node2,':    Tt1=',T1,
-     &           ', Ts1=',T1,', Pt1=',P1
+     &           ', Ts1=',T1,', Pt1=',p1
      &          
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57) 'M = ',xmach
 !
             write(1,56)'      Outlet node ',node1,':    Tt2=',T2,
-     &           ', Ts2=',T2,', Pt2=',P2
+     &           ', Ts2=',T2,', Pt2=',p2
 !               
          endif
 !      

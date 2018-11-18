@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -221,7 +221,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*CONTACTDAMPING")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INTERACTION",
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*CONTACTPAIR")==0){
@@ -237,6 +237,14 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*CYCLICHARDENING")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*DAMPING")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*ELASTIC")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
@@ -280,15 +288,15 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
                           nline,&ikey));
       }
       else if((strcmp1(&buff[0],"*FRICTION")==0)&&(ichangefriction==0)){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INTERACTION",
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*GAPCONDUCTANCE")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INTERACTION",
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*GAPHEATGENERATION")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INTERACTION",
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*HYPERELASTIC")==0){
@@ -383,12 +391,12 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*SURFACEINTERACTION")==0){
-        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INTERACTION",
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*SURFACEBEHAVIOR")==0){
 	  if(ichangesurfacebehavior==0){
-	      FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"SURFACEINTERACTION",
+	      FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"INTERACTION",
                           nline,&ikey));
 	  }else{
 	      FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"REST",

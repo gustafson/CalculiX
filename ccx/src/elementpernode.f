@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,15 +16,18 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine elementpernode(iponoel,inoel,lakon,ipkon,kon,ne,
-     &       inoelsize)
+      subroutine elementpernode(iponoel,inoel,lakon,ipkon,kon,ne)
 !
       implicit none
 !
       character*8 lakon(*)
 !
       integer iponoel(*),inoel(2,*),ipkon(*),kon(*),i,j,ne,
-     &  inoelfree,nope,indexe,node,inoelsize
+     &  inoelfree,nope,indexe,node
+!
+      intent(in) lakon,ipkon,kon,ne
+!
+      intent(inout) iponoel,inoel
 !
 !     determining the elements belonging to the nodes of
 !     the elements
@@ -61,10 +64,6 @@
             inoelfree=inoelfree+1
          enddo
       enddo
-!
-!     size of field inoel
-!
-      inoelsize=inoelfree-1
 !
       return
       end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -70,7 +70,7 @@
 !     
 !     
       do k=1,3
-         cgp(k)=0.0
+         cgp(k)=0.0d0
       enddo
       if(nvertex.lt.3) return       
 !     
@@ -112,13 +112,13 @@
 !
          area=dabs(p1(1)*p2(2)-p2(1)*p1(2))/2.d0
 !
-         if(area.lt.1.e-4) cycle
-         if(nopes.eq.4.and.areaslav+area-4.0.gt.1.e-3
+         if(area.lt.1.d-4) cycle
+         if(nopes.eq.4.and.areaslav+area-4.0d0.gt.1.d-3
      &        .and.nactiveline.gt.0)then
            nactiveline=0
            return
          endif
-         if(nopes.eq.3.and.areaslav+area-0.5.gt.1.e-4
+         if(nopes.eq.3.and.areaslav+area-0.5d0.gt.1.d-4
      &       .and.nactiveline.gt.0)then
            nactiveline=0
            return

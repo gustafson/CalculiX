@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,18 +27,23 @@
       integer nface,i,nshcon(2,*),imat,ntmat_,mi(*),
      &  ielmat(mi(3),*),ielfa(4,*)
 !
-      real*8 t1l,vfa(0:7,*),cp,shcon(0:3,ntmat_,*),cvfa(*),physcon(*)
+      real*8 t1l,vfa(0:7,*),shcon(0:3,ntmat_,*),cvfa(*),physcon(*)
 !     
+c$omp parallel default(none)
+c$omp& shared(vfa,ielmat,ielfa,ntmat_,shcon,nshcon,physcon,cvfa,nface)
+c$omp& private(i,t1l,imat)
+c$omp do
       do i=1,nface
          t1l=vfa(0,i)
 !
 !        take the material of the first adjacent element
 !
          imat=ielmat(1,ielfa(1,i))
-         call materialdata_cp_sec(imat,ntmat_,t1l,shcon,nshcon,cp,
+         call materialdata_cp_sec(imat,ntmat_,t1l,shcon,nshcon,cvfa(i),
      &       physcon)
-         cvfa(i)=cp
       enddo
+c$omp end do
+c$omp end parallel
 !            
       return
       end

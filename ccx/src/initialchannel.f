@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,13 +46,13 @@
      &     nrhs,info,idof1,idof2,nteq,nrhcon(*),ipobody(2,*),ibody(3,*),
      &     nbody,numf,network,iin_abs,icase,index2,index1,nelem1,nelem2,
      &     node11,node21,node12,node22,istep,iit,ineighe(*),
-     &     ilboun(*),nelemup,k,node2up,ider,iaxial
+     &     ilboun(*),nelemup,k,node2up,ider,iaxial,iplausi
 !     
       real*8 ac(nteq,nteq), bc(nteq),prop(*),shcon(0:3,ntmat_,*),
      &     f,df(8),xflow,xbounact(*),v(0:mi(2),*),cp,r,tg1,
      &     tg2,gastemp,physcon(*),pressmin,dvi,rho,g(3),z1,z2,
      &     rhcon(0:1,ntmat_,*),co(3,*),xbodyact(7,*),kappa,
-     &     a,Tt,Pt,Ts,pressmax,constant,vold(0:mi(2),*),href,
+     &     a,Tt,Ts,pressmax,constant,vold(0:mi(2),*),href,
      &     ttime,time
 !
       kflag=1
@@ -312,7 +312,7 @@
      &              nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &              nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
      &              vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
-     &              ttime,time,iaxial)
+     &              ttime,time,iaxial,iplausi)
 !     
                if(dabs(xflow).gt.1.d-30) exit
             enddo
@@ -392,7 +392,7 @@
      &              nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &              nodef,idirf,df,cp,r,rho,physcon,g,co,dvi,numf,
      &              vold,set,shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ider,
-     &              ttime,time,iaxial)
+     &              ttime,time,iaxial,iplausi)
 !     
             enddo
 !     

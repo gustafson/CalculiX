@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,7 +48,7 @@
 !     loadtype           load type label
 !     node               network node (only for forced convection)
 !     area               area covered by the integration point
-!     vold(0..4,1..nk)   solution field in all nodes; 
+!     vold(0..4,1..nk)   actual solution field in all nodes; 
 !                        for structural nodes:
 !                        0: temperature
 !                        1: displacement in global x-direction
@@ -66,6 +66,7 @@
 !                        over all elements)
 !     mi(2)              max degree of freedom per node (max over all
 !                        nodes) in fields like v(0:mi(2))...
+!     mi(3)              max # of layers in any element
 !     ipkon(i)           points to the location in field kon preceding
 !                        the topology of element i
 !     kon(*)             contains the topology of all elements. The
@@ -88,7 +89,8 @@
 !                        number and their order corresponds
 !                        to the description in the user's manual,
 !                        cf. the sections "Fluid Section Types"
-!     ielmat(i)          contains the material number for element i
+!     ielmat(j,i)        contains the material number for element i
+!                        and layer j
 !     shcon(0,j,i)       temperature at temperature point j of material i
 !     shcon(1,j,i)       specific heat at constant pressure at the
 !                        temperature point j of material i
@@ -122,11 +124,11 @@
 !                        1=centrifugal, 2=gravity, 3=generalized gravity
 !     ibody(2,i)         amplitude number for load i
 !     ibody(3,i)         load case number for load i
-!     xbody(1,i)      size of body load i
-!     xbody(2..4,i)   for centrifugal loading: point on the axis,
+!     xbody(1,i)         size of body load i
+!     xbody(2..4,i)      for centrifugal loading: point on the axis,
 !                        for gravity loading with known gravity vector:
 !                          normalized gravity vector
-!     xbody(5..7,i)   for centrifugal loading: normalized vector on the
+!     xbody(5..7,i)      for centrifugal loading: normalized vector on the
 !                          rotation axis
 !
 !     OUTPUT:
@@ -146,14 +148,14 @@
       character*20 loadtype
 !
       integer kstep,kinc,noel,npt,jltyp,nfield,node,mi(*),ipkon(*),
-     &  kon(*),iponoel(*),inoel(2,*),ielprop(*),ielmat(*),ntmat_,
+     &  kon(*),iponoel(*),inoel(2,*),ielprop(*),ielmat(mi(3),*),ntmat_,
      &  nshcon(*),nrhcon(*),ncocon(2,*),nodem,indexprop,indexe,
      &  iel1,iel2,ielup,iit,imat,icase,ithermal,ipobody(2,*),
      &  ibody(3,*)
 !
       real*8 h(2),sink,time(2),coords(3),temp,field(nfield),area,
      &  vold(0:mi(2),*),prop(*),shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),
-     &  cocon(0:6,ntmat_,*),rho,r,Pt,Pr,xl,Tt,Ts,xflow,Tsold,Re,um,
+     &  cocon(0:6,ntmat_,*),rho,r,pt,Pr,xl,Tt,Ts,xflow,Tsold,Re,um,
      &  xks,xkappa,xlambda,f,cp,A,D,form_fact,xbody(7,*),heatnod,
      &  heatfac
 !
@@ -292,11 +294,11 @@
 !
 !        material of upstream element
 !
-         imat=ielmat(ielup)
+         imat=ielmat(1,ielup)
 !
          xflow=dabs(vold(1,nodem))
          Tt=vold(0,node)
-         Pt=vold(2,node)
+         pt=vold(2,node)
 !
          if(lakon(ielup)(2:2).eq.'G') then
 !
@@ -309,7 +311,7 @@
                Tsold=Ts
                call materialdata_tg(imat,ntmat_,Ts,shcon,nshcon,cp,r,
      &              um,rhcon,nrhcon,rho)
-               call ts_calc(xflow,Tt,Pt,xkappa,r,A,Ts,icase)
+               call ts_calc(xflow,Tt,pt,xkappa,r,A,Ts,icase)
                if((dabs(Ts-Tsold).le.1.d-5*Ts).or.(iit.eq.10)) exit
             enddo
 !

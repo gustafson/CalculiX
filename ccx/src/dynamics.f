@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,8 @@
 !
       subroutine dynamics(inpc,textpart,nmethod,iperturb,tinc,tper,
      &  tmin,tmax,idrct,alpha,iexpl,isolver,istep,istat,n,iline,
-     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd,ctrl,tincf,nener)
+     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd,ctrl,tincf,nener,
+     &  ier)
 !
 !     reading the input deck: *DYNAMIC
 !
@@ -40,14 +41,15 @@
 !
       integer nmethod,istep,istat,n,key,i,iperturb,idrct,iexpl,
      &  isolver,iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,
-     &  ipoinpc(0:*),cfd,nener
+     &  ipoinpc(0:*),cfd,nener,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),tincf
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *DYNAMIC: *DYNAMIC can only'
          write(*,*) '  be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     default is implicit
@@ -92,8 +94,11 @@
       do i=2,n
          if(textpart(i)(1:6).eq.'ALPHA=') then
             read(textpart(i)(7:26),'(f20.0)',iostat=istat) alpha
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DYNAMIC%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DYNAMIC%",ier)
+               return
+            endif
             if(alpha.lt.-1.d0/3.d0) then
                write(*,*) '*WARNING reading *DYNAMIC: alpha is smaller'
                write(*,*) '  than -1/3 and is reset to -1/3'
@@ -157,20 +162,35 @@
       endif
 !
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DYNAMIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*DYNAMIC%",ier)
+         return
+      endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DYNAMIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*DYNAMIC%",ier)
+         return
+      endif
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DYNAMIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*DYNAMIC%",ier)
+         return
+      endif
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DYNAMIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*DYNAMIC%",ier)
+         return
+      endif
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tincf
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DYNAMIC%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*DYNAMIC%",ier)
+         return
+      endif
 !
       if(tinc.le.0.d0) then
          write(*,*)'*ERROR reading *DYNAMIC: initial increment size is n

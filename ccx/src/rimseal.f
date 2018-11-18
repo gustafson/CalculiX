@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
       subroutine rimseal(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,mi,
-     &     ttime,time,iaxial,co,vold)
+     &     ttime,time,iaxial,co,vold,iplausi)
 !     
 !     rimseal element
 !
@@ -34,7 +34,8 @@
      &     ielprop(*),nodef(*),idirf(*),index,iflag,mi(*),
      &     inv,ipkon(*),kon(*),kgas,nelem_in,nelem_out,iaxial,
      &     element0,node10,node20,node11,node21,node12,node22,node_cav,
-     &     node_main,node_main2,node_in1,node_out1,node_in2,node_out2
+     &     node_main,node_main2,node_in1,node_out1,node_in2,node_out2,
+     &     iplausi
 !
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,a,d,
      &     p1,p2,T1,T2,Aeff,C1,C2,C3,cd,cp,physcon(*),p2p1,km1,dvi,
@@ -44,6 +45,12 @@
      &     MRTAP_ref_aus, m_ref_ein, m_ref_aus,maus_zu_mref,
      &     mein_zu_mref, A_aus, A_ein, A_ges,m_aus, m_ein, m_sperr,
      &     vold(0:mi(2),*),co(3,*)
+!
+      intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &        nactdog,ielprop,prop,iflag,v,cp,r,physcon,dvi,set,mi,
+     &        ttime,time,iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi
 !
       pi=4.d0*datan(1.d0)   
 

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,7 @@
      &  mpcfree,inotr,trab,ntrans,ikboun,ilboun,ikmpc,ilmpc,nk_,
      &  co,labmpc,boun_flag,typeboun,istat,n,iline,ipol,
      &  inl,ipoinp,inp,nam_,namtot_,namta,amta,nmethod,iperturb,
-     &  iaxial,ipoinpc,vold,mi)
+     &  iaxial,ipoinpc,vold,mi,iamplitudedefault,namtot,ier)
 !
 !     reading the input deck: *BOUNDARY
 !
@@ -37,21 +37,21 @@
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),nodeboun(*),
-     &  ndirboun(*),
+     &  ndirboun(*),nbounnew,kflag,
      &  nset,nboun,nboun_,istat,n,i,j,k,l,ibounstart,ibounend,
      &  key,nk,iamboun(*),nam,iamplitude,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,inotr(2,*),ikboun(*),ilboun(*),ikmpc(*),
      &  ilmpc(*),nmpcold,id,idof,index1,ntrans,nk_,ipos,m,node,is,ie,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,namtot_,
      &  namta(3,*),idelay,nmethod,iperturb,lc,iaxial,ipoinpc(0:*),
-     &  ktrue,mi(*),iglobstep
+     &  ktrue,mi(*),iglobstep,iamplitudedefault,ier
 !
       real*8 xboun(*),bounval,coefmpc(*),trab(7,*),co(3,*),amta(2,*),
      &  vold(0:mi(2),*)
 !
       type='B'
       label='                    '
-      iamplitude=0
+      iamplitude=iamplitudedefault
       idelay=0
       user=.false.
       massflowrate=.false.
@@ -141,10 +141,12 @@
                      call nident(ikmpc,idof,nmpc,id)
                      if(id.eq.0) then
                         write(*,*) '*ERROR reading *BOUNDARY'
-                        call exit(201)
+                        ier=1
+                        return
                      elseif(ikmpc(id).ne.idof) then
                         write(*,*) '*ERROR reading *BOUNDARY'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      ilmpc(id)=k
                   endif
@@ -154,22 +156,38 @@
 !           removing the boundary conditions defined by a *BOUNDARY
 !           statement
 !
-            loop1: do
-               if(nboun.gt.0) then
-                  do j=1,nboun
-                     if(typeboun(j).eq.'B') then
-                        node=nodeboun(j)
-                        is=ndirboun(j)
-                        ie=ndirboun(j)
-                        call bounrem(node,is,j,nodeboun,ndirboun,xboun,
-     &                       nboun,iamboun,nam,ikboun,ilboun,typeboun)
-                        cycle loop1
-                     endif
-                  enddo
-                  exit
+c            loop1: do
+c               if(nboun.gt.0) then
+c                  do j=1,nboun
+c                     if(typeboun(j).eq.'B') then
+c                        node=nodeboun(j)
+c                        is=ndirboun(j)
+c                        ie=ndirboun(j)
+c                        call bounrem(node,is,j,nodeboun,ndirboun,xboun,
+c     &                       nboun,iamboun,nam,ikboun,ilboun,typeboun)
+c                        cycle loop1
+c                     endif
+c                  enddo
+c                  exit
+c               endif
+c               exit
+c            enddo loop1
+            nbounnew=0
+            do j=1,nboun
+               if(typeboun(j).ne.'B') then
+                  nbounnew=nbounnew+1
+                  nodeboun(nbounnew)=nodeboun(j)
+                  ndirboun(nbounnew)=ndirboun(j)
+                  xboun(nbounnew)=xboun(j)
+                  typeboun(nbounnew)=typeboun(j)
+                  if(nam.gt.0) iamboun(nbounnew)=iamboun(j)
+                  ikboun(nbounnew)=8*(nodeboun(j)-1)+ndirboun(j)
+                  ilboun(nbounnew)=nbounnew
                endif
-               exit
-            enddo loop1
+            enddo
+            nboun=nbounnew
+            kflag=2
+            call isortii(ikboun,ilboun,nboun,kflag)
          elseif(textpart(i)(1:10).eq.'AMPLITUDE=') then
             read(textpart(i)(11:90),'(a80)') amplitude
             do j=nam,1,-1
@@ -183,8 +201,8 @@
      &           '*ERROR reading *BOUNDARY: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
-               call exit(201)
+     &              "*BOUNDARY%",ier)
+               return
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
@@ -193,50 +211,61 @@
                write(*,*) '       DELAY is used twice in the same'
                write(*,*) '       keyword; '
                call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
-               call exit(201)
+     &              "*BOUNDARY%",ier)
+               return
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR reading *BOUNDARY: increase nam_'
-               call exit(201)
+               ier=1
+               return
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
                write(*,*) '*ERROR reading *BOUNDARY: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
-            if(nam.eq.1) then
-               namtot=0
-            else
-               namtot=namta(2,nam-1)
-            endif
+c            if(nam.eq.1) then
+c               namtot=0
+c            else
+c               namtot=namta(2,nam-1)
+c            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR boundaries: increase namtot_'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
+c            call reorderampl(amname,namta,nam)
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARY%",ier)
+               return
+            endif
          elseif(textpart(i)(1:9).eq.'LOADCASE=') then
             read(textpart(i)(10:19),'(i10)',iostat=istat) lc
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARY%",ier)
+               return
+            endif
             if(nmethod.ne.5) then
                write(*,*) '*ERROR reading *BOUNDARY: the parameter LOAD'
                write(*,*) '       CASE is only allowed in STEADY STATE'
                write(*,*) '       DYNAMICS calculations'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:4).eq.'USER') then
             user=.true.
@@ -248,8 +277,11 @@
             submodel=.true.
          elseif(textpart(i)(1:5).eq.'STEP=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARY%",ier)
+               return
+            endif
          else
             write(*,*) 
      &        '*WARNING reading *BOUNDARY: parameter not recognized:'
@@ -266,7 +298,8 @@
          write(*,*) '*ERROR reading *BOUNDARY: no global step'
          write(*,*) '       step specified for the submodel'
          call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
+     &        "*BOUNDARY%",ier)
+         return
       endif
 !
 !     storing the step for submodels in iamboun
@@ -294,23 +327,31 @@
          if((istat.lt.0).or.(key.eq.1)) return
 !
          read(textpart(2)(1:10),'(i10)',iostat=istat) ibounstart
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*BOUNDARY%",ier)
+            return
+         endif
 !     
          if(textpart(3)(1:1).eq.' ') then
             ibounend=ibounstart
          else
             read(textpart(3)(1:10),'(i10)',iostat=istat) ibounend
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARY%",ier)
+               return
+            endif
          endif
 !     
          if(textpart(4)(1:1).eq.' ') then
             bounval=0.d0
          else
             read(textpart(4)(1:20),'(f20.0)',iostat=istat) bounval
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARY%",ier)
+            endif
          endif
          if((massflowrate).and.(iaxial.eq.180)) bounval=bounval/iaxial
 !     
@@ -324,7 +365,8 @@
             if((l.gt.nk).or.(l.le.0)) then
                write(*,*) '*ERROR reading *BOUNDARY:'
                write(*,*) '       node ',l,' is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
             if(submodel) then
                if(ntrans.gt.0) then
@@ -333,7 +375,8 @@
                      write(*,*) '       node',l,' a local coordinate'
                      write(*,*) '       system was defined. This is not'
                      write(*,*) '       allowed'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                endif
             endif
@@ -359,8 +402,8 @@
                write(*,*) '*ERROR reading *BOUNDARY: node set ',noset
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
-               call exit(201)
+     &              "*BOUNDARY%",ier)
+               return
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
@@ -375,7 +418,8 @@
                            write(*,*) 
      &                       '       system was defined. This is not'
                            write(*,*) '       allowed'
-                           call exit(201)
+                           ier=1
+                           return
                         endif
                      endif
                   endif
@@ -403,7 +447,8 @@
                               write(*,*) 
      &                          '       system was defined. This is not'
                               write(*,*) '       allowed'
-                              call exit(201)
+                              ier=1
+                              return
                            endif
                         endif
                      endif

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine transforms(inpc,textpart,trab,ntrans,ntrans_,
      &     inotr,set,istartset,iendset,ialset,nset,istep,istat,
-     &     n,iline,ipol,inl,ipoinp,inp,ipoinpc)
+     &     n,iline,ipol,inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *TRANSFORM
 !
@@ -32,18 +32,20 @@
 !
       integer ntrans,ntrans_,istep,istat,n,key,i,j,k,inotr(2,*),
      &  istartset(*),iendset(*),ialset(*),nset,ipos,iline,ipol,
-     &  inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),ier
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR reading *TRANSFORM: *TRANSFORM should be'
          write(*,*) '  placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ntrans=ntrans+1
       if(ntrans.gt.ntrans_) then
          write(*,*) '*ERROR reading *TRANSFORM: increase ntrans_'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ipos=1
@@ -81,19 +83,23 @@
          write(*,*)'*ERROR reading *TRANSFORM: definition of a'
          write(*,*) '  transformation is not complete'
          call inputerror(inpc,ipoinpc,iline,
-     &"*TRANSFORM%")
-         call exit(201)
+     &        "*TRANSFORM%",ier)
+         return
       endif
 !
       do i=1,6
          read(textpart(i)(1:20),'(f20.0)',iostat=istat) trab(i,ntrans)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TRANSFORM%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*TRANSFORM%",ier)
+            return
+         endif
       enddo
 !
       if(noset(1:1).eq.' ') then
          write(*,*) '*ERROR reading *TRANSFORM: no node set defined'
-         call exit(201)
+         ier=1
+         return
       endif
 !         
       do i=1,nset
@@ -103,7 +109,8 @@
          noset(ipos:ipos)=' '
          write(*,*) '*ERROR reading *TRANSFORM: node set ',noset
          write(*,*) '       has not yet been defined.'
-         call exit(201)
+         ier=1
+         return
       endif
       do j=istartset(i),iendset(i)
          if(ialset(j).gt.0) then

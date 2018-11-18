@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine masss(inpc,textpart,nrhcon,nmat,ntmat_,
      &        rhcon,matname,irstrt,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
-     &        nset,ielmat,ielorien,ipoinpc,mi,iaxial)
+     &        nset,ielmat,ielorien,ipoinpc,mi,iaxial,ier)
 !
 !     reading the input deck: *MASS
 !
@@ -31,8 +31,8 @@
       character*132 textpart(16)
 !
       integer mi(*),nrhcon(*),nmat,ntmat_,ntmat,istep,
-     &  n,key,i,istat,istartset(*),iaxial,
-     &  iendset(*),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
+     &  n,key,i,istat,istartset(*),iaxial,ier,
+     &  iendset(*),irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
      &  ialset(*),ipos,nset,j,k,ielmat(mi(3),*),ielorien(mi(3),*),
      &  ipoinpc(0:*)  
 !
@@ -40,16 +40,18 @@
 !
       ntmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *MASS: *MASS should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
          write(*,*) '*ERROR reading *MASS: increase nmat_'
-         call exit(201)
+         ier=1
+         return
       endif
       matname(nmat)(1:4)='MASS'
       do i=5,80
@@ -78,8 +80,8 @@
          write(*,*) '*ERROR reading *MASS: definition of the'
          write(*,*) '       mass is not complete'
          call inputerror(inpc,ipoinpc,iline,
-     &"*MASS%")
-         call exit(201)
+     &        "*MASS%",ier)
+         return
       endif
 !
 !     reading the mass and storing it in rhcon
@@ -88,7 +90,8 @@
       nrhcon(nmat)=ntmat
       if(ntmat.gt.ntmat_) then
          write(*,*) '*ERROR reading *MASS: increase ntmat_'
-         call exit(201)
+         ier=1
+         return
       endif
       read(textpart(1)(1:20),'(f20.0)',iostat=istat)
      &     rhcon(1,ntmat,nmat)
@@ -97,13 +100,17 @@
 !
       if(iaxial.eq.180) rhcon(1,ntmat,nmat)=rhcon(1,ntmat,nmat)/iaxial
 !
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MASS%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*MASS%",ier)
+         return
+      endif
       rhcon(0,ntmat,nmat)=0.d0
 !     
       if(ntmat.eq.0) then
          write(*,*) '*ERROR reading *MASS: *MASS card without data'
-         call exit(201)
+         ier=1
+         return
       endif
       do i=1,nset
          if(set(i).eq.elset) exit
@@ -113,8 +120,8 @@
          write(*,*) '*ERROR reading *MASS: element set ',elset
          write(*,*) '       has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*MASS%")
-         call exit(201)
+     &        "*MASS%",ier)
+         return
       endif
 !     
 !     assigning the elements of the set the appropriate material

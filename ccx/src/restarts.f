@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
      &  ttime,qaold,cs,mcs,output,physcon,ctrl,typeboun,iline,ipol,inl,
      &  ipoinp,inp,fmpc,tieset,ntie,tietol,ipoinpc,nslavs,t0g,t1g,nprop,
      &  ielprop,prop,mortar,nintpoint,ifacecount,islavsurf,pslavsurf,
-     &  clearini)
+     &  clearini,ier)
 !
       implicit none
 !
@@ -62,8 +62,8 @@
      &  inotr(*),nprop,ielprop(*),mortar,nintpoint,ifacecount,
      &  namta(*),iamt1(*),ielmat(*),nodebounold(*),ndirbounold(*),
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),islavsurf(*),
-     &  nshcon(*),ncocon(*),ics(*),infree(*),
-     &  nener,irestartstep,irestartread,irstrt,istat,n,i,key,
+     &  nshcon(*),ncocon(*),ics(*),infree(*),ier,
+     &  nener,irestartstep,irestartread,irstrt(*),istat,n,i,key,
      &  iprestr,mcs,maxlenmpc,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ntie,ibody(*),nbody,nslavs
 !
@@ -82,17 +82,24 @@
       do i=2,n
          if(textpart(i)(1:4).eq.'READ') then
             irestartread=1
-c            if(irestartstep.eq.0) irestartstep=1
          elseif(textpart(i)(1:5).eq.'STEP=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) irestartstep
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RESTART%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RESTART%",ier)
+               return
+            endif
          elseif(textpart(i)(1:5).eq.'WRITE') then
-            irstrt=1
+            irstrt(1)=1
          elseif(textpart(i)(1:10).eq.'FREQUENCY=') then
-            read(textpart(i)(11:20),'(i10)',iostat=istat) irstrt
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RESTART%")
+            read(textpart(i)(11:20),'(i10)',iostat=istat) irstrt(1)
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RESTART%",ier)
+               return
+            endif
+         elseif(textpart(i)(1:7).eq.'OVERLAY') then
+            irstrt(2)=1
          else
             write(*,*) 
      &        '*WARNING in restarts: parameter not recognized:'
@@ -123,7 +130,7 @@ c            if(irestartstep.eq.0) irestartstep=1
      &  cbody,ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,
      &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,
      &  t0g,t1g,nprop,ielprop,prop,mortar,nintpoint,ifacecount,
-     &  islavsurf,pslavsurf,clearini)
+     &  islavsurf,pslavsurf,clearini,irstrt)
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

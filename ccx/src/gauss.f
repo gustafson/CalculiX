@@ -1,6 +1,7 @@
 !
 !     contains Gauss point information
 !
+!     gauss1d1: lin, 1-point integration (1 integration point)
 !     gauss1d2: lin, 2-point integration (2 integration points)
 !     gauss1d3: lin, 3-point integration (3 integration points)
 !     gauss2d1: quad, 1-point integration (1 integration point)
@@ -27,7 +28,7 @@
 !     weight2d1,... contains the weights
 !
 !
-      real*8 gauss1d2(1,2),gauss1d3(1,3),
+      real*8 gauss1d1(1,1),gauss1d2(1,2),gauss1d3(1,3),
      &  gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),
      &  gauss2d5(2,3),gauss3d1(3,1),gauss3d2(3,8),gauss3d3(3,27),
      &  gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),gauss3d7(3,2),
@@ -38,7 +39,9 @@
      &  weight3d2(8),weight3d3(27),weight3d4(1),weight3d5(4),
      &  weight3d6(15),weight3d7(2),weight3d8(9),weight3d9(18),
      &  weight3d10(6),weight3d11(1),weight2d6(7),weight3d12(14),
-     &  weight3d13(50),weight3d14(1)
+     &  weight3d13(50),weight3d14(1),weight1d1(1)
+!
+      gauss1d1=reshape(( /0.d0/),(/1,1/))
 !
       gauss1d2=reshape(( /
      &  -0.577350269189626d0,0.577350269189626d0/),(/1,2/))
@@ -46,7 +49,7 @@
       gauss1d3=reshape(( /
      & -0.774596669241483d0,0.d0,0.774596669241483d0/),(/1,3/))
 !
-      gauss2d1=reshape((/0.,0./),(/2,1/))
+      gauss2d1=reshape((/0.d0,0.d0/),(/2,1/))
 !
 !     the order of the Gauss points in gauss2d2 is important
 !     and should not be changed (used to accelerate the code
@@ -87,7 +90,7 @@
      & 0.470142064105115d0,0.470142064105115d0/),(/2,7/))
 !
 !
-      gauss3d1=reshape((/0.,0.,0./),(/3,1/))
+      gauss3d1=reshape((/0.d0,0.d0,0.d0/),(/3,1/))
 !
 !     the order of the Gauss points in gauss3d2 is important
 !     and should not be changed (used to accelerate the code
@@ -284,6 +287,8 @@
       gauss3d14=reshape((/
      & 0.333333333333333d0,0.333333333333333d0,0.d0/),
      &  (/3,1/))
+!
+      weight1d1=(/2.d0/)
 !
       weight1d2=(/1.d0,1.d0/)
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  set,istartset,iendset,ialset,nset,nset_,nalset,nalset_,mi,
      &  ixfree,iponor,xnor,istep,istat,n,iline,ipol,inl,ipoinp,inp,
      &  iaxial,ipoinpc,solid,cfd,network,filab,nlabel,out3d,iuel,
-     &  nuel_)
+     &  nuel_,ier)
 !
 !     reading the input deck: *ELEMENT
 !
@@ -39,14 +39,15 @@
      &  nteller,j,ipkon(*),nkon,nope,indexe,mi(*),ipos,indexy,ixfree,
      &  iponor(2,*),nopeexp,iline,ipol,inl,ipoinp(2,*),inp(3,*),
      &  iaxial,ipoinpc(0:*),cfd,nlabel,network,iuel(4,*),nuel_,
-     &  id,four,number,ndof,intpoints
+     &  id,four,number,ndof,intpoints,ier
 !
       real*8 xnor(*)
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR reading *ELEMENT: *ELEMENT should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       indexy=-1
@@ -65,7 +66,8 @@
                write(*,*) '*ERROR reading *ELEMENT: set name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       set name:',textpart(i)(1:132)
-               call exit(201)
+               ier=1
+               return
             endif
             elset(81:81)=' '
             ipos=index(elset,' ')
@@ -86,7 +88,8 @@
                      if(nalset+nn.gt.nalset_) then
                         write(*,*)
      &                   '*ERROR reading *ELEMENT: increase nalset_'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      do k=1,nn
                         ialset(nalset+k)=ialset(istartset(js)+k-1)
@@ -112,7 +115,8 @@
             nset=nset+1
             if(nset.gt.nset_) then
                write(*,*) '*ERROR reading *ELEMENT: increase nset_'
-               call exit(201)
+               ier=1
+               return
             endif
             js=nset
             istartset(js)=nalset+1
@@ -262,7 +266,8 @@ c    Bernhardi end
             else
                write(*,*) '*ERROR reading *ELEMENT:'
                write(*,*) label,' is an unknown element type'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             if(label(1:3).eq.'CAX') then
@@ -289,8 +294,8 @@ c    Bernhardi end
          write(*,*) '*ERROR reading *ELEMENT: element type is lacking'
          write(*,*) '       '
          call inputerror(inpc,ipoinpc,iline,
-     &"*ELEMENT%")
-         call exit(201)
+     &        "*ELEMENT%",ier)
+         return
       endif
 !
 !     nope is the number of nodes per element as defined in the input
@@ -330,8 +335,6 @@ c     Bernhardi end
       elseif(label(4:4).eq.'8') then
          nope=8
          nopeexp=8
-c      elseif((label(1:5).eq.'CPE4 ').or.(label(1:5).eq.'CPS4 ').or.
-c     &        (label(1:5).eq.'CAX4 ').or.(label(1:3).eq.'S4 ')) then
       elseif(label(1:3).eq.'S4 ') then
          nope=4
 !        expanded into C3D8I: 11 nodes per element
@@ -419,11 +422,15 @@ c         read(label(2:3),'(i2)',iostat=istat) number
             return
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) i
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELEMENT%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*ELEMENT%",ier)
+            return
+         endif
          if(i.gt.ne_) then
             write(*,*) '*ERROR reading *ELEMENT: increase ne_'
-            call exit(201)
+            ier=1
+            return
          endif
 !
 !        check whether element was already defined
@@ -433,7 +440,8 @@ c         read(label(2:3),'(i2)',iostat=istat) number
             write(*,*) '       is already defined'
             write(*,*) '       '
             call inputerror(inpc,ipoinpc,iline,
-     &"*ELEMENT%")
+     &           "*ELEMENT%",ier)
+            return
          endif
 !            
 !        new element
@@ -446,8 +454,11 @@ c         read(label(2:3),'(i2)',iostat=istat) number
 !
          do j=2,min(n,nope+1)
             read(textpart(j)(1:10),'(i10)',iostat=istat) kon(indexe+j-1)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELEMENT%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*ELEMENT%",ier)
+               return
+            endif
          enddo
          nteller=n-1
          if(nteller.lt.nope) then
@@ -458,14 +469,18 @@ c         read(label(2:3),'(i2)',iostat=istat) number
                   write(*,*) 
      &              '*ERROR reading *ELEMENT: element definition'
                   write(*,*) '       incomplete for element ',i
-                  call exit(201)
+                  ier=1
+                  return
                endif
                if(nteller+n.gt.nope) n=nope-nteller
                do j=1,n
                   read(textpart(j)(1:10),'(i10)',iostat=istat) 
      &                  kon(indexe+nteller+j)
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELEMENT%")
+                  if(istat.gt.0) then
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*ELEMENT%",ier)
+                     return
+                  endif
                enddo
                nteller=nteller+n
                if(nteller.eq.nope) exit
@@ -478,7 +493,8 @@ c         read(label(2:3),'(i2)',iostat=istat) number
          if(ielset.eq.1) then
             if(nalset+1.gt.nalset_) then
                write(*,*) '*ERROR reading *ELEMENT: increase nalset_'
-               call exit(201)
+               ier=1
+               return
             endif
             nalset=nalset+1
             ialset(nalset)=i

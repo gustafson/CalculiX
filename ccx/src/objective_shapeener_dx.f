@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,8 +46,9 @@
      &  icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,ielprop(*),
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_qa,
-     &  nopered,mortar,jfaces,iloc,igauss,idesvar,ndesi,nodedesi(*),
-     &  nobject,iobject,iactive,node,istartdesi(*),ialdesi(*),ij
+     &  nopered,mortar,jfaces,igauss,idesvar,ndesi,nodedesi(*),
+     &  nobject,iobject,iactive,node,istartdesi(*),ialdesi(*),ij,
+     &  nlgeom_undo
 !
       real*8 co(3,*),shp(4,26),stiini(6,mi(1),*),xener(*),
      &  stx(6,mi(1),*),xl(3,26),vl(0:mi(2),26),stre(6),prop(*),
@@ -69,6 +70,20 @@
      &  thicke(mi(3),*),emeini(6,mi(1),*),clearini(3,9,*),
      &  pslavsurf(3,*),pmastsurf(6,*),distmin,xenerel,g0(iobject),
      &  dgdx(ndesi,nobject),sti(6,mi(1),*),xdesi(3,*)
+!
+      intent(in) co,kon,ipkon,lakon,ne,
+     &  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
+     &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,prestr,
+     &  iprestr,iperturb,iout,vold,nmethod,
+     &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
+     &  xstateini,xstate,npmat_,matname,mi,ielas,icmd,
+     &  ncmat_,nstate_,stiini,vini,enerini,istep,iinc,
+     &  springarea,reltime,calcul_qa,nener,ikin,ne0,thicke,
+     &  emeini,pslavsurf,pmastsurf,mortar,clearini,nea,neb,ielprop,
+     &  prop,distmin,ndesi,nodedesi,nobject,
+     &  iobject,sti,istartdesi,ialdesi,xdesi,idesvar
+!
+      intent(inout) g0,dgdx,ener,xener,xstiff
 !
       include "gauss.f"
 !
@@ -347,15 +362,14 @@ c     Bernhardi end
                   elseif((mortar.eq.1).and.
      &                    ((nmethod.ne.1).or.(iperturb(1).ge.2).or.
      &                     (iout.ne.-1)))then
-                     iloc=kon(indexe+nope+1)
                      jfaces=kon(indexe+nope+2)
                      igauss=kon(indexe+nope+1)
                      call springforc_f2f(xl,vl,imat,elcon,nelcon,elas,
      &                    fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,
      &                    elconloc,plicon,nplicon,npmat_,ener(1,i),
-     &                    nener,stx(1,1,i),mi,springarea(1,iloc),
+     &                    nener,stx(1,1,i),mi,springarea(1,igauss),
      &                    nmethod,ne0,nstate_,xstateini,xstate,reltime,
-     &                    ielas,iloc,jfaces,igauss,pslavsurf,pmastsurf,
+     &                    ielas,jfaces,igauss,pslavsurf,pmastsurf,
      &                    clearini,ener(1,i+ne))
                   endif
 !     
@@ -730,9 +744,9 @@ c     Bernhardi end
 !     calculating the deformation gradient of the old
 !     fields
 !     
-                  xikl(1,1)=vikl(1,1)+1
-                  xikl(2,2)=vikl(2,2)+1.
-                  xikl(3,3)=vikl(3,3)+1.
+                  xikl(1,1)=vikl(1,1)+1.d0
+                  xikl(2,2)=vikl(2,2)+1.d0
+                  xikl(3,3)=vikl(3,3)+1.d0
                   xikl(1,2)=vikl(1,2)
                   xikl(1,3)=vikl(1,3)
                   xikl(2,3)=vikl(2,3)
@@ -874,12 +888,13 @@ c     Bernhardi end
 !     
 !     calculating the local stiffness and stress
 !     
+               nlgeom_undo=0
                call mechmodel(elconloc,elas,emec,kode,emec0,ithermal,
      &              icmd,beta,stre,xkl,ckl,vj,xikl,vij,
      &              plconloc,xstate,xstateini,ielas,
      &              amat,t1l,dtime,time,ttime,i,jj,nstate_,mi(1),
      &              iorien,pgauss,orab,eloc,mattyp,qa(3),istep,iinc,
-     &              ipkon,nmethod,iperturb,qa(4))
+     &              ipkon,nmethod,iperturb,qa(4),nlgeom_undo)
 !     
                if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
      &              (nmethod.ne.5)) then
@@ -888,7 +903,7 @@ c     Bernhardi end
                   enddo
                endif
 !     
-               if(iperturb(1).eq.-1) then
+               if((iperturb(1).eq.-1).and.(nlgeom_undo.eq.0)) then
 !     
 !     if the forced displacements were changed at
 !     the start of a nonlinear step, the nodal

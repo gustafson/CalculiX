@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,9 +56,9 @@
      &          1,1,1,2,2,2,1,2,3,3,1,2,1,2,1,2,1,1,1,3,2,2,1,3,
      &          3,3,1,3,1,2,1,3,1,3,1,3,1,1,2,3,2,2,2,3,3,3,2,3,
      &          1,2,2,3,1,3,2,3,2,3,2,3/),(/4,21/))
-      dkl=reshape((/1.,0.,0.,0.,1.,0.,0.,0.,1./),(/3,3/))
+      dkl=reshape((/1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/),
+     &      (/3,3/))
 !
-c      pnewdt=-1.d0
       leximp=1
       lend=2
       user_creep=0
@@ -442,9 +442,24 @@ c      pnewdt=-1.d0
       enddo
       xstate(1,iint,iel)=ep
 !
-!     maximum equivalent viscoplastic strain in this increment
+!     maximum difference in the equivalent viscoplastic strain 
+!     in this increment based on the viscoplastic strain rate at
+!     the start and the end of the increment
 !
-      depvisc=max(depvisc,ep-epini)
+      if(ivisco.eq.1) then
+         depvisc=max(depvisc,abs(decra(1)-dtime*xstateini(14,iint,iel)))
+         xstate(14,iint,iel)=decra(1)/dtime
+      endif
+!
+!     maximum difference in the equivalent viscoplastic strain 
+!     in this increment based on the viscoplastic strain rate at
+!     the start and the end of the increment
+!
+      if(ivisco.eq.1) then
+         depvisc=max(depvisc,abs(decra(1)-dtime*xstateini(14,iint,iel)))
+         xstate(14,iint,iel)=decra(1)/dtime
+      endif
+c      depvisc=max(depvisc,ep-epini)
 !
       return
       end

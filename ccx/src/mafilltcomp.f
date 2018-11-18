@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,7 +38,7 @@
       real*8 xflux,vfa(0:7,*),xxn(3,*),area(*),au(*),ad(*),b(neq),
      &  vel(nef,0:7),umel(*),xlet(*),xle(*),coef,gradtfa(3,*),
      &  xxi(3,*),body(0:3,*),volume(*),dtimef,velo(nef,0:7),
-     &  veloo(nef,0:7),rhovel,constant,cvel(*),gradvel(3,3,*),
+     &  veloo(nef,0:7),rhovol,constant,cvel(*),gradvel(3,3,*),
      &  cvfa(*),hcfa(*),div,xload(2,*),gamma(*),xrlfa(3,*),
      &  xxj(3,*),a1,a2,a3,flux(*),xxni(3,*),xxnj(3,*)
 !
@@ -64,18 +64,25 @@
 !     outflowing flux
 !     
                ad(i)=ad(i)+xflux
-!     centdiff
-c               b(i)=b(i)-gamma(ifa)*(vfa(0,ifa)-vel(i,0))*xflux
-!end centdiff
+c               if(iel.eq.0) then
+c                  ad(i)=ad(i)+xflux
+c               else
+c                  ad(i)=ad(i)+xflux
+!
+cc               b(i)=b(i)-gamma(ifa)*(vfa(0,ifa)-vel(i,0))*xflux
+               b(i)=b(i)-(vfa(0,ifa)-vel(i,0))*xflux
+c               endif
+!
             else
                if(iel.gt.0) then
 !
 !                    incoming flux from neighboring element
 !
                   au(indexf)=au(indexf)+xflux
-!centdiff
-c                  b(i)=b(i)-gamma(ifa)*(vfa(0,ifa)-vel(iel,0))*xflux
-!end centdiff
+!
+cc                  b(i)=b(i)-gamma(ifa)*(vfa(0,ifa)-vel(iel,0))*xflux
+                  b(i)=b(i)-(vfa(0,ifa)-vel(iel,0))*xflux
+!
                else
 !
 !                    incoming flux through boundary
@@ -85,19 +92,7 @@ c                  b(i)=b(i)-gamma(ifa)*(vfa(0,ifa)-vel(iel,0))*xflux
                      if((ifabou(indexb).ne.0).or.
      &                    (dabs(xflux).lt.1.d-10)) then
                         b(i)=b(i)-vfa(0,ifa)*xflux
-                     else
-c                        write(*,*) '*ERROR in mafillt: the tempera-'
-c                        write(*,*) '       ture of an incoming flux'
-c                        write(*,*) '       through face ',j,'of'
-c                        write(*,*)'       element ',nactdohinv(i),
-c     &                          ' is not given'
                      endif
-                  else
-c                     write(*,*) '*ERROR in mafillt: the tempera-'
-c                     write(*,*) '       ture of an incoming flux'
-c                     write(*,*) '       through face ',j,'of'
-c                     write(*,*)'       element ',nactdohinv(i),
-c     &                   ' is not given'
                   endif
                endif
             endif
@@ -179,22 +174,17 @@ c     &                   ' is not given'
 !     
 !           body heat source and body sources
 !     
-         rhovel=vel(i,5)*volume(i)
+         rhovol=vel(i,5)*volume(i)
 !
          if(nbody.gt.0) then
-            b(i)=b(i)+rhovel*body(0,i)
+            b(i)=b(i)+rhovol*body(0,i)
          endif
 !
 !           transient term
 !
-c         a1=1.d0/dtimef
-c         a2=-1.d0/dtimef
-c         a3=0.d0/dtimef
-c         constant=rhovel*cvel(i)
-c         b(i)=b(i)-(a2*velo(i,0)+a3*veloo(i,0))*constant
-c
-         constant=rhovel*cvel(i)/dtimef
-         b(i)=b(i)+velo(i,0)*constant
+         constant=rhovol*cvel(i)
+         b(i)=b(i)-(a2*velo(i,0)+a3*veloo(i,0))*constant
+         constant=a1*constant
          ad(i)=ad(i)+constant
 !     
       enddo

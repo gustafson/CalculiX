@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,6 +27,10 @@
      &  nactdof(0:mi(2),*)
 !      
       real*8 fn0(0:mi(2),*),fint(*)
+!
+      intent(in) ne,ipkon,lakon,kon,nactdof,mi,fn0
+!
+      intent(inout) fint
 !
 !     calculation of the internal force vector for all
 !     active degrees of freedom

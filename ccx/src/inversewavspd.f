@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -62,11 +62,11 @@
       phi=(et+1.d0)*pi/2.d0
 !     
       do l=1,3
-         v(l)=0.
+         v(l)=0.d0
          do k=1,3
-            cmm(k,l)=0.
+            cmm(k,l)=0.d0
             do j=1,3
-               cm(j,l,k)=0.
+               cm(j,l,k)=0.d0
             enddo
          enddo
       enddo            
@@ -102,11 +102,11 @@
 !     ---------reset vars for EIGvALUES
 !
       do j=1,3
-         al(j)=0.
-         fv1(j)=0.
-         fv2(j)=0.
+         al(j)=0.d0
+         fv1(j)=0.d0
+         fv2(j)=0.d0
          do i=1,3
-            alz(j,i)=0.
+            alz(j,i)=0.d0
          enddo
       enddo
 !     
@@ -121,9 +121,9 @@
 !     
       do l=1,3
          do k=1,3
-            cmm(k,l)=0.
+            cmm(k,l)=0.d0
             do j=1,3
-               cm(j,l,k)=0.
+               cm(j,l,k)=0.d0
             enddo
          enddo
       enddo

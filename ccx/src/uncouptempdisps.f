@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine uncouptempdisps(inpc,textpart,
      &  nmethod,iperturb,isolver,
      &  istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,ttime,nener)
+     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,ttime,nener,ier)
 !
 !     reading the input deck: *UNCOUPLED TEMPERATURE-DISPLACEMENT
 !
@@ -40,7 +40,7 @@
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
      &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
-     &  nener
+     &  nener,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),ttime
 !
@@ -58,7 +58,8 @@
      &       '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
          write(*,*) '       perturbation analysis is not provided in a '
          write(*,*) '       *UNCOUPLED TEMPERATURE-DISPLACEMENT step.'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(istep.lt.1) then
@@ -66,7 +67,8 @@
      &       '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
          write(*,*) '       *UNCOUPLED TEMPERATURE-DISPLACMENT '
          write(*,*) '       can only be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     default solver
@@ -89,8 +91,11 @@
       do i=2,n
          if(textpart(i)(1:6).eq.'ALPHA=') then
             read(textpart(i)(7:26),'(f20.0)',iostat=istat) alpha
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*UNCOUPLED TEMPERATURE-DISPLACEMENT%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &            "*UNCOUPLED TEMPERATURE-DISPLACEMENT%",ier)
+               return
+            endif
             if(alpha.lt.-1.d0/3.d0) then
                write(*,*) '*WARNING in dynamics: alpha is smaller'
                write(*,*) '  than -1/3 and is reset to -1/3'
@@ -130,7 +135,8 @@
      &        '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
          write(*,*) '       please define initial '
          write(*,*) '       conditions for the temperature'
-         call exit(201)
+         ier=1
+         return
       else
          ithermal=4
       endif
@@ -175,17 +181,29 @@
       endif
 !
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*UNCOUPLED TEMPERATURE-DISPLACEMENT%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*UNCOUPLED TEMPERATURE-DISPLACEMENT%",ier)
+         return
+      endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*UNCOUPLED TEMPERATURE-DISPLACEMENT%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*UNCOUPLED TEMPERATURE-DISPLACEMENT%",ier)
+         return
+      endif
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*UNCOUPLED TEMPERATURE-DISPLACEMENT%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*UNCOUPLED TEMPERATURE-DISPLACEMENT%",ier)
+         return
+      endif
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*UNCOUPLED TEMPERATURE-DISPLACEMENT%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*UNCOUPLED TEMPERATURE-DISPLACEMENT%",ier)
+         return
+      endif
 !
       if(tinc.le.0.d0) then
          write(*,*) 

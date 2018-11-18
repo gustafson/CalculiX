@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,7 @@
      &  mpcfree,inotr,trab,ikboun,ilboun,ikmpc,ilmpc,nk_,
      &  co,labmpc,typeboun,istat,n,iline,ipol,
      &  inl,ipoinp,inp,nmethod,iperturb,
-     &  ipoinpc,vold,mi,istep)
+     &  ipoinpc,vold,mi,istep,ier)
 !
 !     reading the input deck: *RETAINED NODAL DOFS
 !
@@ -36,7 +36,7 @@
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),nodeboun(*),
-     &  ndirboun(*),ntransl,istep,
+     &  ndirboun(*),ntransl,istep,ier,
      &  nset,nboun,nboun_,istat,n,i,j,k,l,ibounstart,ibounend,
      &  key,nk,iamboun(*),nam,iamplitude,ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,mpcfree,inotr(2,*),ikboun(*),ilboun(*),ikmpc(*),
@@ -56,7 +56,8 @@
          write(*,*) '*ERROR reading *RETAINED NODAL DOFS:'
          write(*,*) '       *RETAINED NODAL DOFS can only be used'
          write(*,*) '       within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -77,15 +78,21 @@
          if((istat.lt.0).or.(key.eq.1)) return
 !
          read(textpart(2)(1:10),'(i10)',iostat=istat) ibounstart
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RETAINED NODAL DOFS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*RETAINED NODAL DOFS%",ier)
+            return
+         endif
 !     
          if(textpart(3)(1:1).eq.' ') then
             ibounend=ibounstart
          else
             read(textpart(3)(1:10),'(i10)',iostat=istat) ibounend
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RETAINED NODAL DOFS%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RETAINED NODAL DOFS%",ier)
+               return
+            endif
          endif
 !     
          bounval=0.d0
@@ -95,7 +102,8 @@
             if((l.gt.nk).or.(l.le.0)) then
                write(*,*) '*ERROR reading *RETAINED NODAL DOFS:'
                write(*,*) '       node ',l,' is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
             ktrue=l
             call bounadd(l,ibounstart,ibounend,bounval,
@@ -119,8 +127,8 @@
                write(*,*) '       node set ',noset
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*RETAINED NODAL DOFS%")
-               call exit(201)
+     &              "*RETAINED NODAL DOFS%",ier)
+               return
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then

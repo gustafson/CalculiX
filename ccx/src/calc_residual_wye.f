@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -119,8 +119,18 @@
       call wpi(w2, pspt1, Q1, 
      &      dsqrt(Tt1),kappa,R) 
 !
-      w2w1=w2/w1
-      w1w2=w1/w2
+c      w2w1=w2/w1
+c      w1w2=w1/w2
+      if(w2.eq.0.d0)then
+         w1w2=1d30
+      else
+         w1w2=w1/w2
+      endif
+      if(w1.eq.0.d0)then
+         w2w1=1d30
+      else
+         w2w1=w2/w1
+      endif
 !
 !     Zeta calculation
 !     Main branch
@@ -142,7 +152,7 @@
             z2d390=0.95d0*((W2W1-2d0*dcos(90.d0*pi/180))
      &                 *W2W1+1.d0)
 !
-            z1p090=0.95*(0.34d0+W2W1**2)
+            z1p090=0.95d0*(0.34d0+W2W1**2)
 !
             z90=z2d390+(3*hq-2.d0)*(z1p090-z2d390)
 !

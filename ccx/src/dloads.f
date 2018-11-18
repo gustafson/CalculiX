@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,7 +22,7 @@
      &  istat,n,iline,ipol,inl,ipoinp,inp,cbody,ibody,xbody,nbody,
      &  nbody_,xbodyold,iperturb,physcon,nam_,namtot_,namta,amta,
      &  nmethod,ipoinpc,maxsectors,mi,idefload,idefbody,ipkon,
-     &  thicke)
+     &  thicke,iamplitudedefault,namtot,ier)
 !
 !     reading the input deck: *DLOAD
 !
@@ -43,13 +43,13 @@
      &  inl,ipoinp(2,*),inp(3,*),ibody(3,*),nbody,nbody_,nam_,namtot,
      &  namtot_,namta(3,*),idelay,nmethod,lc,isector,node,ipoinpc(0:*),
      &  maxsectors,jsector,iglobstep,idefload(*),idefbody(*),ipkon(*),
-     &  k,indexe
+     &  k,indexe,iamplitudedefault,ier
 !
       real*8 xload(2,*),xbody(7,*),xmagnitude,dd,p1(3),p2(3),bodyf(3),
      &  xbodyold(7,*),physcon(*),amta(2,*),xxmagnitude,thicke(mi(3),*),
      &  thickness
 !
-      iamplitude=0
+      iamplitude=iamplitudedefault
       idelay=0
       lc=1
       isector=0
@@ -61,7 +61,8 @@
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *DLOAD: *DLOAD should only be used'
          write(*,*) '  within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -86,8 +87,8 @@
                write(*,*)'*ERROR reading *DLOAD: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
-               call exit(201)
+     &              "*DLOAD%",ier)
+               return
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
@@ -97,74 +98,93 @@
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
                call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
-               call exit(201)
+     &              "*DLOAD%",ier)
+               return
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR reading *DLOAD: increase nam_'
-               call exit(201)
+               ier=1
+               return
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
                write(*,*) '*ERROR reading *DLOAD: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
-            if(nam.eq.1) then
-               namtot=0
-            else
-               namtot=namta(2,nam-1)
-            endif
+c            if(nam.eq.1) then
+c               namtot=0
+c            else
+c               namtot=namta(2,nam-1)
+c            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR dloads: increase namtot_'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
+c            call reorderampl(amname,namta,nam)
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DLOAD%",ier)
+               return
+            endif
          elseif(textpart(i)(1:9).eq.'LOADCASE=') then
             read(textpart(i)(10:19),'(i10)',iostat=istat) lc
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DLOAD%",ier)
+               return
+            endif
             if(nmethod.ne.5) then
                write(*,*) 
      &            '*ERROR reading *DLOAD: the parameter LOAD CASE'
                write(*,*) '       is only allowed in STEADY STATE'
                write(*,*) '       DYNAMICS calculations'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:7).eq.'SECTOR=') then
             read(textpart(i)(8:17),'(i10)',iostat=istat) isector
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DLOAD%",ier)
+               return
+            endif
             if((nmethod.le.3).or.(iperturb.gt.1)) then
                write(*,*) '*ERROR reading *DLOAD: the parameter SECTOR'
                write(*,*) '       is only allowed in MODAL DYNAMICS or'
                write(*,*) '       STEADY STATE DYNAMICS calculations'
-               call exit(201)
+               ier=1
+               return
             endif
             if(isector.gt.maxsectors) then
                write(*,*) '*ERROR reading *DLOAD: sector ',isector
                write(*,*) '       exceeds number of sectors'
-               call exit(201)
+               ier=1
+               return
             endif
             isector=isector-1
          elseif(textpart(i)(1:8).eq.'SUBMODEL') then
             submodel=.true.
          elseif(textpart(i)(1:5).eq.'STEP=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DLOAD%",ier)
+               return
+            endif
          else
             write(*,*) 
      &        '*WARNING reading *DLOAD: parameter not recognized:'
@@ -191,7 +211,8 @@
          write(*,*) '*ERROR reading *DLOAD: no global step'
          write(*,*) '       step specified for the submodel'
          call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+     &        "*DLOAD%",ier)
+         return
       endif
 !
       do
@@ -214,18 +235,27 @@
          else
             read(textpart(3)(1:10),'(i10)',iostat=istat) node
          endif
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*DLOAD%",ier)
+            return
+         endif
          if(label(1:7).eq.'CENTRIF') then
             do i=1,3
                read(textpart(i+3)(1:20),'(f20.0)',iostat=istat) p1(i)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*DLOAD%",ier)
+                  return
+               endif
             enddo
             do i=1,3
                read(textpart(i+6)(1:20),'(f20.0)',iostat=istat) p2(i)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*DLOAD%",ier)
+                  return
+               endif
             enddo
             dd=dsqrt(p2(1)**2+p2(2)**2+p2(3)**2)
             do i=1,3
@@ -234,22 +264,27 @@
          elseif(label(1:4).eq.'GRAV') then
             do i=1,3
                read(textpart(i+3)(1:20),'(f20.0)',iostat=istat) bodyf(i)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*DLOAD%",ier)
+                  return
+               endif
             enddo
          elseif(label(1:6).eq.'NEWTON') then
             if(iperturb.le.1) then
                write(*,*) '*ERROR reading *DLOAD: NEWTON gravity force'
                write(*,*) '       can only be used in a nonlinear'
                write(*,*) '       procedure'
-               call exit(201)
+               ier=1
+               return
             endif
             if(physcon(3).le.0.d0) then
                write(*,*) '*ERROR reading *DLOAD: NEWTON gravity force'
                write(*,*) '       requires the definition of a'
                write(*,*) '       positive gravity constant with'
                write(*,*) '       a *PHYSICAL CONSTANTS card'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(((label(1:2).ne.'P1').and.(label(1:2).ne.'P2').and.
      &           (label(1:2).ne.'P3').and.(label(1:2).ne.'P4').and.
@@ -264,7 +299,8 @@ cBernhardiEnd
      &          ((label(3:4).ne.'  ').and.(label(3:4).ne.'NU').and.
      &           (label(3:4).ne.'NP').and.(label(3:4).ne.'SM'))) then
             call inputerror(inpc,ipoinpc,iline,
-     &"*DLOAD%")
+     &           "*DLOAD%",ier)
+            return
          endif
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
@@ -272,7 +308,8 @@ cBernhardiEnd
             if(l.gt.ne) then
                write(*,*) '*ERROR reading *DLOAD: element ',l
                write(*,*) '       is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
             if((label(1:7).eq.'CENTRIF').or.(label(1:4).eq.'GRAV').or.
      &         (label(1:6).eq.'NEWTON')) then
@@ -375,8 +412,8 @@ c     BernhardiEnd
                   write(*,*) '       or facial surface ',elset
                   write(*,*) '       has not yet been defined. '
                   call inputerror(inpc,ipoinpc,iline,
-     &                 "*DLOAD%")
-                  call exit(201)
+     &                 "*DLOAD%",ier)
+                  return
                endif
             endif
 !

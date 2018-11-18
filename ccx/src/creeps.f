@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine creeps(inpc,textpart,nelcon,nmat,ntmat_,npmat_,
      &        plicon,nplicon,elcon,iplas,iperturb,nstate_,ncmat_,
      &        matname,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &        ipoinpc,ianisoplas)
+     &        ipoinpc,ianisoplas,ier)
 !
 !     reading the input deck: *CREEP
 !
@@ -33,8 +33,8 @@
 !
       integer nelcon(2,*),nmat,ntmat_,ntmat,istep,npmat_,nstate_,
      &  n,key,i,j,iplas,iperturb(*),istat,nplicon(0:ntmat_,*),ncmat_,
-     &  k,id,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
-     &  ianisoplas
+     &  k,id,irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+     &  ianisoplas,ier
 !
       real*8 temperature,elcon(0:ncmat_,ntmat_,*),t1l,
      &  plicon(0:2*npmat_,ntmat_,*)
@@ -42,16 +42,18 @@
       iso=.true.
       ntmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *CREEP: *CREEP should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *CREEP: *CREEP should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     check for anisotropic creep: assumes a ucreep routine
@@ -68,7 +70,8 @@
             write(*,*) '*ERROR reading *CREEP: *CREEP should be'
             write(*,*) '       preceded by an *ELASTIC,TYPE=ISO card,'
             write(*,*) '       or an *ELASTIC,TYPE=ORTHO card'
-            call exit(201)
+            ier=1
+            return
          endif
 !
          ianisoplas=1
@@ -92,13 +95,18 @@
 !              no plasticity
 !              user creep: -109
 !
+!              7 state variables: cf. Section 6.8.13
+!              "Elastic anisotropy with isotropic creep defined by
+!               a creep user subroutine" in the User's Manual
+!
                nstate_=max(nstate_,7)
                if(matname(nmat)(70:80).ne.'           ') then
                   write(*,*) '*ERROR reading *CREEP: the material name'
                   write(*,*) '       for an elastically anisotropic'
                   write(*,*) '       material with isotropic creep must'
                   write(*,*) '       not exceed 69 characters'
-                  call exit(201)
+                  ier=1
+                  return
                else
                   do i=80,12,-1
                      matname(nmat)(i:i)=matname(nmat)(i-11:i-11)
@@ -114,6 +122,10 @@
 !              no plasticity
 !              Norton creep: -114
 !
+!              14 state variables: cf. Section 6.8.12
+!              "Elastic anisotropy with isotropic viscoplasticity" 
+!              in the User's Manual
+!
                nstate_=max(nstate_,14)
                do i=1,nelcon(2,nmat)
                   elcon(10,i,nmat)=0.d0
@@ -125,7 +137,8 @@
                   write(*,*) '       for an elastically anisotropic'
                   write(*,*) '       material with Norton creep'
                   write(*,*) '       must not exceed 70 characters'
-                  call exit(201)
+                  ier=1
+                  return
                else
                   do i=80,11,-1
                      matname(nmat)(i:i)=matname(nmat)(i-10:i-10)
@@ -139,13 +152,18 @@
 !              plasticity
 !              Norton creep: -114 (user creep is not allowed)
 !
+!              14 state variables: cf. Section 6.8.12
+!              "Elastic anisotropy with isotropic viscoplasticity" 
+!              in the User's Manual
+!
             do i=2,n
                if(textpart(i)(1:8).eq.'LAW=USER') then
                   write(*,*) '*ERROR reading *CREEP: for an elastically'
                   write(*,*) '       anisotropic material with von'
                   write(*,*) '       Mises plasticity only Norton creep'
                   write(*,*) '       is allowed (no user subroutine)'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             enddo
          endif
@@ -178,7 +196,17 @@
          iperturb(1)=3
          iplas=1
          nelcon(1,nmat)=-52
-         nstate_=max(nstate_,13)
+c         nstate_=max(nstate_,13)
+!
+!        13 state variables: cf. Sections 6.8.6 and 6.8.7
+!        "Incremental (visco)plasticity: multiplicative decomposition" 
+!        and "Incremental (visco)plasticity: additive decomposition"
+!        in the User's Manual
+!
+!        one extra internal variable to store the creep strain rate
+!        (needed for the treatment of cetol)
+!
+         nstate_=max(nstate_,14)
 !     
          do i=2,n
             if(textpart(i)(1:8).eq.'LAW=USER') then
@@ -214,29 +242,38 @@
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *CREEP: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,3
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &               elcon(i+5,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CREEP%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CREEP%",ier)
+                  return
+               endif
             enddo
             if(elcon(6,ntmat,nmat).le.0.d0) then
                write(*,*) '*ERROR reading *CREEP: parameter A'
                write(*,*) '       in the Norton law is nonpositive'
-               call exit(201)
+               ier=1
+               return
             endif
             if(elcon(7,ntmat,nmat).le.0.d0) then
                write(*,*) '*ERROR reading *CREEP: parameter n'
                write(*,*) '       in the Norton law is nonpositive'
-               call exit(201)
+               ier=1
+               return
             endif
             if(textpart(4)(1:1).ne.' ') then
                read(textpart(4)(1:20),'(f20.0)',iostat=istat)
      &               temperature
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CREEP%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CREEP%",ier)
+                  return
+               endif
             else
                temperature=0.d0
             endif
@@ -246,7 +283,8 @@
          if(ntmat.eq.0) then
             write(*,*) '*ERROR reading *CREEP: Norton law assumed,'
             write(*,*) '       yet no constants given'
-            call exit(201)
+            ier=1
+            return
          endif
 !
 !        interpolating the creep data at the elastic temperature
@@ -299,19 +337,26 @@
             ntmat=ntmat+1
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *CREEP: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,3
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &               elcon(i+15,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CREEP%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CREEP%",ier)
+                  return
+               endif
             enddo
             if(textpart(3)(1:1).ne.' ') then
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &                  temperature
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CREEP%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CREEP%",ier)
+                  return
+               endif
             else
                temperature=0.d0
             endif
@@ -339,7 +384,8 @@
          if(ntmat.eq.0) then
             write(*,*) '*ERROR reading *CREEP: Norton law assumed,'
             write(*,*) '       yet no constants given'
-            call exit(201)
+            ier=1
+            return
          endif
 !     
          do i=1,nelcon(2,nmat)

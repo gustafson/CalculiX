@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine gapconductances(inpc,textpart,nelcon,nmat,ntmat_,
      &        npmat_,plkcon,nplkcon,iperturb,irstrt,istep,istat,n,iline,
-     &        ipol,inl,ipoinp,inp,ipoinpc)
+     &        ipol,inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *GAP CONDUCTANCE
 !
@@ -28,9 +28,8 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,
-     &  n,key,i,nplkcon(0:ntmat_,*),
-     &  iperturb(*),istat,
-     &  irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
+     &  n,key,i,nplkcon(0:ntmat_,*),iperturb(*),istat,ier,
+     &  irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*)
 !
       real*8 plkcon(0:2*npmat_,ntmat_,*),
      & temperature
@@ -38,25 +37,28 @@
       ntmat=0
       npmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
          write(*,*) '       *GAP CONDUCTANCE should'
          write(*,*) '       be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
          write(*,*) '       *GAP CONDUCTANCE should'
          write(*,*) '       be preceded by a *SURFACE INTERACTION card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nelcon(1,nmat).eq.0) then
          write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
          write(*,*) '       *GAP CONDUCTANCE should'
          write(*,*) '       be preceeded by a *SURFACE BEHAVIOR card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       iperturb(1)=2
@@ -88,8 +90,11 @@ c      iperturb(2)=1
      &           ipoinp,inp,ipoinpc)
             if((istat.lt.0).or.(key.eq.1)) exit
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) temperature
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*GAP CONDUCTANCE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*GAP CONDUCTANCE%",ier)
+               return
+            endif
 !
 !           first temperature
 !
@@ -99,7 +104,8 @@ c      iperturb(2)=1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
                   write(*,*) '       increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplkcon(0,nmat)=ntmat
                plkcon(0,ntmat,nmat)=temperature
@@ -112,7 +118,8 @@ c      iperturb(2)=1
                if(ntmat.gt.ntmat_) then
                   write(*,*) '*ERROR reading *GAP CONDUCTANCE:' 
                   write(*,*) '       increase ntmat_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                nplkcon(0,nmat)=ntmat
                plkcon(0,ntmat,nmat)=temperature
@@ -120,14 +127,18 @@ c      iperturb(2)=1
             do i=1,2
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &              plkcon(2*npmat+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*GAP CONDUCTANCE%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*GAP CONDUCTANCE%",ier)
+                  return
+               endif
             enddo
             npmat=npmat+1
             if(npmat.gt.npmat_) then
                write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
                write(*,*) '       increase npmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             nplkcon(ntmat,nmat)=npmat
          enddo
@@ -136,7 +147,8 @@ c      iperturb(2)=1
          write(*,*) '*ERROR reading *GAP CONDUCTANCE:'
          write(*,*) '       *GAP CONDUCTANCE card'
          write(*,*) '       without data'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       return

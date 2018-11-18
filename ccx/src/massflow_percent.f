@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine massflow_percent(node1,node2,nodem,nelem,lakon,kon,
      &        ipkon,nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,shcon,
-     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,iaxial)
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,
+     &        iaxial,iplausi)
 !     
 !     partial massflow  element
 !
@@ -35,12 +36,20 @@
      &     ielprop(*),nodef(*),idirf(*),index,iflag,
      &     inv,ipkon(*),kon(*),number,kgas,iaxial,
      &     nodea,nodeb,mi(*),i,itype,nodemup,
-     &     nrhcon(*),ntmat_,nshcon(*)
+     &     nrhcon(*),ntmat_,nshcon(*),iplausi
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,a,d,xl,
      &     p1,p2,T1,physcon(*),pi,xflow_oil,T2,co(3,*),vold(0:mi(2),*),
      &     xflow_sum,percent_xflow,cp,dvi,pt1,pt2,Tt1,Tt2,ttime,time,
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*)
+!
+      intent(in) node1,node2,nodem,nelem,lakon,kon,
+     &        ipkon,nactdog,ielprop,prop,iflag,v,
+     &        cp,r,physcon,dvi,set,shcon,
+     &        nshcon,rhcon,nrhcon,ntmat_,co,vold,mi,ttime,time,
+     &        iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi
 !
       pi=4.d0*datan(1.d0) 
       index=ielprop(nelem)
@@ -90,7 +99,7 @@
          enddo
          
          if(xflow_sum.eq.0.d0) then
-            xflow_sum=1E-5
+            xflow_sum=1d-5
          endif
 !
          inv=1
@@ -135,14 +144,14 @@
  55         format(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
 !            
             write(1,56)'       Inlet node ',node1,' :   Tt1 = ',Tt1,
-     &           '  , Ts1 = ',Tt1,'  , Pt1 = ',Pt1
+     &           '  , Ts1 = ',Tt1,'  , Pt1 = ',pt1
 !            
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'        Massflow upstream = ',xflow_sum,
      &        ' [kg/s]'
             write(1,58)'        Massflow fraction = ', percent_xflow
             write(1,56)'      Outlet node ',node2,':    Tt2=',Tt2,
-     &           ', Ts2=',Tt2,', Pt2=',Pt2
+     &           ', Ts2=',Tt2,', Pt2=',pt2
 !            
          endif
       endif

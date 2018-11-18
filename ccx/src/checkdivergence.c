@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -74,7 +74,7 @@ void checkdivergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	printf(" divergence; the increment size is decreased to %e\n",*dtheta**tper);
 	printf(" the increment is reattempted\n\n");
 	
-	FORTRAN(writesummarydiv,(istep,iinc,icutb,iit,ttime,time,
+	FORTRAN(writestadiv,(istep,iinc,icutb,iit,ttime,time,
 				 dtime));
 	
 	*istab=0;
@@ -103,7 +103,7 @@ void checkdivergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
 		&ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
 		ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
-		mortar,cdnr,cdni,nmat);
+		mortar,cdnr,cdni,nmat,ielprop,prop);
 	    
 	    FORTRAN(stop,());
 	}
@@ -134,7 +134,7 @@ void checkdivergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
 		&ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
 		ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
-		mortar,cdnr,cdni,nmat);
+		mortar,cdnr,cdni,nmat,ielprop,prop);
 	    
 	    FORTRAN(stop,());
 	}

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,13 +46,14 @@
       real*8 xboun(*),xnor(*),coefmpc(*),trab(7,*),val,co(3,*),
      &  xnoref(3),dmax,d(3,3),e(3,3,3),alpha,q(3),w(3),xn(3),
      &  a1(3),a2(3),dd,c1,c2,c3,ww,c(3,3),vold(0:mi(2),*),a(3,3),
-     &  e1(3),e2(3),t1(3),b(3,3),x(3),y(3),fv1(3),dot,
+     &  e1(3),e2(3),t1(3),b(3,3),x(3),y(3),fv1(3),dot,midfix(3,4),
      &  fv2(3),z(3,3),xi1,xi2,xi3,u(3,3),r(3,3),xnode
 !
-      data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
-      data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
-     &        0.,0.,1.,0.,0.,0.,-1.,0.,0.,
-     &        0.,-1.,0.,1.,0.,0.,0.,0.,0./
+      data d /1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/
+      data e /0.d0,0.d0,0.d0,0.d0,0.d0,-1.d0,0.d0,1.d0,0.d0,
+     &        0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,-1.d0,0.d0,0.d0,
+     &        0.d0,-1.d0,0.d0,1.d0,0.d0,0.d0,0.d0,0.d0,0.d0/
+      data midfix /5,1,2,6,2,3,7,3,4,8,4,1/
 !
       label='                    '
       fixed=.false.
@@ -133,7 +134,9 @@ c            endif
 !              => knot is created
 !
 !           check for rotational DOFs defined in any but the first step
-!           nonlinear dynamic case: creation of knots
+!
+!           nonlinear dynamic case and/or beams: creation of knots
+!
 !           knots (expandable rigid bodies) can take rotational
 !           values arbitrarily exceeding 90 degrees
 !
@@ -364,35 +367,35 @@ c                     enddo
                            c(l,m)=0.d0
                         enddo
                      enddo
-!     
-!     solving a least squares problem to determine 
-!
-!              start meanrotationmpc
-!              change: mean rotation MPC instead of KNOT
-!
-               idirref=idir-3
-!
-               if(lakon(ielem)(7:7).eq.'L') then
-                  lstart=3
-                  lend=1
-                  linc=-2
-               elseif(lakon(ielem)(7:7).eq.'B') then
-                  lstart=4
-                  lend=1
-                  linc=-1
-               endif
-!
-!              check for transformations
-!
-               if(ntrans.le.0) then
-                  itr=0
-               elseif(inotr(1,node).eq.0) then
-                  itr=0
-               else
-                  itr=inotr(1,node)
-               endif
-!
-!              determine a unit vector on the rotation axis
+c!     
+c!     solving a least squares problem to determine 
+c!
+c!              start meanrotationmpc
+c!              change: mean rotation MPC instead of KNOT
+c!
+c               idirref=idir-3
+c!
+c               if(lakon(ielem)(7:7).eq.'L') then
+c                  lstart=3
+c                  lend=1
+c                  linc=-2
+c               elseif(lakon(ielem)(7:7).eq.'B') then
+c                  lstart=4
+c                  lend=1
+c                  linc=-1
+c               endif
+c!
+c!              check for transformations
+c!
+c               if(ntrans.le.0) then
+c                  itr=0
+c               elseif(inotr(1,node).eq.0) then
+c                  itr=0
+c               else
+c                  itr=inotr(1,node)
+c               endif
+c!
+c!              determine a unit vector on the rotation axis
 !
 !     the transpose of the deformation gradient:
 !     c.F^T=b
@@ -623,6 +626,13 @@ c                     enddo
                   enddo
 !                  
                elseif(lakon(ielem)(7:7).eq.'B') then
+c                  if(lakon(ielem)(4:4).eq.'8') then
+c                     lstart=4
+c                     lend=1
+c                  else
+c                     lstart=8
+c                     lend=1
+c                  endif
                   lstart=4
                   lend=1
                   linc=-1
@@ -664,7 +674,7 @@ c                     enddo
 !                 rotation vector is projected on the tangential
 !                 plane
 !
-                  if(dabs(dot).gt.0.05) then
+                  if(dabs(dot).gt.0.05d0) then
                      if(xboun(i).gt.1.d-10) then
                         write(*,*) '*ERROR in gen3dboun: rotation'
                         write(*,*) '       vector in node ',node
@@ -759,6 +769,65 @@ c                     enddo
                   ilboun(id)=nboun
                endif
 !
+!              for quadratic beams: fixing the middle nodes in between the
+!              end nodes
+!
+               if((lakon(ielem)(7:7).eq.'B').and.
+     &            (lakon(ielem)(4:4).eq.'2')) then
+                  do k=1,4
+                     newnode=knor(indexk+midfix(1,k))
+                     do idir=1,3
+                        idof=8*(newnode-1)+idir
+                        call nident(ikmpc,idof,nmpc,id)
+                        if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                           nmpc=nmpc+1
+                           if(nmpc.gt.nmpc_) then
+                              write(*,*) 
+     &                             '*ERROR in gen3dboun: increase nmpc_'
+                              call exit(201)
+                           endif
+                           labmpc(nmpc)='                    '
+                           ipompc(nmpc)=mpcfree
+                           do j=nmpc,id+2,-1
+                              ikmpc(j)=ikmpc(j-1)
+                              ilmpc(j)=ilmpc(j-1)
+                           enddo
+                           ikmpc(id+1)=idof
+                           ilmpc(id+1)=nmpc
+                           nodempc(1,mpcfree)=newnode
+                           nodempc(2,mpcfree)=idir
+                           coefmpc(mpcfree)=2.d0
+                           mpcfree=nodempc(3,mpcfree)
+                           if(mpcfree.eq.0) then
+                              write(*,*) 
+     &                           '*ERROR in gen3dboun: increase memmpc_'
+                              call exit(201)
+                           endif
+                           nodempc(1,mpcfree)=knor(indexk+midfix(2,k))
+                           nodempc(2,mpcfree)=idir
+                           coefmpc(mpcfree)=-1.d0
+                           mpcfree=nodempc(3,mpcfree)
+                           if(mpcfree.eq.0) then
+                              write(*,*) 
+     &                           '*ERROR in gen3dboun: increase memmpc_'
+                              call exit(201)
+                           endif
+                           nodempc(1,mpcfree)=knor(indexk+midfix(3,k))
+                           nodempc(2,mpcfree)=idir
+                           coefmpc(mpcfree)=-1.d0
+                           mpcfreenew=nodempc(3,mpcfree)
+                           if(mpcfreenew.eq.0) then
+                              write(*,*) 
+     &                           '*ERROR in gen3dboun: increase memmpc_'
+                              call exit(201)
+                           endif
+                           nodempc(3,mpcfree)=0
+                           mpcfree=mpcfreenew
+                        endif
+                     enddo
+                  enddo
+               endif
+!     
                cycle
             endif
 !     

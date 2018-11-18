@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine heattransfers(inpc,textpart,nmethod,iperturb,isolver,
      &  istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,ipol,
-     &  inl,ipoinp,inp,alpha,mei,fei,ipoinpc,ctrl,ttime)
+     &  inl,ipoinp,inp,alpha,mei,fei,ipoinpc,ctrl,ttime,ier)
 !
 !     reading the input deck: *HEAT TRANSFER
 !
@@ -39,7 +39,7 @@
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,nev,
      &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),mei(4),ncv,mxiter,
-     &  ipoinpc(0:*),idirect
+     &  ipoinpc(0:*),idirect,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha,fei(3),tol,fmin,fmax,ctrl(*),
      &  ttime
@@ -59,15 +59,19 @@
       if(iperturb.eq.0) then
          iperturb=2
       elseif((iperturb.eq.1).and.(istep.gt.1)) then
-         write(*,*) '*ERROR in heattransfers: perturbation analysis is'
+         write(*,*) 
+     &     '*ERROR reading *HEAT TRANSFER: perturbation analysis is'
          write(*,*) '       not provided in a *HEAT TRANSFER step.'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in heattransfers: *HEAT TRANSFER can only'
+         write(*,*) 
+     &     '*ERROR reading *HEAT TRANSFER: *HEAT TRANSFER can only'
          write(*,*) '       be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     default solver
@@ -112,7 +116,7 @@
             read(textpart(i)(18:37),'(f20.0)',iostat=istat) ttime
          else
             write(*,*) 
-     &        '*WARNING in heattransfers: parameter not recognized:'
+     &      '*WARNING reading *HEAT TRANSFER: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -134,9 +138,11 @@
 !
       if((ithermal.eq.0).and.(nmethod.ne.1).and.
      &   (nmethod.ne.2).and.(iperturb.ne.0)) then
-         write(*,*) '*ERROR in heattransfers: please define initial '
+         write(*,*) 
+     &     '*ERROR reading *HEAT TRANSFER: please define initial '
          write(*,*) '       conditions for the temperature'
-         call exit(201)
+         ier=1
+         return
       else
          ithermal=2
       endif
@@ -158,7 +164,8 @@
          elseif(solver(1:7).eq.'PARDISO') then
             isolver=7
          else
-            write(*,*) '*WARNING in heattransfers: unknown solver;'
+            write(*,*) 
+     &          '*WARNING reading *HEAT TRANSFER: unknown solver;'
             write(*,*) '         the default solver is used'
          endif
 !
@@ -166,7 +173,8 @@
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) then
             if(iperturb.ge.2) then
-               write(*,*) '*WARNING in heattransfers: a nonlinear geomet
+               write(*,*) 
+     &              '*WARNING reading *HEAT TRANSFER: a nonlinear geomet
      &ric analysis is requested'
                write(*,*) '         but no time increment nor step is sp
      &ecified'
@@ -181,27 +189,42 @@
          endif
 !
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*HEAT TRANSFER%",ier)
+            return
+         endif
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*HEAT TRANSFER%",ier)
+            return
+         endif
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*HEAT TRANSFER%",ier)
+            return
+         endif
          read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*HEAT TRANSFER%",ier)
+            return
+         endif
 !
          if(tinc.le.0.d0) then
-            write(*,*) '*ERROR in heattransfers: initial increment size 
+            write(*,*) 
+     &            '*ERROR reading *HEAT TRANSFER: initial increment size 
      &is negative'
          endif
          if(tper.le.0.d0) then
-            write(*,*) '*ERROR in heattransfers: step size is negative'
+            write(*,*) 
+     &        '*ERROR reading *HEAT TRANSFER: step size is negative'
          endif
          if(tinc.gt.tper) then
-            write(*,*) '*ERROR in heattransfers: initial increment size 
+            write(*,*) 
+     &            '*ERROR reading *HEAT TRANSFER: initial increment size 
      &exceeds step size'
          endif
 !      
@@ -224,19 +247,24 @@ c               tmin=min(tinc,1.d-5*tper)
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) then
-            write(*,*)'*ERROR in heattransfers: definition not complete'
+            write(*,*)
+     &       '*ERROR reading *HEAT TRANSFER: definition not complete'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
-            call exit(201)
+     &           "*HEAT TRANSFER%",ier)
+            return
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) nev
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*HEAT TRANSFER%",ier)
+            return
+         endif
          if(nev.le.0) then
             write(*,*) '*ERROR in frequencies: less than 1 eigenvalue re
      &quested'
-            call exit(201)
+            ier=1
+            return
          endif
          tol=1.d-2
          ncv=4*nev
@@ -244,13 +272,19 @@ c               tmin=min(tinc,1.d-5*tper)
          mxiter=1000
          if(textpart(2)(1:1).ne.' ') then
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*HEAT TRANSFER%",ier)
+               return
+            endif
          endif
          if(textpart(3)(1:1).ne.' ') then
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*HEAT TRANSFER%",ier)
+               return
+            endif
          endif
 !
          mei(1)=nev
@@ -267,18 +301,25 @@ c               tmin=min(tinc,1.d-5*tper)
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) then
-            write(*,*)'*ERROR in heattransfers: definition not complete'
+            write(*,*)
+     &       '*ERROR reading *HEAT TRANSFER: definition not complete'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
-            call exit(201)
+     &           "*HEAT TRANSFER%",ier)
+            return
          endif
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*HEAT TRANSFER%",ier)
+            return
+         endif
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HEAT TRANSFER%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*HEAT TRANSFER%",ier)
+            return
+         endif
       endif
 !
       if(timereset)ttime=ttime-tper

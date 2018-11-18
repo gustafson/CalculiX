@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine magneticpermeabilitys(inpc,textpart,elcon,nelcon,
      &  nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc)
+     &  inp,ipoinpc,ier)
 !
 !     reading the input deck: *MAGNETIC PERMEABILITY
 !
@@ -28,25 +28,27 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ipoinpc(0:*),
-     &  n,key,i,ityp,ncmat_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  idomain
+     &  n,key,i,ityp,ncmat_,irstrt(*),iline,ipol,inl,ipoinp(2,*),
+     &  inp(3,*),idomain,ier
 !
       real*8 elcon(0:ncmat_,ntmat_,*)
 !
       ntmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *MAGNETIC PERMEABILITY:'
          write(*,*) '       *MAGNETIC PERMEABILITY should be placed'
          write(*,*) '        before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *MAGNETIC PERMEABILITY:'
          write(*,*) '       *MAGNETIC PERMEABILITY should be preceded'
          write(*,*) '       by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ityp=2
@@ -79,24 +81,34 @@
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *MAGNETIC PERMEABILITY:'
                write(*,*) '       increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             read(textpart(1)(1:20),'(f20.0)',iostat=istat)
      &           elcon(1,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MAGNETIC PERMEABILITY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*MAGNETIC PERMEABILITY%",ier)
+               return
+            endif
 !
             read(textpart(2)(1:10),'(i10)',iostat=istat) idomain
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MAGNETIC PERMEABILITY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*MAGNETIC PERMEABILITY%",ier)
+               return
+            endif
             elcon(2,ntmat,nmat)=idomain+0.5d0
 !
             if(textpart(3)(1:1).ne.' ') then
                read(textpart(3)(1:20),'(f20.0)',iostat=istat)
      &                   elcon(0,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*MAGNETIC PERMEABILITY%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*MAGNETIC PERMEABILITY%",ier)
+                  return
+               endif
             else
                elcon(0,ntmat,nmat)=0.d0
             endif
@@ -104,7 +116,8 @@
       else
          write(*,*) '*ERROR reading *MAGNETIC PERMEABILITY:'
          write(*,*) '       no anisotropy allowed'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(ntmat.eq.0) nelcon(1,nmat)=0

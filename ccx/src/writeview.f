@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,6 +30,7 @@
 !
       implicit none
 !
+      character*80 version
       character*132 jobnamef(*),fnvw
 !     
       integer ntr,nzsrad,i,k
@@ -50,7 +51,10 @@
       endif
       open(10,file=fnvw,status='unknown',form='unformatted',
      &     access='sequential',err=10)
+!
+      call getversion(version)
 !     
+      write(10) version
       write(10) (adview(k),k=1,ntr)
       write(10) (auview(k),k=1,2*nzsrad)
       write(10)(fenv(k),k=1,ntr)
@@ -58,7 +62,7 @@
 !     
       return
 !
- 10   write(*,*) '*ERROR in radmatrix: could not open file ',fnvw
+ 10   write(*,*) '*ERROR in writeview: could not open file ',fnvw
       call exit(201)
       end
       

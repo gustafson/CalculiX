@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -112,7 +112,7 @@
          cflag=filab(1)(5:5)
          force=.false.
          call map3dto1d2d(vold,ipkon,inum,kon,lakon,nfield,nk,
-     &        ne,cflag,co,vold,force,mi)
+     &        ne,cflag,co,vold,force,mi,ielprop,prop)
       endif
 !
 !     marking gas nodes by multiplying inum by -1

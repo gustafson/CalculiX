@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine steadystatedynamicss(inpc,textpart,nmethod,
      &  iexpl,istep,istat,n,iline,ipol,inl,ipoinp,inp,iperturb,isolver,
      &  xmodal,cs,mcs,ipoinpc,nforc,nload,nbody,iprestr,t0,t1,ithermal,
-     &  nk,set,nset,cyclicsymmetry)
+     &  nk,set,nset,cyclicsymmetry,ier)
 !
 !     reading the input deck: *STEADY STATE DYNAMICS
 !
@@ -36,7 +36,7 @@
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,nset,
      &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,ndata,nfour,mcs,
      &  ipoinpc(0:*),nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,
-     &  cyclicsymmetry
+     &  cyclicsymmetry,ier
 !
       real*8 fmin,fmax,bias,tmin,tmax,xmodal(*),cs(17,*),t0(*),t1(*)
 !
@@ -50,10 +50,11 @@
       nodalset=.false.
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in steadystatedynamics: *STEADY STATE DYNAMI
-     &CS'
+         write(*,*) '*ERROR reading *STEADY STATE DYNAMICS:'
+         write(*,*) '               *STEADY STATE DYNAMICS'
          write(*,*) '  can only be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     default solver
@@ -79,8 +80,8 @@
          elseif(textpart(i)(1:9).eq.'HARMONIC=') then
             read(textpart(i)(10:12),'(a3)') harmonic
          else
-            write(*,*) 
-     &      '*WARNING in steadystatedynamics: parameter not recognized:'
+            write(*,*) '*WARNING reading *STEADY STATE DYNAMICS:' 
+            write(*,*) '         parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -91,14 +92,14 @@
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
-         write(*,*) '*WARNING in steadystatedynamics: the iterative scal
-     &ing'
+         write(*,*) '*WARNING reading *STEADY STATE DYNAMICS:'
+         write(*,*) '         the iterative scaling'
          write(*,*) '         procedure is not available for modal'
          write(*,*) '         dynamic calculations; the default solver'
          write(*,*) '         is used'
       elseif(solver(1:17).eq.'ITERATIVECHOLESKY') then
-         write(*,*) '*WARNING in steadystatedynamics: the iterative scal
-     &ing'
+         write(*,*) '*WARNING reading *STEADY STATE DYNAMICS:'
+         write(*,*) '         the iterative scaling'
          write(*,*) '         procedure is not available for modal'
          write(*,*) '         dynamic calculations; the default solver'
          write(*,*) '         is used'
@@ -109,69 +110,92 @@
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else
-         write(*,*) '*WARNING in steadystatedynamics: unknown solver;'
+         write(*,*) '*WARNING reading *STEADY STATE DYNAMICS:'
+         write(*,*) '         unknown solver;'
          write(*,*) '         the default solver is used'
       endif
 !
       if((isolver.eq.2).or.(isolver.eq.3)) then
-         write(*,*) '*ERROR in steadystatedynamics: the default solver '
-     & ,solver
+         write(*,*) '*ERROR reading *STEADY STATE DYNAMICS:'
+         write(*,*) '       the default solver ',solver
          write(*,*) '       cannot be used for modal dynamic'
          write(*,*) '       calculations '
-         call exit(201)
+         ier=1
+         return
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*) '*ERROR in steadystatedynamics: definition not compl
-     &ete'
+         write(*,*) '*ERROR reading *STEADY STATE DYNAMICS:'
+         write(*,*) '       definition not complete'
          write(*,*) '       '
          call inputerror(inpc,ipoinpc,iline,
-     &"*STEADY STATE DYNAMICS%")
-         call exit(201)
+     &        "*STEADY STATE DYNAMICS%",ier)
+         return
       endif
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) fmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEADY STATE DYNAMICS%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*STEADY STATE DYNAMICS%",ier)
+         return
+      endif
       xmodal(3)=fmin
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEADY STATE DYNAMICS%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*STEADY STATE DYNAMICS%",ier)
+         return
+      endif
       xmodal(4)=fmax
       read(textpart(3)(1:20),'(i10)',iostat=istat) ndata
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEADY STATE DYNAMICS%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*STEADY STATE DYNAMICS%",ier)
+         return
+      endif
       if(ndata.lt.2) ndata=20
-      xmodal(5)=ndata+0.5
+      xmodal(5)=ndata+0.5d0
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) bias
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEADY STATE DYNAMICS%")
-      if(bias.lt.1.) bias=3.
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*STEADY STATE DYNAMICS%",ier)
+         return
+      endif
+      if(bias.lt.1.) bias=3.d0
       xmodal(6)=bias
 !
       if(harmonic.eq.'YES') then
-         xmodal(7)=-0.5
+         xmodal(7)=-0.5d0
       else
          read(textpart(5)(1:10),'(i10)',iostat=istat) nfour
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEADY STATE DYNAMICS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*STEADY STATE DYNAMICS%",ier)
+            return
+         endif
          if(nfour.le.0) nfour=20
          if(n.ge.6) then
             read(textpart(6)(1:20),'(f20.0)',iostat=istat) tmin
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEADY STATE DYNAMICS%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*STEADY STATE DYNAMICS%",ier)
+               return
+            endif
          else
             tmin=0.d0
          endif
          if(n.ge.7) then
             read(textpart(7)(1:20),'(f20.0)',iostat=istat) tmax
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*STEADY STATE DYNAMICS%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*STEADY STATE DYNAMICS%",ier)
+               return
+            endif
          else
             tmax=1.d0
          endif
-         xmodal(7)=nfour+0.5
+         xmodal(7)=nfour+0.5d0
          xmodal(8)=tmin
          xmodal(9)=tmax
       endif

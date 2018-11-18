@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine ties(inpc,textpart,tieset,tietol,istep,
-     &       istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,ipoinpc)
+     &       istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,ipoinpc,
+     &       ier)
 !
 !     reading the input deck: *TIE
 !
@@ -30,7 +31,7 @@
       character*132 textpart(16)
 !
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ntie,ntie_,ipoinpc(0:*)
+     &  inp(3,*),ntie,ntie_,ipoinpc(0:*),ier
 !
       real*8 tietol(3,*)
 !
@@ -40,15 +41,17 @@
       fluidcyclic=.false.
 !
       if(istep.gt.0) then
-         write(*,*) '*ERROR in ties: *TIE should'
+         write(*,*) '*ERROR reading *TIE: *TIE should'
          write(*,*) '  be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ntie=ntie+1
       if(ntie.gt.ntie_) then
-         write(*,*) '*ERROR in ties: increase ntie_'
-         call exit(201)
+         write(*,*) '*ERROR reading *TIE: increase ntie_'
+         ier=1
+         return
       endif
 !
       tietol(1,ntie)=-1.d0
@@ -59,13 +62,19 @@
          if(textpart(i)(1:18).eq.'POSITIONTOLERANCE=') then
             read(textpart(i)(19:38),'(f20.0)',iostat=istat) 
      &             tietol(1,ntie)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TIE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*TIE%",ier)
+               return
+            endif
          elseif(textpart(i)(1:5).eq.'NAME=') then
             read(textpart(i)(6:85),'(a80)',iostat=istat) 
      &          tieset(1,ntie)(1:80)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TIE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*TIE%",ier)
+               return
+            endif
          elseif(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
             tied=.false.
          elseif(textpart(i)(1:10).eq.'MULTISTAGE') then
@@ -81,7 +90,7 @@
             tietol(2,ntie)=-1.d0
          else
             write(*,*) 
-     &        '*WARNING in ties: parameter not recognized:'
+     &        '*WARNING reading *TIE: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -89,18 +98,19 @@
          endif
       enddo
       if(tieset(1,ntie)(1:1).eq.' ') then
-         write(*,*) '*ERROR in ties: tie name is lacking'
+         write(*,*) '*ERROR reading *TIE: tie name is lacking'
          call inputerror(inpc,ipoinpc,iline,
-     &"*TIE%")
-         call exit(201)
+     &        "*TIE%",ier)
+         return
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         write(*,*)'*ERROR in ties: definition of the tie'
+         write(*,*)'*ERROR reading *TIE: definition of the tie'
          write(*,*) '      is not complete.'
-         call exit(201)
+         ier=1
+         return
       endif
 !      
       if(multistage) then

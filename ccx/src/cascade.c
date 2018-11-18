@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -92,7 +92,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     nodempc=*nodempcp;
     coefmpc=*coefmpcp;
     
-    /*       for(i=0;i<*nmpc;i++){
+    /*     for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/
@@ -347,6 +347,8 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	    index1=ipompc[i];
 	    index1old=0;
 	    do {
+//		printf("index1=%d\n",index1);
+//		printf("coefmpc=%e\n",coefmpc[index1-1]);
 		if(fabs(coefmpc[index1-1])<1.e-10){
 		    if(index1old==0){
 			printf("*ERROR in cascade: zero coefficient on the\n");

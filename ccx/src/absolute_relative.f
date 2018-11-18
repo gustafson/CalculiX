@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine absolute_relative(node1,node2,nodem,nelem,lakon,
      &     kon,ipkon, nactdog,identity,ielprop,prop,iflag,v,
      &     xflow,f,nodef,idirf,df,cp,R,physcon,numf,set,mi,ttime,time,
-     &     iaxial)
+     &     iaxial,iplausi)
 !     
 !     orifice element
 !
@@ -33,12 +33,19 @@
 !     
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,
-     &     ipkon(*),kon(*),nelemswirl,mi(*),iaxial
+     &     ipkon(*),kon(*),nelemswirl,mi(*),iaxial,iplausi
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,
      &     p1,p2,T1,T2,cp,physcon(*),km1,kp1,kdkm1,
      &     kdkp1,u,pi,Qred_crit,pt1,pt2,Tt1,Tt2,ct,fact,
      &     Cp_cor,ttime,time
+!
+      intent(in) node1,node2,nodem,nelem,lakon,
+     &     kon,ipkon, nactdog,ielprop,prop,iflag,v,
+     &     cp,R,physcon,set,mi,ttime,time,
+     &     iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi
 !     
       if(iflag.eq.0) then
          identity=.true.
@@ -156,7 +163,7 @@
 !     
             fact=1+(u**2-2*u*ct)/(2*Cp_cor*Tt1)
 !     
-            f=Pt2-Pt1*(fact)**kdkm1
+            f=pt2-pt1*(fact)**kdkm1
 !     
 !     pressure node 1
 !
@@ -181,11 +188,11 @@
 !     
             fact=1-(u**2-2*u*ct)/(2*Cp*Tt1)
 !     
-            f=Pt2-Pt1*(fact)**kdkm1
+            f=pt2-pt1*(fact)**kdkm1
 !     
             df(1)=-fact**kdkm1
 !     
-            df(2)=-Pt1*Kdkm1*((u**2-2*u*ct)/(2*Cp*Tt1**2))
+            df(2)=-pt1*Kdkm1*((u**2-2*u*ct)/(2*Cp*Tt1**2))
      &           *fact**(kdkm1-1)
 !     
             df(3)=0
@@ -295,11 +302,11 @@
  55      FORMAT(1X,A,I6,A,I6,A,e11.4,A,A,e11.4,A)
 
             write(1,56)'       Inlet node ',node1,':     Tt1= ',Tt1,
-     &           ', Ts1= ',Tt1,', Pt1= ',Pt1
+     &           ', Ts1= ',Tt1,', Pt1= ',pt1
             write(1,*)'             Element ',nelem,lakon(nelem)
             write(1,57)'             u= ',u,' ,Ct= ',Ct,''
             write(1,56)'      Outlet node ',node2,':     Tt2= ',Tt2,
-     &           ', Ts2= ',Tt2,', Pt2= ',Pt2
+     &           ', Ts2= ',Tt2,', Pt2= ',pt2
 !     
  56      FORMAT(1X,A,I6,A,e11.4,A,e11.4,A,e11.4,A,e11.4)  
  57      FORMAT(1X,A,e11.4,A,e11.4,A)

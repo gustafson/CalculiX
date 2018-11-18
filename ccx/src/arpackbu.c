@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -77,7 +77,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     rhsi=1, intscheme=0, noddiam=-1,*ipneigh=NULL,*neigh=NULL,ne0,
     *integerglob=NULL,ntie,icfd=0,*inomat=NULL,mortar=0,*islavnode=NULL,
     *islavact=NULL,*nslavnode=NULL,*islavsurf=NULL,kscale=1,
-    *iponoel=NULL,*inoel=NULL,network=0;
+    *iponoel=NULL,*inoel=NULL,network=0,nrhs=1;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
     *workl=NULL,*d=NULL,sigma,*temp_array=NULL,*fnext=NULL,
@@ -158,7 +158,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
 	     iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	     fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
-	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
+	     &reltime,&ne0,thicke,shcon,nshcon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	     islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -177,7 +177,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     emeini,xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,
 	     iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	     fmpc,nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,
-	     &reltime,&ne0,xforc,nforc,thicke,shcon,nshcon,
+	     &reltime,&ne0,thicke,shcon,nshcon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	     islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -210,7 +210,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,pmastsurf,
 	      &mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,iponoel,inoel,
-              &network);
+	      &network,ntrans,inotr,trab);
   }
   else{
     mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -229,7 +229,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
 	      pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-	      iponoel,inoel,&network);
+	      iponoel,inoel,&network,ntrans,inotr,trab);
   }
 
   /* determining the right hand side */
@@ -257,7 +257,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,
+	    ielprop,prop);
     
     if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
     SFREE(inum);FORTRAN(stop,());
@@ -297,7 +298,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
   else if(*isolver==7){
 #ifdef PARDISO
     pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0],
-		 &symmetryflag,&inputformat,jq,&nzs[2]);
+		 &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
     printf("*ERROR in arpackbu: the PARDISO library is not linked\n\n");
     FORTRAN(stop,());
@@ -338,7 +339,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	    ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-	    &ne0,xforc,nforc,thicke,shcon,nshcon,
+	    &ne0,thicke,shcon,nshcon,
 	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -357,7 +358,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	    ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	    nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-	    &ne0,xforc,nforc,thicke,shcon,nshcon,
+	    &ne0,thicke,shcon,nshcon,
 	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -380,7 +381,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-            thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+            thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,
+	    ielprop,prop);
 
   if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
   SFREE(v);SFREE(fn);SFREE(stn);SFREE(inum);
@@ -418,7 +420,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
 	      pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-	      iponoel,inoel,&network);
+	      iponoel,inoel,&network,ntrans,inotr,trab);
   }
   else{
       mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -437,7 +439,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
               xstateini,xstate,thicke,integerglob,doubleglob,
 	      tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
 	      pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-	      iponoel,inoel,&network);
+	      iponoel,inoel,&network,ntrans,inotr,trab);
   }
 
   SFREE(stx);SFREE(fext);if(*nbody>0) SFREE(ipobody);
@@ -532,7 +534,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
         }
         else if(*isolver==7){
 #ifdef PARDISO
-          pardiso_solve(temp_array,&neq[0],&symmetryflag);
+          pardiso_solve(temp_array,&neq[0],&symmetryflag,&nrhs);
 #endif
         }
         for(jrow=0;jrow<neq[0];jrow++){
@@ -559,7 +561,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
         else if(*isolver==7){
 #ifdef PARDISO
           pardiso_solve(&workd[ipntr[2]-1],&neq[0],
-               &symmetryflag);
+               &symmetryflag,&nrhs);
 #endif
         }
         for(jrow=0;jrow<neq[0];jrow++){
@@ -677,7 +679,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-	      &ne0,xforc,nforc,thicke,shcon,nshcon,
+	      &ne0,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -697,7 +699,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-	      &ne0,xforc,nforc,thicke,shcon,nshcon,
+	      &ne0,thicke,shcon,nshcon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -716,7 +718,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	    mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	    cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-   	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+   	    thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,
+	    ielprop,prop);
 
     if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
   }

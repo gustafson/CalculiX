@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine usermaterials(inpc,textpart,elcon,nelcon,
      &  nmat,ntmat_,ncmat_,iperturb,iumat,irstrt,istep,istat,n,
-     &  iline,ipol,inl,ipoinp,inp,cocon,ncocon,ipoinpc)
+     &  iline,ipol,inl,ipoinp,inp,cocon,ncocon,ipoinpc,ier)
 !
 !     reading the input deck: *USER MATERIAL
 !
@@ -28,8 +28,8 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ncocon(2,*),
-     &  n,key,i,ncmat_,nconstants,imax,isum,j,iperturb(*),iumat,
-     &  irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),imech,ipoinpc(0:*)
+     &  n,key,i,ncmat_,nconstants,imax,isum,j,iperturb(*),iumat,ier,
+     &  irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),imech,ipoinpc(0:*)
 !
       real*8 elcon(0:ncmat_,ntmat_,*),cocon(0:6,ntmat_,*)
 !
@@ -38,16 +38,20 @@
       ntmat=0
       iumat=1
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
-         write(*,*)'*ERROR in usermaterials: *USER MATERIAL should be'
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
+         write(*,*)
+     &   '*ERROR reading *USER MATERIAL: *USER MATERIAL should be'
          write(*,*) '  placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
-         write(*,*) '*ERROR in usermaterials: *USER MATERIAL should be'
+         write(*,*) 
+     &    '*ERROR reading *USER MATERIAL: *USER MATERIAL should be'
          write(*,*) '  preceded by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       imech=1
@@ -55,13 +59,16 @@
       do i=2,n
          if(textpart(i)(1:10).eq.'CONSTANTS=') then
             read(textpart(i)(11:20),'(i10)',iostat=istat) nconstants
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*USER MATERIAL%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*USER MATERIAL%",ier)
+               return
+            endif
          elseif(textpart(i)(1:12).eq.'TYPE=THERMAL') then
             imech=0
          else
             write(*,*) 
-     &        '*WARNING in usermaterials: parameter not recognized:'
+     &      '*WARNING reading *USER MATERIAL: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -74,11 +81,12 @@
 !        mechanical user material
 !
 c         if(nconstants.gt.21) then
-c            write(*,*) '*ERROR in usermaterials: number of'
+c            write(*,*) '*ERROR reading *USER MATERIAL: number of'
 c            write(*,*) '       mechanical constants cannot exceed 21'
 c            write(*,*) '       change the source code or'
 c            write(*,*) '       contact the author'
-c            call exit(201)
+c            ier=1
+c            return
 c         endif
          nelcon(1,nmat)=-100-nconstants
 !
@@ -93,19 +101,20 @@ c         endif
                   nelcon(2,nmat)=ntmat
                   if(ntmat.gt.ntmat_) then
                      write(*,*) 
-     &                    '*ERROR in usermaterials: increase ntmat_'
-                     call exit(201)
+     &                  '*ERROR reading *USER MATERIAL: increase ntmat_'
+                     ier=1
+                     return
                   endif
                else
                   call getnewline(inpc,textpart,istat,n,key,iline,ipol,
      &                 inl,ipoinp,inp,ipoinpc)
                   if((istat.lt.0).or.(key.eq.1)) then
                      write(*,*) 
-     &                 '*ERROR in usermaterials: anisotropic definition'
+     &           '*ERROR reading *USER MATERIAL: anisotropic definition'
                      write(*,*) '  is not complete. '
                      call inputerror(inpc,ipoinpc,iline,
-     &"*USER MATERIAL%")
-                     call exit(201)
+     &                    "*USER MATERIAL%",ier)
+                     return
                   endif
                endif
                imax=8
@@ -120,8 +129,11 @@ c         endif
                      read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                    elcon(0,ntmat,nmat)
                   endif
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*USER MATERIAL%")
+                  if(istat.gt.0) then
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*USER MATERIAL%",ier)
+                     return
+                  endif
                enddo
                isum=isum+imax
 !     
@@ -133,11 +145,12 @@ c         endif
 !        thermal user material
 !
          if(nconstants.gt.6) then
-            write(*,*) '*ERROR in usermaterials: number of'
+            write(*,*) '*ERROR reading *USER MATERIAL: number of'
             write(*,*) '       thermal constants cannot exceed 6'
             write(*,*) '       change the source code or'
             write(*,*) '       contact the author'
-            call exit(201)
+            ier=1
+            return
          endif
          ncocon(1,nmat)=-100-nconstants
 !
@@ -149,8 +162,9 @@ c         endif
             ncocon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) 
-     &              '*ERROR in usermaterials: increase ntmat_'
-               call exit(201)
+     &              '*ERROR reading *USER MATERIAL: increase ntmat_'
+               ier=1
+               return
             endif
 !     
             do i=1,nconstants+1
@@ -161,8 +175,11 @@ c         endif
                   read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                 cocon(0,ntmat,nmat)
                endif
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*USER MATERIAL%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*USER MATERIAL%",ier)
+                  return
+               endif
             enddo
          enddo
 !     

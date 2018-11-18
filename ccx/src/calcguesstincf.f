@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,6 +40,7 @@
      &              vfa(2,i)*vfa(2,i)+
      &              vfa(3,i)*vfa(3,i))
          if(umax.gt.1.d-30) tincfguess=min(tincfguess,dmin/umax)
+c         write(*,*) 'calcguesstincf ',umax,tincfguess,dmin
 !
 !        viscous diffusion
 !
@@ -47,6 +48,7 @@
             tincfguess=min(tincfguess,vfa(5,i)*dmin*dmin/
      &           (2.d0*umfa(i)))
          endif
+c         write(*,*) 'calcguesstincf ',tincfguess,vfa(5,i),dmin,umfa(i)
 !
 !        thermal diffusion
 !
@@ -56,8 +58,12 @@
                tincfguess=min(tincfguess,vfa(5,i)*cvfa(i)*dmin*dmin/
      &              (2.d0*hcfa(i)))
             endif
+c            write(*,*) 'calcguesstincf ',tincfguess,vfa(5,i),cvfa(i),
+c     &            dmin,hcfa(i)
          endif
       enddo
+c      tincfguess=tincfguess/5.d0
+c      write(*,*) 'calcguesstincf ',tincfguess
 !     
       return
       end

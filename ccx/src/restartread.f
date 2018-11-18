@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
      &  cbody,ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,
      &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,
      &  t0g,t1g,nprop,ielprop,prop,mortar,nintpoint,ifacecount,
-     &  islavsurf,pslavsurf,clearini)
+     &  islavsurf,pslavsurf,clearini,irstrt)
 !
       implicit none
 !
@@ -62,7 +62,7 @@
      &  namta(*),iamt1(*),ielmat(*),nodebounold(*),ndirbounold(*),
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),
      &  nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,
-     &  nener,irestartstep,istat,iprestr,
+     &  nener,irestartstep,istat,iprestr,irstrt(*),
      &  maxlenmpc,mcs,mpcend,ntie,ibody(*),nbody,nslavs
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
@@ -423,10 +423,14 @@
 !
 !     control parameters
 !
-      read(15) (ctrl(i),i=1,39)
+      read(15) (ctrl(i),i=1,52)
       read(15) (qaold(i),i=1,2)
       read(15) output
       read(15) ttime
+!
+!     restart parameters
+!
+      read(15) (irstrt(i),i=1,2)
 !
       close(15)
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,8 @@
       external matvec,msolve
 !
       itol=0
-      tol=1.e-6
+c      tol=1.d-6
+      tol=1.d-12
       itmax=0
       iunit=0
 !

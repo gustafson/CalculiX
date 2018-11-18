@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine distributingcouplings(inpc,textpart,ipompc,nodempc,
      &  coefmpc,nmpc,nmpc_,mpcfree,nk,ikmpc,ilmpc,
      &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,lakon,
-     &  kon,ipkon,set,nset,istartset,iendset,ialset,co)
+     &  kon,ipkon,set,nset,istartset,iendset,ialset,co,ier)
 !
 !     reading the input deck: *DISTRIBUTING COUPLING
 !
@@ -32,7 +32,7 @@
       character*132 textpart(16)
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,istep,istat,
-     &  n,i,j,key,nk,node,
+     &  n,i,j,key,nk,node,ier,
      &  mpcfreeold,ikmpc(*),ilmpc(*),id,idof,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),irefnode,
      &  k,ipos,kon(*),ipkon(*),nset,idir,newmpc,
@@ -61,7 +61,8 @@
          write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
          write(*,*) '       no element set given'
          call inputerror(inpc,ipoinpc,iline,
-     &"*DISTRIBUTING COUPLING%")
+     &        "*DISTRIBUTING COUPLING%",ier)
+         return
       endif
 !
 !     check whether the element set exists
@@ -73,7 +74,8 @@
          write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
          write(*,*) '       element set ',elset(1:ipos-1),
      &         ' is not defined'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     check whether only one element belongs
@@ -83,7 +85,8 @@
          write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
          write(*,*) '       element set ',elset(1:ipos-1),
      &        ' contains more than one element'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     check whether the element is a DCOUP3D element
@@ -93,7 +96,8 @@
          write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
          write(*,*) '       element ',ielem,' is not a'
          write(*,*) '       DCOUP3D element'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     the reference node belongs to the DCOUP3D element
@@ -114,7 +118,8 @@
             if(node.gt.nk) then
                write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
                write(*,*) '       node ',node,' is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
 !     
 !           if first node : new MPC
@@ -127,7 +132,8 @@
                      write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
                      write(*,*) '       dof 1 of node ',node,
      &                    ' is already used'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                endif
 !
@@ -135,7 +141,8 @@
                if(nmpc.gt.nmpc_) then
                   write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
                   write(*,*) '       increase nmpc_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                ipompc(nmpc)=mpcfree
                labmpc(nmpc)='                    '
@@ -156,8 +163,11 @@
 !           reading the weight
 !
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) weight
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DISTRIBUTING COUPLING%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DISTRIBUTING COUPLING%",ier)
+               return
+            endif
             totweight=totweight+weight
 !
 !           new term in MPC
@@ -173,8 +183,11 @@
 !
             read(textpart(1)(1:80),'(a80)',iostat=istat) noset
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) weight
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DISTRIBUTING COUPLING%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DISTRIBUTING COUPLING%",ier)
+               return
+            endif
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
@@ -187,8 +200,8 @@
                write(*,*) '       node set ',noset
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*DISTRIBUTING COUPLING%")
-               call exit(201)
+     &              "*DISTRIBUTING COUPLING%",ier)
+               return
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then
@@ -204,7 +217,8 @@
      &                       '*ERROR reading *DISTRIBUTING COUPLING:'
                            write(*,*) '       dof 1 of node ',node,
      &                          ' is already used'
-                           call exit(201)
+                           ier=1
+                           return
                         endif
                      endif
 !
@@ -213,7 +227,8 @@
                         write(*,*) 
      &                    '*ERROR reading *DISTRIBUTING COUPLING:'
                         write(*,*) '       increase nmpc_'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      ipompc(nmpc)=mpcfree
                      labmpc(nmpc)='                    '
@@ -280,7 +295,8 @@
                write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
                write(*,*) '       dof',idir,' of node ',node,
      &              ' is already used'
-               call exit(201)
+               ier=1
+               return
             endif
          endif
 !     
@@ -288,7 +304,8 @@
          if(nmpc.gt.nmpc_) then
             write(*,*) '*ERROR reading *DISTRIBUTING COUPLING:'
             write(*,*) '       increase nmpc_'
-            call exit(201)
+            ier=1
+            return
          endif
          ipompc(nmpc)=mpcfree
          labmpc(nmpc)='                    '

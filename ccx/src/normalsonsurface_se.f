@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,21 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine normalsonsurface_se(ipkon,kon,lakon,extnor,co,nk,
-     &      ipoface,nodface,nactdof,mi,nodedesiinv,noregion)
+     &      ipoface,nodface,nactdof,mi,nodedesiinv,iregion)
+!
+!     calculating the normal direction onto the external surface;
+!     the design variables are moved in this direction.
+!
+!     if the design variables constitute a region, i.e. they 
+!     are constitute a set of faces, the normals at the boundary
+!     of this set is determined based on the faces belonging to
+!     this set only (so faces external to this set do not
+!     contribute to the normal at the boundary)
+!
+!     if it is not a region, the normal in a node is the mean
+!     of the normal of all external faces to which this node
+!     belongs, no matter how many other design variables
+!     belong to these faces (if any)
 !
       implicit none
 !
@@ -26,11 +40,16 @@
       integer j,nelemm,jfacem,indexe,ipkon(*),kon(*),nopem,node,
      &  ifaceq(8,6),ifacet(6,4),ifacew1(4,5),ifacew2(8,5),
      &  konl(26),ipoface(*),nodface(5,*),mi(*),nodedesiinv(*),
-     &  nactdof(0:mi(2),*),nopesurf(9),nnodes,noregion,nope,
+     &  nactdof(0:mi(2),*),nopesurf(9),nnodes,iregion,nope,
      &  nopedesi,l,m,iflag,k,nk
 !
       real*8 extnor(3,*),xsj2(3),shp2(7,9),xs2(3,2),xi,et,dd,
      &  xquad(2,9),xtri(2,7),xl2m(3,9),co(3,*)
+!
+      intent(in) ipkon,kon,lakon,co,nk,
+     &      ipoface,nodface,nactdof,mi,nodedesiinv,iregion
+!
+      intent(inout) extnor
 !
 !     nodes per face for hex elements
 !
@@ -93,6 +112,8 @@
 !     2) the node is a design variable and belongs to a design face
 !     A design face is an external face for which more than nopedesi
 !     nodes are design variables
+!
+!     The appropriate normal component is set to zero for fixed dofs
 !     
       do j=1,nk
 !        
@@ -118,7 +139,8 @@
             elseif(lakon(nelemm)(4:5).eq.'10') then
                nopem=6
                nope=10
-               nopedesi=3
+c               nopedesi=3
+               nopedesi=4
             elseif(lakon(nelemm)(4:4).eq.'4') then
                nopem=3
                nope=4
@@ -138,12 +160,14 @@
                nope=15
                if(jfacem.le.2) then
                   nopem=6
+                  nopedesi=4
                else
                   nopem=8
+                  nopedesi=5
                endif
-               nopedesi=3
+c               nopedesi=3
             endif
-            if(noregion.eq.1) nopedesi=0
+            if(iregion.eq.0) nopedesi=0
 !     
 !     actual position of the nodes belonging to the
 !     master surface

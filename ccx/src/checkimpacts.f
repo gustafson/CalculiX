@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -76,12 +76,11 @@
 !     
 !     Initialization
 !     
-c      icase=0
       iforceincsize=0
 !     
 !     Adaption of the energy residual (absolute/relative check)
 !     
-      if(dabs(r_abs).lt.(enetoll/4.0))then
+      if(dabs(r_abs).lt.(enetoll/4.d0))then
          delta=r_abs*emax
       else
          delta=r_abs
@@ -129,7 +128,6 @@ c      icase=0
             idivergence=1
             sizemaxinc=dtheta*0.25d0
             iforceincsize=1
-c            icase=1
          elseif((r_rel-r_rel_bc.gt.0.0025d0).and.(ne.le.neini))then
 !     
 !     Rebound (or too high variation during pers. contact)
@@ -138,12 +136,10 @@ c            icase=1
             idivergence=1
             sizemaxinc=dtheta*0.5d0
             iforceincsize=1
-c            icase=3
          else
 !     
 !     Persistent Contact
 !     
-c            icase=2
             if(r_rel.gt.(-0.9d0*maxdecay))then
                sizemaxinc=max(fact*temax/tper,1.01d0*dtheta)
                sizemaxinc=min(sizemaxinc,100.d0*temax/tper)
@@ -166,7 +162,6 @@ c            icase=2
             idivergence=1
             sizemaxinc=dtheta*0.25d0
             iforceincsize=1
-c            icase=1
 !     
          elseif((r_rel-r_rel_bc.gt.0.0025d0).and.(ne.le.neini))then     
 !     
@@ -176,15 +171,13 @@ c            icase=1
             idivergence=1
             sizemaxinc=dtheta*0.5d0
             iforceincsize=1
-c            icase=3
 !     
          else
 !     
 !     Persistent Contact
 !     
-c            icase=2
             if(r_rel.gt.(-0.9d0*maxdecay))then
-               sizemaxinc=min(fact*temax/tper,1.1*dtheta)
+               sizemaxinc=min(fact*temax/tper,1.1d0*dtheta)
                sizemaxinc=min(sizemaxinc,100.d0*temax/tper)
             else
                sizemaxinc=max(temax/tper/10.d0,0.5d0*dtheta)
@@ -196,22 +189,6 @@ c            icase=2
       if(sizemaxinc.lt.tmin)then
          sizemaxinc=tmin
       endif
-!     
-!     Debug prints
-!     
-c      if(icase.eq.1)then
-c         write(*,*)"# # # # # # # # # # # # # # # # # # # # # # # # # #"
-c         write(*,*)"icase=1"
-c         write(*,*)"Impact detected, increment reattempted"
-c      elseif(icase.eq.2)then
-c         write(*,*)"# # # # # # # # # # # # # # # # # # # # # # # # # #"
-c         write(*,*)"icase=2"
-c         write(*,*)"Persistent Contact conditions"
-c      elseif(icase.eq.3)then
-c         write(*,*)"# # # # # # # # # # # # # # # # # # # # # # # # # #"
-c         write(*,*)"icase=3"
-c         write(*,*)"Rebound, the increment is reattempted (stability)"
-c      endif
 !     
       return
       end

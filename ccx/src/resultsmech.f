@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,8 @@
      &  ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
      &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,nener,
      &  ikin,nal,ne0,thicke,emeini,pslavsurf,
-     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale)
+     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale,
+     &  list,ilist)
 !
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
@@ -45,7 +46,8 @@
      &  nal,icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,ielprop(*),
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_fn,
-     &  calcul_cauchy,calcul_qa,nopered,mortar,jfaces,iloc,igauss
+     &  calcul_cauchy,calcul_qa,nopered,mortar,jfaces,igauss,
+     &  istrainfree,nlgeom_undo,list,ilist(*),m
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),stiini(6,mi(1),*),
      &  stx(6,mi(1),*),xl(3,26),vl(0:mi(2),26),stre(6),prop(*),
@@ -69,16 +71,18 @@
 !
       intent(in) co,kon,ipkon,lakon,ne,v,
      &  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,prestr,
+     &  ielorien,norien,orab,ntmat_,t0,t1,ithermal,
      &  iprestr,iperturb,iout,vold,nmethod,
      &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
      &  xstateini,xstate,npmat_,matname,mi,ielas,icmd,
      &  ncmat_,nstate_,stiini,vini,enerini,istep,iinc,
      &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,nener,
-     &  ikin,ne0,thicke,emeini,pslavsurf,
-     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale
+     &  ikin,ne0,thicke,pslavsurf,
+     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale,
+     &  list,ilist
 !
-      intent(inout) nal,qa,fn,xstiff,ener,eme,eei,stx
+      intent(inout) nal,qa,fn,xstiff,ener,eme,eei,stx,ielmat,prestr,
+     &  emeini
 !
       include "gauss.f"
 !
@@ -87,10 +91,25 @@
 !
       mt=mi(2)+1
       nal=0
-      qa(3)=-1.
-      qa(4)=0.
+      qa(3)=-1.d0
+      qa(4)=0.d0
 !
-      do i=nea,neb
+      do m=nea,neb
+!
+         if(list.eq.1) then
+            i=ilist(m)
+         else
+            i=m
+         endif
+!
+!        check for strainless reactivated elements
+!
+         if(ielmat(1,i).lt.0) then
+            istrainfree=1
+            ielmat(1,i)=-ielmat(1,i)
+         else
+            istrainfree=0
+         endif
 !
          lakonl=lakon(i)
 !
@@ -356,15 +375,14 @@ c         write(*,*) 'resultsmech ',i,lakonl,mint3d
                elseif((mortar.eq.1).and.
      &           ((nmethod.ne.1).or.(iperturb(1).ge.2).or.(iout.ne.-1)))
      &               then
-                  iloc=kon(indexe+nope+1)
                   jfaces=kon(indexe+nope+2)
                   igauss=kon(indexe+nope+1)
                   call springforc_f2f(xl,vl,imat,elcon,nelcon,elas,
      &              fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
      &              plicon,nplicon,npmat_,ener(1,i),nener,
-     &              stx(1,1,i),mi,springarea(1,iloc),nmethod,
+     &              stx(1,1,i),mi,springarea(1,igauss),nmethod,
      &              ne0,nstate_,xstateini,xstate,reltime,
-     &              ielas,iloc,jfaces,igauss,pslavsurf,pmastsurf,
+     &              ielas,jfaces,igauss,pslavsurf,pmastsurf,
      &              clearini,ener(1,i+ne),kscale,konl,iout,i)
                endif
 !             
@@ -747,9 +765,9 @@ c     Bernhardi end
 !              calculating the deformation gradient of the old
 !              fields
 !
-               xikl(1,1)=vikl(1,1)+1
-               xikl(2,2)=vikl(2,2)+1.
-               xikl(3,3)=vikl(3,3)+1.
+               xikl(1,1)=vikl(1,1)+1.d0
+               xikl(2,2)=vikl(2,2)+1.d0
+               xikl(3,3)=vikl(3,3)+1.d0
                xikl(1,2)=vikl(1,2)
                xikl(1,3)=vikl(1,3)
                xikl(2,3)=vikl(2,3)
@@ -866,12 +884,10 @@ c     Bernhardi end
             if(ithermal(1).ne.0) then
                do m1=1,6
                   emec(m1)=eloc(m1)-eth(m1)
-c                 emec0(m1)=emeini(m1,jj,i)
                enddo
             else
                do m1=1,6
                   emec(m1)=eloc(m1)
-c                 emec0(m1)=emeini(m1,jj,i)
                enddo
             endif
             if(kode.le.-100) then
@@ -880,22 +896,32 @@ c                 emec0(m1)=emeini(m1,jj,i)
                enddo
             endif
 !
-!           subtracting the plastic initial strains
+!           subtracting the initial strains
 !
             if(iprestr.eq.2) then
-               do m1=1,6
-                  emec(m1)=emec(m1)-prestr(m1,jj,i)
-               enddo
+               if(istrainfree==0) then
+                  do m1=1,6
+                     emec(m1)=emec(m1)-prestr(m1,jj,i)
+                  enddo
+               else
+                  do m1=1,6
+                     prestr(m1,jj,i)=emec(m1)
+                     emeini(m1,jj,i)=emec(m1)
+                     eme(m1,jj,i)=emec(m1)
+                     emec(m1)=0.d0
+                  enddo
+               endif
             endif
 !
 !           calculating the local stiffness and stress
 !
+            nlgeom_undo=0
             call mechmodel(elconloc,elas,emec,kode,emec0,ithermal,
      &           icmd,beta,stre,xkl,ckl,vj,xikl,vij,
      &           plconloc,xstate,xstateini,ielas,
      &           amat,t1l,dtime,time,ttime,i,jj,nstate_,mi(1),
      &           iorien,pgauss,orab,eloc,mattyp,qa(3),istep,iinc,
-     &           ipkon,nmethod,iperturb,qa(4))
+     &           ipkon,nmethod,iperturb,qa(4),nlgeom_undo)
 !
             if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
      &         (nmethod.ne.5).and.(icmd.ne.3)) then
@@ -904,7 +930,7 @@ c                 emec0(m1)=emeini(m1,jj,i)
                enddo
             endif
 !
-            if(iperturb(1).eq.-1) then
+            if((iperturb(1).eq.-1).and.(nlgeom_undo.eq.0)) then
 !
 !                    if the forced displacements were changed at
 !                    the start of a nonlinear step, the nodal
@@ -973,7 +999,8 @@ c                 emec0(m1)=emeini(m1,jj,i)
 !           is requested), since it is input to the umat routine
 !
             if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100).or.
-     &         ((nmethod.eq.4).and.(iperturb(1).gt.1).and.
+     &         ((nmethod.eq.4).and.
+     &          ((iperturb(1).gt.1).and.(nlgeom_undo.eq.0)).and.
      &          (ithermal(1).le.1))) then
                if(ithermal(1).eq.0) then
                   do m1=1,6
@@ -1062,7 +1089,7 @@ c                 emec0(m1)=emeini(m1,jj,i)
 !
 !                          nonlinear geometric part
 !
-                     if(iperturb(2).eq.1) then
+                     if((iperturb(2).eq.1).and.(nlgeom_undo.eq.0)) then
                         do m3=1,3
                            do m4=1,3
                               fn(m2,konl(m1))=fn(m2,konl(m1))+
@@ -1084,7 +1111,7 @@ c     Bernhardi end
 !
 !           calculation of the Cauchy stresses
 !
-            if(calcul_cauchy.eq.1) then
+            if((calcul_cauchy.eq.1).and.(nlgeom_undo.eq.0)) then
 !
 !              changing the displacement gradients into
 !              deformation gradients
@@ -1146,8 +1173,6 @@ c     Bernhardi end
             nal=nal+3*nope
          endif
       enddo
-!
-c      write(*,*) 'resultsmech ',qa(4)
 !
       return
       end

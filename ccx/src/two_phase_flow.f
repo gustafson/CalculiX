@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine two_phase_flow(Tt1,pt1,T1,pt2,xflow_air,
+      subroutine two_phase_flow(Tt1,pt1,T1,Tt2,pt2,T2,xflow_air,
      &     xflow_oil,nelem,lakon,kon,ipkon,ielprop,prop,v,
      &     dvi_air,cp,r,k_oil,phi,lambda,nshcon,nrhcon,shcon,
      &     rhcon,ntmat_,mi,iaxial)
@@ -33,13 +33,15 @@
      &     ipkon(*),kon(*),icase,kgas,k_oil,mtlog,ier,nshcon(*),
      &     nrhcon(*),ntmat_,n1,n2,n11
 !
+!     note: Tt2 and T2 are used in proprietary routines
+!
       real*8 prop(*),v(0:mi(2),*),kappa,R,a,d,dl,
      &     T1,Tt1,pt1,pt2,cp,dvi_air,dvi_oil,
      &     reynolds,lambda,ks,form_fact,f,
      &     l_neg,xflow_air,xflow_oil,A1,A2,
      &     rho_air,rho_oil,nue_air,nue_oil,zeta,reynolds_h,mpg,
      &     xp,xpm2,xpmini,isothermal,dvi_h,zeta_h,auxphi,
-     &     rad,theta,phi,phizeta,x,
+     &     rad,theta,phi,phizeta,x,Tt2,T2,
      &     rho_q,p1,shcon(0:3,ntmat_,*),
      &     rhcon(0:1,ntmat_,*),cp_oil,r_oil
 !
@@ -124,7 +126,7 @@
 !
          A1=prop(index+1)
          A2=prop(index+2)
-         call ts_calc(xflow_air,Tt1,Pt1,kappa,r,A1,T1,icase)
+         call ts_calc(xflow_air,Tt1,pt1,kappa,r,A1,T1,icase)
 !
          d=dsqrt(A1*4/(4.d0*datan(1.d0)))
 !
@@ -133,8 +135,8 @@
 !            
             kgas=0
 !
-         P1=Pt1*(T1/Tt1)**(kappa/kappa-1)
-         rho_air=P1/(R*T1)
+         p1=pt1*(T1/Tt1)**(kappa/kappa-1)
+         rho_air=p1/(R*T1)
          nue_air=dvi_air/rho_air
 !     
 !     calculating the dynamic viscosity, the kinematic viscosity and
@@ -236,12 +238,12 @@
             a=min(prop(index+1),prop(index+2))
          endif
 !
-         call ts_calc(xflow_air,Tt1,Pt1,kappa,r,a,T1,icase)
+         call ts_calc(xflow_air,Tt1,pt1,kappa,r,a,T1,icase)
 !
 !     calculating kinematic viscosity and density for air 
 !
-         P1=Pt1*(T1/Tt1)**(kappa/kappa-1)
-         rho_air=P1/(R*T1)
+         p1=pt1*(T1/Tt1)**(kappa/kappa-1)
+         rho_air=p1/(R*T1)
          nue_air=dvi_air/rho_air
 !         
 !     calculation of the dynamic viscosity for oil

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine liquidpipe(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,rho,g,co,dvi,numf,vold,mi,ipkon,kon,set,
-     &     ttime,time,iaxial)
+     &     ttime,time,iaxial,iplausi)
 !
 !     pipe element for incompressible media
 !     
@@ -38,7 +38,7 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,iaxial,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,mi(*),
      &     inv,ncoel,ndi,nbe,id,nen,ngv,numf,nodea,nodeb,
-     &     ipkon(*),isothermal,kon(*),nelemswirl
+     &     ipkon(*),isothermal,kon(*),nelemswirl,iplausi
 !      
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),a,d,pi,radius,
      &     p1,p2,rho,dvi,friction,reynolds,vold(0:mi(2),*),
@@ -50,27 +50,41 @@
      &     xflow_vol,r1d,r2d,r1,r2,eta, K1, Kr, U1,Ui, ciu, c1u, 
      &     c2u, omega,cinput,un,T
 !
+      intent(in) node1,node2,nodem,nelem,nactdog,ielprop,iflag,v,
+     &     rho,g,co,dvi,vold,mi,ipkon,kon,set,ttime,time,iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi,prop,
+     &  lakon
+!
       data ncoel /11/
-      data xcoel /0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0/
-      data yco /0.5,0.46,0.41,0.36,0.30,0.24,0.18,0.12,0.06,0.02,0./
-      data yel /1.,0.81,0.64,0.49,0.36,0.25,0.16,0.09,0.04,0.01,0./
+      data xcoel /0d0,0.1d0,0.2d0,0.3d0,0.4d0,0.5d0,0.6d0,0.7d0,0.8d0,
+     &            0.9d0,1.0d0/
+      data yco /0.5d0,0.46d0,0.41d0,0.36d0,0.30d0,0.24d0,0.18d0,0.12d0,
+     &          0.06d0,0.02d0,0.d0/
+      data yel /1.d0,0.81d0,0.64d0,0.49d0,0.36d0,0.25d0,0.16d0,0.09d0,
+     &          0.04d0,0.01d0,0.d0/
 !
       data ndi /10/
-      data xdi /0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1./
-      data ydi /226.,47.5,17.5,7.8,3.75,1.80,0.8,0.29,0.06,0./
+      data xdi /0.1d0,0.2d0,0.3d0,0.4d0,0.5d0,0.6d0,0.7d0,0.8d0,0.9d0,
+     &          1.d0/
+      data ydi /226.d0,47.5d0,17.5d0,7.8d0,3.75d0,1.80d0,0.8d0,0.29d0,
+     &          0.06d0,0.d0/
 !
       data nbe /7/
-      data xbe /1.,1.5,2.,3.,4.,6.,10./
-      data ybe /0.21,0.12,0.10,0.09,0.09,0.08,0.2/
-      data zbe /0.51,0.32,0.29,0.26,0.26,0.17,0.31/
+      data xbe /1.d0,1.5d0,2.d0,3.d0,4.d0,6.d0,10.d0/
+      data ybe /0.21d0,0.12d0,0.10d0,0.09d0,0.09d0,0.08d0,0.2d0/
+      data zbe /0.51d0,0.32d0,0.29d0,0.26d0,0.26d0,0.17d0,0.31d0/
 !
       data nen /10/
-      data xen /0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1./
-      data yen /232.,51.,18.8,9.6,5.26,3.08,1.88,1.17,0.734,0.46/
+      data xen /0.1d0,0.2d0,0.3d0,0.4d0,0.5d0,0.6d0,0.7d0,0.8d0,0.9d0,
+     &          1.d0/
+      data yen /232.d0,51.d0,18.8d0,9.6d0,5.26d0,3.08d0,1.88d0,1.17d0,
+     &          0.734d0,0.46d0/
 !
       data ngv /8/
-      data xgv /0.125,0.25,0.375,0.5,0.625,0.75,0.875,1./
-      data ygv /98.,17.,5.52,2.,0.81,0.26,0.15,0.12/
+      data xgv /0.125d0,0.25d0,0.375d0,0.5d0,0.625d0,0.75d0,0.875d0,
+     &          1.d0/
+      data ygv /98.d0,17.d0,5.52d0,2.d0,0.81d0,0.26d0,0.15d0,0.12d0/
 !
       numf=4
 !
@@ -195,7 +209,7 @@
 !
 !              assuming large reynolds number
 !
-               friction=1.d0/(2.03*dlog10(xks/(d*3.7)))**2
+               friction=1.d0/(2.03d0*dlog10(xks/(d*3.7d0)))**2.d0
             else
 !
 !              solving the implicit White-Colebrook equation
@@ -839,7 +853,7 @@
                endif
 !            
 !               if (iflag.eq.1) then
-                  a1=1E-6
+                  a1=1d-6
                   a2=a1 
                if(inv.ne.0) then                         
                   xkn=rho/2*ciu**2*(1-(R1/R2)**2)
@@ -875,7 +889,7 @@
                   prop(index+7)=c1u
                endif
 !     
-               a1=1E-6
+               a1=1d-6
                a2=a1 
                if(iflag.eq.1)then
                   xflow=0.5d0
@@ -935,12 +949,12 @@
             else if (lakon(nelem)(4:5).eq.'VF') then
                numf=3  
                if(R2.ge.R1) then
-                  f=P1-P2+xkp
+                  f=p1-p2+xkp
                   df(1)=1
                   df(2)=0
                   df(3)=-1
                elseif(R2.lt.R1) then 
-                  f=P1-P2-xkp
+                  f=p1-p2-xkp
                   df(1)=1
                   df(2)=0
                   df(3)=-1
@@ -989,7 +1003,7 @@
          
             if(inv.eq.1) then
                write(1,56)'       Inlet node  ',node1,':   Tt1=',T,
-     &              ', Pt1=',P1
+     &              ', Pt1=',p1
                if(lakon(nelem)(4:5).eq.'EL'.or.
      &            lakon(nelem)(4:5).eq.'CO'.or.
      &            lakon(nelem)(4:5).eq.'EN'.or.
@@ -1021,7 +1035,7 @@
                endif
 !
                write(1,56)'       Outlet node ',node2,':   Tt2=',T,
-     &              ', Pt2=',P2
+     &              ', Pt2=',p2
 !     
             else if(inv.eq.-1) then
                

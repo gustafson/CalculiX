@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -37,17 +37,20 @@ void checkconvnet(ITG *icutb, ITG *iin,
                   double *cam1a,double *cam2a,double *cama,
                   double *vamt, double *vamf, double *vamp, double *vama,
                   double *qa, double *qamt, double *qamf,
-                  double *ramt, double *ramf, double *ramp, ITG *iplausi){
+                  double *ramt, double *ramf, double *ramp, ITG *iplausi,
+                  ITG *ichannel){
   
   ITG i0,ir,ip,ic,il,ig,ia,idivergence;
   
-  double c2t,c2f,c2p,c2a,c1t,c1f,c1p,qamp=1.,
+  double c2t,c2f,c2p,c2a,c1t,c1f,c1p,a2t,a2f,a2p,a2a,a1t,a1f,a1p,qamp=1.,
          df,dc,db,dd,ran,can,rap,ea,cae,ral;
 
   i0=ctrl[0];ir=ctrl[1];ip=ctrl[2];ic=ctrl[3];il=ctrl[4];ig=ctrl[5];ia=ctrl[7];
   df=ctrl[10];dc=ctrl[11];db=ctrl[12];dd=ctrl[16];ran=ctrl[18];can=ctrl[19];
   rap=ctrl[22];ea=ctrl[23];cae=ctrl[24];ral=ctrl[25];c1t=ctrl[32];c1f=ctrl[33];
   c1p=ctrl[34];c2t=ctrl[35];c2f=ctrl[36];c2p=ctrl[37];c2a=ctrl[38];
+  a1t=ctrl[40];a1f=ctrl[41];a1p=ctrl[42];a2t=ctrl[43];a2f=ctrl[44],a2p=ctrl[45];
+  a2a=ctrl[46];
   
   /* temperature */
   
@@ -71,7 +74,8 @@ void checkconvnet(ITG *icutb, ITG *iin,
   else{c2p=0.0001*rap;}
   
   if(*iin<=ip){c1p=0.0001*ran;}
-  else{c1p=0.0001*rap;}
+  else{c1p=0.5*rap;}
+//  else{c1p=0.0001*rap;}
   
   /* geometry */
   
@@ -91,11 +95,12 @@ void checkconvnet(ITG *icutb, ITG *iin,
      - a comparison of the residual in the latest network
        iteration with mean typical values of the equation terms */
 
-  *ramt=0.;*ramf=0.;*ramp=0.;
-  if((*camt<=c2t**vamt)&&(*ramt<c1t**qamt)&&
-     (*camf<=c2f**vamf)&&(*ramf<c1f**qamf)&&
-     (*camp<=c2p**vamp)&&(*ramp<c1p*qamp)&&
-     (*cama<=c2a**vama)&&
+  if(*ichannel==1){*ramt=0.;*ramf=0.;*ramp=0.;}
+
+  if((*camt<=c2t**vamt)&&(*ramt<c1t**qamt)&&(*camt<=a2t)&&(*ramt<a1t)&&
+     (*camf<=c2f**vamf)&&(*ramf<c1f**qamf)&&(*camf<=a2f)&&(*ramf<a1f)&&
+     (*camp<=c2p**vamp)&&(*ramp<c1p*qamp)&&(*camp<a2p)&&(*ramp<a1p)&&
+     (*cama<=c2a**vama)&&(*cama<=a2a)&&(*iplausi==1)&&
 //     (*cama<=c2a**vama)&&(*iplausi==1)&&
      (*iin>3)){
       

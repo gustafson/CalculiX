@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine electromagneticss(inpc,textpart,nmethod,iperturb,
      &  isolver,istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,
-     &  ipol,inl,ipoinp,inp,alpha,mei,fei,ipoinpc,ctrl,ttime)
+     &  ipol,inl,ipoinp,inp,alpha,mei,fei,ipoinpc,ctrl,ttime,ier)
 !
 !     reading the input deck: *ELECTROMAGNETICS
 !
@@ -39,7 +39,7 @@
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,nev,
      &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),mei(4),ncv,mxiter,
-     &  ipoinpc(0:*),idirect,iheat
+     &  ipoinpc(0:*),idirect,iheat,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha,fei(3),tol,fmin,fmax,ctrl(*),
      &  ttime
@@ -62,14 +62,16 @@
          write(*,*) 
      &  '*ERROR reading *ELECTROMAGNETICS: perturbation analysis is'
          write(*,*) '       not provided in a *HEAT TRANSFER step.'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(istep.lt.1) then
          write(*,*) 
      &     '*ERROR reading *ELECTROMAGNETICS: *HEAT TRANSFER can only'
          write(*,*) '       be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     default solver
@@ -140,7 +142,8 @@
                write(*,*) 
      &        '*ERROR reading *ELECTROMAGNETICS: please define initial '
                write(*,*) '       conditions for the temperature'
-               call exit(201)
+               ier=1
+               return
             endif
             ithermal=3
          endif
@@ -187,17 +190,29 @@
          endif
 !
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELECTROMAGNETICS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*ELECTROMAGNETICS%",ier)
+            return
+         endif
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELECTROMAGNETICS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*ELECTROMAGNETICS%",ier)
+            return
+         endif
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELECTROMAGNETICS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*ELECTROMAGNETICS%",ier)
+            return
+         endif
          read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELECTROMAGNETICS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*ELECTROMAGNETICS%",ier)
+            return
+         endif
 !
          if(tinc.le.0.d0) then
             write(*,*) '*ERROR reading *ELECTROMAGNETICS: initial increm 
@@ -235,16 +250,20 @@ c               tmin=min(tinc,1.d-5*tper)
      &       '*ERROR reading *ELECTROMAGNETICS: definition not complete'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*ELECTROMAGNETICS%")
-            call exit(201)
+     &           "*ELECTROMAGNETICS%",ier)
+            return
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) nev
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELECTROMAGNETICS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*ELECTROMAGNETICS%",ier)
+            return
+         endif
          if(nev.le.0) then
             write(*,*) '*ERROR reading *ELECTROMAGNETICS: less than 1 ei
      &genvalue requested'
-            call exit(201)
+            ier=1
+            return
          endif
          tol=1.d-2
          ncv=4*nev
@@ -252,13 +271,19 @@ c               tmin=min(tinc,1.d-5*tper)
          mxiter=1000
          if(textpart(2)(1:1).ne.' ') then
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELECTROMAGNETICS%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*ELECTROMAGNETICS%",ier)
+               return
+            endif
          endif
          if(textpart(3)(1:1).ne.' ') then
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*ELECTROMAGNETICS%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*ELECTROMAGNETICS%",ier)
+               return
+            endif
          endif
 !
          mei(1)=nev

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -27,7 +27,7 @@ static char *lakonf1;
 static ITG num_cpus,*nef1,*ipnei1,*neifa1,*neiel1,*jq1,*irow1,*ielfa1,
     *ifabou1,*neq1,*nzs1,*neij1,*iau61;
 
-static double *vfa1,*area1,*advfa1,*xlet1,*cosa1,*volume1,*au1,*ad1,
+static double *vfa1,*area1,*advfa1,*xlet1,*cosa1,*volume1,*au1,*ad1,*flux1,
     *ap1,*xle1,*b1,*xxn1,*hfa1,*gradpel1,*bp1,*xxi1,*xlen1,*cosb1,*xxicn1;
 
 void mafillpmain(ITG *nef,char *lakonf,ITG *ipnei,
@@ -37,7 +37,8 @@ void mafillpmain(ITG *nef,char *lakonf,ITG *ipnei,
 	     double *xle,double *b,double *xxn,ITG *neq,
 	     ITG *nzs,double *hfa,double *gradpel,
 	     double *bp,double *xxi,ITG *neij,double *xlen,double *cosb,
-	     ITG *iatleastonepressurebc,ITG *iau6,double *xxicn){
+	     ITG *iatleastonepressurebc,ITG *iau6,double *xxicn,
+             double *flux){
 
     ITG i,j;
       
@@ -104,7 +105,7 @@ void mafillpmain(ITG *nef,char *lakonf,ITG *ipnei,
     jq1=jq;irow1=irow;ap1=ap;ielfa1=ielfa;ifabou1=ifabou;xle1=xle;
     xxn1=xxn;neq1=neq;nzs1=nzs;hfa1=hfa;gradpel1=gradpel;bp1=bp;xxi1=xxi;
     neij1=neij;xlen1=xlen;cosb1=cosb;iau61=iau6;ad1=ad;au1=au;b1=b;
-    xxicn1=xxicn;
+    xxicn1=xxicn;flux1=flux;
     
     /* create threads and wait */
     
@@ -141,7 +142,7 @@ void *mafillpmt(ITG *i){
 			 advfa1,xlet1,cosa1,volume1,au1,ad1,
                          jq1,irow1,ap1,ielfa1,ifabou1,xle1,b1,xxn1,neq1,nzs1,
 		         hfa1,gradpel1,bp1,xxi1,neij1,xlen1,cosb1,&nefa,&nefb,
-		         iau61,xxicn1));
+		         iau61,xxicn1,flux1));
 
     return NULL;
 }

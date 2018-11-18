@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine equationfs(inpc,textpart,ipompc,nodempc,coefmpc,
      &  nmpc,nmpc_,mpcfree,co,trab,ntrans,ikmpc,ilmpc,
      &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
-     &  lakon,ne,nload,sideload,ipkon,kon,nelemload)
+     &  lakon,ne,nload,sideload,ipkon,kon,nelemload,ier)
 !
 !     reading the input deck: *EQUATIONF
 !
@@ -33,7 +33,7 @@
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,istep,istat,
      &  n,i,j,ii,key,nterm,number,ntrans,ndir,indexe,
      &  mpcfreeold,ikmpc(*),ilmpc(*),id,idof,itr,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+     &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),ier,
      &  k,m,iface,ifacel,nelem,ifaceq(8,6),ifacet(6,4),ifacew(8,5),
      &  loadid,ne,nope,nopes,ipkon(*),nload,nelemload(2,*),kon(*)
 !
@@ -68,7 +68,8 @@
          write(*,*) 
      &     '*ERROR reading *EQUATIONF: *EQUATIONF should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do
@@ -80,7 +81,8 @@
          nmpc=nmpc+1
          if(nmpc.gt.nmpc_) then
             write(*,*) '*ERROR reading *EQUATIONF: increase nmpc_'
-            call exit(201)
+            ier=1
+            return
          endif
 !
          labmpc(nmpc)='FLUID               '
@@ -95,43 +97,56 @@
      &             nmpc
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATIONF%")
-               call exit(201)
+     &              "*EQUATIONF%",ier)
+               return
             endif
 !
             do i=1,n/4
 !
                read(textpart((i-1)*4+1)(1:10),'(i10)',iostat=istat)nelem
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATIONF%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EQUATIONF%",ier)
+                  return
+               endif
                if((nelem.gt.ne).or.(nelem.le.0)) then
                   write(*,*) '*ERROR reading *EQUATIONF:'
                   write(*,*) '       element ',nelem,' is not defined'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !
                read(textpart((i-1)*4+2)(2:2),'(i1)',iostat=istat) 
      &             ifacel
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATIONF%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EQUATIONF%",ier)
+                  return
+               endif
                iface=10*nelem+ifacel
 !
                read(textpart((i-1)*4+3)(1:10),'(i10)',iostat=istat) ndir
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATIONF%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EQUATIONF%",ier)
+                  return
+               endif
                if(ndir.le.3) then
                elseif(ndir.eq.4) then
-                  write(*,*) '*ERROR in equationfs: an equation'
+                  write(*,*) '*ERROR reading *EQUATIONF: an equation'
                   write(*,*) '       on DOF 4 is not allowed'
-                  call exit(201)
+                  ier=1
+                  return
                elseif(ndir.eq.5) then
-                  write(*,*) '*ERROR in equationfs: an equation'
+                  write(*,*) '*ERROR reading *EQUATIONF: an equation'
                   write(*,*) '       on DOF 5 is not allowed'
-                  call exit(201)
+                  ier=1
+                  return
                elseif(ndir.eq.6) then
-                  write(*,*) '*ERROR in equationfs: an equation'
+                  write(*,*) '*ERROR reading *EQUATIONF: an equation'
                   write(*,*) '       on DOF 6 is not allowed'
-                  call exit(201)
+                  ier=1
+                  return
                elseif(ndir.eq.8) then
                   ndir=4
                elseif(ndir.eq.11) then
@@ -139,12 +154,16 @@
                else
                   write(*,*) '*ERROR reading *EQUATIONF:'
                   write(*,*) '       direction',ndir,' is not defined'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !
                read(textpart((i-1)*4+4)(1:20),'(f20.0)',iostat=istat) x
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATIONF%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EQUATIONF%",ier)
+                  return
+               endif
 !
 !              check whether the face is transformed
 !
@@ -176,7 +195,8 @@
                         if(ikmpc(id).eq.idof) then
                            write(*,100)
      &                   (ikmpc(id))/8+1,ikmpc(id)-8*((ikmpc(id))/8)
-                           call exit(201)
+                           ier=1
+                           return
                         endif
                      endif
                      do j=nmpc,id+2,-1
@@ -192,7 +212,8 @@
                   if(mpcfree.eq.0) then
                      write(*,*) 
      &                 '*ERROR reading *EQUATIONF: increase memmpc_'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                else
 !
@@ -283,7 +304,8 @@
                         write(*,*) ' cannot be converted in MPC: all'
                         write(*,*) ' DOFs in the node are used as'
                         write(*,*) ' dependent nodes in other MPCs'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      number=number-1
 !
@@ -309,7 +331,8 @@
                      if(mpcfree.eq.0) then
                         write(*,*) 
      &                    '*ERROR reading *EQUATIONF: increase memmpc_'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                   enddo
                endif

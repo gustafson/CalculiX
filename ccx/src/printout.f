@@ -1,6 +1,6 @@
 
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -50,6 +50,13 @@
      &  trab(7,*),orab(7,*),vold(0:mi(2),*),enerkintot,thicke(mi(3),*),
      &  eme(6,mi(1),*),prop(*),veold(0:mi(2),*),xload(2,*)
 !
+      intent(in) set,nset,istartset,iendset,ialset,nprint,
+     &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eei,xstate,ener,
+     &  mi,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
+     &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
+     &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname,
+     &  nelemload,nload,sideload,xload
+!
       mt=mi(2)+1
 !
 !     interpolation in the original nodes of 1d and 2d elements
@@ -62,7 +69,7 @@
                cflag=' '
                force=.false.
                call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
-     &              ne,cflag,co,vold,force,mi)
+     &              ne,cflag,co,vold,force,mi,ielprop,prop)
             endif
             exit
           endif
@@ -74,7 +81,7 @@
                cflag=' '
                force=.false.
                call map3dto1d2d(t1,ipkon,inum,kon,lakon,nfield,nk,
-     &              ne,cflag,co,vold,force,mi)
+     &              ne,cflag,co,vold,force,mi,ielprop,prop)
             endif
             exit
           endif
@@ -86,7 +93,7 @@
                cflag=' '
                force=.true.
                call map3dto1d2d(fn,ipkon,inum,kon,lakon,nfield,nk,
-     &              ne,cflag,co,vold,force,mi)
+     &              ne,cflag,co,vold,force,mi,ielprop,prop)
             endif
             exit
           endif
@@ -403,7 +410,6 @@
 !     
 !     printing the data
 !     
-            
             volumetot=0.d0
             bhetot=0.d0
             energytot=0.d0

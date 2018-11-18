@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
       subroutine tee(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
-     &     iaxial)
+     &     iaxial,iplausi)
 !
 !     A tee split element(zeta calculation according to Idel'chik)
 !     Written by Yavor Dobrev
@@ -69,7 +69,7 @@
 !     The middle node of the previous element
      &nodem1,
 !     0 if a residual is to be calculated, 1 for derivatives
-     &ider,chan_num,icase,iaxial
+     &ider,chan_num,icase,iaxial,iplausi
 !
       real*8 
 !     Array with the properties of all elements
@@ -107,6 +107,12 @@
      &xflow1,
 !     Mass flow in the current element(same as xflow)
      &xflow2,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time
+!
+      intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,ielprop,prop,iflag,v,cp,r,physcon,set,mi,ttime,time,
+     &     iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi,ider
 !
       index=ielprop(nelem)
 !
@@ -296,7 +302,7 @@
      &        ' to node ', node2,':   air massflow rate=' ,xflow
 !     
          write(1,56)'       Inlet node ',node1,':    Tt1= ',Tt1,
-     &        ' , Ts1= ',Ts0,' , Pt1= ',Pt1,
+     &        ' , Ts1= ',Ts0,' , Pt1= ',pt1,
      &        ', M1= ',M1
          write(1,*)'             Element ',nelem,lakon(nelem)
      &        ,', Branch ',chan_num
@@ -312,7 +318,7 @@
      &        Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)
 !     
          write(1,56)'      Outlet node ',node2,':   Tt2= ',Tt2,
-     &        ' , Ts2= ',Ts2,' , Pt2= ',Pt2,
+     &        ' , Ts2= ',Ts2,' , Pt2= ',pt2,
      &        ', M2= ',M2
       endif
 !     

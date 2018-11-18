@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,6 +37,7 @@ c$omp do
          t1l=vel(i,0)
          imat=ielmat(1,i)
          vel(i,5)=vel(i,4)/(shcon(3,1,imat)*t1l)
+c         write(*,*) 'calcrhoelcomp ',i,vel(i,4),shcon(3,1,imat),t1l
       enddo
 c$omp end do
 c$omp end parallel

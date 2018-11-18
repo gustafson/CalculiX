@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine clearances(inpc,textpart,tieset,istat,n,iline,
-     &           ipol,inl,ipoinp,inp,ntie,ipoinpc,istep,tietol,irstrt)
+     &           ipol,inl,ipoinp,inp,ntie,ipoinpc,istep,tietol,irstrt,
+     &           ier)
 !
 !     reading the input deck: *CLEARANCE
 !
@@ -29,15 +30,17 @@
       character*81 tieset(3,*)
       character*132 textpart(16),master,slave
 !
-      integer istat,n,i,j,key,ipos,iline,ipol,inl,ipoinp(2,*),irstrt,
-     &  inp(3,*),ntie,ipoinpc(0:*),iposslave,iposmaster,itie,istep
+      integer istat,n,i,j,key,ipos,iline,ipol,inl,ipoinp(2,*),irstrt(*),
+     &  inp(3,*),ntie,ipoinpc(0:*),iposslave,iposmaster,itie,istep,
+     &  ier
 !
       real*8 tietol(3,*),value
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *CLEARANCE: *CLEARANCE should be'
          write(*,*) '       placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       contactpair=.false.
@@ -85,9 +88,10 @@
       enddo
 !
       if(i.gt.ntie) then
-         write(*,*) '*ERROR in clearances: no such contact pair'
+         write(*,*) '*ERROR reading *CLEARANCE: no such contact pair'
          call inputerror(inpc,ipoinpc,iline,
-     &"*CLEARANCE%")
+     &        "*CLEARANCE%",ier)
+         return
       endif
       tietol(3,i)=value
 !

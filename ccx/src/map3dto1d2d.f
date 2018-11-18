@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,
-     &  ne,cflag,co,vold,force,mi)
+     &  ne,cflag,co,vold,force,mi,ielprop,prop)
 !
 !     interpolates 3d field nodal values to 1d/2d nodal locations
 !
@@ -34,11 +34,16 @@
       integer ipkon(*),inum(*),kon(*),ne,indexe,nfield,nk,i,j,k,l,m,
      &  node3(8,3),node6(3,6),node8(3,8),node2d,node3d,indexe2d,ne1d2d,
      &  node3m(8,3),node(8),m1,m2,nodea,nodeb,nodec,iflag,mi(*),jmax,
-     &  jinc,nope
+     &  jinc,nope,mint3d,null,ielprop(*)
 !
       real*8 yn(nfield,*),cg(3),p(3),pcg(3),t(3),xl(3,8),shp(7,8),
-     &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,co(3,*),xs(3,7),
-     &  vold(0:mi(2),*),ratioe(3)
+     &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,ze,co(3,*),xs(3,7),
+     &  vold(0:mi(2),*),ratioe(3),weight,prop(*)
+!
+      intent(in) ipkon,kon,lakon,nfield,nk,
+     &  ne,cflag,co,vold,force,mi
+!
+      intent(inout) yn,inum
 !
       include "gauss.f"
 !
@@ -53,6 +58,8 @@
       data ratioe /0.16666666666667d0,0.66666666666666d0,
      &     0.16666666666667d0/
       data iflag /2/
+!
+      null=0
 !
 !     removing any results in 1d/2d nodes
 !
@@ -372,15 +379,40 @@
                      e3(3)=e1(1)*e2(2)-e2(1)*e1(2)
                   endif
 !
-!                 loop over the integration points (2x2)
+!                 loop over the integration points (2x2 for
+!                 rectangular or circular cross section, else
+!                 section dependent)
 !                  
-                  do l=1,4
-                     xi=gauss2d2(1,l)
-                     et=gauss2d2(2,l)
-                     if(quadratic) then
-                        call shape8q(xi,et,xl,xsj,xs,shp,iflag)
+                  if((lakonl(8:8).eq.'R').or.
+     &               (lakonl(8:8).eq.'C')) then
+                     mint3d=4
+                  else
+                     call beamintscheme(lakonl,mint3d,ielprop(i),
+     &                    prop,null,xi,et,ze,weight)
+!
+!                    mint3d are the 3d integration points. It is
+!                    assumed that along the beam axes 2 integration
+!                    points are used, i.e. the number of 2d
+!                    integration points is half the number of 3d
+!                    integration points (ze is discarded).
+!
+                     mint3d=mint3d/2
+                  endif
+!
+                  do l=1,mint3d
+                     if(mint3d.eq.4) then
+                        xi=gauss2d2(1,l)
+                        et=gauss2d2(2,l)
+                        weight=1.d0
+                        if(quadratic) then
+                           call shape8q(xi,et,xl,xsj,xs,shp,iflag)
+                        else
+                           call shape4q(xi,et,xl,xsj,xs,shp,iflag)
+                        endif
                      else
-                        call shape4q(xi,et,xl,xsj,xs,shp,iflag)
+                        call beamintscheme(lakonl,mint3d,ielprop(i),
+     &                       prop,l,xi,et,ze,weight)
+                        call shape8q(xi,et,xl,xsj,xs,shp,iflag)
                      endif
 !
 !                    local stress tensor
@@ -404,9 +436,9 @@
 !
 !                    local stress vector on section
 !
-                     t(1)=s(1)*xsj(1)+s(4)*xsj(2)+s(5)*xsj(3)
-                     t(2)=s(4)*xsj(1)+s(2)*xsj(2)+s(6)*xsj(3)
-                     t(3)=s(5)*xsj(1)+s(6)*xsj(2)+s(3)*xsj(3)
+                     t(1)=(s(1)*xsj(1)+s(4)*xsj(2)+s(5)*xsj(3))*weight
+                     t(2)=(s(4)*xsj(1)+s(2)*xsj(2)+s(6)*xsj(3))*weight
+                     t(3)=(s(5)*xsj(1)+s(6)*xsj(2)+s(3)*xsj(3))*weight
 !
 !                    section forces
 !

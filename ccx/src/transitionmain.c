@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                     */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -59,7 +59,7 @@ void transitionmain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
     double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL;
 
     if(*nobject==0){return;}
-    if(strcmp1(&objectset[20],"                    ")!=0){
+    if(strcmp1(&objectset[86],"BOU")==0){
     
        /* prepare for near3d */
     
@@ -111,7 +111,7 @@ void transitionmain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
     
        /* local declaration prevails, if strictly positive */
     
-       envloc = getenv("CCX_NPROC_FILTER");
+       envloc = getenv("CCX_NPROC_SENS");
        if(envloc){
 	  num_cpus=atoi(envloc);
 	  if(num_cpus<0){
@@ -165,8 +165,6 @@ void transitionmain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
                    
     }
        
-    FORTRAN(posttransition,(dgdxglob,nobject,nk,nodedesi,ndesi,objectset));
-                                     
     return;
     
 } 

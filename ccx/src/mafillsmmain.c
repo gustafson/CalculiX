@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -34,7 +34,7 @@ static ITG *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,
     *nshcon1,*ncocon1,*istep1,*iinc1,*coriolis1,*ibody1,*nstate1_,
     *integerglob1,*istartset1,*iendset1,*ialset1,*ntie1,*nasym1,
     *mortar1,*ielprop1,*ne01,num_cpus,*kscale1,*iponoel1,*inoel1,
-    *network1;
+    *network1,*neapar=NULL,*nebpar=NULL;
 
 static double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*cgr1,
     *ad1=NULL,*au1=NULL,*fext1=NULL,*elcon1,*rhcon1,*alcon1,*alzero1,
@@ -77,7 +77,7 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	       ITG *nasym,double *pslavsurf,double *pmastsurf,ITG *mortar,
 	       double *clearini,ITG *ielprop,double *prop,ITG *ne0,
 	       double *fnext,ITG *kscale,ITG *iponoel,ITG *inoel,
-               ITG *network){
+	       ITG *network,ITG *ntrans,ITG *inotr,double *trab){
 
     ITG i,j,mt=mi[1]+1;
       
@@ -137,6 +137,28 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     if(*ne<num_cpus) num_cpus=*ne;
     
     pthread_t tid[num_cpus];
+    
+    /* determining the element bounds in each thread */
+    
+    NNEW(neapar,ITG,num_cpus);
+    NNEW(nebpar,ITG,num_cpus);
+    if((*nasym==0)||(*ithermal>1)){
+
+        /* symmetric mechanical calculations or
+           thermal/thermomechanical calculations:
+           include contact elements (symmetric
+           thermal contributions are not covered by
+           mafillsmas.f) */
+
+	elementcpuload(neapar,nebpar,ne,ipkon,&num_cpus);
+
+    }else{
+
+        /* asymmetric mechanical calculations:
+           do not include contact elements */
+
+	elementcpuload(neapar,nebpar,ne0,ipkon,&num_cpus);
+    }
 
     /* determine nzl */
 
@@ -221,7 +243,7 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     }
     for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
     
-    SFREE(ithread);
+    SFREE(ithread);SFREE(neapar);SFREE(nebpar);
 
     /*      for(i=0;i<num_cpus;i++){
       for(k=i*neq[1];k<i*neq[1]+neq[1];++k){printf("fext=%" ITGFORMAT ",%f\n",k-i*neq[1],fext1[k]);}
@@ -368,8 +390,8 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     /* taking point forces into account in fext */
 
     FORTRAN(mafillsmforc,(nforc,ndirforc,nodeforc,xforc,nactdof,
-			  fext,nmpc,ipompc,nodempc,ikmpc,ilmpc,
-		          coefmpc,mi,rhsi,fnext,nmethod));
+			  fext,ipompc,nodempc,coefmpc,mi,rhsi,fnext,
+                          nmethod,ntrans,inotr,trab,co));
   
   return;
 
@@ -379,7 +401,7 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
 void *mafillsmmt(ITG *i){
 
-    ITG indexad,indexfext,indexadb,nea,neb,nedelta,indexfnext;
+    ITG indexad,indexfext,indexadb,nea,neb,indexfnext;
     long long indexau,indexaub;
 
     indexad=0;
@@ -406,9 +428,8 @@ void *mafillsmmt(ITG *i){
     if(nmethod1[0]==4){
 	indexfnext=*i*(mi1[1]+1)**nk1;
     }
-    
 
-    if((*nasym1==0)||(*ithermal1>1)){
+//    if((*nasym1==0)||(*ithermal1>1)){
 
         /* symmetric mechanical calculations or
            thermal/thermomechanical calculations:
@@ -416,21 +437,23 @@ void *mafillsmmt(ITG *i){
            thermal contributions are not covered by
            mafillsmas.f) */
 
-	nedelta=(ITG)floor(*ne1/(double)num_cpus);
+/*	nedelta=(ITG)floor(*ne1/(double)num_cpus);
 	nea=*i*nedelta+1;
 	neb=(*i+1)*nedelta;
 	if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
-    }else{
+	}else{*/
 
         /* asymmetric mechanical calculations:
            do not include contact elements */
 
-	nedelta=(ITG)floor(*ne01/(double)num_cpus);
+/*	nedelta=(ITG)floor(*ne01/(double)num_cpus);
 	nea=*i*nedelta+1;
 	neb=(*i+1)*nedelta;
 	if((*i==num_cpus-1)&&(neb<*ne01)) neb=*ne01;
-    }
+	}*/
 
+    nea=neapar[*i]+1;
+    neb=nebpar[*i]+1;
 
     FORTRAN(mafillsm,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
 	    xboun1,nboun1,

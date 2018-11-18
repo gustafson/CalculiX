@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
       data fppkrit
      &     /0.47113022d0,0.37968106d0,0.32930492d0,0.29569704d0,
      &      0.27105479d0,0.25191791d0,0.23646609d0,0.22363192d0,
-     &      0.21274011/
+     &      0.21274011d0/
 !
       ppkrit=fppkrit(n)
 !     

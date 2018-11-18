@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine restartwrite(istepnew,nset,nload,nforc, nboun,nk,ne,
      &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mi,
-     &  ntrans,ncs_,namtot_,ncmat_,mpcend,maxlenmpc,
+     &  ntrans,ncs_,namtot,ncmat_,mpcend,maxlenmpc,
      &  ne1d,ne2d,nflow,nlabel,iplas,
      &  nkon,ithermal,nmethod,iperturb,nstate_,nener,set,istartset,
      &  iendset,ialset,co,kon,ipkon,lakon,nodeboun,ndirboun,iamboun,
@@ -35,7 +35,7 @@
      &  ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,output,
      &  physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,t0g,t1g,
      &  nprop,ielprop,prop,mortar,nintpoint,ifacecount,islavsurf,
-     &  pslavsurf,clearini)
+     &  pslavsurf,clearini,irstrt)
 !
 !     writes all information needed for a restart to file
 !
@@ -63,14 +63,14 @@
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
      &  ikboun(*),ilboun(*),ipompc(*),nodempc(*),ikmpc(*),ilmpc(*),
      &  nodeforc(*),ndirforc(*),iamforc(*),ikforc(*),ilforc(*),
-     &  nelemload(*),iamload(*),nelcon(*),nprop,mortar,
+     &  nelemload(*),iamload(*),nelcon(*),nprop,mortar,irstrt(*),
      &  nrhcon(*),nalcon(*),nplicon(*),nplkcon(*),ielorien(*),
      &  inotr(*),nintpoint,ifacecount,islavsurf(*),ielprop(*),
      &  namta(*),iamt1(*),ielmat(*),nodebounold(*),ndirbounold(*),
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),
      &  nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,
      &  nener,iprestr,istepnew,maxlenmpc,mcs,ntie,
-     &  ibody(*),nbody,mt,nslavs
+     &  ibody(*),nbody,mt,nslavs,namtot
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
@@ -90,19 +90,35 @@
          fnrstrt(i:i)=' '
       enddo
 !
-!     check whether the restart file exists and is opened
+      if(irstrt(2).eq.0) then
+!     
+!        check whether the restart file exists and is opened
+!     
+         inquire(FILE=fnrstrt,OPENED=op,err=152)
+!     
+         if(.not.op) then
+            open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
+     &           err=151)
+         endif
+      else
 !
-      inquire(FILE=fnrstrt,OPENED=op,err=152)
+!        overlay mode: store data in a temporary file, close
+!        temparary file after writing and rename temparary file
+!        into .rout file
 !
-      if(.not.op) then
-         open(15,file=fnrstrt,ACCESS='SEQUENTIAL',FORM='UNFORMATTED',
-     &      err=151)
+!     
+!        check whether the restart file exists and is opened
+!     
+         call system("rm -f temporaryrestartfile")
+!     
+         open(15,file="temporaryrestartfile",ACCESS='SEQUENTIAL',
+     &           FORM='UNFORMATTED',err=151)
       endif
 !
       do i=1,80
          version(i:i)=' '
       enddo
-      version(1:20)='Version 2.13'
+      version(1:20)='Version 2.14'
       write(15) version
 !
       write(15)istepnew
@@ -152,7 +168,7 @@
 !     amplitude size
 !
       write(15)nam
-      write(15)namtot_
+      write(15)namtot
 !
 !     print size
 !
@@ -424,10 +440,22 @@
 !
 !     control parameters
 !
-      write(15) (ctrl(i),i=1,39)
+      write(15) (ctrl(i),i=1,52)
       write(15) (qaold(i),i=1,2)
       write(15) output
       write(15) ttime
+!
+!     restart parameters
+!
+      write(15) (irstrt(i),i=1,2)
+!
+!     if overlay mode: rename temporaryrestartfile into
+!     .rout file
+!
+      if(irstrt(2).eq.1) then
+         call system("rm -f "//fnrstrt(1:ipos+4))
+         call system("mv temporaryrestartfile "//fnrstrt(1:ipos+4))
+      endif
 !
       return
 !

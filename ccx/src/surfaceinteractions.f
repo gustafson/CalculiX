@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine surfaceinteractions(inpc,textpart,matname,nmat,nmat_,
      &  irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,nrhcon,ipoinpc,
-     &  imat)
+     &  imat,ier)
 !
 !     reading the input deck: *SURFACE INTERACTION
 !
@@ -28,21 +28,23 @@
       character*80 matname(*)
       character*132 textpart(16)
 !
-      integer nmat,nmat_,istep,istat,n,key,i,irstrt,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),nrhcon(*),ipoinpc(0:*),imat
+      integer nmat,nmat_,istep,istat,n,key,i,irstrt(*),iline,ipol,inl,
+     &  ipoinp(2,*),inp(3,*),nrhcon(*),ipoinpc(0:*),imat,ier
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *SURFACE INTERACTION:'
          write(*,*) '       *SURFACE INTERACTION should be placed'
          write(*,*) '       before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
          write(*,*) 
      &       '*ERROR reading *SURFACE INTERACTION: increase nmat_'
-         call exit(201)
+         ier=1
+         return
       endif
       imat=nmat
 !
@@ -54,7 +56,8 @@
                write(*,*) '       name too long'
                write(*,*) '       (more than 80 characters)'
                write(*,*) '       interaction name:',textpart(i)(1:132)
-               call exit(201)
+               ier=1
+               return
             endif
             exit
          else

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine transformfs(inpc,textpart,trab,ntrans,ntrans_,
      &     set,istartset,iendset,ialset,nset,istep,istat,
      &     n,iline,ipol,inl,ipoinp,inp,ipoinpc,xload,sideload,
-     &     nelemload,idefload,nload,nload_,ne,nam,iamload)
+     &     nelemload,idefload,nload,nload_,ne,nam,iamload,ier)
 !
 !     reading the input deck: *TRANSFORMF
 !
@@ -36,20 +36,22 @@
      &  istartset(*),iendset(*),ialset(*),nset,ipos,iline,ipol,
      &  inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),nelemload(2,*),ne,
      &  nam,nload,l,iamload(*),iamplitude,idefload(*),
-     &  nload_,iset,nelem,ifacel
+     &  nload_,iset,nelem,ifacel,ier
 !
       real*8 xload(2,*),xmagnitude
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR reading *TRANSFORMF: *TRANSFORMF should be'
          write(*,*) '  placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ntrans=ntrans+1
       if(ntrans.gt.ntrans_) then
          write(*,*) '*ERROR reading *TRANSFORMF: increase ntrans_'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ipos=1
@@ -99,14 +101,17 @@
          write(*,*)'*ERROR reading *TRANSFORMF: definition of a'
          write(*,*) '  transformation is not complete'
          call inputerror(inpc,ipoinpc,iline,
-     &"*TRANSFORMF%")
-         call exit(201)
+     &        "*TRANSFORMF%",ier)
+         return
       endif
 !
       do i=1,6
          read(textpart(i)(1:20),'(f20.0)',iostat=istat) trab(i,ntrans)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TRANSFORMF%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*TRANSFORMF%",ier)
+            return
+         endif
       enddo
 !
       label(1:20)='T                   '

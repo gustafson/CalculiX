@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  mpcfree,ikboun,ikmpc,ilmpc,co,labmpc,istat,n,iline,ipol,
      &  inl,ipoinp,inp,ipoinpc,norien,orname,orab,irstrt,ipkon,
      &  kon,lakon,istep,ics,dcs,nk_,nboun_,nodeboun,ndirboun,
-     &  typeboun,ilboun,xboun)
+     &  typeboun,ilboun,xboun,ier)
 !
 !     reading the input deck: *COUPLING in combination with
 !     *KINEMATIC or *DISTRIBUTING
@@ -35,7 +35,7 @@
       character*81 set(*),surfset
       character*132 textpart(16),name
 !
-      integer istartset(*),iendset(*),ialset(*),norien,irstrt,nface,
+      integer istartset(*),iendset(*),ialset(*),norien,irstrt(*),nface,
      &  iorientation,iface,jface,nset,nboun,istat,n,i,j,k,ibounstart,
      &  ibounend,key,nk,ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,
      &  ikboun(*),ikmpc(*),ilmpc(*),ipos,m,node,iline,ipol,inl,nope,
@@ -45,7 +45,7 @@
      &  npt,mint,index1,mpcfreeold,id,idof,iflag,inhomnode,nk_,kk,
      &  irotnode(3),l,index2,indexold(3),indexnew(3),idirold,idirmax,
      &  idir,indexmax,nodeold,node1,nodemax,ndirboun(*),ilboun(*),
-     &  irotnode_kin,idupnode
+     &  irotnode_kin,idupnode,ier
 !
       real*8 coefmpc(*),co(3,*),orab(7,*),dcs(*),areanodal(8),xl2(3,8),
      &  shp2(7,8),xsj2(3),xsj,xi,et,weight,xs2(3,2),area,a(3,3),cgx(3),
@@ -89,10 +89,11 @@
 !
       data iflag /2/
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *COUPLING: *COUPLING'
          write(*,*)'       should be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       label='                    '
@@ -106,12 +107,16 @@
       do i=2,n
          if(textpart(i)(1:8).eq.'REFNODE=') then
             read(textpart(i)(9:18),'(i10)',iostat=istat) irefnode
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*COUPLING%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*COUPLING%",ier)
+               return
+            endif
             if(irefnode.gt.nk) then
                write(*,*) '*ERROR reading *COUPLING: ref node',irefnode
                write(*,*) '       has not been defined'
-               call exit(201)
+               ier=1
+               return
             endif
          else if(textpart(i)(1:8).eq.'SURFACE=') then
             surfset(1:80)=textpart(i)(9:88)
@@ -132,7 +137,8 @@
                   write(*,*) '*ERROR reading *COUPLING:'
                   write(*,*) '       surface ',surfset
                   write(*,*) '       has not yet been defined.' 
-                  call exit(201)
+                  ier=1
+                  return
                endif
             endif
             jsurf=j
@@ -155,8 +161,8 @@
      &        '*ERROR reading *COUPLING: no CONTRAINT NAME given'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
-     &"*COUPLING%")
-         call exit(201)
+     &        "*COUPLING%",ier)
+         return
       endif
 !
       if(orientation.eq.'                    ') then
@@ -170,8 +176,8 @@
      &       '*ERROR reading *COUPLING: nonexistent orientation'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*COUPLING%")
-            call exit(201)
+     &           "*COUPLING%",ier)
+            return
          endif
          iorientation=i
       endif
@@ -300,7 +306,8 @@
          if(nk.gt.nk_) then
             write(*,*) 
      &           '*ERROR reading *KINEMATIC: increase nk_'
-            call exit(201)
+            ier=1
+            return
          endif
          irotnode_kin=nk
          do l=1,3
@@ -317,7 +324,8 @@
             if(nmpc.gt.nmpc_) then
                write(*,*) 
      &              '*ERROR reading *KINEMATIC: increase nmpc_'
-               call exit(201)
+               ier=1
+               return
             endif
 !     
 !           the internal dofs for rotation are 4, 5 and 6
@@ -356,7 +364,8 @@
                if(nk.gt.nk_) then
                   write(*,*) 
      &                 '*ERROR reading *KINEMATIC: increase nk_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                ics(2,m)=nk
                do k=1,3
@@ -381,24 +390,30 @@
             if((istat.lt.0).or.(key.eq.1)) return
 !     
             read(textpart(1)(1:10),'(i10)',iostat=istat) ibounstart
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*KINEMATIC%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*KINEMATIC%",ier)
+               return
+            endif
             if(ibounstart.lt.1) then
                write(*,*) '*ERROR reading *KINEMATIC'
                write(*,*) '       starting degree of freedom cannot'
                write(*,*) '       be less than 1'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*KINEMATIC%")
-               call exit(201)
+     &              "*KINEMATIC%",ier)
+               return
             endif
 !     
             if(textpart(2)(1:1).eq.' ') then
                ibounend=ibounstart
             else
                read(textpart(2)(1:10),'(i10)',iostat=istat) ibounend
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*BOUNDARY%",ier)
+                  return
+               endif
             endif
             if(ibounend.gt.3) then
                write(*,*) '*ERROR reading *KINEMATIC'
@@ -406,16 +421,16 @@
                write(*,*) '       exceed 3'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*KINEMATIC%")
-               call exit(201)
+     &              "*KINEMATIC%",ier)
+               return
             elseif(ibounend.lt.ibounstart) then
                write(*,*) '*ERROR reading *KINEMATIC'
                write(*,*) '       initial degree of freedom cannot'
                write(*,*) '       exceed final degree of freedom'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*KINEMATIC%")
-               call exit(201)
+     &              "*KINEMATIC%",ier)
+               return
             endif
 !
 !           generating the MPCs
@@ -453,7 +468,8 @@
             write(*,*) '       a nodal surface is not allowed'
             write(*,*) '       please use a facial surface on'
             write(*,*) '       the *COUPLING card'
-            call exit(201)
+            ier=1
+            return
          endif
 !
          npt=0
@@ -665,7 +681,8 @@
             if(nk.gt.nk_) then
                write(*,*) 
      &              '*ERROR reading *DISTRIBUTING: increase nk_'
-               call exit(201)
+               ier=1
+               return
             endif
             node=ics(1,m)
             ics(1,m)=nk
@@ -685,7 +702,8 @@
                if(nmpc.gt.nmpc_) then
                   write(*,*) 
      &                 '*ERROR reading *DISTRIBUTING: increase nmpc_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !     
 !              MPC: u(old node)= 
@@ -699,10 +717,11 @@
                call nident(ikmpc,idof,nmpc-1,id)
                if(id.gt.0) then
                   if(ikmpc(id).eq.idof) then
-                     write(*,*) '*ERROR in couplings: dof',k
+                     write(*,*) '*ERROR reading *COUPLING: dof',k
                      write(*,*) '       in node ',node
                      write(*,*) '       was already used'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                endif
                do l=nmpc,id+2,-1
@@ -741,8 +760,9 @@
 !     
             nmpc=nmpc+1
             if(nmpc.gt.nmpc_) then
-               write(*,*) '*ERROR in equations: increase nmpc_'
-               call exit(201)
+               write(*,*) '*ERROR reading *COUPLING: increase nmpc_'
+               ier=1
+               return
             endif
             labmpc(nmpc)='                    '
             ipompc(nmpc)=mpcfree
@@ -783,24 +803,30 @@
             if((istat.lt.0).or.(key.eq.1)) return
 !     
             read(textpart(1)(1:10),'(i10)',iostat=istat) ibounstart
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*KINEMATIC%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*KINEMATIC%",ier)
+               return
+            endif
             if(ibounstart.lt.1) then
                write(*,*) '*ERROR reading *KINEMATIC'
                write(*,*) '       starting degree of freedom cannot'
                write(*,*) '       be less than 1'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*KINEMATIC%")
-               call exit(201)
+     &              "*KINEMATIC%",ier)
+               return
             endif
 !     
             if(textpart(2)(1:1).eq.' ') then
                ibounend=ibounstart
             else
                read(textpart(2)(1:10),'(i10)',iostat=istat) ibounend
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*BOUNDARY%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*BOUNDARY%",ier)
+                  return
+               endif
             endif
 !
             ibounstart=max(4,ibounstart)
@@ -810,8 +836,8 @@
                write(*,*) '       exceed 6'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*DISTRIBUTING%")
-               call exit(201)
+     &              "*DISTRIBUTING%",ier)
+               return
             elseif(ibounend.lt.ibounstart) then
                cycle
             endif
@@ -826,7 +852,8 @@
                      write(*,*) '*ERROR reading *DISTRIBUTING'
                      write(*,*) '       a cylindrical local coordinate'
                      write(*,*) '       system is not allowed'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
 !
                   call transformatrix(orab(1,iorientation),
@@ -840,7 +867,8 @@
                   if(nk.gt.nk_) then
                      write(*,*) 
      &                    '*ERROR reading *DISTRIBUTING: increase nk_'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   irotnode(k)=nk
                   do l=1,3
@@ -858,7 +886,8 @@
                   if(nmpc.gt.nmpc_) then
                      write(*,*) 
      &                 '*ERROR reading *DISTRIBUTING: increase nmpc_'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
 !     
 !                 the internal dofs for rotation are 4, 5 and 7
@@ -893,7 +922,8 @@
                if(nk.gt.nk_) then
                   write(*,*) 
      &               '*ERROR reading *DISTRIBUTING: increase nk_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                inhomnode=nk
 !
@@ -934,7 +964,8 @@ c               enddo
                if(nmpc.gt.nmpc_) then
                   write(*,*) 
      &                 '*ERROR reading *DISTRIBUTING: increase nmpc_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !     
                ipompc(nmpc)=mpcfree
@@ -968,8 +999,9 @@ c               enddo
                call nident(ikboun,idof,nboun,id)
                nboun=nboun+1
                if(nboun.gt.nboun_) then
-                  write(*,*) '*ERROR in usermpc: increase nboun_'
-                  call exit(201)
+                  write(*,*) '*ERROR reading *COUPLING: increase nboun_'
+                  ier=1
+                  return
                endif
                nodeboun(nboun)=inhomnode
                ndirboun(nboun)=k
@@ -1252,8 +1284,8 @@ c               enddo
          write(*,*) '       *DISTRIBUTING keyword'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
-     &"*COUPLING%")
-         call exit(201)
+     &        "*COUPLING%",ier)
+         return
       endif
 !
       return

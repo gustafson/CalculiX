@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  labmpc,nmpc,nmpc_,mpcfree,ikmpc,ilmpc,lakon,ipkon,kon,nk,nk_,
      &  nodeboun,ndirboun,ikboun,ilboun,nboun,nboun_,iperturb,ne_,
      &  ctrl,typeboun,istep,istat,n,iline,ipol,inl,ipoinp,inp,co,
-     &  ipoinpc)
+     &  ipoinpc,ier)
 !
 !     reading the input deck: *RIGID BODY
 !
@@ -40,7 +40,7 @@
      &  indexe,nope,istep,istat,n,irefnode,irotnode,ne_,
      &  j,idof,k,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),
      &  nboun,nboun_,key,iperturb,ipos,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ipoinpc(0:*),jmin,jmax
+     &  inp(3,*),ipoinpc(0:*),jmin,jmax,ier
 !
       real*8 coefmpc(3,*),ctrl(*),co(3,*)
 !
@@ -51,7 +51,8 @@
          write(*,*) 
      &     '*ERROR reading *RIGID BODY: *RIGID BODY should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     the *RIGID BODY option implies a nonlinear geometric 
@@ -60,7 +61,8 @@
       if(iperturb.eq.1) then
          write(*,*) '*ERROR reading *RIGID BODY: the *RIGID BODY option'
          write(*,*) '       cannot be used in a perturbation step'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       elset='
@@ -79,7 +81,8 @@
             else
                write(*,*) '*ERROR reading *RIGID BODY: either NSET or'
                write(*,*) '       ELSET can be specified, not both'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:8).eq.'PINNSET=') then
             if(elset(1:1).eq.' ') then
@@ -89,7 +92,8 @@
             else
                write(*,*) '*ERROR reading *RIGID BODY: either NSET or'
                write(*,*) '       ELSET can be specified, not both'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:5).eq.'NSET=') then
             if(elset(1:1).eq.' ') then
@@ -99,27 +103,36 @@
             else
                write(*,*) '*ERROR reading *RIGID BODY: either NSET or'
                write(*,*) '       ELSET can be specified, not both'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:8).eq.'REFNODE=') then
             read(textpart(i)(9:18),'(i10)',iostat=istat) irefnode
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RIGID BODY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RIGID BODY%",ier)
+               return
+            endif
             if(irefnode.gt.nk) then
                write(*,*) '*ERROR reading *RIGID BODY: ref node',
      &           irefnode
                write(*,*) '       has not been defined'
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:8).eq.'ROTNODE=') then
             read(textpart(i)(9:18),'(i10)',iostat=istat) irotnode
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*RIGID BODY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*RIGID BODY%",ier)
+               return
+            endif
             if(irotnode.gt.nk) then
                write(*,*) '*ERROR reading *RIGID BODY: rot node',
      &             irotnode
                write(*,*) '       has not been defined'
-               call exit(201)
+               ier=1
+               return
             endif
          else
             write(*,*) 
@@ -186,7 +199,8 @@
          nk=nk+1
          if(nk.gt.nk_) then
             write(*,*) '*ERROR reading *RIGID BODY: increase nk_'
-            call exit(201)
+            ier=1
+            return
          endif
          irefnode=nk
 !
@@ -201,7 +215,8 @@
          nk=nk+1
          if(nk.gt.nk_) then
             write(*,*) '*ERROR reading *RIGID BODY: increase nk_'
-            call exit(201)
+            ier=1
+            return
          endif
          irotnode=nk
       endif
@@ -215,7 +230,8 @@
                write(*,*) '*ERROR reading *RIGID BODY: node ',node
                write(*,*) '       belonging to set ',noset
                write(*,*) '       has not been defined'
-               call exit(201)
+               ier=1
+               return
             endif
             if((node.eq.irefnode).or.(node.eq.irotnode)) cycle
             do j=1,3
@@ -243,7 +259,8 @@
      &           ielement
                write(*,*) '       belonging to set ',elset
                write(*,*) '       has not been defined'
-               call exit(201)
+               ier=1
+               return
             endif
             if(ipkon(ielement).lt.0) cycle
             indexe=ipkon(ielement)

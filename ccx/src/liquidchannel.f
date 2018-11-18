@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !     
       subroutine liquidchannel(node1,node2,nodem,nelem,lakon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,rho,g,co,dvi,numf,mi,ipkon,kon)
+     &     nodef,idirf,df,rho,g,co,dvi,numf,mi,ipkon,kon,iplausi)
 !
 !     open channel for incompressible media
 !
@@ -38,7 +38,8 @@
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,indexup,i,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,mi(*),nsol,
-     &     inv,numf,nodesg,nelemdown,nelemup,node0,kon(*),ipkon(*)
+     &     inv,numf,nodesg,nelemdown,nelemup,node0,kon(*),ipkon(*),
+     &     iplausi
 !      
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),b,d,c,p,
      &     h1,h2,rho,dvi,friction,reynolds,dg,b1,b2,
@@ -51,6 +52,12 @@
      &     dum1dh1,dum2dh2,c1,c2,dbds,dbjdeta,e0,e1,e2,e3,
      &     dyg3dm,dyg4dm,dA3dm,dA4dm,dyg3dh1,dyg4dh2,
      &     dA3dh1,dA4dh2,solreal(3),solimag(3),dist
+!
+      intent(in) node1,node2,nodem,nelem,lakon,nactdog,ielprop,iflag,
+     &     rho,g,co,dvi,mi,ipkon,kon
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi,v,
+     &  prop
 !
 !     iflag=0: check whether all parameters in the element equation
 !              are known => equation is not needed

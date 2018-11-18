@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -104,6 +104,7 @@ c                     write(*,*) 'applyboun bc',ielfa(2,ifa)
                      endif
                   endif
                   jsum=jsum+j
+c                  write(*,*) 'applyboun jsum ',ifa,jsum
 !
                   ifabou(-ielfa(2,ifa)+j)=iboun
                endif
@@ -237,7 +238,7 @@ c               ifabou(indexb+5)=1
          endif
 !
 !        checking for:
-!           - absent boundary conditions
+!           - absent boundary conditions or
 !           - absent velocity boundary conditions without 
 !             sliding conditions
 !        -> zero velocity gradient and zero temperature gradient
@@ -251,6 +252,8 @@ c               ifabou(indexb+5)=1
 !
             ielfa(3,ifa)=-ielfa(3,ifa)
          elseif(ifabou(-ielfa(2,ifa)+5).ne.-1) then
+c            write(*,*) 'applyboun absent ',ifa,ifabou(-ielfa(2,ifa)+5),
+c     &          jsum
 !
 !           no sliding conditions
 !            

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine temploadmodal(amta,namta,nam,ampli,time,ttime,dtime,
      &  xbounold,xboun,xbounact,iamboun,nboun,nodeboun,ndirboun,
-     &  amname)
+     &  amname,reltime)
 !
 !     calculates the SPC boundary conditions at a given time for
 !     a modal dynamic procedure; used to calculate the velocity and
@@ -31,7 +31,7 @@
       integer nam,i,istart,iend,id,namta(3,*),
      &  iamboun(*),nboun,iambouni,nodeboun(*),ndirboun(*)
 !
-      real*8 amta(2,*),ampli(*),time,
+      real*8 amta(2,*),ampli(*),time,reltime,
      &  xbounold(*),xboun(*),xbounact(*),ttime,dtime,reftime
 !
 !     if an amplitude is active, the loading is scaled according to
@@ -82,7 +82,12 @@
             iambouni=0
          endif
          if(iambouni.gt.0) then
-            xbounact(i)=xboun(i)*ampli(iambouni)
+            if(amname(iambouni).eq.'RAMP12357111317') then
+               xbounact(i)=xbounold(i)+
+     &              (xboun(i)-xbounold(i))*reltime
+            else
+               xbounact(i)=xboun(i)*ampli(iambouni)
+            endif
          else
             xbounact(i)=xboun(i)
          endif

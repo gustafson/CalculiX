@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -53,10 +53,10 @@
      &  vold(0:mi(2),*),e1(3),e2(3),t1(3),b(3,3),x(3),y(3),fv1(3),
      &  fv2(3),z(3,3),xi1,xi2,xi3,u(3,3),r(3,3)
 !
-      data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
-      data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
-     &        0.,0.,1.,0.,0.,0.,-1.,0.,0.,
-     &        0.,-1.,0.,1.,0.,0.,0.,0.,0./
+      data d /1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1./
+      data e /0.d0,0.d0,0.d0,0.d0,0.d0,-1.d0,0.d0,1.d0,0.d0,
+     &        0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,-1.d0,0.d0,0.d0,
+     &        0.d0,-1.d0,0.d0,1.d0,0.d0,0.d0,0.d0,0.d0,0.d0/
 !
       label='                    '
       fixed=.false.
@@ -621,7 +621,7 @@ c               vold(1,iexpnode)=alpha
                if(lakon(ielem)(7:7).eq.'L') then
                   dot=a(1,idirref)*xn(1)+a(2,idirref)*xn(2)+
      &                a(3,idirref)*xn(3)
-                  if(dot.gt.0.05) then
+                  if(dot.gt.0.05d0) then
                      write(*,*) '*ERROR in gen3dforc: applied'
                      write(*,*) '       moment in node ',node
                      write(*,*) '       and direction ',idir-1

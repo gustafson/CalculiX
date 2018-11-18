@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
      &  ipoinp,inp,ntie,mcs,lprev,ithermal,rcscg,rcs0cg,zcscg,
      &  zcs0cg,nrcg,nzcg,jcs,kontri,straight,ne,ipkon,kon,
      &  lakon,lcs,ifacetet,inodface,ipoinpc,maxsectors,
-     &  trab,ntrans,ntrans_,jobnamec,vold,cfd,mi,iaxial)
+     &  trab,ntrans,ntrans_,jobnamec,vold,cfd,mi,iaxial,ier)
 !
 !     reading the input deck: *CYCLIC SYMMETRY MODEL
 !
@@ -73,12 +73,12 @@
      &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
      &  ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,id,jfaces,
      &  noden(2),ntrans,ntrans_,cfd,mi(*),ifaceq(8,6),ifacet(6,4),
-     &  ifacew1(4,5),ifacew2(8,5),idof
+     &  ifacew1(4,5),ifacew2(8,5),idof,ier
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &  csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(3,*),cs(17,*),xsectors,
      &  gsectors,x3,y3,z3,phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
-     &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*),
+     &  straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*),rpd,zpd,
      &  vold(0:mi(2),*),calculated_angle,user_angle
 !
 !     nodes per face for hex elements
@@ -117,7 +117,8 @@
          write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
          write(*,*) '       *CYCLIC SYMMETRY MODEL should'
          write(*,*) '       be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       check=.true.
@@ -129,22 +130,34 @@
       do i=2,n
          if(textpart(i)(1:2).eq.'N=') then
             read(textpart(i)(3:22),'(f20.0)',iostat=istat) xsectors
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CYCLIC SYMMETRY MODEL%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CYCLIC SYMMETRY MODEL%",ier)
+               return
+            endif
          elseif(textpart(i)(1:8).eq.'CHECK=NO') then
             check=.false.
          elseif(textpart(i)(1:7).eq.'NGRAPH=') then
             read(textpart(i)(8:27),'(f20.0)',iostat=istat) gsectors
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CYCLIC SYMMETRY MODEL%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CYCLIC SYMMETRY MODEL%",ier)
+               return
+            endif
          elseif(textpart(i)(1:4).eq.'TIE=') then
             read(textpart(i)(5:84),'(a80)',iostat=istat) tie
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CYCLIC SYMMETRY MODEL%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CYCLIC SYMMETRY MODEL%",ier)
+               return
+            endif
          elseif(textpart(i)(1:6).eq.'ELSET=') then
             read(textpart(i)(7:86),'(a80)',iostat=istat) elset
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CYCLIC SYMMETRY MODEL%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CYCLIC SYMMETRY MODEL%",ier)
+               return
+            endif
             elset(81:81)=' '
             ipos=index(elset,' ')
             elset(ipos:ipos)='E'
@@ -164,7 +177,8 @@
          write(*,*) '       the required parameter N'
          write(*,*) '       is lacking on the *CYCLIC SYMMETRY MODEL'
          write(*,*) '       keyword card or has a value <=0'
-         call exit(201)
+         ier=1
+         return
       endif
       if(gsectors.lt.1) then
          write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
@@ -184,9 +198,9 @@
       maxsectors=max(maxsectors,int(xsectors+0.5d0))
 !
       mcs=mcs+1
-      cs(2,mcs)=-0.5
-      cs(3,mcs)=-0.5
-      cs(14,mcs)=lprev+0.5
+      cs(2,mcs)=-0.5d0
+      cs(3,mcs)=-0.5d0
+      cs(14,mcs)=lprev+0.5d0
 !
 !     determining the tie constraint
 !
@@ -209,7 +223,7 @@
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) 
      &              cs(5+j,mcs)
             enddo
-            cs(17,mcs)=itie+0.5
+            cs(17,mcs)=itie+0.5d0
 !
 !           counting the number of faces on the master side (should be the
 !           same as on the slave side)
@@ -244,7 +258,7 @@
      &              cs(5+j,mcs)
             enddo
             cs(1,mcs)=xsectors
-            cs(17,mcs)=itie+0.5
+            cs(17,mcs)=itie+0.5d0
 !
 !           counting the number of faces on the master side (should be the
 !           same as on the slave side)
@@ -281,13 +295,14 @@
      &                 '*ERROR reading *CYCLIC SYMMETRY MODEL:'
             write(*,*) '       tie constraint is nonexistent'
             call inputerror(inpc,ipoinpc,iline,
-     &"*CYCLIC SYMMETRY MODEL%")
+     &           "*CYCLIC SYMMETRY MODEL%",ier)
+            return
          endif
       endif
 !
       cs(1,mcs)=xsectors
-      cs(5,mcs)=gsectors+0.5
-      cs(17,mcs)=itie+0.5
+      cs(5,mcs)=gsectors+0.5d0
+      cs(17,mcs)=itie+0.5d0
       depset=tieset(2,itie)
       indepset=tieset(3,itie)
       tolloc=tietol(1,itie)
@@ -312,10 +327,11 @@
             write(*,*) '       element set does not'
             write(*,*) '       exist; '
             call inputerror(inpc,ipoinpc,iline,
-     &"*CYCLIC SYMMETRY MODEL%")
+     &           "*CYCLIC SYMMETRY MODEL%",ier)
+            return
          endif
       endif
-      cs(13,mcs)=iset+0.5
+      cs(13,mcs)=iset+0.5d0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
@@ -324,21 +340,26 @@
          write(*,*)'*ERROR reading *CYCLIC SYMMETRY MODEL:'
          write(*,*) '      definition of the cyclic'
          write(*,*) '      symmetry model is not complete'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ntrans=ntrans+1
       if(ntrans.gt.ntrans_) then
          write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
          write(*,*) '       increase ntrans_'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=1,6
          read(textpart(i)(1:20),'(f20.0)',iostat=istat) csab(i)
          trab(i,ntrans)=csab(i)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CYCLIC SYMMETRY MODEL%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*CYCLIC SYMMETRY MODEL%",ier)
+            return
+         endif
       enddo
 !
 !     cyclic coordinate system
@@ -368,7 +389,8 @@
             write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
             write(*,*) '       surface ',depset
             write(*,*) '       has not yet been defined.' 
-            call exit(201)
+            ier=1
+            return
          endif
       endif
       jdep=i
@@ -389,7 +411,8 @@
             write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
             write(*,*) '       surface ',indepset
             write(*,*) '       has not yet been defined.' 
-            call exit(201)
+            ier=1
+            return
          endif
       endif
       jindep=i
@@ -476,7 +499,8 @@
                   if(lprev+l.gt.ncs_) then
                      write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
                      write(*,*) '       increase ncs_'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   do k=l,id+2,-1
                      ics(k)=ics(k-1)
@@ -498,7 +522,8 @@
                   if(lprev+l.gt.ncs_) then
                      write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
                      write(*,*) '       increase ncs_'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   node =ialset(j)
 !     
@@ -522,7 +547,8 @@
                if(l.gt.ncs_) then
                   write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
                   write(*,*) '       increase ncs_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                node=k
 !
@@ -603,6 +629,7 @@
 !
       calcangle=.false.
       nodesonaxis=.false.
+      phi=0.d0
 !
       nneigh=1
       loop1: do i=istartset(jdep),iendset(jdep)
@@ -666,23 +693,23 @@
                   endif
                   noded=ialset(i)
                endif
-c            enddo
 !
                xap=co(1,noded)-csab(1)
                yap=co(2,noded)-csab(2)
                zap=co(3,noded)-csab(3)
 !     
-               zp=xap*xn+yap*yn+zap*zn
-               rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
+               zpd=xap*xn+yap*yn+zap*zn
+               rpd=dsqrt((xap-zpd*xn)**2+(yap-zpd*yn)**2+
+     &                   (zap-zpd*zn)**2)
 !     
-               if((.not.calcangle).and.(rp.gt.1.d-10)) then
-                  x2=(xap-zp*xn)/rp
-                  y2=(yap-zp*yn)/rp
-                  z2=(zap-zp*zn)/rp
+               if((.not.calcangle).and.(rpd.gt.1.d-10)) then
+                  x2=(xap-zpd*xn)/rpd
+                  y2=(yap-zpd*yn)/rpd
+                  z2=(zap-zpd*zn)/rpd
                endif
 !
-               call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rp,zp,ncsnodes,node,
-     &            nneigh)
+               call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rpd,zpd,ncsnodes,
+     &            node,nneigh)
 !
                nodei=ics(node)
                if(nodei.lt.0) cycle
@@ -699,7 +726,12 @@ c            enddo
                zp=xap*xn+yap*yn+zap*zn
                rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
 !     
-               if((.not.calcangle).and.(rp.gt.1.d-10)) then
+!              in order for the angle to be correct the axial position
+!              of the dependent and independent node must be the same
+!              (important for non-coincident meshes)
+!
+               if((.not.calcangle).and.(rp.gt.1.d-10).and.
+     &            (dabs(zp-zpd).lt.1.d-10)) then
                   x3=(xap-zp*xn)/rp
                   y3=(yap-zp*yn)/rp
                   z3=(zap-zp*zn)/rp
@@ -723,7 +755,8 @@ c            enddo
      &                       user_angle*57.29577951d0
                         write(*,*)'       angle based on the geometry:',
      &                       calculated_angle*57.29577951d0
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                   else
                      write(*,*) '*INFO in cyclicsymmetrymodels: angle'
@@ -748,17 +781,18 @@ c            enddo
                yap=co(2,noded)-csab(2)
                zap=co(3,noded)-csab(3)
 !     
-               zp=xap*xn+yap*yn+zap*zn
-               rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
+               zpd=xap*xn+yap*yn+zap*zn
+               rpd=dsqrt((xap-zpd*xn)**2+(yap-zpd*yn)**2+
+     &                   (zap-zpd*zn)**2)
 !     
-               if((.not.calcangle).and.(rp.gt.1.d-10)) then
-                  x2=(xap-zp*xn)/rp
-                  y2=(yap-zp*yn)/rp
-                  z2=(zap-zp*zn)/rp
+               if((.not.calcangle).and.(rpd.gt.1.d-10)) then
+                  x2=(xap-zpd*xn)/rpd
+                  y2=(yap-zpd*yn)/rpd
+                  z2=(zap-zpd*zn)/rpd
                endif
 !     
-               call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rp,zp,ncsnodes,node,
-     &              nneigh)
+               call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rpd,zpd,ncsnodes,
+     &              node,nneigh)
 !     
                nodei=ics(node)
                if(nodei.lt.0) cycle
@@ -775,7 +809,12 @@ c            enddo
                zp=xap*xn+yap*yn+zap*zn
                rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
 !     
-               if((.not.calcangle).and.(rp.gt.1.d-10)) then
+!              in order for the angle to be correct the axial position
+!              of the dependent and independent node must be the same
+!              (important for non-coincident meshes)
+!
+               if((.not.calcangle).and.(rp.gt.1.d-10).and.
+     &            (dabs(zp-zpd).lt.1.d-10)) then
                   x3=(xap-zp*xn)/rp
                   y3=(yap-zp*yn)/rp
                   z3=(zap-zp*zn)/rp
@@ -799,7 +838,8 @@ c            enddo
      &                    user_angle*57.29577951d0
                         write(*,*) '       angle based on the geometry:'
      &                       ,calculated_angle*57.29577951d0
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                   endif
                   calcangle=.true.
@@ -809,6 +849,16 @@ c            enddo
          endif
 !
       enddo loop1
+!
+      if(phi.eq.0.d0) then
+         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL'
+         write(*,*) '       sector angle cannot be determined:'
+         write(*,*) '       there exists no dependent node'
+         write(*,*) '       with the same axial position as'
+         write(*,*) '       an independent node'
+         ier=1
+         return
+      endif
 !
 !     allocating a node of the depset to each node of the indepset 
 !
@@ -889,7 +939,6 @@ c            enddo
                   endif
                   noded=ialset(i)
                endif
-c            enddo
 !
 !           check whether cyclic MPC's have already been
 !           generated (e.g. for nodes belonging to several
@@ -955,7 +1004,8 @@ c            enddo
          write(*,*) '        Failed nodes are stored in file '
          write(*,*) '        WarnNodeMissCyclicSymmetry.nam'
 c     next line was commented on 19/04/2012
-c         call exit(201)
+c         ier=1
+c         return
       endif
 !
 !     sorting ics
@@ -963,7 +1013,7 @@ c         call exit(201)
 !
       kflag=1
       call isortii(ics,nr,ncsnodes,kflag)
-      cs(4,mcs)=ncsnodes+0.5
+      cs(4,mcs)=ncsnodes+0.5d0
       lprev=lprev+ncsnodes
 !
 !     check orientation of (xn,yn,zn) (important for copying of base

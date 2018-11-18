@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine fluidconstantss(inpc,textpart,shcon,nshcon,
      &  nmat,ntmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc)
+     &  inp,ipoinpc,ier)
 !
 !     reading the input deck: *FLUID CONSTANTS
 !
@@ -28,29 +28,31 @@
       character*132 textpart(16)
 !
       integer nshcon(*),nmat,ntmat,ntmat_,istep,istat,n,ipoinpc(0:*),
-     &  key,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),i
+     &  key,irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),i,ier
 !
       real*8 shcon(0:3,ntmat_,*)
 !
       ntmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*)
-     &     '*ERROR in fluidconstants: *FLUID CONSTANTS should be'
+     &     '*ERROR reading *FLUID CONSTANTS: *FLUID CONSTANTS should be'
          write(*,*) '  placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*)
-     &      '*ERROR in fluidconstants: *FLUID CONSTANTS should be'
+     &     '*ERROR reading *FLUID CONSTANTS: *FLUID CONSTANTS should be'
          write(*,*) '  preceded by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
          write(*,*) 
-     &        '*WARNING in fluidconstants: parameter not recognized:'
+     &    '*WARNING reading *FLUID CONSTANTS: parameter not recognized:'
          write(*,*) '         ',
      &        textpart(i)(1:index(textpart(i),' ')-1)
          call inputwarning(inpc,ipoinpc,iline,
@@ -64,21 +66,32 @@
          ntmat=ntmat+1
          nshcon(nmat)=ntmat
          if(ntmat.gt.ntmat_) then
-            write(*,*) '*ERROR in fluidconstants: increase ntmat_'
-            call exit(201)
+            write(*,*) 
+     &          '*ERROR reading *FLUID CONSTANTS: increase ntmat_'
+            ier=1
+            return
          endif
          read(textpart(1)(1:20),'(f20.0)',iostat=istat) 
      &        shcon(1,ntmat,nmat)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID CONSTANTS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*FLUID CONSTANTS%",ier)
+            return
+         endif
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) 
      &        shcon(2,ntmat,nmat)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID CONSTANTS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*FLUID CONSTANTS%",ier)
+            return
+         endif
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) 
      &        shcon(0,ntmat,nmat)
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID CONSTANTS%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*FLUID CONSTANTS%",ier)
+            return
+         endif
       enddo
 !
       return

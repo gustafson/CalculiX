@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine temperatures(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,t0,t1,nk,ithermal,iamt1,amname,nam,inoelfree,nk_,
      &  nmethod,temp_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  nam_,namtot_,namta,amta,ipoinpc,t1g)
+     &  nam_,namtot_,namta,amta,ipoinpc,t1g,iamplitudedefault,
+     &  namtot,ier)
 !
 !     reading the input deck: *TEMPERATURE
 !
@@ -35,12 +36,13 @@
       integer istartset(*),iendset(*),ialset(*),iamt1(*),nmethod,
      &  nset,nk,ithermal,istep,istat,n,key,i,j,k,l,nam,ipoinpc(0:*),
      &  iamplitude,ipos,inoelfree,nk_,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay,iglobstep
+     &  inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay,iglobstep,
+     &  iamplitudedefault,ier
 !
       real*8 t0(*),t1(*),temperature,tempgrad1,tempgrad2,amta(2,*),
      &  t1g(2,*)
 !
-      iamplitude=0
+      iamplitude=iamplitudedefault
       idelay=0
       user=.false.
       iglobstep=0
@@ -51,20 +53,23 @@
          write(*,*) '       loading is not allowed in a linear'
          write(*,*) '       buckling step; perform a static'
          write(*,*) '       nonlinear calculation instead'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *TEMPERATURE: *TEMPERATURE'
          write(*,*) '  should only be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(ithermal.ne.1) then
          write(*,*) '*ERROR reading *TEMPERATURE: a *TEMPERATURE'
          write(*,*) '  card is detected but no thermal'
          write(*,*) '  *INITIAL CONDITIONS are given'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -85,8 +90,8 @@
      &           '*ERROR reading *TEMPERATURE: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
-               call exit(201)
+     &              "*TEMPERATURE%",ier)
+               return
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
@@ -96,15 +101,16 @@
                write(*,*) '       DELAY is used twice in the same'
                write(*,*) '       keyword; '
                call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
-               call exit(201)
+     &              "*TEMPERATURE%",ier)
+               return
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
                write(*,*) '*ERROR reading *TEMPERATURE: increase nam_'
-               call exit(201)
+               ier=1
+               return
             endif
             amname(nam)='
      &                                 '
@@ -112,34 +118,43 @@
                write(*,*) 
      &           '*ERROR reading *TEMPERATURE: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
-            if(nam.eq.1) then
-               namtot=0
-            else
-               namtot=namta(2,nam-1)
-            endif
+c            if(nam.eq.1) then
+c               namtot=0
+c            else
+c               namtot=namta(2,nam-1)
+c            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR temperatures: increase namtot_'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
+c            call reorderampl(amname,namta,nam)
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*TEMPERATURE%",ier)
+               return
+            endif
          elseif(textpart(i)(1:4).eq.'USER') then
             user=.true.
          elseif(textpart(i)(1:8).eq.'SUBMODEL') then
             submodel=.true.
          elseif(textpart(i)(1:5).eq.'STEP=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) iglobstep
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*TEMPERATURE%",ier)
+               return
+            endif
          else
             write(*,*) 
      &        '*WARNING reading *TEMPERATURE: parameter not recognized:'
@@ -156,7 +171,8 @@
          write(*,*) '*ERROR reading *TEMPERATURE: no global step'
          write(*,*) '       step specified for the submodel'
          call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
+     &        "*TEMPERATURE%",ier)
+         return
       endif
 !
 !     storing the step for submodels in iamboun
@@ -183,8 +199,11 @@
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) return
          read(textpart(2)(1:20),'(f20.0)',iostat=istat) temperature
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*TEMPERATURE%",ier)
+            return
+         endif
 !
 !        dummy temperature consisting of the first primes
 !
@@ -196,13 +215,19 @@
             tempgrad2=0.d0
             if(n.gt.2) then
                read(textpart(3)(1:20),'(f20.0)',iostat=istat) tempgrad1
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*TEMPERATURE%",ier)
+                  return
+               endif
             endif
             if(n.gt.3) then
                read(textpart(4)(1:20),'(f20.0)',iostat=istat) tempgrad2
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*TEMPERATURE%",ier)
+                  return
+               endif
             endif
          endif
 !            
@@ -233,8 +258,8 @@
                write(*,*) '*ERROR reading *TEMPERATURE: node set ',noset
                write(*,*) '       has not yet been defined. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
-               call exit(201)
+     &              "*TEMPERATURE%",ier)
+               return
             endif
             do j=istartset(i),iendset(i)
                if(ialset(j).gt.0) then

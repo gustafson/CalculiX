@@ -1,5 +1,6 @@
+
 ========
-LOG-BOOK Version 2.13
+LOG-BOOK Version 2.14
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -3158,3 +3159,331 @@ Dec 2002        - started to work on single crystal plasticity
                - looked into crack propagation light
 
   3 Oct 2017   - removed an error in writeinput.f and allocation.f
+
+  8 Oct 2017   - posted version 2.13
+
+ 11 Oct 2017   - updated the calculation of sensitivities including
+                 constraints
+               - started a detailed description of the sensitivity
+                 code
+
+ 19 Oct 2017   - divided the element range for parallel calculations
+                 evenly among the active elements
+               - corrected an error in expand.c
+               - updated the temperature error estimator
+               - updated parameter description in resultsmech_u1.f
+
+ 20 Oct 2017   - continued to clean up sensitivity.c and its
+                 subroutines
+               - continued program description of sensitivity.c in the
+                 documentation
+
+ 27 Oct 2017   - removed an error in frd.c regarding the temperature
+                 error estimator
+               - introduced nconstraint in sensitivity.c
+               - used consistently the environment variable CCX_NPROC_SENS
+                 for parallel sensitivity calculations
+               - removed an error in forcadd.f
+               - checked the existence of the input sets in 
+                 objectives.f and constraints.f
+               - worked on the documentation of sensitivity calculations
+               - unified nopedesi in the sensitivity routines
+
+ 29 Oct 2017   - removed an error in gen3dconnect.f (original nodes have
+                 to be fixed in z for plane stress/strain/axi elements
+
+ 30 Oct 2017   - coded the CFD-Approach of Moukalled et al. for 
+                 incompressible laminar flow
+
+ 1 Nov 2017    - coded an non-orthogonal loop for the pressure correction
+                 in CFD-calculations (needed for example cylfine.inp)
+                             
+ 3 Nov 2017    - finished description of the post-sensitivity functions
+               - reduced the dimension of field dfl for sensitivity
+                 calculations
+               - wrote mastruct and mafill for second order sensitivity
+                 calculations
+
+ 5 Nov 2017    - removed an error in pretensionsections.f: linear 2d
+                 elements were not covered
+
+ 8 Nov 2017    - coded the real and imaginary part of the energy for
+                 cyclic symmetric frequency calculations (calcenergycs.f)
+               - implemented the changes by O. Bernhardi regarding
+                 the mass matrix for C3D8I-elements: important for
+                 dynamic and frequency calculations
+
+ 11 Nov 2017   - corrected implementation of energy in arpackcs.c
+            
+ 12 Nov 2017   - changed (2*j*neqh) into (long long)(2*j*neqh) in expand.c
+               - removed resetting the load to zero in each *modal dynamic
+                 step
+
+ 17 Nov 2017   - introduced a check on whether the Poission coefficient is
+                 less than 0.5d0 and the Young modulus larger than 0.d0
+               - coded the second order derivative of the Kreisselmeier-
+                 Steinhauser stress
+               - changed Pardiso interface: no more than one rhs can be
+                 solved at the same time
+               - provided a means for writing and reading the "raw"
+                 sensitivities to file (READ and WRITE on the *SENSITIVITY
+                 card)
+
+ 20 Nov 2017   - created the possibility to read the "raw" sensitivities
+                 from file
+
+ 24 Nov 2017   - introduced a check on the size of the argument in the
+                 exponential function of the Kreisselmeier-Steinhauser
+                 function
+               - set calcul_cauchy=0 for linear geometric calculations
+                 in resultsstr.c and stress_sen.c
+               - storing the actual boundary conditions in vold in routine
+                 tempload does not work; maybe local change in radflowload
+                 works.
+               - implemented changes by O. Bernhardi for dynamic calculations
+                 with the C3D8I-element
+               - corrected an error related to mass and pressure equations in
+                 networks (envtemp.f).
+
+ 25 Nov 2017   - changed checkconvergence.c: in thermal calculations at
+                 least two iterations are forced.
+
+ 1 Dec 2017    - section of "S" on the "EL FILE" or "ELEMENT OUTPUT" card
+                 automatically triggers "ERR". Can only be avoided by 
+                 subsequently selecting "NOE".
+               - added Tt2 and T2 as arguments to two_phase_flow.f
+                 (used in proprietary routines)
+               - introduced subroutine calcgeomelemnet to calculate the
+                 cross section for flexible and user defined network elements
+               - created subroutine calcheatnet to allow for a heat input
+                 due to centrifugal loading in user defined network elements
+               - accelerated the treatment of OP=NEW on *BOUNDARY
+
+ 2 Dec 2017    - implemented the calculation of the normal on a pre-tension
+                 surface
+
+ 3 Dec 2017    - worked on compressible CFD
+ 
+ 8 Dec 2017    - introduced the parameter iplausi in the network element 
+                 routines
+               - introduced absolute convergence criteria in checkconvnet.c
+               - inserted a warning in case not all temperatures at inlets and
+                 outlets are defined by a boundary condition
+               - wrote the CalculiX version in the viewfactor file;
+                 checking of the version at while reading this file
+               - replaced single precision constants to double precision
+                 constants throughout
+               - changed the treatment of forces in a cylindrical system: the
+                 transformation is performed in mafillsmforc at the time of
+                 the force application, not in forcadd (needed for different
+                 amplitudes in different direction in local coordinates).
+
+ 15 Dec 2017   - removed xforc, nforc from some subroutine headers (were not
+                 needed)
+               - made modifications to allow for local coordinate treatment
+                 of concentrated forces in addizdofcload.f, expand.c and rhs.f
+               - prepared gencontelem_f2f for openmp application
+               - inserted openmp statements in gencontelem_f2f and tested
+                 the parallellization
+               - corrected an output error for frequency calculations with
+                 perturbation: temperature was not correctly stored
+                 (arpack.c and arpackcs.c)
+               - started to work on *MODEL CHANGE,ADD=STRAIN FREE
+
+ 17 Jan 2018   - corrected an error concerning "MASS" in frd.c
+               - fineshed *MODEL CHANGE,ADD=STRAIN FREE
+	       - checked for negative pressures in frictionheating.f
+               - changed gen3dboun.f: for beam elements and rotational
+                 boundary conditions knots are always creaded (no
+                 mean rotation MPC)
+               - fixed the midnodes in quadratic beam cross sections subject
+                 do moments (bending,torque) (gen3dboun.f)
+               - coded the umat_undo_nlgeom_lin_iso_el.f routine
+
+ 19 Jan 2018   - umat_undo_nlgeom_lin_iso_el materials work
+               - worked on the stress target function in sensitivity
+                 analyses (acceleration of the code for large examples
+                 by a factor of 10)
+ 
+ 21 Jan 2018   - corrected the pressure boundary conditions for compressible
+                 flow in mafillpcomp, rhspcomp and correctfluxcomp.f
+
+ 26 Jan 2018   - user defined *boundary and *cload cards are kept from one
+                 step to the next; needed to do a correction for this in
+                 dyna.c and steadystate.c
+               - corrected an error inthe umatht call in thermmodel.f
+               - updated the interface fields of cflux, networkmpc_lhs,
+                 networkmpc_rhs, uboun and utemp.
+
+ 28 Jan 2018   - worked on compressible cfd; bumpsuperfineshallow and
+                 carter10visc seem to work
+
+ 2 Feb 2018    - reformulated field ipoinp in CalculiX.c as allocatable
+                 field
+               - wrote the user subroutine fricheat.f
+               - updated the documentation for the STRAIN FREE activation of
+                 elements with *MODEL CHANGE
+               - introduced AMPLITUDE=RAMP and AMPLITUDE=STEP on the
+                 *STEP card
+
+ 9 Feb 2018    - coded *STRAIN INCREASE
+               - added test example networkmpc2.inp illustrating the
+                 connection of two networks with a linear mpc
+               - updated the documention on output variables
+               - made a correction in linstatic.c for sensitivity
+                 calculations of Green functions after a nonlinear
+                 geometric static step
+
+ 16 Feb 2018   - added pressure and coords as interface variables in
+                 fricheat.f
+               - removed shape7tri and shape9q from all routines
+               - introduced defaults for K and stick slope for
+                 *SURFACE BEHAVIOR and *FRICTION
+               - corrected an error related to AMPLITUDE=RAMP on the
+                 *STEP card
+               - made some changes in readview.f
+               - replace the superfluous iloc by igauss in some routines
+               - made some convergence check changes in checkconvnet.c
+ 
+ 17 Feb 2018   - worked on compressible CFD (SIMPLEC, modified smart)
+               - allowed for specification of the convection scheme and
+                 SIMPLE/SIMPLEC in the input deck
+
+ 23 Feb 2018   - removed some errors related to the STRAIN FREE option
+                 of *MODEL CHANGE in combination with pure thermal
+                 calculations
+               - replaced "SURFACEINTERACTION" by "INTERACTION" in
+                 routine keystart.f and similar routines (taking care
+                 that *MATERIAL is treated before *SURFACE INTERACTION)
+               - coded PRESSURE-OVERCLOSURE=HARD and PRESSURE-OVERCLOSURE
+                 =LINEAR without any specified constants
+               - included routine objective_stress_tot.f
+ 
+ 27 Feb 2018   - changes mafillp.f and rshp.f: slanted angles work
+                 now for incompressible CFD
+
+ 28 Feb 2018   - made similar changes to mafillpcomp.f and rhspcomp.f
+                 no significant effect (diffusion is subdominant)
+
+ 2 Mar 2018    - corrected the geometry based angle calculation in
+                 cyclicsymmetrymodels.f
+               - created also a sta-file for linear static calculations
+               - defined some examples for membrane elements; updated
+                 the documentation
+               - changed controlss.f such that in the absence of input
+                 the defaults are taken (instead of 0).
+               - worked on automatic meshing
+
+ 3 Mar 2018    - continued work on automatic meshing
+               - wedge elements at the exit of a CFD-domain cause
+                 problems because of the indeterminate zero-gradient
+                 direction; a row of hex elements solves the problem
+
+ 7 Mar 2018    - changed cv into cp in the energy equation for
+                 compressible fluids
+
+ 10 Mar 2018   - reversed the change from 7 Mar 2018: too much viscosity
+                 (agard02 and agard03 example)
+               - replaced deferred correction approach by a direct 
+                 approach (only for modified smart): no significant
+                 effect; rounded isoline corners; worse for agard02
+
+ 12 Mar 2018   - reversed last change (reinstalled old version)
+               - removed voldwithmpc from radflowload.c
+               - made a correction in actideactistr.f
+               - made some corrections for the U1-element
+               - removed "LENGTH OF DESCENT GRADIENT VECTOR" from
+                 .dat output (sensitivity analyses)
+               - looked at forceedge.f (tetmesh)
+               - changed 1.e-4 into 1.e-6 in smalldist.f
+
+ 16 Mar 2018   - made a sensitivity update (included the constraints
+                 FIX GROWTH and FIX SHRINKAGE)
+               - worked on tetmesh
+               - zeroing nonactive nodes deactivated in extrapolatecontact.f
+                 (sometimes no contact in nodes, although contact took
+                  place in the neighboring integration points)
+               - corrected the documentation regarding the automatic
+                 triggering of nlgeom for nonlinear materials
+
+ 17 Mar 2018   - used extrapol_ for the total temperature: no significant
+                 change
+               - introduced automatic allocation for edgecheck in tetmesh.c
+ 
+ 19 Mar 2018   - worked on reducing the profile of the matrices for
+                 CFD-calculations
+
+ 23 Mar 2018   - corrected an error in printoutelem.f (kk->jj)
+               - corrected an output inaccuracy in beamgeneralsections.f
+               - started to postpone exit(201) in case of input deck
+                 errors to the end of allocation.f/calinput.f
+               - positive copen-values are not set to zero any more
+               - corrected the calculation of section forces for
+                 hollow beam sections (map3dto1d2d.f)
+               - stored the expansion of 1d/2d elements to standard
+                 output
+
+ 24 Mar 2018   - worked on tetmesh
+               - finished implementation of renumber routine for CFD
+
+ 25 Mar 2018   - renumbering routine leads to longer calculation
+                 times (CFD)
+
+ 29 Mar 2018   - continued to postpone exit(201) in case of input deck
+                 errors to the end of allocation.f/calinput.f
+               - unified the error messages
+
+ 1 Apr 2018    - implemented mgmres.c for CFD: slower! Removed
+
+ 3 Apr 2018    - worked on removing zeros from the lhs CFD-matrix
+               - worked on dividing the global CFD-matrix into
+                 disjunct submatrices; neighbors from different
+                 submatrices are treated explicitly
+
+ 5 Apr 2018    - changed extrapol_vel, extrapol_pel and extrapol_tel:
+                 20 % acceleration of the CFD code
+
+ 6 Apr 2018    - introduced some changes for sensitivity calculations
+               - coded OVERLAY for *RESTART,WRITE: restart file is being
+                 overwritten
+               - started the implementation of *DAMPING,STRUCTURAL=
+               - worked on mesh smoothing
+
+ 7 Apr 2018    - sharpened the tolerance from 1.d-6 to 1.d-12: temperature
+                 calculation seems improved (compressible CFD)
+               - convergence is now detected based on the satisfaction of
+                 the mass, momentum and energy conservation, not on the
+                 change of the solution
+
+ 13 Apr 2018   - finished *DAMPING,STRUCTURAL=
+               - corrected irstrt into irstrt(*) definitions
+               - corrected an error in actideactistr.f
+               - updated the documentation (pre-tension,submodel,friction)
+               - continued mesh smoothing
+
+ 14 Apr 2018   - analyzed modified smart again for compressible flow:
+                 residue of conservation equations decreases only for
+                 1) hrv_mod_smart AND
+                 2) hrt_ud AND
+                 3) calcrhofacomp_ud
+
+ 20 Apr 2018   - inserted modification of checkinputvaluesnet.f
+               - ran valgrind for all test examples  
+               - worked in meshing/mesh smoothing
+               - started working on error message from valgrind
+                 (contdamp2, pret2, pret5 and userbeam, apart from
+                  multiple CFD-examples).
+
+ 22 Apr 2018   - updated code for block splitting in CFD-calculations with
+                 multiple cpus (reorderrhs.f).
+ 
+ 23 Apr 2018   - made a change in shape3l, calcnormal and pretensionsections.f
+               - splitting CFD-matrices in independent blocks (as many as
+                 cpus) seems to work
+
+ 27 Apr 2018   - made a correction in cd_bleedtapping.f
+               - corrected an error for pretension with shells
+               - changed the definition of CETOL an the *VISCO card
+               - detected and corrected an error for pretension with
+                 linear 2d-elements
+               - started looking into Craig-Bampton

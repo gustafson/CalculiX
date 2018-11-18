@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -47,8 +47,8 @@
      &  icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,ielprop(*),
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_fn,
-     &  calcul_cauchy,nopered,mortar,jfaces,iloc,igauss,
-     &  idesvar,node,nodedesi(*),kscale,idir,
+     &  calcul_cauchy,nopered,mortar,jfaces,igauss,
+     &  idesvar,node,nodedesi(*),kscale,idir,nlgeom_undo,
      &  iactive,icoordinate,ialdesi(*),ii
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),stiini(6,mi(1),*),
@@ -72,6 +72,20 @@
      &  pslavsurf(3,*),pmastsurf(6,*),sti(6,mi(1),*),
      &  fn0(0:mi(2),*),dfn(0:mi(2),*),hglf(3,4),ahr,
      &  dxstiff(27,mi(1),ne,*),xdesi(3,*)
+!
+      intent(in) co,kon,ipkon,lakon,ne,v,
+     &  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
+     &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,prestr,
+     &  iprestr,eme,iperturb,fn,iout,vold,nmethod,
+     &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
+     &  xstateini,xstate,npmat_,matname,mi,ielas,icmd,
+     &  ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
+     &  springarea,reltime,calcul_fn,calcul_cauchy,nener,
+     &  ikin,ne0,thicke,emeini,pslavsurf,
+     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,
+     &  idesvar,nodedesi,sti,icoordinate,ialdesi,xdesi
+!
+      intent(inout) dfn,fn0,dxstiff,xstiff
 !
       include "gauss.f"
 !
@@ -358,15 +372,14 @@ c     Bernhardi end
                elseif((mortar.eq.1).and.
      &           ((nmethod.ne.1).or.(iperturb(1).ge.2).or.(iout.ne.-1)))
      &               then
-                  iloc=kon(indexe+nope+1)
                   jfaces=kon(indexe+nope+2)
                   igauss=kon(indexe+nope+1)
                   call springforc_f2f(xl,vl,imat,elcon,nelcon,elas,
      &              fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
      &              plicon,nplicon,npmat_,ener(1,i),nener,
-     &              stx(1,1,i),mi,springarea(1,iloc),nmethod,
+     &              stx(1,1,i),mi,springarea(1,igauss),nmethod,
      &              ne0,nstate_,xstateini,xstate,reltime,
-     &              ielas,iloc,jfaces,igauss,pslavsurf,pmastsurf,
+     &              ielas,jfaces,igauss,pslavsurf,pmastsurf,
      &              clearini,ener(1,i+ne),kscale,konl,iout,i)
                endif
 !             
@@ -656,22 +669,6 @@ c                  write(*,*) 'vnoeie',i,konl(m1),(vkl(m2,k),k=1,3)
      &              vokl(3,2)*vkl(3,3)+vokl(3,3)*vkl(3,2)
             endif
 !
-c            if(iperturb(2).eq.1) then
-c!     
-c!                 Lagrangian strain
-c!     
-c               exx=exx+(vkl(1,1)**2+vkl(2,1)**2+vkl(3,1)**2)/2.d0
-c               eyy=eyy+(vkl(1,2)**2+vkl(2,2)**2+vkl(3,2)**2)/2.d0
-c               ezz=ezz+(vkl(1,3)**2+vkl(2,3)**2+vkl(3,3)**2)/2.d0
-c               exy=exy+vkl(1,1)*vkl(1,2)+vkl(2,1)*vkl(2,2)+
-c     &              vkl(3,1)*vkl(3,2)
-c               exz=exz+vkl(1,1)*vkl(1,3)+vkl(2,1)*vkl(2,3)+
-c     &              vkl(3,1)*vkl(3,3)
-c               eyz=eyz+vkl(1,2)*vkl(1,3)+vkl(2,2)*vkl(2,3)+
-c     &              vkl(3,2)*vkl(3,3)
-c!     
-c            endif
-!
 !              storing the local strains
 !
             if(iperturb(1).ne.-1) then
@@ -778,9 +775,9 @@ c     Bernhardi end
 !              calculating the deformation gradient of the old
 !              fields
 !
-               xikl(1,1)=vikl(1,1)+1
-               xikl(2,2)=vikl(2,2)+1.
-               xikl(3,3)=vikl(3,3)+1.
+               xikl(1,1)=vikl(1,1)+1.d0
+               xikl(2,2)=vikl(2,2)+1.d0
+               xikl(3,3)=vikl(3,3)+1.d0
                xikl(1,2)=vikl(1,2)
                xikl(1,3)=vikl(1,3)
                xikl(2,3)=vikl(2,3)
@@ -921,12 +918,13 @@ c                 emec0(m1)=emeini(m1,jj,i)
 !
 !           calculating the local stiffness and stress
 !
+            nlgeom_undo=0
             call mechmodel(elconloc,elas,emec,kode,emec0,ithermal,
      &           icmd,beta,stre,xkl,ckl,vj,xikl,vij,
      &           plconloc,xstate,xstateini,ielas,
      &           amat,t1l,dtime,time,ttime,i,jj,nstate_,mi(1),
      &           iorien,pgauss,orab,eloc,mattyp,qa(3),istep,iinc,
-     &           ipkon,nmethod,iperturb,qa(4))
+     &           ipkon,nmethod,iperturb,qa(4),nlgeom_undo)
 !
             if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
      &         (nmethod.ne.5)) then
@@ -946,7 +944,7 @@ c                 emec0(m1)=emeini(m1,jj,i)
                endif
             endif
 !
-            if(iperturb(1).eq.-1) then
+            if((iperturb(1).eq.-1).and.(nlgeom_undo.eq.0)) then
 !
 !                    if the forced displacements were changed at
 !                    the start of a nonlinear step, the nodal
@@ -1039,7 +1037,8 @@ c                 emec0(m1)=emeini(m1,jj,i)
 !     
 !                       nonlinear geometric part
 !     
-                        if(iperturb(2).eq.1) then
+                        if((iperturb(2).eq.1).and.(nlgeom_undo.eq.0)) 
+     &                     then
                            do m3=1,3
                               do m4=1,3
                                  fn0(m2,indexe+m1)=fn0(m2,indexe+m1)+
@@ -1091,7 +1090,8 @@ c     Bernhardi end
 !     
 !                       nonlinear geometric part
 !     
-                        if(iperturb(2).eq.1) then
+                        if((iperturb(2).eq.1).and.(nlgeom_undo.eq.0)) 
+     &                     then
                            do m3=1,3
                               do m4=1,3
                                  dfn(m2,konl(m1))=dfn(m2,konl(m1))+

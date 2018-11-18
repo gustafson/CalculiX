@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -208,7 +208,7 @@ c     calculate hourglass control stiffness factor a
 c     (to be used in hgstiffness() and hgforce())
 c
 c     in ABAQUS, a 0.005 is used as default value.
-      a=0.0005*a/vol
+      a=0.0005d0*a/vol
 c
       return
       end

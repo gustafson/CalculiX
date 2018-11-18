@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -99,7 +99,8 @@
          endif
       enddo
 !
-!     storing the nodes for which *NODE FILE or *EL FILE was selected
+!     storing the nodes, dofs, spcs and mpcs for which *NODE FILE 
+!     or *EL FILE was selected
 !
       do i=1,nlabel
 !
@@ -193,7 +194,8 @@
          endif
       enddo
 !
-!     storing the nodes for which *NODE PRINT was selected
+!     storing the nodes, dofs, spcs and mpcs for which *NODE PRINT 
+!     was selected
 !
       do i=1,nprint
          if((prlab(i)(1:4).eq.'U   ').or.
@@ -259,7 +261,8 @@
          endif
       enddo
 !
-!     check whether all contact slave and master nodes were selected
+!     check whether all contact slave and master nodes (and corresponding
+!     dofs, spcs and mpcs were selected
 !
       do i=1,ntie
 !     
@@ -508,11 +511,11 @@
          endif
       enddo
 !
-!     adding nodes belonging to nonlinear MPC's (why only dependent nodes?)
+!     adding nodes, dofs, spcs and mpcs belonging to nonlinear MPC's 
+!     (why only dependent nodes?)
 !      
       do i=1,nmpc
          if((labmpc(i)(1:20).ne.'                    ').and.
-c     &          (labmpc(i)(1:7).ne.'CONTACT').and.
      &          (labmpc(i)(1:6).ne.'CYCLIC').and.
      &          (labmpc(i)(1:9).ne.'SUBCYCLIC')) then
             indexe1=ipompc(i)
@@ -535,14 +538,6 @@ c     &          (labmpc(i)(1:7).ne.'CONTACT').and.
             endif
          endif
       enddo
-!
-!     subtracting 1 to comply with the C-convention
-!
-c      do j=1,nmddof
-c         imddof(j)=imddof(j)-1
-c      enddo
-!
-c      write (*,*) 'nmddof, nmdnode',nmddof,nmdnode
 !
       return
       end

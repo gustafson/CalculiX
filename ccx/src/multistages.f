@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -55,7 +55,7 @@
 !
       data lathyp /1,2,3,1,3,2,2,1,3,2,3,1,3,1,2,3,2,1/
 ! 
-      pi=4.*atan(1.)
+      pi=4.d0*atan(1.d0)
       multistage=.true.
 !     
 !     Find the TIE numbers which describe multistage connections

@@ -78,7 +78,7 @@
 !     determining the inhomogeneous terms
 !     
       do i=1,3
-         colmean(i)=0.0
+         colmean(i)=0.d0
       enddo
       do j=1,nopes
          k=(j-1)*4

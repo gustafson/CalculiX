@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-Dimensional finite element program                   */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -78,7 +78,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	tint=-1,tnstart=-1,tnend=-1,tint2=-1,network=0,
 	noderight_,*izdof=*izdofp,iload,iforc,*iznode=NULL,nznode,ll,ne0,
 	icfd=0,*inomat=NULL,mortar=0,*islavact=NULL,*ipobody=NULL,
-	*islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,
+	*islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,idirnew,
         *iponoel=NULL,*inoel=NULL;
 
     long long lint;
@@ -342,17 +342,6 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     }
     
     /* point loads */
-    
-/*    for(i=0;i<*nforc;i++){
-	if(nodeforc[2*i+1]<*nsectors){
-	    nodeforc[2*i]+=*nk*nodeforc[2*i+1];
-	}else{
-	    nodeforc[2*i]+=*nk*(nodeforc[2*i+1]-(*nsectors));
-	}
-	iforc=i+1;
-	FORTRAN(addizdofcload,(nodeforc,ndirforc,nactdof,mi,izdof,
-	        nzdof,&iforc,iznode,&nznode,nk,imdnode,nmdnode,xforc));
-		}*/
 
     i=0;
     while(i<*nforc){
@@ -361,9 +350,9 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	/* checking for a cylindrical transformation;
 	   comparison with the cyclic symmetry system */
 	
-	itr=inotr[2*node-2];
+//	itr=inotr[2*node-2];
 
-	if(itr==0){
+//	if(itr==0){
 
             /* carthesian coordinate system */
 
@@ -374,12 +363,13 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    }
 	    i++;iforc=i;
 	    FORTRAN(addizdofcload,(nodeforc,ndirforc,nactdof,mi,izdof,
-		    nzdof,&iforc,iznode,&nznode,nk,imdnode,nmdnode,xforc));
-	}else{
+		    nzdof,&iforc,iznode,&nznode,nk,imdnode,nmdnode,xforc,
+		    ntrans,inotr));
+/*	}else{
 
 	    /* cylindrical coordinate system */	
 	    
-	    FORTRAN(transformatrix,(&trab[7*(itr-1)],&co[3*(node-1)],atrab));
+/*	    FORTRAN(transformatrix,(&trab[7*(itr-1)],&co[3*(node-1)],atrab));
 	    FORTRAN(transformatrix,(&cs[5],&co[3*(node-1)],acs));
 	    diff=0.; for(j=0;j<9;j++) diff+=(atrab[j]-acs[j])*(atrab[j]-acs[j]);
 	    
@@ -392,31 +382,31 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		printf("        the cyclic symmetric cylindrical coordinate system\n");
 		printf("        force at fault is applied in node %" ITGFORMAT "\n",node);
 		FORTRAN(stop,());
-	    }
+		}*/
 	    
 	    /* changing the complete force in the node in the basis sector from
 	       the global rectangular system into the cylindrical system */
 	    
-	    fin[0]=xforc[i];
+/*	    fin[0]=xforc[i];
 	    fin[1]=xforc[i+1];
 	    fin[2]=xforc[i+2];
 	    icntrl=2;
-	    FORTRAN(rectcyltrfm,(&node,co,cs,&icntrl,fin,fout));
+	    FORTRAN(rectcyltrfm,(&node,co,cs,&icntrl,fin,fout));*/
 	    
 	    /* new node number (= node number in the target sector) */
 	    
-	    if(nodeforc[2*i+1]<*nsectors){
+/*	    if(nodeforc[2*i+1]<*nsectors){
 		nodeforc[2*i]+=*nk*nodeforc[2*i+1];
 	    }else{
 		nodeforc[2*i]+=*nk*(nodeforc[2*i+1]-(*nsectors));
 	    }
 	    nodeforc[2*i+2]=nodeforc[2*i];
-	    nodeforc[2*i+4]=nodeforc[2*i];
+	    nodeforc[2*i+4]=nodeforc[2*i];*/
 	    
 	    /* changing the complete force in the node in the target sector from
 	       the cylindrical system into the global rectangular system */
 	    
-	    node=nodeforc[2*i];
+/*	    node=nodeforc[2*i];
 	    fin[0]=fout[0];
 	    fin[1]=fout[1];
 	    fin[2]=fout[2];
@@ -424,16 +414,16 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    FORTRAN(rectcyltrfm,(&node,co,cs,&icntrl,fin,fout));
 	    xforc[i]=fout[0];
 	    xforc[i+1]=fout[1];
-	    xforc[i+2]=fout[2];
+	    xforc[i+2]=fout[2];*/
 	    
 	    /* storing the node and the dof into iznode and izdof */
 	    
-	    for(j=0;j<3;j++){
+/*	    for(j=0;j<3;j++){
 		i++;iforc=i;
 		FORTRAN(addizdofcload,(nodeforc,ndirforc,nactdof,mi,izdof,
 			nzdof,&iforc,iznode,&nznode,nk,imdnode,nmdnode,xforc));
 	    }
-	}
+	}*/
     }
     
     /* loop over all eigenvalues; the loop starts from the highest eigenvalue
@@ -450,7 +440,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
     lfin=0;
     for(j=*nev-1;j>-1;--j){
-	lint=2*j*neqh;
+	lint=(long long)2*j*neqh;
 
 	/* calculating the cosine and sine of the phase angle */
 
@@ -532,7 +522,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 	      ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	      nelemload,nload,ikmpc,ilmpc,&istep,&iinc,springarea,&reltime,
-              &ne0,xforc,nforc,thicke,shcon,nshcon,
+              &ne0,thicke,shcon,nshcon,
               sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
@@ -707,8 +697,15 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    ilmpc[*nmpc]=ilmpc[j]+i**nmpcold;
 	    strcpy1(&labmpc[20**nmpc],&labmpcold[20*j],20);
 	    if(strcmp1(&labmpcold[20*j],"CYCLIC")==0){
+
+                /* identifying the nodes on the master side
+                   corresponding to a given slave node */
+
 		index=ipompcold[j]-1;
 		nodeleft=nodempcold[3*index];
+
+                /* slave node term direction */
+
 		idir=nodempcold[3*index+1];
 		index=nodempcold[3*index+2]-1;
 		numnodes=0;
@@ -723,10 +720,52 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 			    RENEW(noderight,ITG,noderight_);
 			    RENEW(coefright,double,noderight_);
 			}
+		    }else{
+
+                        /* master node term direction */
+
+			idirnew=nodempcold[3*index+1];
 		    }
 		    index=nodempcold[3*index+2]-1;
 		    if(index==-1) break;
 		}while(1);
+
+                /* if not successful:
+                   The cyclic MPC consists of one term corresponding
+                   to the slave node and one or more corresponding to
+                   the master node; the direction of the first master
+                   node term can correspond to the direction of the
+                   slave node term, but does not have to. Any master
+                   node term direction will actually do */
+
+		if(numnodes==0){
+
+                    /* identifying the nodes on the master side
+                       corresponding to a given slave node */
+
+		    index=ipompcold[j]-1;
+		    nodeleft=nodempcold[3*index];
+		    idir=idirnew;
+		    index=nodempcold[3*index+2]-1;
+		    numnodes=0;
+		    do{
+			node=nodempcold[3*index];
+			if(nodempcold[3*index+1]==idir){
+			    noderight[numnodes]=node;
+			    coefright[numnodes]=coefmpcold[index];
+			    numnodes++;
+			    if(numnodes>=noderight_){
+				noderight_=(ITG)(1.5*noderight_);
+				RENEW(noderight,ITG,noderight_);
+				RENEW(coefright,double,noderight_);
+			    }
+			}
+			index=nodempcold[3*index+2]-1;
+			if(index==-1) break;
+		    }while(1);
+
+		}
+
 		if(numnodes>0){
 		    sum=0.;
 		    for(k=0;k<numnodes;k++){

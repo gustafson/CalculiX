@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -129,9 +129,9 @@
       shp(4, 6)=opg*omh*opr/8.d0
       shp(4, 7)=opg*oph*opr/8.d0
       shp(4, 8)=omg*oph*opr/8.d0
-      shp(4, 9)=0.0d0
-      shp(4,10)=0.0d0
-      shp(4,11)=0.0d0
+      shp(4, 9)=1.0d0-xi*xi
+      shp(4,10)=1.0d0-et*et
+      shp(4,11)=1.0d0-ze*ze
 !
       if(iflag.eq.1) return
 !
@@ -145,9 +145,9 @@
       shp(1, 6)=omh*opr/8.d0
       shp(1, 7)=oph*opr/8.d0
       shp(1, 8)=-oph*opr/8.d0
-      shp(1, 9)=-2.0*xi
-      shp(1,10)=0.0
-      shp(1,11)=0.0
+      shp(1, 9)=-2.d0*xi
+      shp(1,10)=0.d0
+      shp(1,11)=0.d0
 !
 !     local derivatives of the shape functions: eta-derivative
 !
@@ -159,9 +159,9 @@
       shp(2, 6)=-opg*opr/8.d0
       shp(2, 7)=opg*opr/8.d0
       shp(2, 8)=omg*opr/8.d0
-      shp(2, 9)=0.0
-      shp(2,10)=-2.0*et
-      shp(2,11)=0.0
+      shp(2, 9)=0.d0
+      shp(2,10)=-2.d0*et
+      shp(2,11)=0.d0
 !
 !     local derivatives of the shape functions: zeta-derivative
 !
@@ -173,9 +173,9 @@
       shp(3, 6)=opg*omh/8.d0
       shp(3, 7)=opg*oph/8.d0
       shp(3, 8)=omg*oph/8.d0
-      shp(3, 9)=0.0
-      shp(3,10)=0.0
-      shp(3,11)=-2.0*ze
+      shp(3, 9)=0.d0
+      shp(3,10)=0.d0
+      shp(3,11)=-2.d0*ze
 !
 !     computation of the local derivative of the global coordinates
 !     (xs). Incompatible modes are not included here. 

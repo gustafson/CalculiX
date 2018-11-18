@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine randomfields(inpc,textpart,istep,istat,n,iline,
-     &        ipol,inl,ipoinp,inp,ipoinpc,nener,physcon)        
+     &        ipol,inl,ipoinp,inp,ipoinpc,nener,physcon,ier)        
 !
 !     reading the input deck: *RANDOM FIELD
 !
@@ -29,14 +29,15 @@
       character*132 textpart(16)
 !
       integer istep,istat,n,key,i,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ipoinpc(0:*),nener,k,ipos,neigenvectors
+     &  inp(3,*),ipoinpc(0:*),nener,k,ipos,neigenvectors,ier
 !
       real*8 physcon(*),dummy
 !      
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *RANDOM FIELD: *RANDOM FIELD can'
          write(*,*) '       only be used within a *SENSITIVITY step'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

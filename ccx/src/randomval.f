@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
             call random_number(v2)
             rsq=v1**2+v2**2
             if((rsq.ge.1.d0).or.(rsq.le.0.d0)) cycle
-            fac=sqrt(-2.*dlog(rsq)/rsq)  
+            fac=sqrt(-2.d0*dlog(rsq)/rsq)  
             randval(i)=v1*fac
             exit
          enddo

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -65,6 +65,19 @@
      &  ttime,xstate(nstate_,mi(1),*),trab(7,*),xstaten(nstate_,*),
      &  eme(6,mi(1),*),emn(6,*),shcon(0:3,ntmat_,*),cocon(0:6,ntmat_,*),
      &  prop(*),veold(0:mi(2),*),energy(*),energyini(*),xload(2,*)
+!
+      intent(in) co,nk,kon,ipkon,lakon,ne,v,stn,
+     &  stx,ielorien,norien,orab,t1,ithermal,filab,een,iperturb,fn,
+     &  nactdof,iout,vold,nodeboun,ndirboun,nboun,nmethod,ttime,xstate,
+     &  epn,mi,nstate_,ener,enern,xstaten,eei,set,nset,istartset,
+     &  iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
+     &  nelemload,nload,ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
+     &  nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,
+     &  islavact,cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,
+     &  ielprop,prop,veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,
+     &  energy,orname,xload
+!
+      intent(inout) inum
 !
       data iflag /3/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
@@ -152,7 +165,7 @@
          cflag=filab(1)(5:5)
          force=.false.
          call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
-     &        ne,cflag,co,vold,force,mi)
+     &        ne,cflag,co,vold,force,mi,ielprop,prop)
       endif
 !
       if((filab(2)(1:4).eq.'NT  ').and.(ithermal(1).le.1)) then
@@ -161,7 +174,7 @@
             cflag=filab(2)(5:5)
             force=.false.
             call map3dto1d2d(t1,ipkon,inum,kon,lakon,nfield,nk,
-     &           ne,cflag,co,vold,force,mi)
+     &           ne,cflag,co,vold,force,mi,ielprop,prop)
          endif
       endif
 !
@@ -183,7 +196,7 @@
                cflag=' '
                force=.true.
                call map3dto1d2d(fn,ipkon,inum,kon,lakon,nfield,nk,
-     &              ne,cflag,co,vold,force,mi)
+     &              ne,cflag,co,vold,force,mi,ielprop,prop)
             endif
          endif
       endif
@@ -303,7 +316,7 @@
          iextrapolate=1
       endif
 !
-!     determining the total energy in the nodes 
+!     determining the internal energy in the nodes 
 !     for output in frd format
 !
       if(filab(7)(1:4).eq.'ENER') then
@@ -361,12 +374,6 @@
 !     inum if nodal quantities are requested: used in subroutine frd
 !     to determine which nodes are active in the model 
 !
-c      if((filab(3)(1:4).ne.'S   ').and.(filab(4)(1:4).ne.'E   ').and.
-c     &   (filab(6)(1:4).ne.'PEEQ').and.(filab(7)(1:4).ne.'ENER').and.
-c     &   (filab(8)(1:4).ne.'SDV ').and.(filab(9)(1:4).ne.'HFL ').and.
-c     &   (filab(42)(1:3).ne.'ECD').and.(filab(32)(1:4).ne.'ME  ').and.
-c     &   ((nmethod.ne.4).or.(iperturb(1).ge.2))) then
-c
       if((iextrapolate.eq.0).and.
      &   ((nmethod.ne.4).or.(iperturb(1).ge.2))) then
 !
@@ -375,10 +382,10 @@ c
          iorienloc=0
          cflag=filab(1)(5:5)
          call createinum(ipkon,inum,kon,lakon,nk,ne,cflag,nelemload,
-     &       nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat)
+     &       nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat,
+     &       ielprop,prop)
       endif
 !
-c      if(ithermal(1).gt.1) then
       if(ithermal(2).gt.1) then
 !
 !        next section is executed if at least one step is thermal

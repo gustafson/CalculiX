@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -60,7 +60,7 @@
       kp1=kappa+1.d0
       Q_crit=dsqrt(kappa/R)*
      &   (1+0.5d0*(kappa-1))**(-0.5d0*(kappa+1)/(kappa-1))
-      pspt_crit=(2./(KAPPA+1.))**(KAPPA/(KAPPA-1.))
+      pspt_crit=(2.d0/(KAPPA+1.d0))**(KAPPA/(KAPPA-1.d0))
 !
       Q0=xflow1*dsqrt(Tt1)/pt1/A1
       Q1=xflow2*dsqrt(Tt1)/pt1/A2
@@ -111,7 +111,7 @@
          else
             z2d390=0.95d0*((W2W1-2d0*dcos(90.d0*pi/180))
      &                 *W2W1+1.d0)
-            z1p090=0.95*(0.34d0+W2W1**2)
+            z1p090=0.95d0*(0.34d0+W2W1**2)
             z90=z2d390+(3*hq-2.d0)*(z1p090-z2d390)
             Z60=0.95d0*((W2W1-2d0*dcos(60.d0*pi/180))
      &                 *W2W1+1.d0)

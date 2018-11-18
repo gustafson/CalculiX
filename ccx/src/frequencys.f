@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine frequencys(inpc,textpart,nmethod,
      &  mei,fei,iperturb,istep,istat,n,iline,ipol,inl,
      &  ipoinp,inp,ithermal,isolver,xboun,nboun,ipoinpc,
-     &  ipompc,labmpc,fmpc,ikmpc,ilmpc,nmpc)
+     &  ipompc,labmpc,fmpc,ikmpc,ilmpc,nmpc,ier)
 !
 !     reading the input deck: *FREQUENCY
 !
@@ -32,7 +32,7 @@
       character*132 textpart(16)
 !
       integer nmethod,mei(4),ncv,mxiter,istep,istat,iperturb(2),i,
-     &  nboun,
+     &  nboun,ier,
      &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal,isolver,
      &  ipoinpc(0:*),nmpcred,kflag,ipompc(*),ikmpc(*),ilmpc(*),nmpc
 !
@@ -50,9 +50,11 @@
       fmax=-1.d0
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in frequencies: *FREQUENCY can only be used'
+         write(*,*) 
+     &      '*ERROR reading *FREQUENCY: *FREQUENCY can only be used'
          write(*,*) '  within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     no heat transfer analysis
@@ -89,7 +91,7 @@
             cycmpcactive=.false.
          else
             write(*,*) 
-     &        '*WARNING in frequencies: parameter not recognized:'
+     &        '*WARNING reading *FREQUENCY: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -100,11 +102,11 @@
       if(solver(1:7).eq.'SPOOLES') then
          isolver=0
       elseif(solver(1:16).eq.'ITERATIVESCALING') then
-         write(*,*) '*WARNING in frequencies: the iterative scaling'
+         write(*,*) '*WARNING reading *FREQUENCY: the iterative scaling'
          write(*,*) '         procedure is not available for frequency'
          write(*,*) '         calculations; the default solver is used'
       elseif(solver(1:17).eq.'ITERATIVECHOLESKY') then
-         write(*,*) '*WARNING in frequencies: the iterative scaling'
+         write(*,*) '*WARNING reading *FREQUENCY: the iterative scaling'
          write(*,*) '         procedure is not available for frequency'
          write(*,*) '         calculations; the default solver is used'
       elseif(solver(1:3).eq.'SGI') then
@@ -116,15 +118,16 @@
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       else
-         write(*,*) '*WARNING in frequencies: unknown solver;'
+         write(*,*) '*WARNING reading *FREQUENCY: unknown solver;'
          write(*,*) '         the default solver is used'
       endif
 !
       if((isolver.eq.2).or.(isolver.eq.3)) then
-         write(*,*) '*ERROR in frequencies: the default solver ',
+         write(*,*) '*ERROR reading *FREQUENCY: the default solver ',
      & solver
          write(*,*) '       cannot be used for frequency calculations '
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nmethod=2
@@ -135,19 +138,24 @@ c      iperturb(2)=0
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) then
-            write(*,*) '*ERROR in frequencies: definition not complete'
+            write(*,*) 
+     &       '*ERROR reading *FREQUENCY: definition not complete'
             write(*,*) '  '
             call inputerror(inpc,ipoinpc,iline,
-     &"*FREQUENCY%")
-            call exit(201)
+     &           "*FREQUENCY%",ier)
+            return
          endif
          read(textpart(1)(1:10),'(i10)',iostat=istat) nev
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FREQUENCY%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*FREQUENCY%",ier)
+            return
+         endif
          if(nev.le.0) then
-            write(*,*) '*ERROR in frequencies: less than 1 eigenvalue re
-     &quested'
-            call exit(201)
+            write(*,*) '*ERROR reading *FREQUENCY: less than 1 eigenvalu
+     &e requested'
+            ier=1
+            return
          endif
          tol=1.d-2
          ncv=4*nev
@@ -155,13 +163,19 @@ c      iperturb(2)=0
          mxiter=1000
          if(textpart(2)(1:1).ne.' ') then
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) fmin
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FREQUENCY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*FREQUENCY%",ier)
+               return
+            endif
          endif
          if(textpart(3)(1:1).ne.' ') then
             read(textpart(3)(1:20),'(f20.0)',iostat=istat) fmax
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FREQUENCY%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*FREQUENCY%",ier)
+               return
+            endif
          endif
 !     
          mei(1)=nev

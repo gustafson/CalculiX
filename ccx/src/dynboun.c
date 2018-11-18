@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -43,9 +43,9 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
              double *alpham, double *betam, ITG *nzl,
              ITG *init,double *bact, double *bmin, ITG *jq, 
              char *amname,double *bv, double *bprev, double *bdiff,
-             ITG *nactmech, ITG *icorrect, ITG *iprev){
+             ITG *nactmech, ITG *icorrect, ITG *iprev,double *reltime){
 
-    ITG idiff[3],i,j,ic,ir,im,symmetryflag=0;
+    ITG idiff[3],i,j,ic,ir,im,symmetryflag=0,nrhs=1;
 
     double *xbounmin=NULL,*xbounplus=NULL,*bplus=NULL,
 	*ba=NULL,deltatime,deltatime2,deltatimesq,timemin,ttimemin,
@@ -83,7 +83,7 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
       ttimemin=*ttime-deltatime;
       FORTRAN(temploadmodal,(amta,namta,nam,ampli,&timemin,&ttimemin,dtime,
 	   xbounold,xboun,xbounmin,iamboun,nboun,nodeboun,ndirboun,
-           amname));
+	   amname,reltime));
   }
 
       /* the SPC value at timeplus is stored in xbounplus */
@@ -92,7 +92,7 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
   ttimeplus=*ttime+deltatime;
   FORTRAN(temploadmodal,(amta,namta,nam,ampli,&timeplus,&ttimeplus,dtime,
 	  xbounold,xboun,xbounplus,iamboun,nboun,nodeboun,ndirboun,
-          amname));
+	  amname,reltime));
 
   NNEW(bplus,double,neq[1]);
   NNEW(ba,double,neq[1]);
@@ -127,7 +127,7 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
       }
       if(*isolver==7){
 #ifdef PARDISO
-	  pardiso_solve(bmin,&neq[1],&symmetryflag);
+	  pardiso_solve(bmin,&neq[1],&symmetryflag,&nrhs);
 #endif
       }
   }
@@ -167,7 +167,7 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
       }
       if(*isolver==7){
 #ifdef PARDISO
-	  pardiso_solve(bact,&neq[1],&symmetryflag);
+	  pardiso_solve(bact,&neq[1],&symmetryflag,&nrhs);
 #endif
       }
   }
@@ -207,7 +207,7 @@ void dynboun(double *amta,ITG *namta,ITG *nam,double *ampli, double *time,
       }
       if(*isolver==7){
 #ifdef PARDISO
-	  pardiso_solve(bplus,&neq[1],&symmetryflag);
+	  pardiso_solve(bplus,&neq[1],&symmetryflag,&nrhs);
 #endif
       }
   }

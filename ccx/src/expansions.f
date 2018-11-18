@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine expansions(inpc,textpart,alcon,nalcon,
      &  alzero,nmat,ntmat_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,ipoinpc)
+     &  inp,ipoinpc,ier)
 !
 !     reading the input deck: *EXPANSION
 !
@@ -28,26 +28,28 @@
       character*132 textpart(16)
 !
       integer nalcon(2,*),nmat,ntmat,ntmat_,istep,istat,n,
-     &  ipoinpc(0:*),
-     &  i,ityp,key,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*)
+     &  ipoinpc(0:*),ier,
+     &  i,ityp,key,irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*)
 !
       real*8 alcon(0:6,ntmat_,*),alzero(*)
 !
       ntmat=0
       alzero(nmat)=0.d0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) 
      &       '*ERROR reading *EXPANSION: *EXPANSION should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*)
      &     '*ERROR reading *EXPANSION: *EXPANSION should be preceded'
          write(*,*) '  by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ityp=1
@@ -63,8 +65,11 @@
             endif
          elseif(textpart(i)(1:5).eq.'ZERO=') then
             read(textpart(i)(6:25),'(f20.0)',iostat=istat) alzero(nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EXPANSION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*EXPANSION%",ier)
+               return
+            endif
          else
             write(*,*) 
      &        '*WARNING reading *EXPANSION: parameter not recognized:'
@@ -86,18 +91,25 @@
             nalcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *EXPANSION: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,1
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                 alcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EXPANSION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EXPANSION%",ier)
+                  return
+               endif
             enddo
             read(textpart(2)(1:20),'(f20.0)',iostat=istat) 
      &                 alcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EXPANSION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*EXPANSION%",ier)
+               return
+            endif
          enddo
       elseif(ityp.eq.3) then
          do
@@ -108,18 +120,25 @@
             nalcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *EXPANSION: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,3
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                 alcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EXPANSION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EXPANSION%",ier)
+                  return
+               endif
             enddo
             read(textpart(4)(1:20),'(f20.0)',iostat=istat) 
      &                   alcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EXPANSION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*EXPANSION%",ier)
+               return
+            endif
          enddo
       elseif(ityp.eq.6) then
          do
@@ -130,18 +149,25 @@
             nalcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*) '*ERROR reading *EXPANSION: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,6
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                    alcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EXPANSION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EXPANSION%",ier)
+                  return
+               endif
             enddo
             read(textpart(7)(1:20),'(f20.0)',iostat=istat) 
      &                alcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EXPANSION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*EXPANSION%",ier)
+               return
+            endif
          enddo
       endif
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine orifice(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,co,vold,mi,ttime,
-     &     time,iaxial)
+     &     time,iaxial,iplausi)
 !     
 !     orifice element
 !
@@ -34,9 +34,7 @@
       integer nelem,nactdog(0:3,*),node1,node2,nodem,numf,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,
      &     inv,ipkon(*),kon(*),number,kgas,nelemswirl,
-     &     nodea,nodeb,iaxial,mi(*),i,itype
-!
-c      real*4 ofvidg
+     &     nodea,nodeb,iaxial,mi(*),i,itype,iplausi
 !     
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,a,d,dl,
      &     p1,p2,T1,Aeff,C1,C2,C3,cd,cp,physcon(*),p2p1,km1,dvi,
@@ -46,7 +44,11 @@ c      real*4 ofvidg
      &     initial_radius,co(3,*),vold(0:mi(2),*),offset,ttime,time,
      &     x_tab(15), y_tab(15),x_tab2(15),y_tab2(15),curve,xmach
 !
-c      external ofvidg
+      intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,ielprop,iflag,v,cp,R,physcon,dvi,set,co,
+     &     vold,mi,ttime,time,iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi,prop
 !
       pi=4.d0*datan(1.d0)   
       if(iflag.eq.0) then
@@ -146,13 +148,11 @@ c      external ofvidg
 !     calculation of the dynamic viscosity 
 !     
 !     
-         if(dabs(dvi).lt.1E-30) then
+         if(dabs(dvi).lt.1d-30) then
             write(*,*) '*ERROR in orifice: '
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
             call exit(201)
-c            kgas=0
-c            call dynamic_viscosity(kgas,T1,dvi)
          endif 
 !     
          if((lakon(nelem)(4:5).ne.'BT').and.
@@ -474,13 +474,11 @@ c            endif
 !     
 !     calculation of the dynamic viscosity 
 !     
-         if(dabs(dvi).lt.1E-30) then
+         if(dabs(dvi).lt.1d-30) then
             write(*,*) '*ERROR in orifice: '
             write(*,*) '       no dynamic viscosity defined'
             write(*,*) '       dvi= ',dvi
             call exit(201)
-c            kgas=0
-c            call dynamic_viscosity(kgas,T1,dvi)
          endif 
 !     
          index=ielprop(nelem)
@@ -721,7 +719,7 @@ c            call dynamic_viscosity(kgas,T1,dvi)
 !          
           if(inv.eq.1) then
              write(1,56)'       Inlet node ',node1,' :   Tt1 = ',T1,
-     &           '  , Ts1 = ',T1,'  , Pt1 = ',P1, ' '
+     &           '  , Ts1 = ',T1,'  , Pt1 = ',p1, ' '
 !             
              write(1,*)'             Element ',nelem,lakon(nelem)
              write(1,57)'             dyn.visc = ',dvi,'  , Re = '
@@ -737,8 +735,8 @@ c            call dynamic_viscosity(kgas,T1,dvi)
              endif
 !     special for bleed tappings
              if(lakon(nelem)(2:5).eq.'ORBT') then
-                write(1,63) '             P2/P1 = ',P2/P1,
-     &' , ps1pt1 = ', ps1pt1, ' , DAB = ',(1-P2/P1)/(1-ps1pt1),
+                write(1,63) '             P2/P1 = ',p2/p1,
+     &' , ps1pt1 = ', ps1pt1, ' , DAB = ',(1-p2/p1)/(1-ps1pt1),
      &' , curve N° = ', curve,' , cd = ',cd
 !     special for preswirlnozzles
              elseif(lakon(nelem)(2:5).eq.'ORPN') then
@@ -748,11 +746,11 @@ c            call dynamic_viscosity(kgas,T1,dvi)
              endif 
 !
              write(1,56)'      Outlet node ',node2,' :   Tt2 = ',T2,
-     &           '  , Ts2 = ',T2,'  , Pt2 = ',P2,' '
+     &           '  , Ts2 = ',T2,'  , Pt2 = ',p2,' '
 !     
           else if(inv.eq.-1) then
              write(1,56)'       Inlet node ',node2,':    Tt1 = ',T1,
-     &           '  , Ts1 = ',T1,' , Pt1 = ',P1, ' '
+     &           '  , Ts1 = ',T1,' , Pt1 = ',p1, ' '
      &          
              write(1,*)'             element R    ',set(numf)(1:30)
              write(1,57)'             dyn.visc. = ',dvi,' , Re ='
@@ -768,8 +766,8 @@ c            call dynamic_viscosity(kgas,T1,dvi)
              endif
 !     special for bleed tappings
              if(lakon(nelem)(2:5).eq.'ORBT') then
-                write(1,63) '             P2/P1 = ',P2/P1,
-     &' , ps1pt1 = ', ps1pt1, ' , DAB = ',(1-P2/P1)/(1-ps1pt1),
+                write(1,63) '             P2/P1 = ',p2/p1,
+     &' , ps1pt1 = ', ps1pt1, ' , DAB = ',(1-p2/p1)/(1-ps1pt1),
      &' , curve N° = ', curve,' , cd = ',cd
 !     special for preswirlnozzles
              elseif(lakon(nelem)(2:5).eq.'ORPN') then
@@ -778,7 +776,7 @@ c            call dynamic_viscosity(kgas,T1,dvi)
              endif
 ! 
              write(1,56)'      Outlet node ',node1,':    Tt2 = ',T2,
-     &           '  , Ts2 = ',T2,'  , Pt2 = ',P2, ' '
+     &           '  , Ts2 = ',T2,'  , Pt2 = ',p2, ' '
          endif
        endif
 !

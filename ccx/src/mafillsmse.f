@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -49,7 +49,7 @@
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,nea,
      &  neb,ndesi,nodedesi(*),idesvar,istartelem(*),ialelem(*),
      &  icoordinate,ii,ieigenfrequency,mass(2),stiffness,buckling,rhsi,
-     &  stiffonly(2),coriolis
+     &  stiffonly(2),coriolis,idesloc
 !
       real*8 co(3,*),coefmpc(*),xload(2,*),p1(3),p2(3),bodyf(3),
      &  xloadold(2,*),reltime,t0(*),t1(*),vold(0:mi(2),*),
@@ -62,7 +62,7 @@
      &  plkcon(0:2*npmat_,ntmat_,*),xstiff(27,mi(1),*),
      &  veold(0:mi(2),*),om,dtime,ttime,time,thicke(mi(3),*),
      &  doubleglob(*),clearini(3,9,*),pslavsurf(3,*),
-     &  pmastsurf(6,*),distmin,dfl(ndesi,60),
+     &  pmastsurf(6,*),distmin,dfl(20,60),
      &  df(*),dxstiff(27,mi(1),ne,*),v(0:mi(2),*)
 !
       intent(in) co,kon,ipkon,lakon,ne,ipompc,nodempc,coefmpc,nmpc,
@@ -159,9 +159,9 @@ c     Bernhardi end
 !     
 !     assigning centrifugal forces
 !     
-               bodyf(1)=0.
-               bodyf(2)=0.
-               bodyf(3)=0.
+               bodyf(1)=0.d0
+               bodyf(2)=0.d0
+               bodyf(3)=0.d0
 !     
                index=i
                do
@@ -214,6 +214,7 @@ c     Bernhardi end
             do ii=istartelem(i),istartelem(i+1)-1
                idesvar=ialelem(ii)
                if(idesvar.eq.0) cycle
+               idesloc=ii-istartelem(i)+1
 !
                do jj=1,3*nope
 !     
@@ -225,12 +226,8 @@ c     Bernhardi end
 !     
                   if(jdof1.le.0) then
                      if(nmpc.ne.0) then
-c     idof1=(node1-1)*8+k
                         idof1=jdof1
-c     call nident(ikmpc,idof1,nmpc,id)
-c     if((id.gt.0).and.(ikmpc(id).eq.idof1)) then
                         if(idof1.ne.2*(idof1/2)) then
-c     id=ilmpc(id)
                            id=(-idof1+1)/2
                            ist=ipompc(id)
                            index=nodempc(3,ist)
@@ -239,14 +236,10 @@ c     id=ilmpc(id)
                               jdof1=nactdof(nodempc(2,index),
      &                             nodempc(1,index))
                               if(jdof1.gt.0) then
-                                 val=-coefmpc(index)*dfl(idesvar,jj)
+                                 val=-coefmpc(index)*dfl(idesloc,jj)
      &                                /coefmpc(ist)
                                  call add_bo_st(df,jqs,irows,jdof1,
      &                                          idesvar,val)
-c     dfextminds(idesvar,jdof1)=
-c     &                            dfextminds(idesvar,jdof1)
-c     &                            -coefmpc(index)*dfl(idesvar,jj)
-c     &                            /coefmpc(ist)
                               endif
                               index=nodempc(3,index)
                               if(index.eq.0) exit
@@ -255,10 +248,8 @@ c     &                            /coefmpc(ist)
                      endif
                      cycle
                   endif  
-c     dfextminds(idesvar,jdof1)=dfextminds(idesvar,jdof1)+
-c     &          dfl(idesvar,jj)
                   call add_bo_st(df,jqs,irows,jdof1,idesvar,
-     &                 dfl(idesvar,jj))
+     &                 dfl(idesloc,jj))
                enddo
             enddo
          enddo

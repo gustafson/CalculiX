@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,6 @@
          idir=nodempc(2,index)
          coef=coefmpc(index)
          write(*,'(i10,1x,i5,1x,e11.4)') node,idir,coef
-c         write(*,'(i10,1x,i10,1x,i5,1x,e11.4)') index,node,idir,coef
          index=nodempc(3,index)
          if(index.eq.0) exit
       enddo

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine rhsp(nef,lakonf,ipnei,neifa,neiel,vfa,area,
      &  advfa,xlet,cosa,volume,au,ad,jq,irow,ap,ielfa,ifabou,xle,
      &  b,xxn,neq,nzs,hfa,gradpel,bp,xxi,neij,xlen,nefa,nefb,
-     &  xxicn)
+     &  xxicn,flux,xxnj,gradpcfa,cosb)
 !
 !     filling the lhs and rhs to calculate the first correction to the
 !     pressure p'
@@ -35,7 +35,8 @@
 !
       real*8 coef,vfa(0:7,*),volume(*),area(*),advfa(*),xlet(*),
      &  cosa(*),ad(*),au(*),xle(*),xxn(3,*),ap(*),b(*),bp(*),
-     &  hfa(3,*),xxi(3,*),gradpel(3,*),xlen(*),bp_ifa,xxicn(3,*)
+     &  hfa(3,*),xxi(3,*),gradpel(3,*),xlen(*),bp_ifa,xxicn(3,*),
+     &  flux(*),xxnj(3,*),gradpcfa(3,*),cosb(*)
 !
       do i=nefa,nefb
          do indexf=ipnei(i)+1,ipnei(i+1)
@@ -47,88 +48,36 @@
             iel=neiel(indexf)
             if(iel.ne.0) then
 !
-!           element has a neighbor across the face
+!              internal face
 !
-!           correction for non-orthogonal meshes
-!     
-               j2=neij(indexf)
-               indexf2=ipnei(iel)+j2
-               bp_ifa=((gradpel(1,iel)*xxicn(1,indexf2)+
-     &                  gradpel(2,iel)*xxicn(2,indexf2)+
-     &                  gradpel(3,iel)*xxicn(3,indexf2))
-     &               *xle(indexf2)
-     &                -(gradpel(1,i)*xxicn(1,indexf)+
-     &                  gradpel(2,i)*xxicn(2,indexf)+
-     &                  gradpel(3,i)*xxicn(3,indexf))
-     &               *xle(indexf))
-               b(i)=b(i)-ap(ifa)*bp_ifa
+               b(i)=b(i)+vfa(5,ifa)*area(ifa)*advfa(ifa)*
+     &                   (gradpcfa(1,ifa)*xxicn(1,indexf)+
+     &                    gradpcfa(2,ifa)*xxicn(2,indexf)+
+     &                    gradpcfa(3,ifa)*xxicn(3,indexf))
             else
 !
-!                 external face
+!              external face
 !
                iel2=ielfa(2,ifa)
                if(iel2.lt.0) then
-                  if((ifabou(-iel2+1).ne.0).and.
-     &                 (ifabou(-iel2+2).ne.0).and.
-     &                 (ifabou(-iel2+3).ne.0)) then
-!
-!                    all velocity components given
-!
-                     knownflux=1
-                  elseif(ifabou(-iel2+5).lt.0) then
-!
-!                    sliding conditions
-!
-                     knownflux=2
-                  elseif(ifabou(-iel2+4).gt.0) then
+                  if(ifabou(-iel2+4).gt.0) then
 !     
 !                    pressure given
 !                        
-!     
-!                    correction for non-orthogonal meshes
-!     
-                     bp_ifa=(-(gradpel(1,i)*xxicn(1,indexf)+
-     &                         gradpel(2,i)*xxicn(2,indexf)+
-     &                         gradpel(3,i)*xxicn(3,indexf))
-     &                     *xle(indexf))
-!
-                     b(i)=b(i)-ap(ifa)*
-     &                    (vfa(4,ifa)+bp_ifa)
-c                  elseif((ifabou(-iel2+1).eq.0).and.
-c     &                   (ifabou(-iel2+2).eq.0).and.
-c     &                   (ifabou(-iel2+3).eq.0)) then
-c!
-c!                        outlet
-c!
-c                     knownflux=2
+                     b(i)=b(i)+vfa(5,ifa)*area(ifa)*advfa(ifa)*
+     &                    (gradpcfa(1,ifa)*xxicn(1,indexf)+
+     &                     gradpcfa(2,ifa)*xxicn(2,indexf)+
+     &                     gradpcfa(3,ifa)*xxicn(3,indexf))
                   endif
-c               else
-c!
-c!                 outlet
-c!
-c                  knownflux=2
                endif
             endif
 !     
-!     save coefficients for correctvfa.f
+!           right hand side: sum of the flux
 !     
-            if((iel.eq.0).or.(i.lt.iel)) then
-               bp(ifa)=bp_ifa
-            endif
-!
-            if(knownflux.eq.1) then
-               b(i)=b(i)+vfa(5,ifa)*area(ifa)*
-     &              (vfa(1,ifa)*xxn(1,indexf)+
-     &              vfa(2,ifa)*xxn(2,indexf)+
-     &              vfa(3,ifa)*xxn(3,indexf))
-            elseif(knownflux.ne.2) then
-               b(i)=b(i)+vfa(5,ifa)*area(ifa)*
-     &              (hfa(1,ifa)*xxn(1,indexf)+
-     &              hfa(2,ifa)*xxn(2,indexf)+
-     &              hfa(3,ifa)*xxn(3,indexf))
-            endif
+            b(i)=b(i)-flux(indexf)
          enddo
       enddo
+c         write(*,*) 'rhsp ',1,b(1)
 !
       return
       end

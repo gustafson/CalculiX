@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine hyperelastics(inpc,textpart,elcon,nelcon,
      &  nmat,ntmat_,ncmat_,irstrt,istep,istat,n,iperturb,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc)
+     &  inl,ipoinp,inp,ipoinpc,ier)
 !
 !     reading the input deck: *HYPERELASTIC
 !
@@ -28,8 +28,8 @@
       character*132 textpart(16)
 !
       integer nelcon(2,*),nmat,ntmat,ntmat_,istep,istat,ipoinpc(0:*),
-     &  n,key,i,j,k,ityp,iperturb(*),iend,jcoef(3,14),ncmat_,irstrt,
-     &  iline,ipol,inl,ipoinp(2,*),inp(3,*)
+     &  n,key,i,j,k,ityp,iperturb(*),iend,jcoef(3,14),ncmat_,irstrt(*),
+     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ier
 !
       real*8 elcon(0:ncmat_,ntmat_,*),um
 !
@@ -47,18 +47,20 @@
       write(*,*) '      effects are turned on'
       write(*,*)
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) 
      &       '*ERROR reading *HYPERELASTIC: *HYPERELASTIC should be'
          write(*,*) '  placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(nmat.eq.0) then
          write(*,*) 
      &        '*ERROR reading *HYPERELASTIC: *HYPERELASTIC should be'
          write(*,*) '  preceded by a *MATERIAL card'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       ityp=-7
@@ -93,7 +95,8 @@
                   write(*,*) '*WARNING reading *HYPERELASTIC: N=2 is not
      & applicable for this material type; '
                   call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERELASTIC%")
+     &                 "*HYPERELASTIC%",ier)
+                  return
                endif
             elseif(textpart(i)(3:3).eq.'3') then
                if(ityp.eq.-4) then
@@ -106,13 +109,15 @@
                   write(*,*) '*WARNING reading *HYPERELASTIC: N=3 is not
      & applicable for this material type; '
                   call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERELASTIC%")
+     &                 "*HYPERELASTIC%",ier)
+                  return
                endif
             else
                write(*,*) '*WARNING reading *HYPERELASTIC: only N=1, N=2  
      &, or N=3 are allowed; '
                call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERELASTIC%")
+     &              "*HYPERELASTIC%",ier)
+               return
             endif
          else
             write(*,*) 
@@ -149,18 +154,25 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*)'*ERROR reading *HYPERELASTIC: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,iend
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                  elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*HYPERELASTIC%",ier)
+                  return
+               endif
             enddo
             read(textpart(iend+1)(1:20),'(f20.0)',iostat=istat) 
      &                  elcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERELASTIC%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*HYPERELASTIC%",ier)
+               return
+            endif
          enddo
       else
          do
@@ -171,13 +183,17 @@
             nelcon(2,nmat)=ntmat
             if(ntmat.gt.ntmat_) then
                write(*,*)'*ERROR reading *HYPERELASTIC: increase ntmat_'
-               call exit(201)
+               ier=1
+               return
             endif
             do i=1,8
                read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &                     elcon(i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*HYPERELASTIC%",ier)
+                  return
+               endif
             enddo
 !
             if(ityp.eq.-6) then
@@ -192,19 +208,25 @@
      &           '*ERROR reading *HYPERELASTIC: hyperelastic definition'
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERELASTIC%")
-               call exit(201)
+     &              "*HYPERELASTIC%",ier)
+               return
             endif
             do i=1,iend
                read(textpart(i)(1:20),'(f20.0)',iostat=istat) 
      &                  elcon(8+i,ntmat,nmat)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERELASTIC%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*HYPERELASTIC%",ier)
+                  return
+               endif
             enddo
             read(textpart(iend+1)(1:20),'(f20.0)',iostat=istat) 
      &                  elcon(0,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*HYPERELASTIC%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*HYPERELASTIC%",ier)
+               return
+            endif
          enddo
       endif
 !

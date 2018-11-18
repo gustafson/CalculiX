@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -90,7 +90,7 @@ C      ENTRY ZWEINT (T,LSP,IART,XA,YA,ZA,NA,IEXP,IER)
       IER = 0
       one=1
       NX = T(1,1)
-      NY = (T(1,1)-NX)*1000 + 0.1
+      NY = (T(1,1)-NX)*1000 + 0.1d0
 C
 C TESTING INPUT
 C--------------
@@ -117,7 +117,7 @@ C
 C DEFINING THE CONTROL VALUES
 C---------------------------
       INPX = IART/10
-      INPY = IART - INPX*10 + 0.1
+      INPY = IART - INPX*10 + 0.1d0
       IEXPX1 = IEXP(1)/10
       IEXPXN = IEXP(1) - IEXPX1*10
       IEXPY1 = IEXP(2)/10

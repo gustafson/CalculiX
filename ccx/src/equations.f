@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &  labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
      &  set,istartset,iendset,ialset,nset,nodempcref,coefmpcref,
      &  ikmpcref,memmpcref_,mpcfreeref,maxlenmpcref,memmpc_,
-     &  maxlenmpc)
+     &  maxlenmpc,ier)
 !
 !     reading the input deck: *EQUATION
 !
@@ -38,7 +38,7 @@
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),impcstart,impcend,i1,
      &  istartset(*),iendset(*),ialset(*),nset,k,l,m,index1,ipos,
      &  impc,nodempcref(3,*),ikmpcref(*),memmpcref_,mpcfreeref,
-     &  maxlenmpcref,memmpc_,maxlenmpc
+     &  maxlenmpcref,memmpc_,maxlenmpc,ier
 !
       real*8 coefmpc(*),co(3,*),trab(7,*),a(3,3),x,coefmpcref(*)
 !
@@ -49,7 +49,8 @@
                write(*,*) '*ERROR reading *EQUATION'
                write(*,*) '       removing equations is not allowed'
                write(*,*) '       in the first step'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             do j=1,nmpc
@@ -77,7 +78,8 @@
                write(*,*) '*ERROR reading *EQUATION'
                write(*,*) '       removing equations is not allowed'
                write(*,*) '       in the first step'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             do i=1,nmpc
@@ -88,7 +90,8 @@
                   write(*,*) '       changed since the start of the'
                   write(*,*) '       calculation. Removing equations'
                   write(*,*) '       does not work'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             enddo
 !
@@ -113,15 +116,21 @@
                if((istat.lt.0).or.(key.eq.1)) return
 !     
                read(textpart(2)(1:10),'(i10)',iostat=istat) impcstart
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EQUATION%",ier)
+                  return
+               endif
 !     
                if(textpart(3)(1:1).eq.' ') then
                   impcend=impcstart
                else
                   read(textpart(3)(1:10),'(i10)',iostat=istat) impcend
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATION%")
+                  if(istat.gt.0) then
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*EQUATION%",ier)
+                     return
+                  endif
                endif
 !     
                read(textpart(1)(1:10),'(i10)',iostat=istat) l
@@ -129,7 +138,8 @@
                   if((l.gt.nk).or.(l.le.0)) then
                      write(*,*) '*ERROR reading *BOUNDARY:'
                      write(*,*) '       node ',l,' is not defined'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                   do i1=impcstart,impcend
                      idof=8*(l-1)+i1
@@ -161,8 +171,8 @@
      &                       noset
                      write(*,*) '  has not yet been defined. '
                      call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATION%")
-                     call exit(201)
+     &                    "*EQUATION%",ier)
+                     return
                   endif
                   do j=istartset(i),iendset(i)
                      if(ialset(j).gt.0) then
@@ -227,7 +237,8 @@
          write(*,*) 
      &       '*ERROR reading *EQUATION: *EQUATION should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do
@@ -239,7 +250,8 @@
          nmpc=nmpc+1
          if(nmpc.gt.nmpc_) then
             write(*,*) '*ERROR reading *EQUATION: increase nmpc_'
-            call exit(201)
+            ier=1
+            return
          endif
 !
          labmpc(nmpc)='                    '
@@ -254,24 +266,31 @@
      &               nmpc
                write(*,*) '  is not complete. '
                call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATION%")
-               call exit(201)
+     &              "*EQUATION%",ier)
+               return
             endif
 !
             do i=1,n/3
 !
                read(textpart((i-1)*3+1)(1:10),'(i10)',iostat=istat) node
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EQUATION%",ier)
+                  return
+               endif
                if((node.gt.nk).or.(node.le.0)) then
                   write(*,*) '*ERROR reading *EQUATION:'
                   write(*,*) '       node ',node,' is not defined'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !
                read(textpart((i-1)*3+2)(1:10),'(i10)',iostat=istat) ndir
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EQUATION%",ier)
+                  return
+               endif
                if(ndir.le.6) then
 c               elseif(ndir.eq.4) then
 c                  ndir=5
@@ -286,12 +305,16 @@ c                  ndir=7
                else
                   write(*,*) '*ERROR reading *EQUATION:'
                   write(*,*) '       direction',ndir,' is not defined'
-                  call exit(201)
+                  ier=1
+                  return
                endif
 !
                read(textpart((i-1)*3+3)(1:20),'(f20.0)',iostat=istat) x
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*EQUATION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*EQUATION%",ier)
+                  return
+               endif
 !
 !              check whether the node is transformed
 !
@@ -317,7 +340,8 @@ c                  ndir=7
                         if(ikmpc(id).eq.idof) then
                            write(*,100)
      &                   (ikmpc(id))/8+1,ikmpc(id)-8*((ikmpc(id))/8)
-                           call exit(201)
+                           ier=1
+                           return
                         endif
                      endif
                      do j=nmpc,id+2,-1
@@ -333,7 +357,8 @@ c                  ndir=7
                   if(mpcfree.eq.0) then
                      write(*,*) 
      &                  '*ERROR reading *EQUATION: increase memmpc_'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                else
                   call transformatrix(trab(1,inotr(1,node)),
@@ -367,7 +392,8 @@ c                  ndir=7
                         write(*,*) ' cannot be converted in MPC: all'
                         write(*,*) ' DOFs in the node are used as'
                         write(*,*) ' dependent nodes in other MPCs'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                      number=number-1
 !
@@ -393,7 +419,8 @@ c                  ndir=7
                      if(mpcfree.eq.0) then
                         write(*,*) 
      &                    '*ERROR reading *EQUATION: increase memmpc_'
-                        call exit(201)
+                        ier=1
+                        return
                      endif
                   enddo
                endif

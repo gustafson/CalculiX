@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,6 +28,11 @@
      &  idesvarc,iobject,mi(*),j,k,nobject,idesvar
 !
       real*8 g0(nobject),vold(0:mi(2),*)
+!
+      intent(in) nodeset,istartset,iendset,ialset,
+     &  nk,idesvarc,iobject,mi,nobject,vold
+!
+      intent(inout) g0
 !
       idesvar=idesvarc+1
 !

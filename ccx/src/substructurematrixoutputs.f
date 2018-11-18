@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,8 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine substructurematrixoutputs(textpart,istep,
-     &  inpc,istat,n,key,iline,ipol,inl,ipoinp,inp,jobnamec,ipoinpc)
+     &  inpc,istat,n,key,iline,ipol,inl,ipoinp,inp,jobnamec,ipoinpc,
+     &  ier)
 !
 !     reading the input deck: *SUBSTRUCTURE MATRIX OUTPUT
 !
@@ -27,13 +28,14 @@
       character*132 textpart(16),jobnamec(*)
 !
       integer i,istep,n,istat,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),key,j,k,l,ipoinpc(0:*)
+     &  inp(3,*),key,j,k,l,ipoinpc(0:*),ier
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *SUBSTRUCTURE MATRIX OUTPUT:'
          write(*,*) '       *SUBSTRUCTURE MATRIX OUTPUT can '
          write(*,*) '       only be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n

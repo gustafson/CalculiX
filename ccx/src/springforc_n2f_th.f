@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -74,16 +74,16 @@
 !
 !     determining the jacobian vector on the surface 
 !
-      if(nterms.eq.9) then
-         call shape9q(xi,et,pl,xsj2,xs2,shp2,iflag)
-      elseif(nterms.eq.8) then
+c      if(nterms.eq.9) then
+c         call shape9q(xi,et,pl,xsj2,xs2,shp2,iflag)
+      if(nterms.eq.8) then
          call shape8q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.4) then
          call shape4q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.6) then
          call shape6tri(xi,et,pl,xsj2,xs2,shp2,iflag)
-      elseif(nterms.eq.7) then
-         call shape7tri(xi,et,pl,xsj2,xs2,shp2,iflag)
+c      elseif(nterms.eq.7) then
+c         call shape7tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       else
          call shape3tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       endif

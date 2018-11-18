@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine contactprints(inpc,textpart,
      &     nprint,nprint_,jout,prlab,prset,
      &     contactprint_flag,ithermal,istep,istat,n,iline,ipol,inl,
-     &     ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,nener)
+     &     ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,nener,ier)
 !
 !     reading the *CONTACT PRINT cards in the input deck
 !
@@ -33,16 +33,17 @@
       character*81 prset(*),noset
       character*132 textpart(16)
 !
-      integer ii,i,nam,itpamp,
+      integer ii,i,nam,itpamp,ier,
      &  jout(2),joutl,ithermal,nprint,nprint_,istep,
      &  istat,n,key,ipos,iline,ipol,inl,ipoinp(2,*),inp(3,*),idrct,
      &  ipoinpc(0:*),nener
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in contactprints: *CONTACT PRINT 
+         write(*,*) '*ERROR reading *CONTACT PRINT: *CONTACT PRINT 
      &        should only be'
          write(*,*) '  used within a *STEP definition'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nodesys='L'
@@ -73,8 +74,11 @@ c      jout=max(jout,1)
       do ii=2,n
          if(textpart(ii)(1:10).eq.'FREQUENCY=') then
             read(textpart(ii)(11:20),'(i10)',iostat=istat) joutl
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CONTACT PRINT%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CONTACT PRINT%",ier)
+               return
+            endif
             if(joutl.eq.0) then
                do
                   call getnewline(inpc,textpart,istat,n,key,iline,ipol,
@@ -100,22 +104,25 @@ c      jout=max(jout,1)
            enddo
            if(i.gt.nam) then
               ipos=index(timepointsname,' ')
-              write(*,*) '*ERROR in contactprints: time points
-     &             definition '
+              write(*,*) '*ERROR reading *CONTACT PRINT: time points de
+     &finition '
      &               ,timepointsname(1:ipos-1),' is unknown or empty'
-              call exit(201)
+              ier=1
+              return
            endif
            if(idrct.eq.1) then
-              write(*,*) '*ERROR in contactprints: the DIRECT option'
+              write(*,*) 
+     &            '*ERROR reading *CONTACT PRINT: the DIRECT option'
               write(*,*) '       collides with a TIME POINTS '
               write(*,*) '       specification'
-              call exit(201)
+              ier=1
+              return
            endif
            jout(1)=1
            jout(2)=1
          else
             write(*,*) 
-     &        '*WARNING in contactprints: parameter not recognized:'
+     &      '*WARNING reading *CONTACT PRINT: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(ii)(1:index(textpart(ii),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -132,8 +139,8 @@ c      jout=max(jout,1)
      &         (textpart(ii)(1:4).ne.'CELS').and.
      &         (textpart(ii)(1:4).ne.'CNUM').and.
      &         (textpart(ii)(1:4).ne.'CDIS')) then
-               write(*,*) '*WARNING in contactprints: label not
-     &              applicable'
+               write(*,*) '*WARNING reading *CONTACT PRINT: label not ap
+     &plicable'
                write(*,*) '         or unknown; '
                call inputwarning(inpc,ipoinpc,iline,
      &"*CONTACT PRINT%")
@@ -147,7 +154,8 @@ c      jout=max(jout,1)
             nprint=nprint+1
             if(nprint.gt.nprint_) then
                write(*,*) '*ERROR in contatcprints: increase nprint_'
-               call exit(201)
+               ier=1
+               return
             endif
             prset(nprint)=noset
             prlab(nprint)(1:4)=textpart(ii)(1:4)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &        plicon,nplicon,
      &        ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
      &        inl,ipoinp,inp,nmat_,set,istartset,iendset,ialset,
-     &        nset,ielmat,ielorien,ipoinpc,mi)
+     &        nset,ielmat,ielorien,ipoinpc,mi,ier)
 !
 !     reading the input deck: *GAP
 !
@@ -33,25 +33,27 @@
 !
       integer mi(*),nelcon(2,*),nmat,ntmat_,ntmat,npmat_,npmat,istep,
      &  n,key,i,nplicon(0:ntmat_,*),ncmat_,istat,istartset(*),
-     &  iendset(*),irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
+     &  iendset(*),irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),nmat_,
      &  ialset(*),ipos,nset,j,k,ielmat(mi(3),*),ielorien(mi(3),*),
-     &  ipoinpc(0:*)  
+     &  ipoinpc(0:*),ier 
 !
       real*8 plicon(0:2*npmat_,ntmat_,*),temperature,
      &  elcon(0:ncmat_,ntmat_,*)
 !
       ntmat=0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *GAP: *GAP should be placed'
          write(*,*) '  before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nmat=nmat+1
       if(nmat.gt.nmat_) then
          write(*,*) '*ERROR reading *GAP: increase nmat_'
-         call exit(201)
+         ier=1
+         return
       endif
       matname(nmat)(1:3)='GAP'
       do i=4,80
@@ -86,7 +88,8 @@
          nelcon(2,nmat)=ntmat
          if(ntmat.gt.ntmat_) then
             write(*,*) '*ERROR reading *GAP: increase ntmat_'
-            call exit(201)
+            ier=1
+            return
          endif
 !     
 !     defaults for spring constant (force vs. displacement)
@@ -100,8 +103,11 @@
          do i=1,min(4,n)
             read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &           elcon(i,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &           "*GAP%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &                         "*GAP%",ier)
+               return
+            endif
          enddo
 !
 !        reading entry 6 and 7 (spring constant and force at
@@ -110,8 +116,11 @@
          do i=6,min(7,n)
             read(textpart(i)(1:20),'(f20.0)',iostat=istat)
      &           elcon(i-1,ntmat,nmat)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &           "*GAP%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &                         "*GAP%",ier)
+               return
+            endif
          enddo
 !
          elcon(0,ntmat,nmat)=0.d0
@@ -119,7 +128,8 @@
 !
       if(ntmat.eq.0) then
          write(*,*) '*ERROR reading *GAP: *GAP card without data'
-         call exit(201)
+         ier=1
+         return
       endif
       do i=1,nset
          if(set(i).eq.elset) exit
@@ -129,8 +139,8 @@
          write(*,*) '*ERROR reading *GAP: element set ',elset
          write(*,*) '       has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*GAP%")
-         call exit(201)
+     &        "*GAP%",ier)
+         return
       endif
 !
 !     assigning the elements of the set the appropriate material

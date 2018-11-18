@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                     */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -45,10 +45,12 @@ static ITG *nobject1,*nk1,*nodedesi1,*ndesi1,*nx1,*ny1,*nz1,*neighbor1=NULL,
    filtermain.c:42: error: ‘y1’ redeclared as different kind of symbol */
 
 
-static double *dgdxglob1,*xo1,*yo1,*zo1,*x1,*yy1,*z1,*r1=NULL;
+static double *dgdxglob1,*xo1,*yo1,*zo1,*x1,*yy1,*z1,*r1=NULL,*xdesi1,
+              *distmin1;
 
 void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
-                ITG *nodedesi, ITG *ndesi, char *objectset){
+                ITG *nodedesi, ITG *ndesi, char *objectset,double *xdesi,
+		double *distmin){
 
     /* filtering the sensitivities */
 
@@ -60,7 +62,7 @@ void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
        the radius applies to all objective functions */
     
     if(*nobject==0){return;}
-    if(strcmp1(&objectset[81],"                    ")==0){
+    if(strcmp1(&objectset[81],"     ")==0){
 	for(i=1;i<2**nk**nobject;i=i+2){
 	    dgdxglob[i]=dgdxglob[i-1];
 	}
@@ -106,7 +108,7 @@ void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
     
     /* local declaration prevails, if strictly positive */
     
-    envloc = getenv("CCX_NPROC_FILTER");
+    envloc = getenv("CCX_NPROC_SENS");
     if(envloc){
 	num_cpus=atoi(envloc);
 	if(num_cpus<0){
@@ -142,7 +144,8 @@ void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
     
     dgdxglob1=dgdxglob;nobject1=nobject;nk1=nk;nodedesi1=nodedesi;
     ndesi1=ndesi;objectset1=objectset;xo1=xo;yo1=yo;zo1=zo;
-    x1=x;yy1=y;z1=z;nx1=nx;ny1=ny;nz1=nz;
+    x1=x;yy1=y;z1=z;nx1=nx;ny1=ny;nz1=nz;xdesi1=xdesi;
+    distmin1=distmin;
     
     /* filtering */
     
@@ -160,10 +163,6 @@ void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
     SFREE(neighbor1);SFREE(r1);SFREE(xo);SFREE(yo);SFREE(zo);
     SFREE(x);SFREE(y);SFREE(z);SFREE(nx);SFREE(ny);SFREE(nz);
     SFREE(ithread);
-    
-    /* postprocessing the filtered results */
-    
-//    FORTRAN(postfilter,(dgdxglob,nobject,nk,nodedesi,ndesi));
     
     return;
     
@@ -187,7 +186,7 @@ void *filtermt(ITG *i){
 
     FORTRAN(filter,(dgdxglob1,nobject1,nk1,nodedesi1,ndesi1,objectset1,
                     xo1,yo1,zo1,x1,yy1,z1,nx1,ny1,nz1,&neighbor1[indexr],
-                    &r1[indexr],&ndesia,&ndesib));
+                    &r1[indexr],&ndesia,&ndesib,xdesi1,distmin1));
 
     return NULL;
 }

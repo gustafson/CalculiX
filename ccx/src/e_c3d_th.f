@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -52,7 +52,7 @@
      &  mattyp,ithermal(2),iperturb,nload,idist,i,j,k,i1,j1,l,m,
      &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),mi(*),
      &  nrhcon(*),ielmat(mi(3),*),ielorien(mi(3),*),nodempc(3,*),nmpc,
-     &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),iloc,
+     &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),
      &  mint3d,ifacet(6,4),nopev,iorien,ilmpc(*),kode,jfaces,null,
      &  ifacew(8,5),intscheme,ipointeri,ipointerj,ncocon(2,*),
      &  nshcon(*),iinc,istep,jltyp,nfield,node,iflag,iscale,ielprop(*),
@@ -302,14 +302,13 @@ c            nope=nope+1
      &                 npmat_,iperturb,springarea(1,konl(nope+1)),mi,
      &                 timeend,matname,konl(nope),nelem,istep,iinc)
                   elseif(mortar.eq.1) then
-                     iloc=kon(indexe+nope+1)
                      jfaces=kon(indexe+nope+2)
                      igauss=kon(indexe+nope+1) 
                      node=0
                      call springstiff_f2f_th(xl,voldl,s,imat,elcon,
      &                    nelcon,ncmat_,ntmat_,nope,lakonl,kode,
      &                    elconloc,plicon,nplicon,npmat_,
-     &                    springarea(1,iloc),
+     &                    springarea(1,igauss),
      &                    nmethod,mi,reltime,jfaces,igauss,pslavsurf,
      &                    pmastsurf,clearini,matname,plkcon,nplkcon,
      &                    node,nelem,istep,iinc,timeend)
@@ -730,16 +729,16 @@ c            read(sideload(id)(2:2),'(i1)') ig
                 weight=weight2d4(i)
              endif
 !
-             if(nopes.eq.9) then
-                call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
-             elseif(nopes.eq.8) then
+c             if(nopes.eq.9) then
+c                call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
+             if(nopes.eq.8) then
                 call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
              elseif(nopes.eq.4) then
                 call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
              elseif(nopes.eq.6) then
                 call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
-             elseif(nopes.eq.7) then
-                call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+c             elseif(nopes.eq.7) then
+c                call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
              else
                 call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
              endif

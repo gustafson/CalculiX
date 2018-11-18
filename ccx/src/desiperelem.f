@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,12 +17,16 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine desiperelem(ndesi,istartdesi,ialdesi,ipoeldi,ieldi,
-     &      ne)
+     &      ne,istartelem,ialelem)
 !
       implicit none
 !
       integer ndesi,istartdesi(*),ialdesi(*),ipoeldi(*),ieldi(2,*),
-     &  ieldifree,i,j,nelem,ne
+     &  ieldifree,i,j,nelem,ne,ifree,index,istartelem(*),ialelem(*)
+!
+      intent(in) ndesi,istartdesi,ialdesi,ne
+!
+      intent(inout) ipoeldi,ieldi,istartelem,ialelem
 !
 !     storing the design variables per element
 !
@@ -47,6 +51,24 @@
          ipoeldi(i)=ieldifree
          ieldifree=ieldifree+1
       enddo
+!
+!     determining the design variables belonging to a given 
+!     element i. They are stored in ialelem(istartelem(i))..
+!     ...up to..... ialdesi(istartelem(i+1)-1)
+!
+      ifree=1
+      do i=1,ne
+         istartelem(i)=ifree
+         index=ipoeldi(i)
+         do
+            if(index.eq.0) exit
+            ialelem(ifree)=ieldi(1,index)
+c            write(*,*) 'desiperelem ',i,ialelem(ifree)
+            ifree=ifree+1
+            index=ieldi(2,index)
+         enddo
+      enddo
+      istartelem(ne+1)=ifree
 !
       return
       end

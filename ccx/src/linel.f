@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -136,7 +136,7 @@
 !
 !              determining the type: orthotropic or anisotropic
 !
-               emax=0.
+               emax=0.d0
                do j=1,21
                   emax=max(emax,dabs(elas(j)))
                enddo

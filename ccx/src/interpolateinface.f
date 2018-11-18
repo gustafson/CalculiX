@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
      &  koncont(3,2*numpts+1),itri,kflag,neigh(1),kneigh,
      &  imastop(3,2*numpts+1),indexcj,nopespringj,list(numpts),
      &  igauss,mi(*),nstate_,itriangle(100),itriold,
-     &  ifaceq(8,6),ip(numpts),ne0,iloc,itrinew,ntriangle,
+     &  ifaceq(8,6),ip(numpts),ne0,itrinew,ntriangle,
      &  ifacet(6,4),ifacew1(4,5),ifacew2(8,5),n,islavsurf(2,*),
      &  ibin(numpts),ivert1,ntriangle_,nterms,m,islavsurfold(2,*),
      &  nx(2*numpts+1),ny(2*numpts+1),isol,id
@@ -132,9 +132,8 @@
 !
 !       Loop over the new integration points
 !
-      do iloc=islavsurf(2,kk)+1,islavsurf(2,kk+1)
+      do igauss=islavsurf(2,kk)+1,islavsurf(2,kk+1)
          xdist=9.d0
-         igauss=iloc
 !
 !        coordinates of the new integration point
 !
@@ -238,7 +237,7 @@ c     write(*,*) '**regular solution'
      &           coi(1,koncont(1,itri)),coi(2,koncont(1,itri)),z(i,1),
      &           coi(1,koncont(2,itri)),coi(2,koncont(2,itri)),z(i,2),
      &           coi(1,koncont(3,itri)),coi(2,koncont(3,itri)),z(i,3),
-     &           p(1),p(2),xstate(i,1,ne0+iloc))
+     &           p(1),p(2),xstate(i,1,ne0+igauss))
          enddo
 !     
       enddo

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,8 @@
 !
       subroutine cfds(inpc,textpart,nmethod,iperturb,isolver,
      &  istep,istat,n,tinc,tper,tmin,tmax,idrct,ithermal,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl,tincf,ttime,physcon)
+     &  inl,ipoinp,inp,ipoinpc,alpha,ctrl,iexpl,tincf,ttime,physcon,
+     &  ier)
 !
 !     reading the input deck: *CFD
 !
@@ -42,7 +43,7 @@
 !
       integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
      &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
-     &  iexpl
+     &  iexpl,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),tincf,ttime,physcon(*)
 !
@@ -60,13 +61,15 @@
       elseif((iperturb.eq.1).and.(istep.gt.1)) then
          write(*,*) '*ERROR reading *CFD: perturbation analysis is'
          write(*,*) '       not provided in a *HEAT TRANSFER step.'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *CFD: *HEAT TRANSFER can only '
          write(*,*) '       be used within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     default solver
@@ -110,6 +113,12 @@
             elseif(textpart(i)(17:19).eq.'SST') then
                physcon(9)=3.5d0
             endif
+         elseif(textpart(i)(1:9).eq.'SCHEME=UD') then
+            ctrl(48)=1.5d0
+         elseif(textpart(i)(1:15).eq.'SCHEME=MODSMART') then
+            ctrl(48)=2.5d0
+         elseif(textpart(i)(1:7).eq.'SIMPLEC') then
+            ctrl(49)=1.5d0
          else
             write(*,*) 
      &        '*WARNING reading *CFD: parameter not recognized:'
@@ -124,7 +133,8 @@
       if((ithermal.eq.0).and.(iexpl.eq.1)) then
          write(*,*) '*ERROR reading *CFD: please define initial '
          write(*,*) '       conditions for the temperature'
-         call exit(201)
+         ier=1
+         return
       elseif(ithermal.gt.0) then
          ithermal=3
       endif
@@ -180,20 +190,35 @@
       endif
 !
       read(textpart(1)(1:20),'(f20.0)',iostat=istat) tinc
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CFD%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*CFD%",ier)
+         return
+      endif
       read(textpart(2)(1:20),'(f20.0)',iostat=istat) tper
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CFD%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*CFD%",ier)
+         return
+      endif
       read(textpart(3)(1:20),'(f20.0)',iostat=istat) tmin
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CFD%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*CFD%",ier)
+         return
+      endif
       read(textpart(4)(1:20),'(f20.0)',iostat=istat) tmax
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CFD%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*CFD%",ier)
+         return
+      endif
       read(textpart(5)(1:20),'(f20.0)',iostat=istat) tincf
-      if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*CFD%")
+      if(istat.gt.0) then
+         call inputerror(inpc,ipoinpc,iline,
+     &        "*CFD%",ier)
+         return
+      endif
 !
       if(tinc.le.0.d0) then
          write(*,*) '*ERROR reading *CFD: initial increment size is 

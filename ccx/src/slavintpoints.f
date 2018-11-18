@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -55,25 +55,25 @@
 !
       data iflag /2/
 !
-      data xquad /-1,-1,
-     &     1,-1,
-     &     1,1,
-     &     -1,1,
-     &     0,-1,
-     &     1,0,
-     &     0,1,
-     &     -1,0/
+      data xquad /-1.d0,-1.d0,
+     &     1.d0,-1.d0,
+     &     1.d0,1.d0,
+     &     -1.d0,1.d0,
+     &     0.d0,-1.d0,
+     &     1.d0,0.d0,
+     &     0.d0,1.d0,
+     &     -1.d0,0.d0/
 !     
-      data xtri /0,0,
-     &     1,0,
-     &     0,1,
-     &     0.5,0,
-     &     0.5,0.5,
-     &     0,0.5/
+      data xtri /0.d0,0.d0,
+     &     1.d0,0.d0,
+     &     0.d0,1.d0,
+     &     0.5d0,0.d0,
+     &     0.5d0,0.5d0,
+     &     0.d0,0.5d0/
 !     
       kneigh=1
-      err=0.1
-      areaslav=0.0
+      err=0.1d0
+      areaslav=0.d0
       nintpfirst=nintpoint
       islavsurf(2,l)=nintpoint
 !     
@@ -114,7 +114,7 @@
       enddo
       do j=1,3
          do m=1,nopes
-            xl2sr(j,m)=xl2s(j,m)-0.5*err*(xl2s(j,m)-pmiddle(j))
+            xl2sr(j,m)=xl2s(j,m)-0.5d0*err*(xl2s(j,m)-pmiddle(j))
          enddo
       enddo
 !
@@ -127,10 +127,10 @@
             enddo
          enddo
       else
-         do j=1,int(nopes/2.0)
+         do j=1,int(nopes/2.d0)
             do k=1,3
                xl2s2(k,2*j-1)=xl2s(k,j)
-               xl2s2(k,2*j)=xl2s(k,(int(nopes/2.0))+j)           
+               xl2s2(k,2*j)=xl2s(k,(int(nopes/2.d0))+j)           
             enddo
          enddo
       endif
@@ -222,7 +222,7 @@
             xl2sr(j,m)=xl2s(j,m)-2*err*(xl2s(j,m)-pmiddle(j))
          enddo
       enddo
-      distmin=1.1   
+      distmin=1.1d0
       do j=1,nopes
          call neartriangle(xl2sr(1,j),xn,xo,yo,zo,x,y,z,nx,ny,nz,
      &        ntri,neigh,kneigh,itietri,ntie,straight,imastop,itri,i)
@@ -257,7 +257,7 @@
      &        +xn(2)*straight(14,itri)
      &        +xn(3)*straight(15,itri)
 !     
-         if(anglesm.lt.-0.7)then
+         if(anglesm.lt.-0.7d0)then
 !     angle between surface normals between 135 and 225 degree
 !     angle between surfaces between 0 and 45 degree
             ntria=ntria+1

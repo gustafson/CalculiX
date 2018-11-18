@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
       read(objectset(1,iobject)(61:80),'(f20.0)',iostat=istat) refdist
 !      
       nnodes=1
-      numericdist=0.02
+      numericdist=0.02d0
 !
 !     check if upper or lower constraint is defined
 !      
@@ -73,11 +73,15 @@
 !
          if(objectset(1,iobject)(19:20).eq.'LE') then
             if(actdist.gt.refdist) then
-               dgdxglob(2,iactnode,iobject)=1.0d0
+               dgdxglob(1,iactnode,iobject)=1.0d0
+	       dgdxglob(2,iactnode,iobject)=1.0d0
+c               dgdx(j,iobject)=1.d0
             endif
          else
             if(actdist.lt.refdist) then
-               dgdxglob(2,iactnode,iobject)=1.0d0
+               dgdxglob(1,iactnode,iobject)=1.0d0
+	       dgdxglob(2,iactnode,iobject)=1.0d0
+c               dgdx(j,iobject)=1.d0
             endif
          endif      
       enddo

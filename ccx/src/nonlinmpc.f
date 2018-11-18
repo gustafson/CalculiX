@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,16 +48,18 @@
      &  ru2(3,3),ru3(3,3),u1(3,3),u2(3,3),u3(3,3),dcu(3,3,3),u(3,3),
      &  xi1,xi2,xi3,dco,dsi,dco2,dsi2,cj,ck,cl,dmax
 !
-      data d /1.,0.,0.,0.,1.,0.,0.,0.,1./
-      data e /0.,0.,0.,0.,0.,-1.,0.,1.,0.,
-     &        0.,0.,1.,0.,0.,0.,-1.,0.,0.,
-     &        0.,-1.,0.,1.,0.,0.,0.,0.,0./
+      data d /1.d0,0.d0,0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,1.d0/
+      data e /0.d0,0.d0,0.d0,0.d0,0.d0,-1.d0,0.d0,1.d0,0.d0,
+     &        0.d0,0.d0,1.d0,0.d0,0.d0,0.d0,-1.d0,0.d0,0.d0,
+     &        0.d0,-1.d0,0.d0,1.d0,0.d0,0.d0,0.d0,0.d0,0.d0/
       data neigh /1,9,2,12,4,17,5,2,9,1,10,3,18,6,
      &            3,11,4,10,2,19,7,4,11,3,12,1,20,8,
      &            5,13,6,16,8,17,1,6,13,5,14,7,18,2,
      &            7,15,8,14,6,19,3,8,15,7,16,5,20,4/
-      data coloc /-1.,-1.,-1.,1.,-1.,-1.,1.,1.,-1.,-1.,1.,-1.,
-     &            -1.,-1.,1.,1.,-1.,1.,1.,1.,1.,-1.,1.,1./
+      data coloc /-1.d0,-1.d0,-1.d0,1.d0,-1.d0,-1.d0,1.d0,1.d0,-1.d0,
+     &            -1.d0,1.d0,-1.d0,
+     &            -1.d0,-1.d0,1.d0,1.d0,-1.d0,1.d0,1.d0,1.d0,1.d0,
+     &            -1.d0,1.d0,1./
 !     
 !     latin hypercube positions in a 3 x 3 matrix
 !     
@@ -118,12 +120,12 @@
                enddo
 !
                c4=-c2
-               if(ww.gt.0.00464159) then
+               if(ww.gt.0.00464159d0) then
                   c5=(ww*dcos(ww)-dsin(ww))/ww**3
                else
                   c5=-1.d0/3.d0
                endif
-               if(ww.gt.0.0031623) then
+               if(ww.gt.0.0031623d0) then
                   c6=(ww*dsin(ww)-2.d0+2.d0*dcos(ww))/ww**4
                else
                   c6=-1.d0/12.d0
@@ -287,12 +289,12 @@ c     &                                    dc(i,j,3)*w(3)
                enddo
 !
                c4=-c2
-               if(ww.gt.0.00464159) then
+               if(ww.gt.0.00464159d0) then
                   c5=(ww*dcos(ww)-dsin(ww))/ww**3
                else
                   c5=-1.d0/3.d0
                endif
-               if(ww.gt.0.0031623) then
+               if(ww.gt.0.0031623d0) then
                   c6=(ww*dsin(ww)-2.d0+2.d0*dcos(ww))/ww**4
                else
                   c6=-1.d0/12.d0

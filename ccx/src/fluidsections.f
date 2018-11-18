@@ -1,7 +1,6 @@
-
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +20,7 @@
      &  ialset,nset,ielmat,matname,nmat,
      &  irstrt,istep,istat,n,iline,ipol,
      &  inl,ipoinp,inp,lakon,ielprop,nprop,nprop_,prop,
-     &  ipoinpc,mi)
+     &  ipoinpc,mi,ier)
 !
 !     reading the input deck: *FLUID SECTION
 !
@@ -37,10 +36,10 @@
       character*132 textpart(16)
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),nconstants,
-     &  ielmat(mi(3),*),irstrt,nset,nmat,ndprop,npropstart,ndpropread,
+     &  ielmat(mi(3),*),irstrt(*),nset,nmat,ndprop,npropstart,
      &  istep,istat,n,key,i,j,k,imaterial,ipos,lprop,ipoinpc(0:*),
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ielprop(*),nprop,nprop_,
-     &  nodea,nodeb,noil _mat,npu,nfix,nstart,iset
+     &  nodea,nodeb,noil _mat,npu,nfix,nstart,iset,ier,ndpropread
 !
       real*8 prop(*)
 
@@ -48,11 +47,12 @@
       liquid=.false.
       manning=.false.
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) 
      &      '*ERROR reading *FLUID SECTION: *FLUID SECTION should'
          write(*,*) '  be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       typename='
@@ -69,8 +69,11 @@
 !           
          elseif(textpart(i)(1:5).eq.'TYPE=') then
             read(textpart(i)(6:85),'(a80)',iostat=istat) typename
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*FLUID SECTION%",ier)
+               return
+            endif
 !           
          elseif(textpart(i)(1:4).eq.'OIL=') then
             read(textpart(i)(5:85),'(a80)',iostat=istat) typename_oil
@@ -84,7 +87,8 @@
                write(*,*) 
      &            '*ERROR reading *FLUID SECTION: no oil with the'
                write(*,*) '       name',typename_oil,'has been defined'
-               call exit(201)
+               ier=1
+               return
             endif
 !
          elseif(textpart(i)(1:6).eq.'LIQUID') then
@@ -93,8 +97,11 @@
             manning=.true.
          elseif(textpart(i)(1:10).eq.'CONSTANTS=') then
             read(textpart(i)(11:20),'(i10)',iostat=istat) nconstants
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*FLUID SECTION%",ier)
+               return
+            endif
          else
             write(*,*) 
      &      '*WARNING reading *FLUID SECTION: parameter not recognized:'
@@ -208,11 +215,12 @@
             write(*,*) '*ERROR reading *FLUID SECTION:'
             write(*,*) '       unknown channel section'
             call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
+     &           "*FLUID SECTION%",ier)
+            return
          endif
 !
       elseif(typename(1:14).eq.'CHARACTERISTIC') then
-         ndprop=23
+         ndprop=25
          elname='CHAR   '
 !      
       elseif(typename(1:10).eq.'CROSSSPLIT')then
@@ -447,7 +455,7 @@ C         ndprop=20
          elseif(typename(11:23).eq.'BENDIDELCIRC') then
             elname='REBEIDC'
             ndprop=10
-         elseif(typename(11:23).eq.'BENDIDELRECT') then
+         elseif(typename(11:22).eq.'BENDIDELRECT') then
             elname='REBEIDR'
             ndprop=10
          elseif(typename(11:20).eq.'BENDMILLER') then
@@ -503,7 +511,8 @@ C         ndprop=20
       else
          write(*,*) '*ERROR reading *FLUID SECTION: ',typename
          write(*,*) '       is an unknown fluid section type'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     check for the existence of the set and the material
@@ -516,8 +525,8 @@ C         ndprop=20
      &     '*ERROR reading *FLUID SECTION: nonexistent material'
          write(*,*) '  '
          call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
-         call exit(201)
+     &        "*FLUID SECTION%",ier)
+         return
       endif
       imaterial=i
 !
@@ -529,8 +538,8 @@ C         ndprop=20
          write(*,*) '*ERROR reading *FLUID SECTION: element set ',elset
          write(*,*) '  has not yet been defined. '
          call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
-         call exit(201)
+     &        "*FLUID SECTION%",ier)
+         return
       endif
       iset=i
 !
@@ -569,8 +578,11 @@ c               do j=1,nfix
 c                  ndprop=ndprop+1
 c                  read(textpart(j),'(f40.0)',iostat=istat) 
 c     &                 prop(nprop+ndprop)
-c                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-c     &"*FLUID SECTION%")
+c                  if(istat.gt.0) then
+c                     call inputerror(inpc,ipoinpc,iline,
+c     &                     "*FLUID SECTION%",ier)
+c                      return
+c                   endif
 c               enddo
 c               nstart=nfix+1
 c!
@@ -617,15 +629,17 @@ c               ndprop=ndprop+1
                      write(*,*) 'ERROR reading *FLUID SECTION: more'
                      write(*,*) '      than 9 pairs were defined for'
                      write(*,*) '      fluid section type LIQUID PUMP'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                elseif(elname(1:4).eq.'CHAR') then
-                  if(ndprop.gt.23) then
+                  if(ndprop.gt.25) then
                      write(*,*) 'ERROR reading *FLUID SECTION: more'
-                     write(*,*) '      than 9 pairs were defined for'
+                     write(*,*) '      than 10 pairs were defined for'
                      write(*,*) 
      &              '      fluid section type CHARACTERISTIC'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                elseif(elname(1:4).eq.'ORPN') then
                   if(ndprop.gt.41) then
@@ -633,21 +647,26 @@ c               ndprop=ndprop+1
                      write(*,*) '      than 17 pairs were defined for'
                      write(*,*) 
      &              '      fluid section type PRESWIRL NOZZLE'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                elseif(elname(1:4).eq.'ORBT') then
                   if(ndprop.gt.41) then
                      write(*,*) 'ERROR reading *FLUID SECTION: more'
                      write(*,*) '      than 18 pairs were defined for'
                      write(*,*) '      fluid section type BLEED TAPPING'
-                     call exit(201)
+                     ier=1
+                     return
                   endif
                endif
 !
                read(textpart(j),'(f40.0)',iostat=istat) 
      &              prop(nprop+ndprop)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*FLUID SECTION%",ier)
+                  return
+               endif
             enddo
          enddo
 !
@@ -667,7 +686,8 @@ c               ndprop=ndprop+1
             write(*,*) '         points x data points for fluid'
             write(*,*) '         section type',elname(1:4)
             npu=npu-1
-c            call exit(201)
+c            ier=1
+c            return
          endif
 !
          prop(nprop+nfix)=npu/2
@@ -681,13 +701,15 @@ c            call exit(201)
                   write(*,*) '*ERROR reading *FLUID SECTION: volumetric'
                   write(*,*) '       flow data points must be in'
                   write(*,*) '       strict increasing order'
-                  call exit(201)
+                  ier=1
+                  return
                elseif(prop(nprop+nfix+2*j).gt.prop(nprop+nfix+2*j-2))
      &              then
                   write(*,*) '*ERROR reading *FLUID SECTION: total'
                   write(*,*) '       head data points must be '
                   write(*,*) '       decreasing'
-                  call exit(201)
+                  ier=1
+                  return
                endif
             enddo
          endif
@@ -715,8 +737,11 @@ c            call exit(201)
                read(textpart(k),'(f40.0)',iostat=istat)
      &                 prop(nprop+lprop)
                
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*FLUID SECTION%",ier)
+                  return
+               endif
                
 !              If 20 elements have been read, check how many more
 !              are to be read
@@ -742,8 +767,11 @@ c            call exit(201)
                   read(textpart(k),'(f40.0)',iostat=istat)
      &                 prop(nprop+lprop)
                
-                  if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
+                  if(istat.gt.0) then
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*FLUID SECTION%",ier)
+                     return
+                  endif
                enddo
             enddo
          endif
@@ -770,8 +798,11 @@ c            call exit(201)
                if(lprop.gt.ndprop) exit
                read(textpart(k),'(f20.0)',iostat=istat) 
      &             prop(nprop+lprop)
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*FLUID SECTION%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*FLUID SECTION%",ier)
+                  return
+               endif
             enddo
          enddo
          nprop=nprop+ndprop
@@ -782,7 +813,8 @@ c            call exit(201)
 !
       if(nprop.gt.nprop_) then
          write(*,*) '*ERROR reading *FLUID SECTION: increase nprop_'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     complementing the properties of restrictor elements
@@ -874,7 +906,8 @@ c            call exit(201)
             if(lakon(ialset(j))(1:1).ne.'D') then
                write(*,*) '*ERROR reading *FLUID SECTION: element ',
      &            ialset(j),' is no fluid element.'
-               call exit(201)
+               ier=1
+               return
             endif
             lakon(ialset(j))(2:8)=elname(1:7)
 !
@@ -906,7 +939,8 @@ c            call exit(201)
                write(*,*) ' Please change element type', 
      &' and/or definition.'
                write(*,*) ' Calculation stopped.'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             ielmat(1,ialset(j))=imaterial
@@ -919,7 +953,8 @@ c            call exit(201)
                if(lakon(k)(1:1).ne.'D') then
                   write(*,*) '*ERROR reading *FLUID SECTION: element ',
      &                 k,' is no fluid element.'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                lakon(k)(2:8)=elname(1:7)
 !
@@ -951,7 +986,8 @@ c            call exit(201)
                   write(*,*) ' Please change element type ',
      &'and/or definition.'
                   write(*,*) ' Calculation stopped.'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                ielmat(1,k)=imaterial
                if(ndprop.gt.0) ielprop(k)=npropstart

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,22 +69,22 @@
          M1_min=0.001d0
          M1_max=1
 !
-         fmin=(1.d0-M1_min**2)*(kappa*M1_min**2)**(-1)
+         fmin=(1.d0-M1_min**2)*(kappa*M1_min**2)**(-1.d0)
      &        +0.5d0*kp1zk*log((0.5d0*kp1)*M1_min**2
-     &        *(1+0.5d0*km1*M1_min**2)**(-1))-lld
+     &        *(1.d0+0.5d0*km1*M1_min**2)**(-1.d0))-lld
 !     
-         fmax=(1.d0-M1_max**2)*(kappa*M1_max**2)**(-1)
+         fmax=(1.d0-M1_max**2)*(kappa*M1_max**2)**(-1.d0)
      &        +0.5d0*kp1zk*log((0.5d0*kp1)*M1_max**2
-     &        *(1+0.5d0*km1*M1_max**2)**(-1))-lld
+     &        *(1.d0+0.5d0*km1*M1_max**2)**(-1.d0))-lld
          do
             i=i+1
             M1=(M1_min+M1_max)*0.5d0
 !     
-            f=(1.d0-M1**2)*(kappa*M1**2)**(-1)
+            f=(1.d0-M1**2)*(kappa*M1**2)**(-1.d0)
      &           +0.5d0*kp1zk*log((0.5d0*kp1)*M1**2
-     &           *(1+0.5d0*km1*M1**2)**(-1))-lld
+     &           *(1.d0+0.5d0*km1*M1**2)**(-1.d0))-lld
 !     
-            if(abs(f).le.1E-6) then
+            if(abs(f).le.1d-6) then
                exit
             endif
             if(i.gt.50) then
@@ -100,8 +100,8 @@
             endif
          enddo
 !     
-         Pt2zpt1_c=M1*(0.5d0*kp1)**(0.5*kp1/km1)
-     &        *(1+0.5d0*km1*M1**2)**(-0.5d0*kp1/km1)
+         pt2zpt1_c=M1*(0.5d0*kp1)**(0.5d0*kp1/km1)
+     &        *(1.d0+0.5d0*km1*M1**2)**(-0.5d0*kp1/km1)
 !     
 !     isothermal case
 !
@@ -113,7 +113,7 @@
          i=1
 !     
          M1_min=0.001d0
-         M1_max=1/dsqrt(kappa)
+         M1_max=1.d0/dsqrt(kappa)
 !     
          fmin=(1.d0-kappa*M1_min**2)/(kappa*M1_min**2)
      &        +log(kappa*M1_min**2)-lambda*l/d
@@ -128,7 +128,7 @@
             f=(1.d0-kappa*M1**2)/(kappa*M1**2)
      &           +log(kappa*M1**2)-lambda*l/d
 !     
-            if((abs(f).le.1E-5).or.(i.ge.50)) then
+            if((abs(f).le.1d-5).or.(i.ge.50)) then
                exit
             endif
 !     
@@ -146,23 +146,18 @@
 !           M*(1+0.5d0*(kappa-1)M**2)**(-0.5d0*(kappa+1)/(kappa-1))
 !        and forming the pressure ratio between inlet and outlet(choked)
 !     
-c         Pt2zPt1_c=dsqrt(Tt2/Tt1)*M1*dsqrt(kappa)*((1+0.5d0*km1/kappa)
-c     &        /(1+0.5d0*km1*M1**2))**(0.5d0*(kappa+1)/km1)
-         Pt2zPt1_c=M1*dsqrt(kappa)*((1+0.5d0*km1/kappa)
-     &        /(1+0.5d0*km1*M1**2))**(0.5d0*(kappa+1)/km1+0.5d0)
+         pt2zpt1_c=M1*dsqrt(kappa)*((1.d0+0.5d0*km1/kappa)
+     &        /(1.d0+0.5d0*km1*M1**2))**(0.5d0*(kappa+1)/km1+0.5d0)
 !     
       endif
 !     
       pt2zpt1=pt2/pt1
-      if(Pt2zPt1.le.Pt2zPt1_c) then
+      if(pt2zpt1.le.pt2zpt1_c) then
          crit=.true.
       endif
 !     
       Qred1_crit=M1*dsqrt(kappa/r)
-     &     *(1+0.5d0*km1*M1**2)**(-0.5d0*kp1/km1)
-!
-c      write(*,*) 'pt2zpt1_crit ',dsqrt(kappa/r)
-c     &     *(1+0.5d0*km1)**(-0.5d0*kp1/km1)
+     &     *(1.d0+0.5d0*km1*M1**2)**(-0.5d0*kp1/km1)
 !     
       return
       end      

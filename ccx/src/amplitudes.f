@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine amplitudes(inpc,textpart,amname,amta,namta,nam,
      &  nam_,namtot_,irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  ipoinpc)
+     &  ipoinpc,namtot,ier)
 !
 !     reading the input deck: *AMPLITUDE
 !
@@ -31,8 +31,8 @@
       character*132 textpart(16)
 !
       integer namta(3,*),nam,nam_,istep,istat,n,key,i,namtot,
-     &  namtot_,irstrt,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipos,
-     &  ipoinpc(0:*)
+     &  namtot_,irstrt(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),ipos,
+     &  ipoinpc(0:*),ier
 !
       real*8 amta(2,*),x,y,shiftx,shifty
 !
@@ -41,16 +41,18 @@
       shiftx=0.d0
       shifty=0.d0
 !
-      if((istep.gt.0).and.(irstrt.ge.0)) then
+      if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *AMPLITUDE: *AMPLITUDE should be'
          write(*,*) '  placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       nam=nam+1
       if(nam.gt.nam_) then
          write(*,*) '*ERROR reading *AMPLITUDE: increase nam_'
-         call exit(201)
+         ier=1
+         return
       endif
       namta(3,nam)=nam
       amname(nam)='
@@ -64,7 +66,8 @@
                write(*,*) '      name is too long'
                write(*,*) '      (more than 80 characters)'
                write(*,*) '      amplitude name:',textpart(i)(1:132)
-               call exit(201)
+               ier=1
+               return
             endif
          elseif(textpart(i)(1:14).eq.'TIME=TOTALTIME') then
             namta(3,nam)=-nam
@@ -78,12 +81,18 @@
             cycle
          elseif(textpart(i)(1:6).eq.'SHIFTX') then
                read(textpart(i)(8:27),'(f20.0)',iostat=istat) shiftx
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*AMPLITUDE%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*AMPLITUDE%",ier)
+                  return
+               endif
          elseif(textpart(i)(1:6).eq.'SHIFTY') then
                read(textpart(i)(8:27),'(f20.0)',iostat=istat) shifty
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*AMPLITUDE%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*AMPLITUDE%",ier)
+                  return
+               endif
          else
             write(*,*) 
      &        '*WARNING reading *AMPLITUDE: parameter not recognized:'
@@ -98,15 +107,11 @@
      &                                 ') then
          write(*,*) '*ERROR reading *AMPLITUDE: Amplitude has no name'
          call inputerror(inpc,ipoinpc,iline,
-     &"*AMPLITUDE%")
+     &        "*AMPLITUDE%",ier)
+         return
       endif
 !
       if(.not.user) then
-         if(nam.eq.1) then
-            namtot=0
-         else
-            namtot=namta(2,nam-1)
-         endif
          namta(1,nam)=namtot+1
       endif
 !
@@ -120,14 +125,21 @@
                if(namtot.gt.namtot_) then
                   write(*,*) 
      &               '*ERROR reading *AMPLITUDE: increase namtot_'
-                  call exit(201)
+                  ier=1
+                  return
                endif
                read(textpart(2*i-1),'(f20.0)',iostat=istat) x
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*AMPLITUDE%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*AMPLITUDE%",ier)
+                  return
+               endif
                read(textpart(2*i),'(f20.0)',iostat=istat) y
-               if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*AMPLITUDE%")
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*AMPLITUDE%",ier)
+                  return
+               endif
                amta(1,namtot)=x+shiftx
                amta(2,namtot)=y+shifty
                namta(2,nam)=namtot
@@ -144,6 +156,8 @@
      &       amname(nam)(1:ipos-1) 
          write(*,*) '         has no data points'
          nam=nam-1
+c      else
+c         call reorderampl(amname,namta,nam)
       endif
 !
       return

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,7 +44,7 @@
      &  i,j,k,m1,kk,i1,m3,indexe,nope,norien,iperturb(*),iout,
      &  nal,nmpc,kode,imat,mint3d,iorien,istiff,ncmat_,nstate_,
      &  nplkcon(0:ntmat_,*),npmat_,calcul_fn,calcul_qa,nea,neb,
-     &  nelemload(2,*),nload,ithermal(2),nmethod,nopered,iloc,
+     &  nelemload(2,*),nload,ithermal(2),nmethod,nopered,
      &  jfaces,node,nplicon(0:ntmat_,*),null,ielprop(*),
      &  iponoel(*),inoel(2,*),network,ipobody(2,*),ibody(3,*)
 !
@@ -82,6 +82,14 @@
 !
          if(lakon(i)(1:1).eq.'F') cycle
          if(lakon(i)(1:7).eq.'DCOUP3D') cycle
+!
+!        strainless reactivated elements are labeled by a negative
+!        value of ielmat. If the step is mechanical or thermo-mechanical
+!        resultsmech is called before and the negative value is
+!        reversed. If the step is purely thermal the negative sign
+!        persists and has to be reverted here.
+!
+         ielmat(1,i)=abs(ielmat(1,i))
 !
          imat=ielmat(1,i)
          amat=matname(imat)
@@ -225,13 +233,12 @@ c            if(lakon(i)(7:7).eq.'C') konl(nope+1)=kon(indexe+nope+1)
      &                    springarea(1,konl(nope+1)),timeend,matname,
      &                    konl(nope),i,istep,iinc,iperturb)
                      elseif(mortar.eq.1) then
-                        iloc=kon(indexe+nope+1)
                         jfaces=kon(indexe+nope+2)
                         igauss=kon(indexe+nope+1)
                         node=0
                         call springforc_f2f_th(xl,vl,imat,elcon,nelcon,
      &                    tnl,ncmat_,ntmat_,nope,lakonl,kode,elconloc,
-     &                    plicon,nplicon,npmat_,mi,springarea(1,iloc),
+     &                    plicon,nplicon,npmat_,mi,springarea(1,igauss),
      &                    nmethod,reltime,jfaces,igauss,
      &                    pslavsurf,pmastsurf,clearini,timeend,istep,
      &                    iinc,plkcon,nplkcon,node,i,matname)

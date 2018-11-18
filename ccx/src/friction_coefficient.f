@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,7 +51,8 @@
 !     Using Haaland explicit relationship for the initial friction value
 !     S.E. Haaland 1983 (Source en.Wikipwedia.org)
 !     
-         friction=(-1.8*dlog10(6.9d0/4000.d0+(ksd/3.7d0)**1.11d0))**-2
+         friction=(-1.8d0*dlog10(6.9d0/4000.d0+(ksd/3.7d0)**1.11d0))
+     &        **(-2d0)
 !     
          do
             ds=dsqrt(friction)
@@ -94,8 +95,8 @@
 !     Using Haaland explicit relationship for the initial friction value
 !     S.E. Haaland 1983 (Source en.Wikipwedia.org)
 !     
-         friction=(-1.8*dlog10(6.9d0/reynolds+(ksd/3.7d0)
-     &        **1.11d0))**-2
+         friction=(-1.8d0*dlog10(6.9d0/reynolds+(ksd/3.7d0)
+     &        **1.11d0))**-2d0
 !     
          do
             ds=dsqrt(friction)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,6 +43,14 @@
      &  xsj,weight,gs(8,4),a,tlayer(4),dlayer(4),xlayer(mi(3),4),
      &  thicke(mi(3),*),distmin,xmassel,g0(*),xmass(*),xdesi(3,*),
      &  dgdx(ndesi,nobject)
+!
+      intent(in) co,kon,ipkon,lakon,nelcon,rhcon,
+     &  ielmat,ielorien,norien,ntmat_,matname,mi,
+     &  thicke,mortar,nea,neb,ielprop,prop,distmin,
+     &  ndesi,nodedesi,nobject,iobject,
+     &  istartdesi,ialdesi,xdesi,idesvar
+!
+      intent(inout) g0,dgdx,xmass
 !
       include "gauss.f"
 !

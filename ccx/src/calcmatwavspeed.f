@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -161,9 +161,9 @@
      &              (elas(4).eq.elas(5))).and. 
      &              ((elas(7).eq.elas(8)).and.(elas(7).eq.elas(9)).and.
      &              (elas(8).eq.elas(9)))) then
-                  wavspd=max(wavspd,dsqrt((1/3.)*(elas(1)+2.0*elas(2)+ 
-     &                 4.0*elas(7))/rho))
-                  wavspd=max(wavspd,dsqrt((1/2.)*
+                  wavspd=max(wavspd,dsqrt((1/3.d0)*(elas(1)+2.0*elas(2)+ 
+     &                 4.0d0*elas(7))/rho))
+                  wavspd=max(wavspd,dsqrt((1/2.d0)*
      &                 (elas(1)+elas(2)+2.0*elas(7))/rho)) 
                   wavspd=max(wavspd,dsqrt(elas(1)/rho))
                else

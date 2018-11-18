@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine designvariabless(inpc,textpart,tieset,tietol,istep,
      &       istat,n,iline,ipol,inl,ipoinp,inp,ntie,ntie_,ipoinpc,
-     &       set,nset)
+     &       set,nset,ier)
 !
 !     reading the input deck: *DESIGNVARIABLES
 !
@@ -29,7 +29,7 @@
       character*132 textpart(16)
 !
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),ntie,ntie_,ipoinpc(0:*),nset,itype
+     &  inp(3,*),ntie,ntie_,ipoinpc(0:*),nset,itype,ier
 !
       real*8 tietol(3,*)
 !
@@ -38,7 +38,8 @@
       if(istep.gt.0) then
          write(*,*) '*ERROR reading *DESIGN VARIABLES: *DESIGNVARIABLES'
          write(*,*) ' should be placed before all step definitions'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     Check of correct number of ties
@@ -46,7 +47,8 @@
       ntie=ntie+1
       if(ntie.gt.ntie_) then
          write(*,*) '*ERROR reading *DESIGN VARIABLES: increase ntie_'
-         call exit(201)
+         ier=1
+         return
       endif
 !
 !     Read in *DESIGNVARIABLES
@@ -56,8 +58,11 @@
          if(textpart(i)(1:5).eq.'TYPE=') then
             read(textpart(i)(6:85),'(a80)',iostat=istat) 
      &           tieset(1,ntie)(1:80)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &           "*DESIGNVARIABLE%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DESIGNVARIABLE%",ier)
+               return
+            endif
             itype=1
          endif
        enddo  
@@ -66,8 +71,8 @@
          write(*,*) 
      &'*ERROR reading *DESIGN VARIABLES: type is lacking'
          call inputerror(inpc,ipoinpc,iline,
-     &"*DESIGNVARIABLE%")
-         call exit(201)
+     &        "*DESIGNVARIABLE%",ier)
+         return
       endif
 !
 !     Add "D" at the end of the name of the designvariable keyword
@@ -81,7 +86,8 @@
             write(*,*)
      &'*ERROR reading *DESIGN VARIABLES: definition'
             write(*,*) '      is not complete.'
-            call exit(201)
+            ier=1
+            return
          endif
 !
 !        Read the name of the design variable node set
@@ -100,7 +106,8 @@
             write(*,*) 'node set ',tieset(2,ntie)(1:ipos-1),
      &           'does not exist. Card image:'
             call inputerror(inpc,ipoinpc,iline,
-     &"*DESIGN VARIABLES%")
+     &           "*DESIGN VARIABLES%",ier)
+            return
          endif
       endif
 !

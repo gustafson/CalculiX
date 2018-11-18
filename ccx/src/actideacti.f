@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,6 +26,11 @@
 !
       integer i,j,k,nset,istartset(*),iendset(*),ialset(*),ipkon(*),
      &  iobject,ne
+!
+      intent(in) set,nset,istartset,iendset,ialset,
+     &           objectset,iobject,ne
+!
+      intent(inout) ipkon
 !
 !     determining the set
 !

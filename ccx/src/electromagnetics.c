@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -105,7 +105,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       *ipoface=NULL,*istartset=NULL,*iendset=NULL,*ialset=NULL,
       *nelemloadref=NULL,*iamloadref=NULL,nloadref,kscale=1,
       *nelemload=NULL,*iamload=NULL,*idefload=NULL,ialeatoric=0,
-      *iponoel=NULL,*inoel=NULL,inoelsize;
+      *iponoel=NULL,*inoel=NULL,inoelsize,nrhs=1;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*epn=NULL,*cdn=NULL,
       *f=NULL,*fn=NULL,qa[4]={0.,0.,-1.,0.},qam[2]={0.,0.},dtheta,theta,
@@ -400,7 +400,8 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
               ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
               iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
-              ipobody,iponoel,inoel));
+              ipobody,iponoel,inoel,ipkon,kon,ielprop,prop,ielmat,
+              shcon,nshcon,rhcon,nrhcon,cocon,ncocon,ntmat_,lakon));
   
   cam[0]=0.;cam[1]=0.;
   
@@ -447,7 +448,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
           eei,enerini,alcon,nalcon,set,nset,istartset,iendset,
           ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 	  nelemload,&null,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
-	  ne,xforc,&null,thicke,shcon,nshcon,
+	  ne,thicke,shcon,nshcon,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
           &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -476,7 +477,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		    xstateini,xstate,thicke,integerglob,doubleglob,
 		    tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 		    pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
-	            iponoel,inoel,network);
+	            iponoel,inoel,network,ntrans,inotr,trab);
   
   if(nmethodact==0){
       
@@ -491,7 +492,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	  mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	  cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	  thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+	  thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,ielprop,prop);
       
       FORTRAN(stop,());
       
@@ -533,7 +534,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   else if(*isolver==7){
 #ifdef PARDISO
       pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],
-		   &symmetryflag,&inputformat,jq,&nzs[2]);
+		   &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
       printf("*ERROR in nonlingeo: the PARDISO library is not linked\n\n");
       FORTRAN(stop,());
@@ -561,7 +562,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  emeini,xstaten,eei,enerini,alcon,nalcon,set,nset,istartset,
 	  iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
 	  fmpc,nelemload,&null,ikmpc,ilmpc,istep,&iinc,springarea,
-	  &reltime,ne,xforc,&null,thicke,shcon,nshcon,
+	  &reltime,ne,thicke,shcon,nshcon,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
           &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
@@ -602,7 +603,8 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
      of the complete structure, not only of the coil */
 
   FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
-	  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat));
+		      nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat,
+                      ielprop,prop));
 
   ++*kode;
   if(*mcs!=0){
@@ -612,7 +614,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	     nstate_,istep,&iinc,iperturb,ener,mi,output,&ithermalact,qfn,
 	     ialset,istartset,iendset,trab,inotr,ntrans,orab,ielorien,
 	     norien,stx,veold,&noddiam,set,nset,emn,thicke,jobnamec,ne,
-             cdn,&mortar,nmat,qfx);
+             cdn,&mortar,nmat,qfx,ielprop,prop);
   }else{
       
       ptime=*ttime+time;
@@ -622,7 +624,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	  mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	  cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	  thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+	  thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,ielprop,prop);
       
   }
   SFREE(inum);SFREE(v);SFREE(fn);
@@ -881,7 +883,9 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	      co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
               ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
               iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
-              &h0scale,inomat,ipobody,iponoel,inoel));
+              &h0scale,inomat,ipobody,iponoel,inoel,ipkon,kon,lakon,
+	      ielprop,prop,ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,
+              ncocon));
       for(i=0;i<3**nk;i++){h0[i]=h0ref[i]*h0scale;}
 
       for(i=0;i<3;i++){cam[i]=0.;}for(i=3;i<5;i++){cam[i]=0.5;}
@@ -990,7 +994,9 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	       co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
                ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
                iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
-               &h0scale,inomat,ipobody,iponoel,inoel));
+               &h0scale,inomat,ipobody,iponoel,inoel,ipkon,kon,lakon,
+	       ielprop,prop,ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,
+               ncocon));
 	      for(i=0;i<3**nk;i++){h0[i]=h0ref[i]*h0scale;}
 
 	      for(i=0;i<3;i++){cam[i]=0.;}for(i=3;i<5;i++){cam[i]=0.5;}
@@ -1079,7 +1085,8 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 		  mi,sti,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 		  cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-		  thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+		  thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,
+                  ielprop,prop);
 	      
 	  }
 	  
@@ -1184,10 +1191,10 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 #ifdef PARDISO
 	      if(*ithermal<2){
 		  pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0],
-			       &symmetryflag,&inputformat,jq,&nzs[2]);
+			       &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 	      }else{
 		  pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],
-			       &symmetryflag,&inputformat,jq,&nzs[2]);
+			       &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 	      }
 #else
 	      printf(" *ERROR in nonlingeo: the PARDISO library is not linked\n\n");
@@ -1410,7 +1417,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		 nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,qfn,
 		 ialset,istartset,iendset,trab,inotr,ntrans,orab,ielorien,
 		  norien,stx,veold,&noddiam,set,nset,emn,thicke,jobnamec,ne,
-		  cdn,&mortar,nmat,qfx);
+		  cdn,&mortar,nmat,qfx,ielprop,prop);
 	  }else{
 	      
 	      ptime=*ttime+time;
@@ -1421,7 +1428,8 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 		  mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 		  cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-		  thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+		  thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,
+                  ielprop,prop);
 	      
 	  }
 	  
@@ -1485,7 +1493,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		 nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,qfn,
 		 ialset,istartset,iendset,trab,inotr,ntrans,orab,ielorien,
 		 norien,stx,veold,&noddiam,set,nset,emn,thicke,jobnamec,ne,
-                 cdn,&mortar,nmat,qfx);
+                 cdn,&mortar,nmat,qfx,ielprop,prop);
       }else{
 	  
 	  ptime=*ttime+time;
@@ -1495,7 +1503,8 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	      ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	      mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
 	      cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	      thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat);
+	      thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,
+              ielprop,prop);
 	  
       }
       

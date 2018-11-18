@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2017 Guido Dhondt
+!     Copyright (C) 1998-2018 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -68,11 +68,11 @@
 !     Omega Critical
 !     Om_cr=dt*freq_max
 !
-      critom=dsqrt(damping*damping*(1+2*alpha*(1-gam))
-     &     *(1+2*alpha*(1-gam))
-     &     +2*(gam+2*alpha*(gam-bet)) )
-      critom=0.98*(-damping*(1+2*alpha*(1-gam))+critom)
-     &     /(gam+2*alpha*(gam-bet)) !eq 25 miranda
+      critom=dsqrt(damping*damping*(1.d0+2.d0*alpha*(1.d0-gam))
+     &     *(1.d0+2.d0*alpha*(1.d0-gam))
+     &     +2.d0*(gam+2.d0*alpha*(gam-bet)) )
+      critom=0.98d0*(-damping*(1.d0+2.d0*alpha*(1.d0-gam))+critom)
+     &     /(gam+2.d0*alpha*(gam-bet)) !eq 25 miranda
 !     
 !     ** DO per element      
       do nelem=1,ne0
@@ -85,11 +85,16 @@
          geomfac=1.d0
 !
          if(lakon(nelem)(4:5).eq.'20')then 
-!            
             nope=20     
             nopes=8          
             nfaces=6
             geomfac=quadfac
+         elseif(lakon(nelem)(1:5).eq.'C3D8I')then
+            nope=8 
+            nopes=4
+            nfaces=6
+            geomfac=quadfac
+            geomfac=0.5d0
          elseif(lakon(nelem)(4:4).eq.'8') then
             nope=8
             nopes=4
@@ -232,8 +237,8 @@
                call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
             elseif(nopes.eq.6) then
                call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
-            elseif(nopes.eq.7) then
-               call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
+c            elseif(nopes.eq.7) then
+c               call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
             else
                call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
             endif
@@ -253,7 +258,7 @@
       enddo
 !     ** ENDDO per element
 !
-      dtvol=dtvol* safefac
+      dtvol=dtvol*safefac
 !
       return
       end

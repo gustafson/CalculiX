@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,8 @@
      &  ialset,nset,nelemload,sideload,xload,nload,nload_,
      &  ielmat,ntmat_,iamload,
      &  amname,nam,lakon,ne,dflux_flag,istep,istat,n,iline,ipol,inl,
-     &  ipoinp,inp,nam_,namtot_,namta,amta,ipoinpc,mi,idefload)
+     &  ipoinp,inp,nam_,namtot_,namta,amta,ipoinpc,mi,idefload,
+     &  iamplitudedefault,namtot,ier)
 !
 !     reading the input deck: *DFLUX
 !
@@ -37,22 +38,23 @@
 !
       integer istartset(*),iendset(*),ialset(*),nelemload(2,*),mi(*),
      &  ielmat(mi(3),*),nset,nload,nload_,ntmat_,istep,istat,n,i,j,l,
-     &  key,idefload(*),
+     &  key,idefload(*),ier,
      &  iamload(2,*),nam,iamplitude,ipos,ne,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay,isector,
-     &  ipoinpc(0:*)
+     &  ipoinpc(0:*),iamplitudedefault
 !
       real*8 xload(2,*),xmagnitude,amta(2,*)
 !
-      iamplitude=0
+      iamplitude=iamplitudedefault
       idelay=0
       isector=0
       surface=.false.
 !
       if(istep.lt.1) then
-         write(*,*) '*ERROR in dfluxes: *DFLUX should only be used'
+         write(*,*) '*ERROR reading *DFLUX: *DFLUX should only be used'
          write(*,*) '  within a STEP'
-         call exit(201)
+         ier=1
+         return
       endif
 !
       do i=2,n
@@ -72,57 +74,59 @@
                endif
             enddo
             if(j.eq.0) then
-               write(*,*)'*ERROR in dfluxes: nonexistent amplitude'
+               write(*,*)'*ERROR reading *DFLUX: nonexistent amplitude'
                write(*,*) '  '
                call inputerror(inpc,ipoinpc,iline,
-     &"*DFLUX%")
-               call exit(201)
+     &              "*DFLUX%",ier)
+               return
             endif
             iamplitude=j
          elseif(textpart(i)(1:10).eq.'TIMEDELAY=') THEN
             if(idelay.ne.0) then
-               write(*,*) '*ERROR in dfluxes: the parameter TIME DELAY'
+               write(*,*) 
+     &           '*ERROR reading *DFLUX: the parameter TIME DELAY'
                write(*,*) '       is used twice in the same keyword'
                write(*,*) '       '
                call inputerror(inpc,ipoinpc,iline,
-     &"*DFLUX%")
-               call exit(201)
+     &              "*DFLUX%",ier)
+               return
             else
                idelay=1
             endif
             nam=nam+1
             if(nam.gt.nam_) then
-               write(*,*) '*ERROR in dfluxes: increase nam_'
-               call exit(201)
+               write(*,*) '*ERROR reading *DFLUX: increase nam_'
+               ier=1
+               return
             endif
             amname(nam)='
      &                                 '
             if(iamplitude.eq.0) then
-               write(*,*) '*ERROR in dfluxes: time delay must be'
+               write(*,*) '*ERROR reading *DFLUX: time delay must be'
                write(*,*) '       preceded by the amplitude parameter'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
-            if(nam.eq.1) then
-               namtot=0
-            else
-               namtot=namta(2,nam-1)
-            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR dfluxes: increase namtot_'
-               call exit(201)
+               ier=1
+               return
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DFLUX%")
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DFLUX%",ier)
+               return
+            endif
          else
             write(*,*) 
-     &        '*WARNING in dfluxes: parameter not recognized:'
+     &        '*WARNING reading *DFLUX: parameter not recognized:'
             write(*,*) '         ',
      &                 textpart(i)(1:index(textpart(i),' ')-1)
             call inputwarning(inpc,ipoinpc,iline,
@@ -141,13 +145,20 @@
 !
          if(label(2:4).eq.'NEG') label(2:4)='1  '
          if(label(2:4).eq.'POS') label(2:4)='2  '
+!
+!        for plane stress elements: 'N' and 'P' are converted
+!        into '5' and '6' and farther down in '1' and '2'
+!
          if(label(2:2).eq.'N') label(2:2)='5'
          if(label(2:2).eq.'P') label(2:2)='6'
 !
          read(textpart(3)(1:20),'(f20.0)',iostat=istat) xmagnitude
 !
-         if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*DFLUX%")
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*DFLUX%",ier)
+            return
+         endif
          if(((label(1:2).ne.'S1').and.(label(1:2).ne.'S2').and.
      &           (label(1:2).ne.'S0').and.
      &           (label(1:2).ne.'S3').and.(label(1:2).ne.'S4').and.
@@ -155,15 +166,17 @@
      &           (label(1:2).ne.'BF').and.(label(1:2).ne.'S ')).or.
      &          ((label(3:4).ne.'  ').and.(label(3:4).ne.'NU'))) then
             call inputerror(inpc,ipoinpc,iline,
-     &"*DFLUX%")
+     &           "*DFLUX%",ier)
+            return
          endif
 !
          read(textpart(1)(1:10),'(i10)',iostat=istat) l
          if(istat.eq.0) then
             if(l.gt.ne) then
-               write(*,*) '*ERROR in dfluxes: element ',l
+               write(*,*) '*ERROR reading *DFLUX: element ',l
                write(*,*) '       is not defined'
-               call exit(201)
+               ier=1
+               return
             endif
 !
             if((lakon(l)(1:2).eq.'CP').or.
@@ -211,12 +224,12 @@
                enddo
                if(i.gt.nset) then
                   elset(ipos:ipos)=' '
-                  write(*,*) '*ERROR in dfluxes: element set '
+                  write(*,*) '*ERROR reading *DFLUX: element set '
                   write(*,*) '       or facial surface ',elset
                   write(*,*) '       has not yet been defined. '
                   call inputerror(inpc,ipoinpc,iline,
-     &                 "*DFLUX%")
-                  call exit(201)
+     &                 "*DFLUX%",ier)
+                  return
                endif
             endif
 !

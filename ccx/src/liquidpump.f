@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2017 Guido Dhondt
+!              Copyright (C) 1998-2018 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,8 @@
 !     
       subroutine liquidpump(node1,node2,nodem,nelem,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
-     &     nodef,idirf,df,rho,g,co,numf,mi,ttime,time,iaxial)
+     &     nodef,idirf,df,rho,g,co,numf,mi,ttime,time,
+     &     iaxial,iplausi)
 !
 !     pump for incompressible media
 !     
@@ -28,11 +29,16 @@
 !      
       integer nelem,nactdog(0:3,*),node1,node2,nodem,
      &     ielprop(*),nodef(*),idirf(*),index,iflag,
-     &     inv,id,numf,npu,i,mi(*),iaxial
+     &     inv,id,numf,npu,i,mi(*),iaxial,iplausi
 !      
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),ttime,time,
      &     p1,p2,rho,g(3),dg,z1,z2,co(3,*),
      &     xpu(10),ypu(10),xxpu(10),yypu(10),dh
+!
+      intent(in) node1,node2,nodem,nelem,nactdog,ielprop,prop,iflag,v,
+     &     rho,g,co,mi,ttime,time,iaxial
+!
+      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi
 !
       numf=3
 !
