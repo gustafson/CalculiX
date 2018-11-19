@@ -101,44 +101,44 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     if(strcmp1(pos,"N")==0){
       (*num_ns)++; // printf ("Node set identified\n");
       if (store){
-	errr = ex_put_node_set_param (exoid, i, n, 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	errr = ex_put_set_param (exoid, EX_NODE_SET, i, n, 0); // CURRENTLY NO DISTRIBUTIONS ADDED
 	if (errr) printf ("Error writing set parameters\n");
-	errr = ex_put_node_set       (exoid, i, set_nums);
+	errr = ex_put_set       (exoid, EX_NODE_SET, i, set_nums, NULL);
 	if (errr) printf ("Error writing set numbers\n");
-	// ex_put_node_set_dist_fact (exoid, i, set_nums);  //
+	// ex_put_set_dist_fact (exoid, EX_NODE_SET, i, set_nums);  //
       }
     }
     if(strcmp1(pos,"E")==0) {
       (*num_es)++; // printf ("Element set identified\n");}
       /* No element set storage mechanism?
       if (store){
-      	errr = ex_put_elem_set_param (exoid, i, n, 0);
+      	errr = ex_put_set_param (exoid, EX_ELEM_SET, i, n, 0);
       	if (errr) printf ("Error writing set parameters\n");
-      	errr = ex_put_elem_set       (exoid, i, set_nums);
+      	errr = ex_put_set       (exoid, EX_ELEM_SET, i, set_nums, NULL);
       	if (errr) printf ("Error writing set numbers\n");
-      	// ex_put_elem_set_dist_fact (exoid, i, set_nums);  //
+      	// ex_put_set_dist_fact (exoid, EX_ELEM_SET, i, set_nums);  //
 	} */
     }
     if(strcmp1(pos,"S")==0) {
       (*num_ss)++; // printf ("Node side set surface identified\n");}
       /* Side sets (node surfaces) not yet implemented
 	 if (store){
-      	errr = ex_put_side_set_param (exoid, i, n, 0);
+      	errr = ex_put_set_param (exoid, EX_SIDE_SET, i, n, 0);
       	if (errr) printf ("Error writing set parameters\n");
-      	errr = ex_put_side_set       (exoid, i, set_nums);
+      	errr = ex_put_set       (exoid, EX_SIDE_SET, i, set_nums, side_set_side_list);
       	if (errr) printf ("Error writing set numbers\n");
-      	// ex_put_side_set_dist_fact (exoid, i, set_nums);  //
+      	// ex_put_set_dist_fact (exoid, EX_SIDE_SET, i, set_nums);  //
 	} */
     }
     if(strcmp1(pos,"T")==0) {
       (*num_fs)++; // printf ("Face set surface identified\n");}
       /* Face sets not yet implemented
 	 if (store){
-	 errr = ex_put_face_set_param (exoid, i, n, 0);
+	 errr = ex_put_set_param (exoid, EX_FACE_SET, i, n, 0);
 	 if (errr) printf ("Error writing set parameters\n");
-	 errr = ex_put_face_set       (exoid, i, set_nums);
+	 errr = ex_put_set       (exoid, EX_FACE_SET, i, set_nums);
 	 if (errr) printf ("Error writing set numbers\n");
-	 // ex_put_face_set_dist_fact (exoid, i, set_nums);  //
+	 // ex_put_set_dist_fact (exoid, EX_FACE_SET, i, set_nums);  //
 	 } */
     }
     if (store) {free (set_nums);}
