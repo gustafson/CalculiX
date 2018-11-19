@@ -835,6 +835,10 @@ exoselect.c \
 exosetfind.c \
 exovector.c \
 elementcpuload.c \
+exo.c \
+exoselect.c \
+exosetfind.c \
+exovector.c \
 expand.c \
 external.c \
 filtermain.c \

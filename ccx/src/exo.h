@@ -1,5 +1,5 @@
 /*     Calculix - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                     */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 /*     This subroutine                                                   */
 /*              Copyright (C) 2013-2018 Peter A. Gustafson               */
 /*                                                                       */
@@ -31,7 +31,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	 char *set,ITG *nset,ITG *istartset,ITG *iendset,ITG *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
 	 double *thicke,char *jobnamec,char *output,double *qfx,
-         double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat);
+         double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat,
+	 ITG *ielprop,double *prop);
 
 void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs, ITG *node_map_inv,

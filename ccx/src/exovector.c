@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                     */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 /*     This subroutine                                                   */
 /*              Copyright (C) 2013-2018 Peter A. Gustafson               */
 /*                                                                       */
