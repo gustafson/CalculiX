@@ -120,7 +120,7 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
       }
     }
 
-    errr = ex_put_nodal_var (exoid, time_step, j+countvar, nout, nodal_var_vals);
+    errr = ex_put_var (exoid, time_step, EX_NODAL, j+countvar, 1, nout, nodal_var_vals);
     if (errr) printf ("ERROR storing vector data into exo file.\n");
   }
 

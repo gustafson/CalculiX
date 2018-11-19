@@ -226,7 +226,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     // Write values to database
     errr = ex_put_coord (exoid, x, y, z);
     if(errr)printf("*ERROR in exo: failed node positions");
-    errr = ex_put_node_num_map (exoid, node_map);
+    errr = ex_put_id_map (exoid, EX_NODE_MAP, node_map);
     if(errr)printf("*ERROR in exo: failed node map");
 
     // Deallocate
@@ -381,29 +381,29 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 
 
-    int num_nodes_per_elem[num_elem_blk];
+    int num_nodes_per_elem[num_elem_blk], num_edges_per_elem[num_elem_blk], num_faces_per_elem[num_elem_blk];
     char *blknames[num_elem_blk];
     j=0;
-    num_nodes_per_elem[j]=1;   blknames[j++]="PNT";
-    num_nodes_per_elem[j]=20;  blknames[j++]="C3D20 C3D20R";
-    num_nodes_per_elem[j]=20;  blknames[j++]="COMPOSITE LAYER C3D20";
-    num_nodes_per_elem[j]=3;   blknames[j++]="Beam B32 B32R";
-    num_nodes_per_elem[j]=8;   blknames[j++]="CPS8 CPE8 CAX8 S8 S8R";
-    num_nodes_per_elem[j]=8;   blknames[j++]="C3D8 C3D8R";
-    num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
-    num_nodes_per_elem[j]=2;   blknames[j++]="TRUSS2";
-    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4R CPE4R S4 S4R";
-    num_nodes_per_elem[j]=4;   blknames[j++]="CPS4I CPE4I";
-    num_nodes_per_elem[j]=10;  blknames[j++]="C3D10";
-    num_nodes_per_elem[j]=4;   blknames[j++]="C3D4";
-    num_nodes_per_elem[j]=15;  blknames[j++]="C3D15";
-    num_nodes_per_elem[j]=6;   blknames[j++]="CPS6 CPE6 S6";
-    num_nodes_per_elem[j]=6;   blknames[j++]="C3D6";
-    num_nodes_per_elem[j]=3;   blknames[j++]="CPS3 CPE3 S3";
-    num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d network entry elem";
-    num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d network exit elem";
-    num_nodes_per_elem[j]=3;   blknames[j++]="2-node 1d genuine network elem";
-    num_nodes_per_elem[j]=2;   blknames[j++]="2-node 1d spring elem";
+    num_nodes_per_elem[j]=1;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="PNT";
+    num_nodes_per_elem[j]=20; num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="C3D20 C3D20R";
+    num_nodes_per_elem[j]=20; num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="COMPOSITE LAYER C3D20";
+    num_nodes_per_elem[j]=3;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="Beam B32 B32R";
+    num_nodes_per_elem[j]=8;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS8 CPE8 CAX8 S8 S8R";
+    num_nodes_per_elem[j]=8;  num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="C3D8 C3D8R";
+    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="TRUSS2";
+    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="TRUSS2";
+    num_nodes_per_elem[j]=4;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS4R CPE4R S4 S4R";
+    num_nodes_per_elem[j]=4;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS4I CPE4I";
+    num_nodes_per_elem[j]=10; num_edges_per_elem[j]=6;  num_faces_per_elem[j]=4;  blknames[j++]="C3D10";
+    num_nodes_per_elem[j]=4;  num_edges_per_elem[j]=6;  num_faces_per_elem[j]=4;  blknames[j++]="C3D4";
+    num_nodes_per_elem[j]=15; num_edges_per_elem[j]=9;  num_faces_per_elem[j]=5;  blknames[j++]="C3D15";
+    num_nodes_per_elem[j]=6;  num_edges_per_elem[j]=3;  num_faces_per_elem[j]=3;  blknames[j++]="CPS6 CPE6 S6";
+    num_nodes_per_elem[j]=6;  num_edges_per_elem[j]=3;  num_faces_per_elem[j]=3;  blknames[j++]="C3D6";
+    num_nodes_per_elem[j]=3;  num_edges_per_elem[j]=3;  num_faces_per_elem[j]=3;  blknames[j++]="CPS3 CPE3 S3";
+    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="2-node 1d network entry elem";
+    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="2-node 1d network exit elem";
+    num_nodes_per_elem[j]=3;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="2-node 1d genuine network elem";
+    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="2-node 1d spring elem";
 
     errr = ex_put_names (exoid, EX_ELEM_BLOCK, blknames);
     if(errr){printf("*ERROR in exo: cannot write block names");}
@@ -498,78 +498,78 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       switch (l)
 	{
 	case 0:
-	  errr = ex_put_elem_block (exoid, l, "SPHERE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "SPHERE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 1:
-	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 2:
-	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 3:
-	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 4:
-	  errr = ex_put_elem_block (exoid, l, "QUAD", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "QUAD", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 5:
-	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 6:
-	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 7:
-	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 8:
-	  errr = ex_put_elem_block (exoid, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 9:
-	  errr = ex_put_elem_block (exoid, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 10:
-	  errr = ex_put_elem_block (exoid, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 11:
-	  errr = ex_put_elem_block (exoid, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 12:
-	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 13:
-	  errr = ex_put_elem_block (exoid, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 14:
-	  errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 15:
 	  // KEEP FOR AWHILE CHECKING BREAKAGE
-	  // errr = ex_put_elem_block (exoid, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
-	  errr = ex_put_elem_block (exoid, l, "TRIANGLE", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  // errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRIANGLE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	default:
 	  // case 16:
 	  // case 17:
 	  // case 18:
 	  // case 19:
-	  errr = ex_put_elem_block (exoid, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_attr);	
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	};
-	
+
 
 
       if (num_elem_in_blk>0){
-	errr = ex_put_elem_conn (exoid, l, connect);
+	errr = ex_put_conn (exoid, EX_ELEM_BLOCK, l, connect, NULL, NULL);
 	if (errr)
-	  printf ("ERROR in ex_put_elem_conn %i\n", errr);
+	  printf ("ERROR in ex_put_conn %i\n", errr);
       }
       free (connect);
     }
 
     // Write the element map into the file
-    errr = ex_put_elem_num_map (exoid, elem_map);
+    errr = ex_put_id_map (exoid, EX_ELEM_MAP, elem_map);
     if (errr)
-      printf ("ERROR in ex_put_elem_num_map %i\n", errr);
+      printf ("ERROR in ex_put_id_map %i\n", errr);
 
     // Write the node sets into the file
     exosetfind(set, nset, ialset, istartset, iendset,
@@ -790,7 +790,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  frdset(&filab[174],set,&iset,istartset,iendset,ialset,
 		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 		 ngraph);
-
+	  printf ("S values countvars %i\n", countvars);
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
@@ -840,7 +840,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  var_names[countvars++]="S-imagyz";
 	}else{
 	  iselect=1;
-	
+
 	  frdset(&filab[174],set,&iset,istartset,iendset,ialset,
 		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 		 ngraph);
@@ -1153,14 +1153,13 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    nodes=node_map_inv[kon[ipkon[i]+nope-1]-1]-1;
 	    nodal_var_vals[nodes]=stx[6*mi[0]*i+j];
 	  }
-	
-	  errr = ex_put_nodal_var (exoid, num_time_steps, 1+countvars++, nout, nodal_var_vals);
+
+	  errr = ex_put_var (exoid, num_time_steps, EX_NODAL, 1+countvars++, 1, nout, nodal_var_vals);
 	  if (errr) printf ("ERROR storing contact data into exo file.\n");
 	}
 
 	free(nodal_var_vals);
 	printf ("Warning: export CONT to exo not tested.\n");
-	countvars+=6;
       }
     }
 
@@ -1178,7 +1177,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  var_names[countvars++]="CSHEAR2";
 	}else{
 	  iselect=1;
-	
+
 	  frdset(&filab[2175],set,&iset,istartset,iendset,ialset,
 		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 		 ngraph);
@@ -1228,7 +1227,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    break;
 	}
 	noutloc=*ne-i-1;
-	
+
 	nodal_var_vals = (float *) calloc (nkcoords, sizeof(float));
 	for(i=*ne-1;i>=0;i--){
 	  if((strcmp1(&lakon[8*i+1],"S")!=0)||(strcmp1(&lakon[8*i+6],"C")!=0))
@@ -1239,9 +1238,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}
 
 	countvars+=1;
-	int errr = ex_put_nodal_var (exoid, num_time_steps, countvars, nout, nodal_var_vals);
+	int errr = ex_put_var (exoid, num_time_steps, EX_NODAL, countvars, 1, nout, nodal_var_vals);
 	if (errr) printf ("ERROR storing CELS data into exo file.\n");
-
+	printf ("Warning: export CELS to exo not tested.\n");
 	free(nodal_var_vals);
       }
     }
@@ -1371,7 +1370,6 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
 		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
-	  printf ("Warning: export of ZZSTR to exo not tested.\n");
 	  countvars+=6;
 	}
       }
@@ -1456,11 +1454,11 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,kon,lakon,nk,ne,
 				  mi,ielmat,&nterms,inum,co,vold,&filab[1048],
 				  ielprop,prop));
-	
+
 	  ncomp=2;
 	  ifield[0]=1;ifield[1]=1;
 	  icomp[0]=0;icomp[1]=1;
-	
+
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
 		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
@@ -1491,7 +1489,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  ncomp=1;
 	  ifield[0]=1;
 	  icomp[0]=1;
-	
+
 	  exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
 		    nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
@@ -1514,7 +1512,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,kon,lakon,nk,ne,
 				  mi,ielmat,&nterms,inum,co,vold,&filab[2788],
 				  ielprop,prop));
-	
+
 	  ncomp=1;
 	  ifield[0]=1;
 	  icomp[0]=1;
@@ -1522,7 +1520,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
 		    nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
-	
+
 	  countvars+=1;
 	}
       }
@@ -1793,7 +1791,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	var_names[countvars++]="PHASH2";
       }else{
 	iselect=1;
-	
+
 	frdset(&filab[3915],set,&iset,istartset,iendset,ialset,
 	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	       ngraph);
@@ -1960,7 +1958,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   WRITENAMES:
     if (countbool==3){
-      errr = ex_put_var_param (exoid, "n", countvars);
+      errr = ex_put_variable_param (exoid, EX_NODAL, countvars);
       ex_update (exoid);
       // var_names = (char *) calloc (countvars, sizeof (char));
       // var_names = (char *) calloc (countvars, MAX_STR_LENGTH);
@@ -1970,7 +1968,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  var_names[ii] = (char *) calloc ((MAX_STR_LENGTH+1), sizeof(char));
 	}
     }else if(countbool==2){
-      errr = ex_put_var_names (exoid, "n", countvars, var_names);
+      errr = ex_put_variable_names (exoid, EX_NODAL, countvars, var_names);
       if (errr) {
 	printf ("Unable to update variable names.  Was output data requested?\n\n");
 	printf ("  NOTE CalculiX Extras doesn't currently support\n");
@@ -1981,7 +1979,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  printf("    %i %s\n", ii+1, var_names[ii]);
 	}
       }
-	
+
       //  for (i=0; i<countvars; i++)
       // 	{
       // 	  free(var_names[i]);
