@@ -152,8 +152,8 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
       k=j;
     }else{k=j;}
 
-    int errr = ex_put_nodal_var (exoid, time_step, k+1+countvar, nout, nodal_var_vals);
-    if (errr) printf ("ERROR exoselect data for dim %i record %i.\n", j, countvar+j);
+    int errr = ex_put_var (exoid, time_step, EX_NODAL, k+1+countvar, 1, nout, nodal_var_vals);
+    if (errr) printf ("ERROR exoselect data for dim %i record %i.\n", j, k+1+countvar);
   }
 
   free(nodal_var_vals);
