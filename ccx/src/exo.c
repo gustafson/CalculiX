@@ -1,5 +1,5 @@
 /*     Calculix - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2017 Guido Dhondt                     */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 /*     This subroutine                                                   */
 /*              Copyright (C) 2013-2018 Peter A. Gustafson               */
 /*                                                                       */
@@ -42,7 +42,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	 char *set,ITG *nset,ITG *istartset,ITG *iendset,ITG *ialset,
 	 double *eenmax,double *fnr,double *fni,double *emn,
 	 double *thicke,char *jobnamec,char *output,double *qfx,
-         double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat){
+         double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat,
+	 ITG *ielprop,double *prop){
 
   /* stores the results in exo format
 
@@ -1101,21 +1102,23 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 
     /* storing the energy in the nodes */
-    if((strcmp1(&filab[522],"ENER")==0)&&(*ithermal!=2)){
-      if (countbool==3){
-	countvars+=1;
-      }else if(countbool==2){
-	var_names[countvars++]="ENER";
-      }else{
-	iselect=1;
-	frdset(&filab[522],set,&iset,istartset,iendset,ialset,
-	       inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
-	       ngraph);
-	exoselect(enern,enern,&iset,&nkcoords,inum,istartset,iendset,
-		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		  nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
-	printf ("Warning: export ENER to exo not tested.\n");
-	countvars+=1;
+    if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[522],"ENER")==0)&&(*ithermal!=2)){
+	if (countbool==3){
+	  countvars+=1;
+	}else if(countbool==2){
+	  var_names[countvars++]="ENER";
+	}else{
+	  iselect=1;
+	  frdset(&filab[522],set,&iset,istartset,iendset,ialset,
+		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+		 ngraph);
+	  exoselect(enern,enern,&iset,&nkcoords,inum,istartset,iendset,
+		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
+	  printf ("Warning: export ENER to exo not tested.\n");
+	  countvars+=1;
+	}
       }
     }
 
@@ -1417,7 +1420,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	  nterms=6;
 	  FORTRAN(errorestimator,(stx,stn,ipkon,kon,lakon,nk,ne,
-				  mi,ielmat,&nterms,inum,co,vold,&filab[1048]));
+				  mi,ielmat,&nterms,inum,co,vold,&filab[1048],
+				  ielprop,prop));
 
 	  iselect=1;
 
@@ -1450,7 +1454,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else{
 	  nterms=6;
 	  FORTRAN(errorestimator,(&stx[6*mi[0]**ne],stn,ipkon,kon,lakon,nk,ne,
-				  mi,ielmat,&nterms,inum,co,vold,&filab[1048]));
+				  mi,ielmat,&nterms,inum,co,vold,&filab[1048],
+				  ielprop,prop));
 	
 	  ncomp=2;
 	  ifield[0]=1;ifield[1]=1;
@@ -1475,7 +1480,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else{
 	  nterms=3;
 	  FORTRAN(errorestimator,(qfx,qfn,ipkon,kon,lakon,nk,ne,
-				  mi,ielmat,&nterms,inum,co,vold,&filab[2788]));
+				  mi,ielmat,&nterms,inum,co,vold,&filab[2788],
+				  ielprop,prop));
 
 	  iselect=1;
 	  frdset(&filab[2784],set,&iset,istartset,iendset,ialset,
@@ -1506,7 +1512,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else{
 	  nterms=3;
 	  FORTRAN(errorestimator,(&qfx[3*mi[0]**ne],qfn,ipkon,kon,lakon,nk,ne,
-				  mi,ielmat,&nterms,inum,co,vold,&filab[2788]));
+				  mi,ielmat,&nterms,inum,co,vold,&filab[2788],
+				  ielprop,prop));
 	
 	  ncomp=1;
 	  ifield[0]=1;
