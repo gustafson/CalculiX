@@ -17,6 +17,7 @@
 /*     along with this program; if not, write to the Free Software       */
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
+#ifdef EXODUSII
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -200,3 +201,5 @@ ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentif
   }
   return val;
 }
+
+#endif
