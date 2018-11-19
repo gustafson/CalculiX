@@ -17,6 +17,7 @@
 /*     along with this program; if not, write to the Free Software       */
 /*     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.         */
 
+#ifdef EXODUSII
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -160,3 +161,5 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
   return;
 
 }
+
+#endif

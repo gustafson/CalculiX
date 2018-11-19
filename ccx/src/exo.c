@@ -22,8 +22,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "CalculiX.h"
+#ifdef EXODUSII
 #include "exodusII.h"
 #include "exo.h"
+#endif
 
 #define min(a,b) ((a) <= (b) ? (a) : (b))
 #define max(a,b) ((a) >= (b) ? (a) : (b))
@@ -45,6 +47,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
          double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat,
 	 ITG *ielprop,double *prop){
 
+#ifdef EXODUSII
   /* stores the results in exo format
 
      iselect selects which nodes are to be stored:
@@ -1996,5 +1999,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   free (node_map_inv);
   ex_update (exoid);
   ex_close(exoid);
+
+#else
+  printf ("Warning: requested exodus output support not included at compile time.\n");
+#endif
   return;
 }
