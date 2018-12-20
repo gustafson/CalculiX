@@ -3148,6 +3148,21 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      dthetaref=dtheta;
 	  }*/
 
+	  // printf("Explicit gets here without altering jprint because it doesn't check convergence\n");
+	  // saves to frd when jprint=1
+	  // printf("DEBUG Time increment %i\n", itp);
+	  // // COULD USE THIS IF WE TRACK THE INTEGER id and determine when it changes	
+	  // integer istart,iend,id;
+	  // fortran(identamta,(amta,&reftime,&istart,&iend,&id));
+	  // This would give you a time increment
+	  // if (amta(1,2)-amta(1,1))
+
+	  /* Only write a result file every 1000 increments (until
+	     such time as time points can be fixed) */
+	  if((iinc/1000)*1000!=iinc){
+	    jprint = 0;
+	  }
+	  
 	  theta=theta+dtheta;  
 	  if(dtheta>=1.-theta){
 	      if(dtheta>1.-theta){
@@ -3156,6 +3171,8 @@ void nonlingeo(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      }
 	      dtheta=1.-theta;
 	      dthetaref=dtheta;
+	      // Ensure the result is saved
+	      jprint = 1;
 	  }
 	  iflagact=0;
       }
