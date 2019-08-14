@@ -38,7 +38,7 @@
 !
       real*8 yn(nfield,*),cg(3),p(3),pcg(3),t(3),xl(3,8),shp(7,8),
      &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,ze,co(3,*),xs(3,7),
-     &  vold(0:mi(2),*),ratioe(3),weight,prop(*)
+     &  vold(0:mi(2),*),ratioe(3),weight,prop(*),xil,etl
 !
       intent(in) ipkon,kon,lakon,nfield,nk,
      &  ne,cflag,co,vold,force,mi
@@ -412,7 +412,17 @@
                      else
                         call beamintscheme(lakonl,mint3d,ielprop(i),
      &                       prop,l,xi,et,ze,weight)
-                        call shape8q(xi,et,xl,xsj,xs,shp,iflag)
+                        if(j.eq.1) then
+                           xil=ze
+                           etl=et
+                           call shape8q(xil,etl,xl,xsj,xs,shp,iflag)
+c                           write(*,*) 'l xi et',l,xil,etl
+                        else
+                           xil=ze
+                           etl=-et
+                           call shape8q(xil,etl,xl,xsj,xs,shp,iflag)
+c                           write(*,*) 'l xi et',l,xil,etl
+                        endif
                      endif
 !
 !                    local stress tensor
@@ -421,7 +431,11 @@
                         s(m1)=0.d0
                         do m2=1,nope
                            s(m1)=s(m1)+shp(4,m2)*yn(m1,node(m2))
+c                           if(m1.eq.3)
+c     &                     write(*,*) 'l,m1..',l,m1,m2,yn(m1,node(m2)),
+c     &                         shp(4,m2)
                         enddo
+c                        if(m1.eq.3) write(*,*) 'l,s(3)',l,s(3)
                      enddo
 !
 !                    local coordinates
@@ -439,6 +453,12 @@
                      t(1)=(s(1)*xsj(1)+s(4)*xsj(2)+s(5)*xsj(3))*weight
                      t(2)=(s(4)*xsj(1)+s(2)*xsj(2)+s(6)*xsj(3))*weight
                      t(3)=(s(5)*xsj(1)+s(6)*xsj(2)+s(3)*xsj(3))*weight
+c                     write(*,*) 'map3dto1d2d'
+c                     write(*,*) 'element i,j,l',i,j,l
+c                     write(*,*) 't',t(1),t(2),t(3)
+c                     write(*,*) 'xsj',xsj(1),xsj(2),xsj(3)
+c                     write(*,*) 's1-3',s(1),s(2),s(3)
+c                     write(*,*) 's4-6',s(4),s(5),s(6)
 !
 !                    section forces
 !

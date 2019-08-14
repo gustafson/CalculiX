@@ -98,6 +98,9 @@
                   scalar=(xdesi(1,j)*xdesi(1,neighbor(i))
      &                +xdesi(2,j)*xdesi(2,neighbor(i))
      &                +xdesi(3,j)*xdesi(3,neighbor(i)))/(distmin**2)
+c                  if(objectset(1,m)(1:4).eq.'MASS') then
+c                     scalar=1.d0
+c                  endif
                   if(scalar.lt.0.d0) then
                      scalar=0.d0
                   endif

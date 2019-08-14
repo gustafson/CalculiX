@@ -586,7 +586,8 @@ c                        ac(ieq,idofm)=-ff1*T1/xflow360
 !     
 !     for liquids: determine the gravity vector
 !     
-           if(lakon(nelem)(2:3).eq.'LI') then
+           if((lakon(nelem)(2:3).eq.'LI').or.
+     &        (lakon(nelem)(2:3).eq.'LP')) then
               do j=1,3
                  g(j)=0.d0
                enddo

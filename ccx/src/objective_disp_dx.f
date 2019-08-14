@@ -17,12 +17,15 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine objective_disp_dx(nodeset,istartset,iendset,ialset,
-     &  nk,idesvarc,iobject,mi,nactdof,dgdx,ndesi,nobject,vold,b)
+     &  nk,idesvarc,iobject,mi,nactdof,dgdx,ndesi,nobject,vold,b,
+     &  objectset)
 !
 !     calculates the sum of the square of the displacements of a node
 !     set and its derivative w.r.t. the coordinates of the mesh
 !
       implicit none
+!
+      character*81 objectset(4,*)
 !
       integer nk,istartset(*),iendset(*),ialset(*),nodeset,idir,
      &  idof,idesvarc,iobject,mi(*),nactdof(0:mi(2),*),j,k,ndesi,
@@ -41,36 +44,96 @@
 !
       if(nodeset.eq.0) then
          do j=1,nk
-            do idir=1,3
-               idof=nactdof(idir,j)
+            if(objectset(1,iobject)(1:12).eq.'DISPLACEMENT') then
+               do idir=1,3
+                  idof=nactdof(idir,j)
+                  if(idof.gt.0) then
+                     dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                    +2.d0*vold(idir,j)*b(idof)
+                  endif
+               enddo
+            elseif(objectset(1,iobject)(1:6).eq.'X-DISP') then
+               idof=nactdof(1,j)
                if(idof.gt.0) then
                   dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
-     &                 +2.d0*vold(idir,j)*b(idof)
+     &                 +2.d0*vold(1,j)*b(idof)
                endif
-            enddo
+            elseif(objectset(1,iobject)(1:6).eq.'Y-DISP') then
+               idof=nactdof(2,j)
+               if(idof.gt.0) then
+                  dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                 +2.d0*vold(2,j)*b(idof)
+               endif
+            elseif(objectset(1,iobject)(1:6).eq.'Z-DISP') then
+               idof=nactdof(3,j)
+               if(idof.gt.0) then
+                  dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                 +2.d0*vold(3,j)*b(idof)
+               endif
+            endif
          enddo
       else
          do j=istartset(nodeset),iendset(nodeset)
             if(ialset(j).gt.0) then
-               do idir=1,3
-                  idof=nactdof(idir,ialset(j))
+               if(objectset(1,iobject)(1:12).eq.'DISPLACEMENT') then
+                  do idir=1,3
+                     idof=nactdof(idir,ialset(j))
+                     if(idof.gt.0) then
+                        dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                       +2.d0*vold(idir,ialset(j))*b(idof)
+                     endif
+                  enddo
+               elseif(objectset(1,iobject)(1:6).eq.'X-DISP') then
+                  idof=nactdof(1,ialset(j))
                   if(idof.gt.0) then
                      dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
-     &                    +2.d0*vold(idir,ialset(j))*b(idof)
+     &                    +2.d0*vold(1,ialset(j))*b(idof)
                   endif
-               enddo
+               elseif(objectset(1,iobject)(1:6).eq.'Y-DISP') then
+                  idof=nactdof(2,ialset(j))
+                  if(idof.gt.0) then
+                     dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                    +2.d0*vold(2,ialset(j))*b(idof)
+                  endif
+               elseif(objectset(1,iobject)(1:6).eq.'Z-DISP') then
+                  idof=nactdof(3,ialset(j))
+                  if(idof.gt.0) then
+                     dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                    +2.d0*vold(3,ialset(j))*b(idof)
+                  endif
+               endif
             else
                k=ialset(j-2)
                do
                   k=k-ialset(j)
                   if(k.ge.ialset(j-1)) exit
-                  do idir=1,3
-                     idof=nactdof(idir,k)
+                  if(objectset(1,iobject)(1:12).eq.'DISPLACEMENT') then
+                     do idir=1,3
+                        idof=nactdof(idir,k)
+                        if(idof.gt.0) then
+                           dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                          +2.d0*vold(idir,k)*b(idof)
+                        endif
+                     enddo
+                  elseif(objectset(1,iobject)(1:6).eq.'X-DISP') then
+                     idof=nactdof(1,k)
                      if(idof.gt.0) then
                         dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
-     &                       +2.d0*vold(idir,k)*b(idof)
+     &                       +2.d0*vold(1,k)*b(idof)
                      endif
-                  enddo
+                  elseif(objectset(1,iobject)(1:6).eq.'Y-DISP') then
+                     idof=nactdof(2,k)
+                     if(idof.gt.0) then
+                        dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                       +2.d0*vold(2,k)*b(idof)
+                     endif
+                  elseif(objectset(1,iobject)(1:6).eq.'Z-DISP') then
+                     idof=nactdof(3,k)
+                     if(idof.gt.0) then
+                        dgdx(idesvar,iobject)=dgdx(idesvar,iobject)
+     &                       +2.d0*vold(3,k)*b(idof)
+                     endif
+                  endif
                enddo
             endif
          enddo

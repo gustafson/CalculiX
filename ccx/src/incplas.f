@@ -278,7 +278,7 @@ ccc         write(*,*) '*WARNING in incplas: dxitril < 0'
          enddo
       endif
 !
-!     if no viscous calculation is performed a pure creep calculatino
+!     if no viscous calculation is performed a pure creep calculation
 !     (without plasticity) is reduced to an elastic calculation
 !
       ielastic=0
@@ -1043,7 +1043,8 @@ c                     write(*,*) cop,fu
 !     in this increment based on the viscoplastic strain rate at
 !     the start and the end of the increment
 !
-      if(ivisco.eq.1) then
+      if((kode.eq.-52).and.(ivisco.eq.1)) then
+c      if(ivisco.eq.1) then
          depvisc=max(depvisc,abs(decra(1)-dtime*xstateini(14,iint,iel)))
          xstate(14,iint,iel)=decra(1)/dtime
       endif

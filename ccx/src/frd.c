@@ -86,7 +86,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
   float ifl;
 
-  double pi,oner;
+  double pi,oner,*errn=NULL;
 
   strcpy(fneig,jobnamec);
   strcat(fneig,".frd");
@@ -188,8 +188,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1,"%5sUTIME              %8s                                        \n",p1,newclock);
     fprintf(f1,"%5sUHOST                                                              \n",p1);
     fprintf(f1,"%5sUPGM               CalculiX                                        \n",p1);
-    fprintf(f1,"%5sUVERSION           Version 2.14                             \n",p1);
-    fprintf(f1,"%5sUCOMPILETIME       Sa 28. Apr 16:09:10 CEST 2018                    \n",p1);
+    fprintf(f1,"%5sUVERSION           Version 2.15                             \n",p1);
+    fprintf(f1,"%5sUCOMPILETIME       Sa 15. Dez 15:34:34 CET 2018                    \n",p1);
     fprintf(f1,"%5sUDIR                                                               \n",p1);
     fprintf(f1,"%5sUDBN                                                               \n",p1);
     
@@ -1421,9 +1421,9 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 	      &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-    fprintf(f1," -4  SDV        %2" ITGFORMAT "    1\n",*nstate_);
+    fprintf(f1," -4  SDV       %3" ITGFORMAT "    1\n",*nstate_);
     for(j=1;j<=*nstate_;j++){
-      fprintf(f1," -5  SDV%-2" ITGFORMAT "       1    1    0    0\n",j);
+      fprintf(f1," -5  SDV%-3" ITGFORMAT "      1    1    0    0\n",j);
     }
 
     for(i=0;i<*nstate_;i++){
@@ -1576,9 +1576,11 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   
   if((*nmethod!=5)||(*mode==-1)){
       if((strcmp1(&filab[1044],"ERR")==0)&&(*ithermal!=2)){
+
+	  NNEW(errn,double,6**nk);
 	  
 	  nterms=6;
-	  FORTRAN(errorestimator,(stx,stn,ipkon,kon,lakon,nk,ne,
+	  FORTRAN(errorestimator,(stx,errn,ipkon,kon,lakon,nk,ne,
 				  mi,ielmat,&nterms,inum,co,v,&filab[1048],
 				  ielprop,prop));
 	  
@@ -1593,18 +1595,12 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  
 	  fprintf(f1," -4  ERROR       1    1\n");
 	  fprintf(f1," -5  STR(%%)      1    1    0    0\n");
-/*	  fprintf(f1," -4  ERROR       2    1\n");
-	  fprintf(f1," -5  STR(%%)      1    1    1    0\n");
-	  fprintf(f1," -5  REL         1    2    2    0\n");
-	  
-	  ncomp=2;
-	  ifield[0]=1;ifield[1]=1;
-	  icomp[0]=0;icomp[1]=1;*/
+
 	  ncomp=1;
 	  ifield[0]=1;
 	  icomp[0]=0;
 	  
-	  frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
+	  frdselect(errn,errn,&iset,&nkcoords,inum,m1,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
 		    nfieldtensor,&iselect,m2,f1,output,m3);
 	  
@@ -1625,13 +1621,12 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-      fprintf(f1," -4  ERRORI      2    1\n");
-      fprintf(f1," -5  STR(%%)      1    1    1    0\n");
-      fprintf(f1," -5  REL         1    2    2    0\n");
+      fprintf(f1," -4  ERRORI      1    1\n");
+      fprintf(f1," -5  STR(%%)      1    1    0    0\n");
       
-      ncomp=2;
-      ifield[0]=1;ifield[1]=1;
-      icomp[0]=0;icomp[1]=1;
+      ncomp=1;
+      ifield[0]=1;
+      icomp[0]=0;
 
       frdselect(stn,stn,&iset,&nkcoords,inum,m1,istartset,iendset,
                 ialset,ngraph,&ncomp,ifield,icomp,
@@ -1659,13 +1654,12 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		    &noutloc,description,kode,nmethod,f1,output,istep,iinc);
 	  
-	  fprintf(f1," -4  HERROR      2    1\n");
-	  fprintf(f1," -5  TEM(%%)      1    1    1    0\n");
-	  fprintf(f1," -5  REL         1    2    2    0\n");
+	  fprintf(f1," -4  HERROR      1    1\n");
+	  fprintf(f1," -5  TEM(%%)      1    1    0    0\n");
 	  
 	  ncomp=1;
 	  ifield[0]=1;
-	  icomp[0]=1;
+	  icomp[0]=0;
 	  
 	  frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
@@ -1688,13 +1682,12 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc);
 
-      fprintf(f1," -4  HERRORI     2    1\n");
-      fprintf(f1," -5  TEM(%%)      1    1    1    0\n");
-      fprintf(f1," -5  REL         1    2    2    0\n");
+      fprintf(f1," -4  HERRORI     1    1\n");
+      fprintf(f1," -5  TEM(%%)      1    1    0    0\n");
       
       ncomp=1;
       ifield[0]=1;
-      icomp[0]=1;
+      icomp[0]=0;
 
       frdselect(qfn,qfn,&iset,&nkcoords,inum,m1,istartset,iendset,
                 ialset,ngraph,&ncomp,ifield,icomp,
@@ -1856,6 +1849,21 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
                 ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
                 nfieldvector0,&iselect,m2,f1,output,m3);
 
+  }
+
+  /* mesh refinement */
+  
+  if(strcmp1(&filab[4089],"RM")==0){
+      refinemesh(nk,ne,co,ipkon,kon,v,veold,stn,een,emn,epn,enern,
+		 qfn,errn,filab,mi,lakon,jobnamec);
+  }
+
+  /* remove auxiliary field for the error estimator at the nodes */  
+
+  if((*nmethod!=5)||(*mode==-1)){
+      if((strcmp1(&filab[1044],"ERR")==0)&&(*ithermal!=2)){
+	  SFREE(errn);
+      }
   }
 
   /*  the remaining lines only apply to frequency calculations

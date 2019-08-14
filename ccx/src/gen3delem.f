@@ -26,7 +26,7 @@
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
      &  istartset,iendset,ialset,prop,ielprop,vold,mi,nkon,ielmat,
      &  icomposite,t0g,t1g,idefforc,iamt1,orname,orab,norien,norien_,
-     &  ielorien)
+     &  ielorien,jobnamec)
 !
 !     generates three-dimensional elements:
 !         for plane stress
@@ -41,6 +41,7 @@
       character*20 labmpc(*),sideload(*)
       character*80 orname(*)
       character*81 set(*)
+      character*132 jobnamec(*),fn
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,ikmpc(*),
      &  ilmpc(*),kon(*),ipkon(*),ne,indexe,i,j,node,index,
@@ -51,7 +52,7 @@
      &  nforc,nforc_,ithermal(2),nload,iamboun(*),
      &  ntrans,inotr(2,*),nam,iponoelmax,iperturb,numnod,itransaxial,
      &  rig(*),nmethod,nset,istartset(*),iendset(*),ialset(*),nkon,
-     &  ielprop(*),mi(*),nope,
+     &  ielprop(*),mi(*),nope,ilen,
      &  ielmat(mi(3),*),iponor(2,*),knor(*),ixfree,ikfree,icomposite,
      &  idefforc(*),idim,iamt1(*),norien,norien_,ielorien(mi(3),*)
 !
@@ -72,6 +73,28 @@
      &             1.d0,1.d0/
 !
       pi=4.d0*datan(1.d0)
+!
+!     open file for 2d-information
+!
+      ilen=index(jobnamec(1),char(0))
+      if(ilen.gt.129) then
+         write(*,*) '*ERROR in gen3delem:'
+         write(*,*) '       name of file for storing the 1d/2d-info'
+         write(*,*) '       is too long (> 128 char); name = '
+         write(*,*) jobnamec(1)(1:132)
+         call exit(201)
+      else
+         fn(1:ilen-1)=jobnamec(1)(1:ilen-1)
+         fn(ilen:ilen+3)='.12d'
+         do i=ilen+4,132
+            fn(i:i)=' '
+         enddo
+      endif
+      if(istep.eq.1) then
+         open(27,file=fn,status='unknown')
+      else
+         open(27,file=fn,status='unknown',position='append')
+      endif
 !
 !     catalogueing the element per node relationship for shell/beam
 !     elements and transferring the nodal thickness to the elements
@@ -126,12 +149,37 @@
                   inoel(3,inoelfree)=iponoel(node)
                   iponoel(node)=inoelfree
                   inoelfree=inoelfree+1
+!
+!                 default is element thickness unless NODAL THICKNESS
+!                 was specified on the *SHELL SECTION or *BEAM SECTION
+!                 card. In the latter case thicke(1,indexe+j) was set
+!                 to -1.d0 in shellsections.f and beamsections.f for
+!                 all nodes j belonging to the element
+!
                   if(lakon(i)(1:2).ne.'CA') then
-                     if(thickn(1,node).gt.0.d0)
-     &                    thicke(1,indexe+j)=thickn(1,node)
+                     if(thicke(1,indexe+j).lt.-0.5d0) then
+                        if(thickn(1,node).le.0.d0) then
+                           write(*,*) '*ERROR in gen3delem:'
+                           write(*,*) 
+     &                      '       first thickness in node',node
+                           write(*,*) '       is nonpositive'
+                           call exit(201)
+                        else
+                           thicke(1,indexe+j)=thickn(1,node)
+                        endif
+                     endif
                      if(mi(3).gt.1) then
-                        if(thickn(2,node).gt.0.d0)
-     &                       thicke(2,indexe+j)=thickn(2,node)
+                        if(thicke(2,indexe+j).lt.-0.5d0) then
+                           if(thickn(2,node).le.0.d0) then
+                              write(*,*) '*ERROR in gen3delem:'
+                              write(*,*) 
+     &                          '       second thickness in node',node
+                              write(*,*) '       is nonpositive'
+                              call exit(201)
+                           else
+                              thicke(2,indexe+j)=thickn(2,node)
+                           endif
+                        endif
                      endif
                   endif
                   if(thicke(1,indexe+j).le.0.d0) then
@@ -257,7 +305,7 @@ c         endif
               endif
 !     
               if(iexpand.eq.1) then
-                 write(*,*) 'Element ',i,'with label "',lakon(i),
+                 write(27,*) 'ELEMENT ',i,'with label "',lakon(i),
      &              '" and with nodes:'
               endif
               if(lakon(i)(1:4).eq.'CPE3') then
@@ -357,15 +405,16 @@ c         endif
               endif
               if(iexpand.eq.1) then
                  read(lakon(i)(4:4),'(i1)') ishift
-                 if(lakon(i)(5:5).eq.'8I') ishift=11
+                 if(lakon(i)(4:5).eq.'8I') ishift=11
                  if(ishift.le.2) then
                     read(lakon(i)(4:5),'(i2)') ishift
                  endif
-                 write(*,'(10(1x,i5))')(kon(ipkon(i)+ishift+j),j=1,nope)
-                 write(*,*) ' is expanded into a "',lakon(i),
+                 write(27,'(10(1x,i10))')
+     &              (kon(ipkon(i)+ishift+j),j=1,nope)
+                 write(27,*) ' is expanded into a "',lakon(i),
      &          '" element with topology:'
-                 write(*,'(10(1x,i5))') (kon(ipkon(i)+j),j=1,ishift)
-                 write(*,*)
+                 write(27,'(10(1x,i10))') (kon(ipkon(i)+j),j=1,ishift)
+                 write(27,*)
               endif
            enddo
 c     Bernhardi start
@@ -453,6 +502,8 @@ c         endif
      &     iamboun,typeboun,xboun,nmethod,iperturb,istep,vold,mi,
      &     idefforc)
       endif
+!
+      close(27)
 !
       return
       end

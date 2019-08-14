@@ -16,8 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calcgammat(nface,ielfa,vel,gradtel,gamma,xlet,
-     &  xxn,xxj,ipnei,betam,nef,flux)
+      subroutine calcgammat(ielfa,vel,gradtel,gamma,xlet,
+     &  xxj,ipnei,betam,nef,flux,nfacea,nfaceb)
 !
 !     determine gamma for the temperature:
 !        upwind difference: gamma=0
@@ -25,16 +25,18 @@
 !
       implicit none
 !
-      integer nface,ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef
+      integer ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef,
+     &  nfacea,nfaceb
 !
-      real*8 vel(nef,0:7),gradtel(3,*),xxn(3,*),xxj(3,*),vud,vcd,
+      real*8 vel(nef,0:7),gradtel(3,*),xxj(3,*),vud,vcd,
      &  gamma(*),phic,xlet(*),betam,flux(*)
 !
-c$omp parallel default(none)
-c$omp& shared(nface,ielfa,ipnei,vel,flux,gradtel,xlet,xxj,gamma,betam)
-c$omp& private(i,j,iel1,iel2,indexf,vcd,vud,phic)
-c$omp do
-      do i=1,nface
+      intent(in) ielfa,vel,gradtel,xlet,
+     &  xxj,ipnei,betam,nef,flux,nfacea,nfaceb
+!     
+      intent(inout) gamma
+!
+      do i=nfacea,nfaceb
          iel2=ielfa(2,i)
 !
 !        faces with only one neighbor need not be treated
@@ -75,10 +77,7 @@ c$omp do
          else
             gamma(i)=phic/betam
          endif
-c         write(*,*) 'calcgammat',i,gamma(i)
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

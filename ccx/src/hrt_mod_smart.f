@@ -37,6 +37,7 @@ c$omp do
          iel2=ielfa(2,i)
 !
 !        faces with only one neighbor need not be treated
+!        unless outlet
 !
          if(iel2.le.0) cycle
          iel1=ielfa(1,i)
@@ -44,6 +45,17 @@ c$omp do
          indexf=ipnei(iel1)+j
 !
          if(flux(indexf).ge.0.d0) then
+!
+!           outflow && (neighbor || outlet)
+!
+!           outlet
+!
+            if(iel2.le.0) then
+               vfa(0,i)=vel(iel1,0)
+               cycle
+            endif
+!
+!           neighbor
 !
             vcd=vel(iel1,0)-vel(iel2,0)
             if(dabs(vcd).lt.1.d-3*dabs(vel(iel1,0))) vcd=0.d0
@@ -76,7 +88,7 @@ c            write(*,*) 'calcvfa1 ',i,phic
             else
                vfa(0,i)=vel(iel1,0)/3.d0+2.d0*vel(iel2,0)/3.d0
             endif
-         else
+         elseif(iel2.gt.0) then
 !
             vcd=vel(iel2,0)-vel(iel1,0)
             if(dabs(vcd).lt.1.d-3*dabs(vel(iel2,0))) vcd=0.d0

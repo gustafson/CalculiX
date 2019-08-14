@@ -72,7 +72,8 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        ITG *islavnode,ITG *nslavnode,ITG *ntie,double *clearini,
        ITG *islavsurf,ITG *ielprop,double *prop,double *energyini,
        double *energy,ITG *kscale,ITG *iponoel,ITG *inoel,ITG *nener,
-       char *orname,ITG *network,ITG *ipobody,double *xbody,ITG *ibody){
+       char *orname,ITG *network,ITG *ipobody,double *xbody,ITG *ibody,
+       char *typeboun){
 
     ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,ikin,
         intpointvart,mt=mi[1]+1,i,j;
@@ -163,7 +164,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
        veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
        &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
-       &ikin,&intpointvart));
+       &ikin,&intpointvart,typeboun));
 
    /* next statement allows for storing the displacements in each
       iteration: for debugging purposes */

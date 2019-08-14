@@ -28,10 +28,6 @@
 !
       real*8 t1l,vfa(0:7,*),dvi,shcon(0:3,ntmat_,*),umfa(*)
 !     
-c$omp parallel default(none)
-c$omp& shared(nface,vfa,ielmat,ielfa,shcon,nshcon,ntmat_,ithermal,umfa)
-c$omp& private(i,t1l,imat,dvi)
-c$omp do
       do i=1,nface
          t1l=vfa(0,i)
 !
@@ -43,8 +39,6 @@ c$omp do
          umfa(i)=dvi
 c         write(*,*) 'calcumfa ',umfa(i)
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

@@ -114,7 +114,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     NNEW(inum,ITG,*nk);
     NNEW(stx,double,6*mi[0]**ne);
     
-    nlabel=47;
+    nlabel=48;
     NNEW(filabt,char,87*nlabel);
     for(i=1;i<87*nlabel;i++) filabt[i]=' ';
     filabt[0]='U';
@@ -526,7 +526,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
               sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-	      inoel,nener,orname,&network,ipobody,xbody,ibody);
+	      inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);
 	    
 	}
 	SFREE(eei);

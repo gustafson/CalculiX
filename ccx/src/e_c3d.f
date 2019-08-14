@@ -696,7 +696,6 @@ c     Bernhardi end
             nmethod=0
          endif
 !
-c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
          if(((iperturb(1).eq.1).or.(iperturb(2).eq.1)).and.
      &           (stiffness.eq.1).and.(buckling.eq.0))then
 !
@@ -1167,7 +1166,6 @@ c            call orthotropic(elas,anisox)
 !                   point
 !
                      q(i1)=0.d0
-c                     if(iperturb(1).eq.0) then
                      if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                         do j1=1,nope
                            q(i1)=q(i1)+shp(4,j1)*xl(i1,j1)
@@ -1249,7 +1247,6 @@ c     Bernhardi start
           if((nope.eq.20).or.(nope.eq.8).or.
      &       (nope.eq.11)) then
 c     Bernhardi end
-c             if(iperturb(1).eq.0) then
              if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                 do i=1,nopes
                    do j=1,3
@@ -1272,7 +1269,6 @@ c             if(iperturb(1).eq.0) then
                 enddo
              endif
           elseif((nope.eq.10).or.(nope.eq.4)) then
-c             if(iperturb(1).eq.0) then
              if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                 do i=1,nopes
                    do j=1,3
@@ -1295,7 +1291,6 @@ c             if(iperturb(1).eq.0) then
                 enddo
              endif
           else
-c             if(iperturb(1).eq.0) then
              if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                 do i=1,nopes
                    do j=1,3
@@ -1447,19 +1442,14 @@ c    Bernhardi end
 !            three-dimensional thermomechanical Applications,
 !            Wiley, 2004, p 153, eqn. (3.54).
 !
-c             elseif((mass.eq.1).and.(iperturb(1).ne.0)) then
              elseif((mass.eq.1).and.
      &            ((iperturb(1).eq.1).or.(iperturb(2).eq.1))) then
-c                if(nopes.eq.9) then
-c                   call shape9q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 if(nopes.eq.8) then
                    call shape8q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.4) then
                    call shape4q(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 elseif(nopes.eq.6) then
                    call shape6tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
-c                elseif(nopes.eq.7) then
-c                   call shape7tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 else
                    call shape3tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
                 endif

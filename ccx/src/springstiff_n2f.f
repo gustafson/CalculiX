@@ -23,6 +23,8 @@
      &  norien,nelem)
 !
 !     calculates the stiffness of a spring (node-to-face penalty)
+!     (User's manual -> theory -> boundary conditions -> 
+!      node-to-face penalty contact)
 !
       implicit none
 !
@@ -295,34 +297,32 @@
       nterms=nope-1
 !
 !     vector al connects the actual position of the slave node 
-!     with its projection on the master face
+!     with its projection on the master face = vec_r (User's
+!     manual -> theory -> boundary conditions -> node-to-face
+!     penalty contact)
 !
       do i=1,3
          pproj(i)=pl(i,nope)
       enddo
-      call attach(pl,pproj,nterms,ratio,dist,xi,et)
+      call attach_2d(pl,pproj,nterms,ratio,dist,xi,et)
       do i=1,3
          al(i)=pl(i,nope)-pproj(i)
       enddo
 !
 !     determining the jacobian vector on the surface 
 !
-c      if(nterms.eq.9) then
-c         call shape9q(xi,et,pl,xm,xs2,shp2,iflag)
       if(nterms.eq.8) then
          call shape8q(xi,et,pl,xm,xs2,shp2,iflag)
       elseif(nterms.eq.4) then
          call shape4q(xi,et,pl,xm,xs2,shp2,iflag)
       elseif(nterms.eq.6) then
          call shape6tri(xi,et,pl,xm,xs2,shp2,iflag)
-c      elseif(nterms.eq.7) then
-c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
       else
          call shape3tri(xi,et,pl,xm,xs2,shp2,iflag)
       endif
 !
-!     dxi(i,j) is the derivative of xi w.r.t. pl(i,j),
-!     det(i,j) is the derivative of eta w.r.t. pl(i,j)
+!     d xi / d vec_u_j
+!     d eta / d vec_u_j
 !
 !     dxi and det are determined from the orthogonality
 !     condition
@@ -355,8 +355,7 @@ c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
          enddo
       enddo
 !
-!     dal(i,j,k) is the derivative of al(i) w.r.t pl(j,k)
-!     ( d al / d u_k)
+!     d vec_r / d vec_u_k
 !
       do i=1,nope
          do j=1,3
@@ -585,17 +584,17 @@ c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
             enddo
 !     
 !     calculating the difference in relative displacement since
-!     the start of the increment = lamda^*
+!     the start of the increment = vec_s
 !     
             do i=1,3
                al(i)=alnew(i)-xstateini(3+i,1,ne0+konl(nope+1))
             enddo
 !     
-!     ||lambda^*||
+!     s=||vec_s||
 !     
             val=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
 !     
-!     update the relative tangential displacement
+!     update the relative tangential displacement vec_t
 !     
             do i=1,3
                t(i)=xstateini(6+i,1,ne0+konl(nope+1))+al(i)-val*xn(i)
@@ -609,7 +608,7 @@ c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
                xstate(6+i,1,ne0+konl(nope+1))=t(i)
             enddo
 !     
-!     d al/d u_k -> d al^*/d u_k
+!     d vec_s/ d vec_u_k
 !     notice: xi & et are const.
 !     
             do k=1,nope
@@ -630,7 +629,7 @@ c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
                dal(j,j,nope)=1.d0
             enddo
 !     
-!     (d al/d u_k).||m|| -> (d al^*/d u_k).||m||
+!     d s/ dvec_u_k.||m||
 !     
             do k=1,nope
                do i=1,3
@@ -641,7 +640,7 @@ c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
                enddo
             enddo
 !     
-!     d t/d u_k
+!     d vec_t/d vec_u_k
 !     
             do k=1,nope
                do j=1,3

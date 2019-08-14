@@ -24,7 +24,7 @@
      &  ipoinp,inp,ntie,mcs,lprev,ithermal,rcscg,rcs0cg,zcscg,
      &  zcs0cg,nrcg,nzcg,jcs,kontri,straight,ne,ipkon,kon,
      &  lakon,lcs,ifacetet,inodface,ipoinpc,maxsectors,
-     &  trab,ntrans,ntrans_,jobnamec,vold,cfd,mi,iaxial,ier)
+     &  trab,ntrans,ntrans_,jobnamec,vold,nef,mi,iaxial,ier)
 !
 !     reading the input deck: *CYCLIC SYMMETRY MODEL
 !
@@ -69,10 +69,10 @@
      &  nset,istep,istat,n,key,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),
      &  nr(*),nz(*),jdep,jindep,l,noded,ikmpc(*),ilmpc(*),lcs(*),
      &  kflag,node,ncsnodes,ncs_,iline,ipol,inl,ipoinp(2,*),nneigh,
-     &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal,ncounter,
+     &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal(2),ncounter,
      &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
      &  ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,id,jfaces,
-     &  noden(2),ntrans,ntrans_,cfd,mi(*),ifaceq(8,6),ifacet(6,4),
+     &  noden(2),ntrans,ntrans_,nef,mi(*),ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),ifacew2(8,5),idof,ier
 !
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
@@ -172,30 +172,30 @@
          endif
       enddo
 !
-      if(xsectors.le.0) then
-         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
-         write(*,*) '       the required parameter N'
-         write(*,*) '       is lacking on the *CYCLIC SYMMETRY MODEL'
-         write(*,*) '       keyword card or has a value <=0'
-         ier=1
-         return
-      endif
-      if(gsectors.lt.1) then
-         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
-         write(*,*) '         cannot plot less than'
-         write(*,*) '         one sector: one sector will be plotted'
-         gsectors=1
-      endif
-      if(gsectors.gt.xsectors) then
-         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
-         write(*,*) '         cannot plot more than'
-         write(*,*) '         ',xsectors,'sectors;',
-     &           xsectors,' sectors will'
-         write(*,*) '       be plotted'
-         gsectors=xsectors
-      endif
-!
-      maxsectors=max(maxsectors,int(xsectors+0.5d0))
+c      if(xsectors.le.0) then
+c         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+c         write(*,*) '       the required parameter N'
+c         write(*,*) '       is lacking on the *CYCLIC SYMMETRY MODEL'
+c         write(*,*) '       keyword card or has a value <=0'
+c         ier=1
+c         return
+c      endif
+c      if(gsectors.lt.1) then
+c         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
+c         write(*,*) '         cannot plot less than'
+c         write(*,*) '         one sector: one sector will be plotted'
+c         gsectors=1
+c      endif
+c      if(gsectors.gt.xsectors) then
+c         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
+c         write(*,*) '         cannot plot more than'
+c         write(*,*) '         ',xsectors,'sectors;',
+c     &           xsectors,' sectors will'
+c         write(*,*) '       be plotted'
+c         gsectors=xsectors
+c      endif
+c!
+c      maxsectors=max(maxsectors,int(xsectors+0.5d0))
 !
       mcs=mcs+1
       cs(2,mcs)=-0.5d0
@@ -247,11 +247,20 @@
 !
 !           fluid periodicity (rotational)
 !
+            if(xsectors.le.0) then
+               write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+               write(*,*) '       the required parameter N'
+               write(*,*) 
+     &          '       is lacking on the *CYCLIC SYMMETRY MODEL'
+               write(*,*) '       keyword card or has a value <=0'
+               ier=1
+               return
+            endif
+!
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
 !
-!           translation vector from the slave surface to the
-!           master surface
+!           cyclic symmetry axis
 !
             do j=1,6
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) 
@@ -299,6 +308,31 @@
             return
          endif
       endif
+!
+      if(xsectors.le.0) then
+         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '       the required parameter N'
+         write(*,*) '       is lacking on the *CYCLIC SYMMETRY MODEL'
+         write(*,*) '       keyword card or has a value <=0'
+         ier=1
+         return
+      endif
+      if(gsectors.lt.1) then
+         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '         cannot plot less than'
+         write(*,*) '         one sector: one sector will be plotted'
+         gsectors=1
+      endif
+      if(gsectors.gt.xsectors) then
+         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
+         write(*,*) '         cannot plot more than'
+         write(*,*) '         ',xsectors,'sectors;',
+     &           xsectors,' sectors will'
+         write(*,*) '       be plotted'
+         gsectors=xsectors
+      endif
+!
+      maxsectors=max(maxsectors,int(xsectors+0.5d0))
 !
       cs(1,mcs)=xsectors
       cs(5,mcs)=gsectors+0.5d0
@@ -877,6 +911,27 @@
       write(*,*) 
      &     '      read WarnNodeMissCyclicSymmetry.nam inp'
       write(*,*)
+!     
+!     generating the thermal MPC's; the generated MPC's are for nodal
+!     diameter 0. BETTER: based on ithermal(2), cf. gen3dfrom2d.f
+!     
+!     about next info write statement:
+!     in tempload cyclic symmetry is enforced for field t1, but not
+!     for field t0. This may lead to stresses if t1 is not cyclic
+!     symmetric. If there is a *initial conditions,type=temperature
+!     card in the input deck but no *temperature card t1 is copied from
+!     t0 before ensuring the cyclic symmetry for t1. So also in this
+!     case a non-cyclic symmetric field t0 can lead to stresses.
+!
+      if(ithermal(1).eq.1) then
+         write(*,*) '*INFO reading *CYCLIC SYMMETRY MODEL'
+         write(*,*) '      cyclic symmetry equations are generated'
+         write(*,*) '      for the temperature; if the initial'
+         write(*,*) '      temperatures are not cyclic symmetric'
+         write(*,*) '      and/or the applied temperature is not'
+         write(*,*) '      cyclic symmetric this may lead to'
+         write(*,*) '      additional stresses'
+      endif
 !
       loop2: do i=istartset(jdep),iendset(jdep)
          if(ialset(i).gt.0) then
@@ -958,8 +1013,8 @@
      &         mcs,triangulation,csab,xn,yn,zn,phi,noded,
      &         ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &         nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &         ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi,
-     &         indepset)
+     &         ifacetet,inodface,ncounter,jobnamec,vold,nef,mi,
+     &         indepset,ithermal)
             enddo
 !
          else
@@ -987,8 +1042,8 @@
      &           mcs,triangulation,csab,xn,yn,zn,phi,noded,
      &           ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &           nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &           ifacetet,inodface,ncounter,jobnamec,vold,cfd,mi,
-     &           indepset)
+     &           ifacetet,inodface,ncounter,jobnamec,vold,nef,mi,
+     &           indepset,ithermal)
             enddo
          endif
 !

@@ -70,7 +70,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	       double *ctrl, ITG *itpamp, double *tietol,ITG *nalset,
 	       ITG *ikforc, ITG *ilforc, double *thicke,
 	       char *jobnamef,ITG *mei,ITG *nmat,ITG *ielprop,double *prop,
-               char *orname){
+	       char *orname,char *typeboun){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
     *lakont=NULL;
@@ -1361,7 +1361,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-	    inoel,nener,orname,&network,ipobody,xbody,ibody);}
+	    inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
             &stx[kkx],elcon,
@@ -1381,7 +1381,7 @@ void complexfreq(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-	    inoel,nener,orname,&network,ipobody,xbody,ibody);
+	    inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);
       }
 
     }

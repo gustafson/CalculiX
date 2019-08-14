@@ -74,7 +74,7 @@
       do i=1,3
          q(i)=pl(i,nope)
       enddo
-      call attach(pl,q,nterms,ratio,dist,xi,et)
+      call attach_2d(pl,q,nterms,ratio,dist,xi,et)
       do i=1,3
          al(i)=pl(i,nope)-q(i)
       enddo

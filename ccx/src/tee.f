@@ -106,7 +106,7 @@
 !     Mass flow in the previuos element
      &xflow1,
 !     Mass flow in the current element(same as xflow)
-     &xflow2,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time
+     &xflow2,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time,zeta
 !
       intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,ielprop,prop,iflag,v,cp,r,physcon,set,mi,ttime,time,
@@ -240,11 +240,11 @@
          if(ider.eq.0) then
 !           Residual
             f=calc_residual_tee(pt1,Tt1,xflow1,xflow2,pt2,
-     &    Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)
+     &    Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)
          else
 !           Derivatives
             call calc_ider_tee(df,pt1,Tt1,xflow1,xflow2,pt2,
-     &    Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)
+     &    Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)
          endif
       elseif(iflag.eq.3) then
 !
@@ -315,11 +315,12 @@
 !     
 !     Calculate the element one last time with enabled output
          f=calc_residual_tee(pt1,Tt1,xflow1,xflow2,pt2,
-     &        Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)
+     &        Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)
 !     
          write(1,56)'      Outlet node ',node2,':   Tt2= ',Tt2,
      &        ' , Ts2= ',Ts2,' , Pt2= ',pt2,
      &        ', M2= ',M2
+!
       endif
 !     
       xflow=xflow/iaxial

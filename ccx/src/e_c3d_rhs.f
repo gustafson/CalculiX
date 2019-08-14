@@ -41,7 +41,7 @@
 !
       integer mi(*),nk,konl(20),ielmat(mi(3),*),nbody,ifaceq(8,6),
      &  nelemload(2,*),ielprop(*),null,
-     &  nelem,nmethod,iperturb,nload,idist,i,i1,j1,jj,jj1,id,kk,
+     &  nelem,nmethod,iperturb(*),nload,idist,i,i1,j1,jj,jj1,id,kk,
      &  ipointer,nope,nopes,j,k,ntmat_,i2,imat,ii,ig,mint2d,mint3d,
      &  ifacet(6,4),ifacew(8,5),istep,iinc,layer,kspt,jltyp,iflag,
      &  ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),iscale
@@ -143,7 +143,8 @@ c      endif
 !
 !     displacements for 2nd order static and modal theory
 !
-      if(iperturb.ne.0) then
+c      if(iperturb.ne.0) then
+      if((iperturb(1).eq.1).or.(iperturb(2).eq.1)) then
          do i1=1,nope
             do i2=1,3
                voldl(i2,i1)=vold(i2,konl(i1))
@@ -348,7 +349,9 @@ c      endif
 !     point
 !     
                      q(i1)=0.d0
-                     if(iperturb.eq.0) then
+c                     if(iperturb.eq.0) then
+                     if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) 
+     &                    then
                         do j1=1,nope
                            q(i1)=q(i1)+shp(4,j1)*xl(i1,j1)
                         enddo
@@ -421,7 +424,8 @@ c      endif
          endif
 !     
          if((nope.eq.20).or.(nope.eq.8)) then
-            if(iperturb.eq.0) then
+c            if(iperturb.eq.0) then
+            if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                do i=1,nopes
                   do j=1,3
                      xl2(j,i)=co(j,konl(ifaceq(i,ig)))
@@ -436,7 +440,8 @@ c      endif
                enddo
             endif
          elseif((nope.eq.10).or.(nope.eq.4)) then
-            if(iperturb.eq.0) then
+c            if(iperturb.eq.0) then
+            if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                do i=1,nopes
                   do j=1,3
                      xl2(j,i)=co(j,konl(ifacet(i,ig)))
@@ -451,7 +456,8 @@ c      endif
                enddo
             endif
          else
-            if(iperturb.eq.0) then
+c            if(iperturb.eq.0) then
+            if((iperturb(1).ne.1).and.(iperturb(2).ne.1)) then
                do i=1,nopes
                   do j=1,3
                      xl2(j,i)=co(j,konl(ifacew(i,ig)))

@@ -103,17 +103,6 @@
 !
       if(orientation.eq.'                    ') then
          iorientation=0
-c
-c      next lines were removed since some people use local systems
-c      to the the stresses stored in that system (e.g. cylindrical
-c      system)
-c
-c      elseif(nelcon(1,i).eq.2) then
-c         write(*,*) '*INFO reading *SOLID SECTION: an orientation'
-c         write(*,*) '      is for isotropic materials irrelevant'
-c         call inputinfo(inpc,ipoinpc,iline,
-c     &"*SOLID SECTION%")
-c         iorientation=0
       else
          do i=1,norien
             if(orname(i).eq.orientation) exit
@@ -189,36 +178,33 @@ c         iorientation=0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
+      if(istat.lt.0) return
 !
 !     assigning a thickness to plane stress elements and an angle to
 !     axisymmetric elements
 !
-cccc      if((key.eq.0).or.(lakon(ialset(istartset(i)))(1:2).eq.'CA')) then
-         if(key.eq.0) then
-            read(textpart(1)(1:20),'(f20.0)',iostat=istat) thickness
-            if(istat.gt.0) then
-               call inputerror(inpc,ipoinpc,iline,
-     &              "*SOLID SECTION%",ier)
-               return
-            endif
+      if(key.eq.0) then
+         read(textpart(1)(1:20),'(f20.0)',iostat=istat) thickness
+         if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,
+     &           "*SOLID SECTION%",ier)
+            return
+         endif
 !
 !        for axial symmetric structures:
 !           thickness for axial symmetric elements: 2 degrees
 !           thickness for plane stress elements: reduced by 180
 !           thickness for plane strain elements: reduced by 180
 !
-            if(iaxial.eq.180) then
-               if(lakon(ialset(istartset(i)))(1:2).eq.'CA') then
-                  thickness=datan(1.d0)*8.d0/iaxial
-               elseif(lakon(ialset(istartset(i)))(1:3).eq.'CPS') then
-                  thickness=thickness/iaxial
-               elseif(lakon(ialset(istartset(i)))(1:3).eq.'CPE') then
-                  thickness=thickness/iaxial
-               endif
+         if(iaxial.eq.180) then
+            if(lakon(ialset(istartset(i)))(1:2).eq.'CA') then
+               thickness=datan(1.d0)*8.d0/iaxial
+            elseif(lakon(ialset(istartset(i)))(1:3).eq.'CPS') then
+               thickness=thickness/iaxial
+            elseif(lakon(ialset(istartset(i)))(1:3).eq.'CPE') then
+               thickness=thickness/iaxial
             endif
-cccc         else
-cccc            thickness=datan(1.d0)*8.d0/iaxial
-cccc         endif
+         endif
 !
 !        assigning the thickness to each node of the corresponding
 !        elements (thickness specified)
@@ -226,7 +212,7 @@ cccc         endif
          do j=istartset(i),iendset(i)
             if(ialset(j).gt.0) then
                if((lakon(ialset(j))(1:2).eq.'CP').or.
-     &            (lakon(ialset(j))(1:2).eq.'CA')) then
+     &              (lakon(ialset(j))(1:2).eq.'CA')) then
 !
 !                 plane stress/strain  or axisymmetric elements
 !
@@ -296,7 +282,7 @@ cccc         endif
                   k=k-ialset(j)
                   if(k.ge.ialset(j-1)) exit
                   if((lakon(k)(1:2).eq.'CP').or.
-     &               (lakon(k)(1:2).eq.'CA')) then
+     &                 (lakon(k)(1:2).eq.'CA')) then
                      indexe=ipkon(k)
                      do l=1,8
                         thicke(1,indexe+l)=thickness
@@ -359,17 +345,15 @@ cccc         endif
                enddo
             endif
          enddo
-         else
-!
+      else
+!     
 !        assigning the thickness to each node of the corresponding
 !        elements (thickness not specified: only axisymmetric elements)
 !
-            thickness=datan(1.d0)*8.d0/iaxial
+         thickness=datan(1.d0)*8.d0/iaxial
          do j=istartset(i),iendset(i)
             if(ialset(j).gt.0) then
                if(lakon(ialset(j))(1:2).eq.'CA') then
-c                  write(*,*) 'solidsections ',
-c     &               ialset(j),lakon(ialset(j)),thickness
 !
 !                 axisymmetric elements
 !
@@ -395,28 +379,70 @@ c     &               ialset(j),lakon(ialset(j)),thickness
                enddo
             endif
          enddo
-         endif
-!
+      endif
+!     
 !        defining cyclic symmetric conditions for axisymmetric
 !        elements (needed for cavity radiation)
 !
-         do j=istartset(i),iendset(i)
-            if(ialset(j).gt.0) then
-               if(lakon(ialset(j))(1:2).eq.'CA') then
+      do j=istartset(i),iendset(i)
+         if(ialset(j).gt.0) then
+            if(lakon(ialset(j))(1:2).eq.'CA') then
+               if(mcs.gt.1) then
+                  write(*,*) '*ERROR reading *SOLID SECTION: '
+                  write(*,*) '       axisymmetric elements cannot be
+     &combined with cyclic symmetry'
+                  ier=1
+                  return
+               elseif(mcs.eq.1) then
+                  if(int(cs(1,1)).ne.int(2.d0*pi/thickness+0.5d0)) 
+     &                 then
+                     write(*,*) '*ERROR reading *SOLID SECTION: '
+                     write(*,*) '       it is not allowed to define t
+     &wo different'
+                     write(*,*) '       angles for an axisymmetric st
+     &ructure'
+                     ier=1
+                     return
+                  else
+                     exit
+                  endif
+               endif
+               mcs=1
+               cs(1,1)=2.d0*pi/thickness+0.5d0
+               cs(2,1)=-0.5d0
+               cs(3,1)=-0.5d0
+               cs(5,1)=1.5d0
+               do k=6,9
+                  cs(k,1)=0.d0
+               enddo
+               cs(10,1)=1.d0
+               cs(11,1)=0.d0
+               cs(12,1)=-1.d0
+               cs(14,1)=0.5d0
+               cs(15,1)=dcos(thickness)
+               cs(16,1)=dsin(thickness)
+               exit
+            endif
+         else
+            k=ialset(j-2)
+            do
+               k=k-ialset(j)
+               if(k.ge.ialset(j-1)) exit
+               if(lakon(k)(1:2).eq.'CA') then
                   if(mcs.gt.1) then
                      write(*,*) '*ERROR reading *SOLID SECTION: '
-                     write(*,*) '       axisymmetric elements cannot be
-     &combined with cyclic symmetry'
+                     write(*,*) '       axisymmetric elements cannot 
+     &be combined with cyclic symmetry'
                      ier=1
                      return
                   elseif(mcs.eq.1) then
                      if(int(cs(1,1)).ne.int(2.d0*pi/thickness+0.5d0)) 
-     &                 then
+     &                    then
                         write(*,*) '*ERROR reading *SOLID SECTION: '
-                        write(*,*) '       it is not allowed to define t
-     &wo different'
-                        write(*,*) '       angles for an axisymmetric st
-     &ructure'
+                        write(*,*) '       it is not allowed to defin
+     &e two different'
+                        write(*,*) '       angles for an axisymmetric
+     &structure'
                         ier=1
                         return
                      else
@@ -439,59 +465,15 @@ c     &               ialset(j),lakon(ialset(j)),thickness
                   cs(16,1)=dsin(thickness)
                   exit
                endif
-            else
-               k=ialset(j-2)
-               do
-                  k=k-ialset(j)
-                  if(k.ge.ialset(j-1)) exit
-c                  if(lakon(ialset(j))(1:2).eq.'CA') then
-                  if(lakon(k)(1:2).eq.'CA') then
-                     if(mcs.gt.1) then
-                        write(*,*) '*ERROR reading *SOLID SECTION: '
-                        write(*,*) '       axisymmetric elements cannot 
-     &be combined with cyclic symmetry'
-                        ier=1
-                        return
-                     elseif(mcs.eq.1) then
-                        if(int(cs(1,1)).ne.int(2.d0*pi/thickness+0.5d0)) 
-     &                       then
-                           write(*,*) '*ERROR reading *SOLID SECTION: '
-                           write(*,*) '       it is not allowed to defin
-     &e two different'
-                           write(*,*) '       angles for an axisymmetric
-     & structure'
-                           ier=1
-                           return
-                        else
-                           exit
-                        endif
-                     endif
-                     mcs=1
-                     cs(1,1)=2.d0*pi/thickness+0.5d0
-                     cs(2,1)=-0.5d0
-                     cs(3,1)=-0.5d0
-                     cs(5,1)=1.5d0
-                     do k=6,9
-                        cs(k,1)=0.d0
-                     enddo
-                     cs(10,1)=1.d0
-                     cs(11,1)=0.d0
-                     cs(12,1)=-1.d0
-                     cs(14,1)=0.5d0
-                     cs(15,1)=dcos(thickness)
-                     cs(16,1)=dsin(thickness)
-                     exit
-                  endif
-              enddo
-            endif
-         enddo
-!
-         if(key.eq.0) then
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &           ipoinp,inp,ipoinpc)
+            enddo
          endif
-cccc      endif
-!
+      enddo
+!     
+      if(key.eq.0) then
+         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &        ipoinp,inp,ipoinpc)
+      endif
+!     
       return
       end
 

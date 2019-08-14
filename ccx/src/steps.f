@@ -20,7 +20,7 @@
      &  nforc,nload,ithermal,t0,t1,nk,irstrt,istep,istat,n,jmax,ctrl,
      &  iline,ipol,inl,ipoinp,inp,newstep,ipoinpc,network,
      &  iamplitudedefault,amname,nam,nam_,namta,amta,namtot,
-     &  nstam,ier)
+     &  nstam,ier,namtot_)
 !
 !     reading the input deck: *STEP
 !
@@ -32,7 +32,7 @@
 !
       integer iperturb(*),nforc,nload,ithermal,nk,istep,istat,n,key,
      &  i,j,iprestr,jmax(2),irstrt(*),iline,ipol,inl,ipoinp(2,*),
-     &  inp(3,*),
+     &  inp(3,*),namtot_,
      &  newstep,nbody,ipoinpc(0:*),network,iamplitudedefault,nam,
      &  nam_,namta(3,*),namtot,nstam,ier
 !
@@ -74,9 +74,21 @@
          enddo
          namta(1,nam)=namtot+1
          namtot=namtot+1
+         if(namtot.gt.namtot_) then
+            write(*,*) 
+     &           '*ERROR reading *STEP: increase namtot_'
+            ier=1
+            return
+         endif
          amta(1,namtot)=0.d0
          amta(2,namtot)=0.d0
          namtot=namtot+1
+         if(namtot.gt.namtot_) then
+            write(*,*) 
+     &           '*ERROR reading *STEP: increase namtot_'
+            ier=1
+            return
+         endif
          amta(1,namtot)=1.d20
          amta(2,namtot)=1.d20
          namta(2,nam)=namtot
@@ -97,9 +109,21 @@
          enddo
          namta(1,nam)=namtot+1
          namtot=namtot+1
+         if(namtot.gt.namtot_) then
+            write(*,*) 
+     &           '*ERROR reading *STEP: increase namtot_'
+            ier=1
+            return
+         endif
          amta(1,namtot)=0.d0
          amta(2,namtot)=1.d0
          namtot=namtot+1
+         if(namtot.gt.namtot_) then
+            write(*,*) 
+     &           '*ERROR reading *STEP: increase namtot_'
+            ier=1
+            return
+         endif
          amta(1,namtot)=1.d20
          amta(2,namtot)=1.d0
          namta(2,nam)=namtot

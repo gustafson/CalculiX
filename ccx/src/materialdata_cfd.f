@@ -37,16 +37,9 @@
      &  ielfa
 !
       intent(inout) vel,vfa,cvel,cvfa,umel,umfa,hcfa
-!     
-c$omp parallel default(none)
-c$omp& shared(nef,vel,ielmatf,shcon,ntmat_,nshcon,physcon,cvel,umel,
-c$omp&        ithermal,nface,vfa,ielfa,cvfa,umfa,hcfa,cocon,ncocon,
-c$omp&        rhcon,nrhcon)
-c$omp& private(i,t1l,imat)
 !
 !     element (cell) values
 !
-c$omp do
       do i=1,nef
          t1l=vel(i,0)
          imat=ielmatf(1,i)
@@ -67,11 +60,9 @@ c$omp do
          call materialdata_dvi(shcon,nshcon,imat,umel(i),t1l,ntmat_,
      &            ithermal)
       enddo
-c$omp end do
 !
 !     facial values
 !
-c$omp do
       do i=1,nface
          t1l=vfa(0,i)
 !
@@ -98,8 +89,6 @@ c$omp do
 !
          call materialdata_cond(imat,ntmat_,t1l,cocon,ncocon,hcfa(i))
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

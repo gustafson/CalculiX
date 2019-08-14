@@ -19,8 +19,7 @@
       subroutine applyboun(ifaext,nfaext,ielfa,ikboun,ilboun,
      &  nboun,typeboun,nelemload,nload,sideload,isolidsurf,nsolidsurf,
      &  ifabou,nfabou,nface,nodeboun,ndirboun,ikmpc,ilmpc,labmpc,nmpc,
-     &  nactdohinv,compressible,iatleastonepressurebc,ipkonf,kon,konf,
-     &  nblk)
+     &  nactdohinv,compressible,iatleastonepressurebc,ipkonf,kon,konf)
 !
 !     stores pointers to ifabou in ielfa(2,*) at those locations
 !     which are zero (external faces)
@@ -36,7 +35,7 @@
      &  nload,isolidsurf(*),nsolidsurf,ifabou(*),i,nface,indexb,
      &  nodeboun(*),ndirboun(*),jsum,ig,ikmpc(*),ilmpc(*),nmpc,mpc,
      &  nactdohinv(*),compressible,iatleastonepressurebc,iface,
-     &  ifaceblk,ipkonf(*),kon(*),konf(*),nblk,indexe
+     &  ipkonf(*),kon(*),konf(*),indexe
 !
       nfabou=1
       iatleastonepressurebc=0
@@ -53,18 +52,7 @@
 !
 !        face label used to apply the SPC
 !
-         if(nblk.gt.0) then
-!
-!           retrieving the original face number in case the
-!           element was reordered 
-!
-            ifaceblk=ielfa(4,ifa)
-            indexe=ipkonf(ielfa(1,ifa))
-            call identifyface(konf(indexe+1),kon(indexe+1),
-     &            ifaceblk,iface)
-         else
-            iface=ielfa(4,ifa)
-         endif
+         iface=ielfa(4,ifa)
 !
          jface=10*ielem+iface
 !

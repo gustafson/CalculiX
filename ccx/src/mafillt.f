@@ -21,7 +21,7 @@
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
      &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
      &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iau6,xxni,xxnj,
-     &  iturbulent)
+     &  iturbulent,of2)
 !
 !     filling the matrix for the conservation of energy
 !
@@ -41,13 +41,14 @@
      &  xxi(3,*),body(0:3,*),volume(*),dtimef,velo(nef,0:7),
      &  veloo(nef,0:7),rhovol,constant,cvel(*),gradvel(3,3,*),
      &  cvfa(*),hcfa(*),div,xload(2,*),gamma(*),xrlfa(3,*),
-     &  xxj(3,*),a1,a2,a3,flux(*),xxnj(3,*),xxni(3,*),visdis
+     &  xxj(3,*),a1,a2,a3,flux(*),xxnj(3,*),xxni(3,*),visdis,
+     &  four,of2(*)
 !
       intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  jq,irow,nzs,vel,umel,xlet,xle,gradtfa,xxi,
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
      &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
-     &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb
+     &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iturbulent,of2
 !
       intent(inout) au,ad,b
 !
@@ -93,17 +94,37 @@
 !
 !           diffusion
 !
+!           k_turbulent=cp*mu_turbulent/Prandl_turbulent
+!           Prandl_turbulent=0.9
+!     
+            if(iturbulent.eq.0) then
+               four=hcfa(ifa)
+            elseif(iturbulent.le.3) then
+!
+!              k-epsilon, k-omega or BSL model
+!
+               four=hcfa(ifa)+cvfa(ifa)*vfa(5,ifa)*vfa(6,ifa)/
+     &                        (vfa(7,ifa)*0.9d0)
+            else
+!
+!              SST model
+!
+               four=hcfa(ifa)+cvfa(ifa)*vfa(5,ifa)*
+     &              (0.31d0*vfa(6,ifa))/
+     &              (max(0.31d0*vfa(7,ifa),of2(i))*0.9d0)
+            endif
+!
             if(iel.ne.0) then
 !     
 !              neighboring element
 !     
-               coef=hcfa(ifa)*area(ifa)/xlet(indexf)
+               coef=four*area(ifa)/xlet(indexf)
                ad(i)=ad(i)+coef
                au(indexf)=au(indexf)-coef
 !     
 !              correction for non-orthogonal grid
 !     
-               b(i)=b(i)+hcfa(ifa)*area(ifa)*
+               b(i)=b(i)+four*area(ifa)*
      &              (gradtfa(1,ifa)*xxnj(1,indexf)+
      &               gradtfa(2,ifa)*xxnj(2,indexf)+
      &               gradtfa(3,ifa)*xxnj(3,indexf))
@@ -130,7 +151,7 @@
 !                    temperature given or no outlet:
 !                    temperature is assumed fixed
 !     
-                     coef=hcfa(ifa)*area(ifa)/xle(indexf)
+                     coef=four*area(ifa)/xle(indexf)
                      ad(i)=ad(i)+coef
                      b(i)=b(i)+coef*vfa(0,ifa)
                   else
@@ -143,7 +164,7 @@
 !              correction for non-orthogonal grid
 !     
                if(.not.knownflux) then
-                  b(i)=b(i)+hcfa(ifa)*area(ifa)*
+                  b(i)=b(i)+four*area(ifa)*
      &                 (gradtfa(1,ifa)*xxni(1,indexf)+
      &                  gradtfa(2,ifa)*xxni(2,indexf)+
      &                  gradtfa(3,ifa)*xxni(3,indexf))
@@ -153,13 +174,7 @@
 !
 !           viscous dissipation
 !
-         if(iturbulent.eq.0) then
-            visdis=umel(i)
-         else
-            visdis=umel(i)+vel(i,5)*vel(i,6)/vel(i,7)
-         endif
-!
-         b(i)=b(i)+visdis*volume(i)*
+         b(i)=b(i)+umel(i)*volume(i)*
      &        (2.d0*(gradvel(1,1,i)**2+gradvel(2,2,i)**2+
      &        gradvel(3,3,i)**2)+
      &        (gradvel(1,2,i)+gradvel(2,1,i))**2+

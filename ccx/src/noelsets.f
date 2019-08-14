@@ -190,18 +190,21 @@ c               write(*,*) noelset(1:ipos)
                if(ialset(nalset+1).gt.nk) then
                   write(*,*) 
      &               '*ERROR reading *NSET/ELSET: starting value in'
-                  write(*,*) '       set ',set(iset),' > nk'
+                  write(*,*) '       set ',
+     &              set(iset)(1:index(set(iset),' ')-2),' > nk'
                   ier=1
                   return
                elseif(ialset(nalset+2).gt.nk) then
                   write(*,*) 
      &               '*WARNING reading *NSET/ELSET: end value in'
-                  write(*,*) '         set ',set(iset),' > nk;'
+                  write(*,*) '         set ',
+     &              set(iset)(1:index(set(iset),' ')-2),' > nk;'
                   write(*,*) '         replaced by nk'
                   ialset(nalset+2)=nk
                elseif(ialset(nalset+3).le.0) then
                   write(*,*) '*ERROR reading *NSET/ELSET: increment in'
-                  write(*,*) '       set ',set(iset),' <=0'
+                  write(*,*) '       set ',
+     &              set(iset)(1:index(set(iset),' ')-2),' <=0'
                   ier=1
                   return
                endif
@@ -209,18 +212,21 @@ c               write(*,*) noelset(1:ipos)
                if(ialset(nalset+1).gt.ne) then
                   write(*,*) 
      &              '*ERROR reading *NSET/ELSET: starting value in'
-                  write(*,*) '       set ',set(iset),' > ne'
+                  write(*,*) '       set ',
+     &              set(iset)(1:index(set(iset),' ')-2),' > ne'
                   ier=1
                   return
                elseif(ialset(nalset+2).gt.ne) then
                   write(*,*) 
      &             '*WARNING reading *NSET/ELSET: end value in'
-                  write(*,*) '         set ',set(iset),' > ne;'
+                  write(*,*) '         set ',
+     &              set(iset)(1:index(set(iset),' ')-2),' > ne;'
                   write(*,*) '         replaced by ne'
                   ialset(nalset+2)=nk
                elseif(ialset(nalset+3).le.0) then
                   write(*,*) '*ERROR reading *NSET/ELSET: increment in'
-                  write(*,*) '       set ',set(iset),' <=0'
+                  write(*,*) '       set ',
+     &              set(iset)(1:index(set(iset),' ')-2),' <=0'
                   ier=1
                   return
                endif
@@ -285,7 +291,8 @@ c               write(*,*) noelset(1:ipos)
                         write(*,*) 
      &                     '*WARNING reading *NSET/ELSET: value ',
      &                       ialset(nalset+1)
-                        write(*,*) '         in set ',set(iset),' > nk'
+                        write(*,*) '         in set ',
+     &                    set(iset)(1:index(set(iset),' ')-2),' > nk'
                      else
                         nalset=nalset+1
                      endif
@@ -294,7 +301,8 @@ c               write(*,*) noelset(1:ipos)
                         write(*,*) 
      &                       '*WARNING reading *NSET/ELSET: value ',
      &                       ialset(nalset+1)
-                        write(*,*) '         in set ',set(iset),' > ne;'
+                        write(*,*) '         in set ',
+     &                    set(iset)(1:index(set(iset),' ')-2),' > ne;'
                         write(*,*) '         This is only allowed for'
                         write(*,*) 
      &                       '         global elsets in combination'

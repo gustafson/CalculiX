@@ -20,7 +20,7 @@
      &  istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,ipoinp,inp,
      &  ithermal,cs,ics,tieset,istartset,
      &  iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
-     &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd,ttime,
+     &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,nef,ttime,
      &  iaxial,nelcon,nmat,tincf,ier)
 !
 !     reading the input deck: *STATIC
@@ -47,7 +47,7 @@
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ics(*),iexpl,
      &  istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*),
-     &  cfd,iaxial,nelcon(2,*),nmat,ier
+     &  nef,iaxial,nelcon(2,*),nmat,ier
 !
       real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*),ttime,tincf
 !
@@ -56,14 +56,14 @@
       tmax=0.d0
       timereset=.false.
 !
-      if((iperturb.eq.1).and.(istep.ge.1)) then
-         write(*,*) '*ERROR reading *STATIC: perturbation analysis is'
-         write(*,*) '       not provided in a *STATIC step. Perform'
-         write(*,*) '       a genuine nonlinear geometric calculation'
-         write(*,*) '       instead (parameter NLGEOM)'
-         ier=1
-         return
-      endif
+c      if((iperturb.eq.1).and.(istep.ge.1)) then
+c         write(*,*) '*ERROR reading *STATIC: perturbation analysis is'
+c         write(*,*) '       not provided in a *STATIC step. Perform'
+c         write(*,*) '       a genuine nonlinear geometric calculation'
+c         write(*,*) '       instead (parameter NLGEOM)'
+c         ier=1
+c         return
+c      endif
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *STATIC: *STATIC can only be used'
@@ -167,7 +167,7 @@ c      enddo
       endif
 !
       if((istat.lt.0).or.(key.eq.1)) then
-         if((iperturb.ge.2).or.(cfd.eq.1)) then
+         if((iperturb.ge.2).or.(nef.gt.0)) then
             write(*,*) '*WARNING reading *STATIC: a nonlinear analysis i
      &s requested'
             write(*,*) '         but no time increment nor step is speci
@@ -242,6 +242,15 @@ c            tincf=1.d-2
 !      
       if(idrct.ne.1) then
          if(dabs(tmin).lt.1.d-6*tper) then
+            write(*,*) '*WARNING reading *STATIC:'
+            write(*,*) '         the minimum increment ',tmin
+            write(*,*) '         is smaller then 1.e-6 times the '
+            write(*,*) '         step time;'
+            write(*,*) '         the minimum increment is changed'
+            write(*,*) '         to ',min(tinc,1.d-6*tper)
+            write(*,*) '         which is the minimum of the initial'
+            write(*,*) 
+     &         '         increment time and 1.e-6 times the step time'
             tmin=min(tinc,1.d-6*tper)
          endif
          if(dabs(tmax).lt.1.d-10) then

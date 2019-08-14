@@ -19,7 +19,7 @@
       subroutine sectionprints(inpc,textpart,set,istartset,iendset,
      &  ialset,nset,nset_,nalset,nprint,nprint_,jout,prlab,prset,
      &  sectionprint_flag,ithermal,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,amname,nam,itpamp,idrct,ipoinpc,cfd,ier)
+     &  inp,amname,nam,itpamp,idrct,ipoinpc,nef,ier)
 !
 !     reading the *NODE PRINT cards in the input deck
 !
@@ -36,7 +36,7 @@
       integer istartset(*),iendset(*),ialset(*),ii,i,nam,itpamp,
      &  jout(2),joutl,ithermal,nset,nset_,nalset,nprint,nprint_,istep,
      &  istat,n,key,ipos,iline,ipol,inl,ipoinp(2,*),inp(3,*),idrct,
-     &  ipoinpc(0:*),cfd,ier
+     &  ipoinpc(0:*),nef,ier
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *SECTION PRINT: *SECTION PRINT'
@@ -179,7 +179,7 @@
      &"*SECTION PRINT%")
                cycle
             endif
-            if((cfd.eq.0).and.(textpart(ii)(1:4).eq.'DRAG')) then
+            if((nef.eq.0).and.(textpart(ii)(1:4).eq.'DRAG')) then
                write(*,*) 
      &           '*WARNING reading *SECTION PRINT: DRAG only makes '
                write(*,*) '         sense for 3D fluid '

@@ -85,8 +85,12 @@
             ctrl(48)=1.5d0
             ctrl(49)=0.5d0
             ctrl(50)=20.5d0
-            ctrl(51)=0.5d0
+            ctrl(51)=1.5d0
             ctrl(52)=1.5d0
+            ctrl(53)=1.d-3
+            ctrl(54)=1.d-1
+            ctrl(55)=100.5d0
+            ctrl(56)=60.5d0
             write(*,*)
             write(*,*) 
      &         '*INFO: control parameters reset to default'
@@ -96,7 +100,8 @@
      &      then
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            do j=1,n
+            if((istat.lt.0).or.(key.eq.1)) return
+            do j=1,min(8,n)
                if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:10),'(i10)',iostat=istat) k
                if(istat.gt.0) then
@@ -108,7 +113,8 @@
             enddo
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            do j=1,n
+            if((istat.lt.0).or.(key.eq.1)) return
+            do j=1,min(8,n)
                if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+10)
                if(istat.gt.0) then
@@ -141,7 +147,8 @@
          elseif(textpart(i)(1:16).eq.'PARAMETERS=FIELD') then
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            do j=1,n
+            if((istat.lt.0).or.(key.eq.1)) return
+            do j=1,min(8,n)
                if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+18)
                if(istat.gt.0) then
@@ -164,7 +171,8 @@
          elseif(textpart(i)(1:21).eq.'PARAMETERS=LINESEARCH') then
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            do j=1,n
+            if((istat.lt.0).or.(key.eq.1)) return
+            do j=1,min(5,n)
                if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+27)
                if(istat.gt.0) then
@@ -184,7 +192,8 @@
          elseif(textpart(i)(1:18).eq.'PARAMETERS=NETWORK') then
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            do j=1,n
+            if((istat.lt.0).or.(key.eq.1)) return
+            do j=1,min(7,n)
                if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+32)
                if(istat.gt.0) then
@@ -203,7 +212,8 @@
             write(*,*) '       c2a = ',ctrl(39)
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            do j=1,n
+            if((istat.lt.0).or.(key.eq.1)) return
+            do j=1,min(6,n)
                if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+40)
                if(istat.gt.0) then
@@ -222,7 +232,8 @@
          elseif(textpart(i)(1:14).eq.'PARAMETERS=CFD') then
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-            do j=1,n
+            if((istat.lt.0).or.(key.eq.1)) return
+            do j=1,min(3,n)
                if(textpart(j)(1:1).eq.' ') cycle
                read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+49)
                if(istat.gt.0) then
@@ -235,6 +246,58 @@
             write(*,*) '       iitt = ',int(ctrl(50))
             write(*,*) '       iitg = ',int(ctrl(51))
             write(*,*) '       iitp = ',int(ctrl(52))
+            exit
+         elseif(textpart(i)(1:18).eq.'PARAMETERS=CONTACT') then
+            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &           ipoinp,inp,ipoinpc)
+            if((istat.lt.0).or.(key.eq.1)) return
+            do j=1,min(4,n)
+               if(textpart(j)(1:1).eq.' ') cycle
+               read(textpart(j)(1:20),'(f20.0)',iostat=istat) ctrl(j+52)
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONTROLS%",ier)
+                  return
+               endif
+               if(j.ge.3) ctrl(j+52)=ctrl(j+52)+0.5d0
+            enddo
+!
+!           check range of parameters
+!
+            if(ctrl(53).lt.0.d0) then
+               write(*,*) '*ERROR reading *CONTROLS'
+               write(*,*) '       delcon should be positive'
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CONTROLS%",ier)
+            endif
+!
+            if((ctrl(54).lt.0.d0).or.(ctrl(54).gt.1.d0)) then
+               write(*,*) '*ERROR reading *CONTROLS'
+               write(*,*) 
+     &        '       alea should belong to the interval [0.,1.]'
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CONTROLS%",ier)
+            endif
+!
+            if(ctrl(55).lt.1.d0) then
+               write(*,*) '*ERROR reading *CONTROLS'
+               write(*,*) '       kscalemax must be at least 1'
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CONTROLS%",ier)
+            endif
+!
+            if(ctrl(56).lt.1.d0) then
+               write(*,*) '*ERROR reading *CONTROLS'
+               write(*,*) '       itf2f must be at least 1'
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*CONTROLS%",ier)
+            endif
+!
+            write(*,*) '*INFO: CONTACT control parameter set to:'
+            write(*,*) '       delcon = ',ctrl(53)
+            write(*,*) '       alea = ',ctrl(54)
+            write(*,*) '       kscalemax = ',int(ctrl(55))
+            write(*,*) '       itf2f = ',int(ctrl(56))
             exit
          else
             write(*,*) 

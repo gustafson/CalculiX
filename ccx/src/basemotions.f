@@ -18,7 +18,7 @@
 !
       subroutine basemotions(inpc,textpart,amname,nam,ibasemotion,
      &  xboun,ndirboun,iamboun,typeboun,nboun,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,ipoinpc,iamplitudedefault,ier)
+     &  inl,ipoinp,inp,ipoinpc,iamplitudedefault,ier,xmodal,nmethod)
 !
 !     reading the input deck: *BASE MOTION
 !
@@ -30,13 +30,13 @@
 !
       integer iamplitude,idof,i,j,n,nam,ibasemotion,iamboun(*),nboun,
      &  ndirboun(*),istep,istat,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  key,ipoinpc(0:*),iamplitudedefault,ier
+     &  key,ipoinpc(0:*),iamplitudedefault,ier,nmethod
 !
-      real*8 xboun(*)
+      real*8 xboun(*),xmodal(*)
 !
       type='A'
       iamplitude=iamplitudedefault
-      idof=0
+      idof=-1
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *BASE MOTION:'
@@ -75,6 +75,14 @@
             if(textpart(i)(6:17).eq.'DISPLACEMENT') then
                type='B'
             elseif(textpart(i)(6:17).eq.'ACCELERATION') then
+               if((nmethod.ne.5).or.(int(xmodal(7)).ne.0)) then
+                  write(*,*) '*ERROR reading *BASE MOTION'
+                  write(*,*) '       ACCELERATION is only allowed'
+                  write(*,*) '       for harmonic steady state'
+                  write(*,*) '       dynamics calculations'
+                  ier=1
+                  return
+               endif
                type='A'
             else
                write(*,*) '*ERROR reading *BASE MOTION:'
@@ -93,9 +101,14 @@
          endif
       enddo
 !
-      if(idof.eq.0) then
+      if(idof.eq.-1) then
          write(*,*) '*ERROR reading *BASE MOTION'
          write(*,*) '       no degree of freedom specified'
+         ier=1
+         return
+      elseif((idof.lt.1).or.(idof.gt.3)) then
+         write(*,*) '*ERROR reading *BASE MOTION'
+         write(*,*) '       only degrees of freedom 1 to 3 are allowed'
          ier=1
          return
       elseif(iamplitude.eq.0) then

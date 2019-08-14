@@ -39,6 +39,7 @@
 !
       if(calcul_fn.eq.1)then
         do i=1,nmpc
+            if(labmpc(i)(1:5).eq.'FLUID') cycle
             ist=ipompc(i)
             node=nodempc(1,ist)
             ndir=nodempc(2,ist)
@@ -74,6 +75,7 @@
 !
       if(calcul_fn.eq.1)then
          do i=1,nmpc
+            if(labmpc(i)(1:5).eq.'FLUID') cycle
             ist=ipompc(i)
             node=nodempc(1,ist)
             ndir=nodempc(2,ist)

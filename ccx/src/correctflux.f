@@ -17,26 +17,25 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine correctflux(nef,ipnei,neifa,neiel,flux,vfa,advfa,area,
-     &  vel,xlet,ielfa,xle,ifabou,xxnj,gradpcfa)
+     &  vel,xlet,ielfa,xle,ifabou,nefa,nefb)
 !
 !     correction of v due to the balance of mass
 !     the correction is in normal direction to the face
 !
       implicit none
 !
-      integer i,nef,indexf,ipnei(*),neifa(*),neiel(*),iel2,ielfa(4,*),
-     &  iel,ifa,ifabou(*),indexb
+      integer i,nef,indexf,ipnei(*),neifa(*),neiel(*),ielfa(4,*),
+     &  iel,ifa,ifabou(*),indexb,nefa,nefb
 !
       real*8 flux(*),vfa(0:7,*),advfa(*),area(*),vel(nef,0:7),xlet(*),
-     &  xle(*),totflux,maxflux,xxnj(3,*),gradpcfa(3,*)
+     &  xle(*)
 !
-c      maxflux=0.d0
-c$omp parallel default(none)
-c$omp& shared(nef,ipnei,neifa,neiel,flux,vfa,advfa,area,vel,xlet,ielfa,
-c$omp&        xle,ifabou,xxnj,gradpcfa)
-c$omp& private(i,indexf,ifa,iel,iel2,totflux,maxflux,indexb)
-c$omp do
-      do i=1,nef
+      intent(in) nef,ipnei,neifa,neiel,vfa,advfa,area,
+     &  vel,xlet,ielfa,xle,ifabou,nefa,nefb
+!
+      intent(inout) flux
+!
+      do i=nefa,nefb
 c         totflux=0.d0
          do indexf=ipnei(i)+1,ipnei(i+1)
             ifa=neifa(indexf)
@@ -54,9 +53,6 @@ c         totflux=0.d0
      &                 (ifabou(indexb+2).eq.0).or.
      &                 (ifabou(indexb+3).eq.0)).and.
      &                 (ifabou(indexb+4).ne.0)) then
-c               iel2=ielfa(2,ifa)
-c               if(iel2.lt.0) then
-c                  if(ifabou(-iel2+4).ne.0) then
 !
 !                    external face with pressure boundary conditions
 !
@@ -68,11 +64,7 @@ c                  if(ifabou(-iel2+4).ne.0) then
             endif
 c            totflux=totflux+flux(indexf)
          enddo
-c         if(dabs(totflux).gt.maxflux)maxflux=dabs(totflux)
-c         write(*,*) 'correctvfa mass check ',i,totflux,maxflux
       enddo
-c$omp end do
-c$omp end parallel
 ! 
       return
       end

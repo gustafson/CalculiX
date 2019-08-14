@@ -193,6 +193,8 @@ c            endif
                endif
                irotnode=nk
                rig(node)=irotnode
+               write(27,*) 'a KNOT was generated in node ',node
+               write(27,*)
                nk=nk+1
                if(nk.gt.nk_) then
                   write(*,*) '*ERROR in rigidbodies: increase nk_'
@@ -676,16 +678,18 @@ c                  endif
 !
                   if(dabs(dot).gt.0.05d0) then
                      if(xboun(i).gt.1.d-10) then
-                        write(*,*) '*ERROR in gen3dboun: rotation'
-                        write(*,*) '       vector in node ',node
-                        write(*,*) '       and direction ',idir-1
-                        write(*,*) '       has a significant'
+                        write(*,*) '*WARNING in gen3dboun: rotation'
+                        write(*,*) '         vector in node ',node
+                        write(*,*) '         and direction ',idir-1
+                        write(*,*) '         has a significant'
                         write(*,*) 
-     &                       '       component along the drilling'
-                        write(*,*) '       direction and a nonzero'
-                        write(*,*) '       boundary value; this is not'
-                        write(*,*) '       allowed'
-                        call exit(201)
+     &                       '         component along the drilling'
+                        write(*,*) '         direction and a nonzero'
+                        write(*,*)
+     &                      '         boundary value; projection is'
+                        write(*,*) '         applied'
+                        write(*,*)
+C                        call exit(201)
                      endif
                   endif
 !
@@ -713,6 +717,11 @@ c                  endif
 !              shells
 !
                label='MEANROTBS           '
+               write(27,*) 'a MEAN ROTATION MPC was generated in node ',
+     &              node
+               write(27,*) '                about the axis (',
+     &            a(1,idirref),',',a(2,idirref),',',a(3,idirref),')'
+               write(27,*)
                nnodes=0
                do j=lstart,lend,linc
                   nodeact=knor(indexk+j)

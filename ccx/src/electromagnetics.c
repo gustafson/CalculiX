@@ -41,7 +41,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	     ITG *nodeforc, ITG *ndirforc,double *xforc, ITG *nforc, 
 	     ITG **nelemloadp, char **sideloadp, double *xload,ITG *nload, 
 	     ITG *nactdof, 
-	     ITG **icolp, ITG *jq, ITG **irowp, ITG *neq, ITG *nzl, 
+	     ITG **icolp, ITG **jqp, ITG **irowp, ITG *neq, ITG *nzl, 
 	     ITG *nmethod, ITG **ikmpcp, ITG **ilmpcp, ITG *ikboun, 
 	     ITG *ilboun,
              double *elcon, ITG *nelcon, double *rhcon, ITG *nrhcon,
@@ -105,7 +105,8 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       *ipoface=NULL,*istartset=NULL,*iendset=NULL,*ialset=NULL,
       *nelemloadref=NULL,*iamloadref=NULL,nloadref,kscale=1,
       *nelemload=NULL,*iamload=NULL,*idefload=NULL,ialeatoric=0,
-      *iponoel=NULL,*inoel=NULL,inoelsize,nrhs=1;
+      *iponoel=NULL,*inoel=NULL,inoelsize,nrhs=1,neqfreq,nzsfreq,
+      *irowfreq=NULL,*icolfreq=NULL,*jqfreq=NULL,*jq=NULL,maxmode;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*epn=NULL,*cdn=NULL,
       *f=NULL,*fn=NULL,qa[4]={0.,0.,-1.,0.},qam[2]={0.,0.},dtheta,theta,
@@ -118,7 +119,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	 *fextini=NULL,*veini=NULL,*xstateini=NULL,*h0ref=NULL,
 	 *ampli=NULL,*eei=NULL,*t1ini=NULL,*tinc,*tper,*tmin,*tmax,
 	 *xbounini=NULL,*xstiff=NULL,*stx=NULL,*cv=NULL,*cvini=NULL,
-         *enern=NULL,*coefmpc=NULL,*aux=NULL,*xstaten=NULL,
+         *enern=NULL,*coefmpc=NULL,*xstaten=NULL,
 	 *enerini=NULL,*emn=NULL,*xmastnor=NULL,*fnext=NULL,
 	 *tarea=NULL,*tenv=NULL,*erad=NULL,*fnr=NULL,*fni=NULL,
 	 *adview=NULL,*auview=NULL,*qfx=NULL,*adaux=NULL,
@@ -129,7 +130,8 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	 *xstate=NULL,*eenmax=NULL,*adrad=NULL,*aurad=NULL,*bcr=NULL,
          *emeini=NULL,*doubleglob=NULL,*au=NULL,
 	 *ad=NULL,*b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,
-         *cdnr=NULL,*cdni=NULL,*energyini=NULL,*energy=NULL;
+	 *cdnr=NULL,*cdni=NULL,*energyini=NULL,*energy=NULL,*adfreq=NULL,
+	 *aufreq=NULL,*bfreq=NULL,om;
 
 #ifdef SGI
   ITG token;
@@ -160,7 +162,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
   maxlenmpc=mpcinfo[3];
   
-  icol=*icolp;irow=*irowp;co=*cop;vold=*voldp;
+  icol=*icolp;irow=*irowp;jq=*jqp;co=*cop;vold=*voldp;
   ipkon=*ipkonp;lakon=*lakonp;kon=*konp;ielorien=*ielorienp;
   ielmat=*ielmatp;ener=*enerp;xstate=*xstatep;
   
@@ -197,9 +199,6 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   
   NNEW(b,double,neq[1]);
   NNEW(vini,double,mt**nk);
-  
-  NNEW(aux,double,7*maxlenmpc);
-  NNEW(iaux,ITG,maxlenmpc);
   
   /* allocating fields for the actual external loading */
   
@@ -334,7 +333,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   dtheta=(*tinc)/(*tper);
   dthetaref=dtheta;
   if(dtheta<=1.e-6){
-      printf("\n *ERROR in nonlingeo\n");
+      printf("\n *ERROR in electromagnetics\n");
       printf(" increment size smaller than one millionth of step size\n");
       printf(" increase increment size\n\n");
   }
@@ -452,7 +451,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
           &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-          inoel,nener,orname,network,ipobody,xbodyact,ibody);
+          inoel,nener,orname,network,ipobody,xbodyact,ibody,typeboun);
   
   SFREE(fn);SFREE(inum);SFREE(v);
   
@@ -507,7 +506,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       spooles(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],
 	      &symmetryflag,&inputformat,&nzs[2]);
 #else
-      printf("*ERROR in nonlingeo: the SPOOLES library is not linked\n\n");
+      printf("*ERROR in electromagnetics: the SPOOLES library is not linked\n\n");
       FORTRAN(stop,());
 #endif
   }
@@ -519,7 +518,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       token=1;
       sgi_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],token);
 #else
-      printf("*ERROR in nonlingeo: the SGI library is not linked\n\n");
+      printf("*ERROR in electromagnetics: the SGI library is not linked\n\n");
       FORTRAN(stop,());
 #endif
   }
@@ -527,7 +526,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 #ifdef TAUCS
       tau(ad,&au,adb,aub,&sigma,b,icol,&irow,&neq[1],&nzs[1]);
 #else
-      printf("*ERROR in nonlingeo: the TAUCS library is not linked\n\n");
+      printf("*ERROR in electromagnetics: the TAUCS library is not linked\n\n");
       FORTRAN(stop,());
 #endif
   }
@@ -536,7 +535,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],
 		   &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
-      printf("*ERROR in nonlingeo: the PARDISO library is not linked\n\n");
+      printf("*ERROR in electromagnetics: the PARDISO library is not linked\n\n");
       FORTRAN(stop,());
 #endif
   }
@@ -566,7 +565,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
           &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-          inoel,nener,orname,network,ipobody,xbodyact,ibody);
+          inoel,nener,orname,network,ipobody,xbodyact,ibody,typeboun);
   
 //  memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
   
@@ -1090,10 +1089,59 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	      
 	  }
 	  
-	  /* implicit step (static or dynamic */
-	  
-	  if(*nmethod==4){
+	  if(*nmethod==2){
+
+	      /* frequency calculation 
+		 expanding the matrices K and M */
+
+	      neqfreq=2*neq[0];
+	      nzsfreq=8*nzs[0]+neqfreq;
+	      NNEW(adfreq,double,neqfreq);
+	      NNEW(aufreq,double,nzsfreq);
+	      NNEW(irowfreq,ITG,nzsfreq);
+	      NNEW(iaux,ITG,nzsfreq);
+	      NNEW(icolfreq,ITG,neqfreq);
+	      NNEW(jqfreq,ITG,neqfreq+1);
+	      NNEW(bfreq,double,neqfreq);
+
+	      FORTRAN(mafillfreq_em,(ad,au,adb,aub,irow,jq,&neq[0],
+		      adfreq,aufreq,irowfreq,iaux,jqfreq,
+                      icolfreq,&neqfreq,&nzsfreq,&om,&symmetryflag,
+                      &inputformat,b,bfreq));
+
+	      SFREE(iaux);
+
+	      RENEW(ad,double,neqfreq);
+	      memcpy(ad,adfreq,sizeof(double)*neqfreq);
+	      SFREE(adfreq);
+
+	      RENEW(au,double,nzsfreq);
+	      memcpy(au,aufreq,sizeof(double)*nzsfreq);
+	      SFREE(aufreq);
+
+	      RENEW(irow,ITG,nzsfreq);
+	      memcpy(irow,irowfreq,sizeof(ITG)*nzsfreq);
+	      SFREE(irowfreq);
+
+	      RENEW(icol,ITG,neqfreq);
+	      memcpy(icol,icolfreq,sizeof(ITG)*neqfreq);
+	      SFREE(icolfreq);
+
+	      RENEW(jq,ITG,neqfreq+1);
+	      memcpy(jq,jqfreq,sizeof(ITG)*(neqfreq+1));
+	      SFREE(jqfreq);
+
+	      RENEW(b,double,neqfreq);
+	      memcpy(b,bfreq,sizeof(double)*neqfreq);
+	      SFREE(bfreq);
 	      
+	      neq[0]=neqfreq;neq[1]=neqfreq;
+	      nzs[0]=nzsfreq;nzs[1]=nzsfreq;
+
+	  }else if(*nmethod==4){
+	      
+	      /* transient calculation */
+
 	      /* electromagnetic part */
 	      
 	      if(*ithermal!=2){
@@ -1133,7 +1181,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	      }
 	  }
 
-	  NNEW(adaux,double,neq[2]);
+	  NNEW(adaux,double,neq[1]);
 	  FORTRAN(preconditioning,(ad,au,b,&neq[1],irow,jq,adaux));
 
 	  
@@ -1147,13 +1195,13 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 			  &symmetryflag,&inputformat,&nzs[2]);
 	      }
 #else
-	      printf(" *ERROR in nonlingeo: the SPOOLES library is not linked\n\n");
+	      printf(" *ERROR in electromagnetics: the SPOOLES library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
 	  else if((*isolver==2)||(*isolver==3)){
 	      if(nasym>0){
-		  printf(" *ERROR in nonlingeo: the iterative solver cannot be used for asymmetric matrices\n\n");
+		  printf(" *ERROR in electromagnetics: the iterative solver cannot be used for asymmetric matrices\n\n");
 		  FORTRAN(stop,());
 	      }
 	      preiter(ad,&au,b,&icol,&irow,&neq[1],&nzs[1],isolver,iperturb);
@@ -1161,7 +1209,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	  else if(*isolver==4){
 #ifdef SGI
 	      if(nasym>0){
-		  printf(" *ERROR in nonlingeo: the SGI solver cannot be used for asymmetric matrices\n\n");
+		  printf(" *ERROR in electromagnetics: the SGI solver cannot be used for asymmetric matrices\n\n");
 		  FORTRAN(stop,());
 	      }
 	      token=1;
@@ -1171,19 +1219,19 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		  sgi_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],token);
 	      }
 #else
-	      printf(" *ERROR in nonlingeo: the SGI library is not linked\n\n");
+	      printf(" *ERROR in electromagnetics: the SGI library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
 	  else if(*isolver==5){
 	      if(nasym>0){
-		  printf(" *ERROR in nonlingeo: the TAUCS solver cannot be used for asymmetric matrices\n\n");
+		  printf(" *ERROR in electromagnetics: the TAUCS solver cannot be used for asymmetric matrices\n\n");
 		  FORTRAN(stop,());
 	      }
 #ifdef TAUCS
 	      tau(ad,&au,adb,aub,&sigma,b,icol,&irow,&neq[1],&nzs[1]);
 #else
-	      printf(" *ERROR in nonlingeo: the TAUCS library is not linked\n\n");
+	      printf(" *ERROR in electromagnetics: the TAUCS library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
@@ -1197,14 +1245,25 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 			       &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 	      }
 #else
-	      printf(" *ERROR in nonlingeo: the PARDISO library is not linked\n\n");
+	      printf(" *ERROR in electromagnetics: the PARDISO library is not linked\n\n");
 	      FORTRAN(stop,());
 #endif
 	  }
 
+	  SFREE(au);SFREE(ad);
+
 	  for(i=0;i<neq[1];i++){b[i]*=adaux[i];}
 	  SFREE(adaux);
 	  
+	  if(*nmethod==2){
+	      neq[0]=neqfreq/2;neq[1]=neq[0];
+	      nzs[0]=(nzsfreq-neqfreq)/8;nzs[1]=nzs[0];
+	      RENEW(irow,ITG,nzs[0]);
+	      RENEW(icol,ITG,neq[0]);
+	      RENEW(jq,ITG,neq[0]+1);
+	      break;
+	  }
+
 	  /* calculating the electromagnetic fields and temperatures 
              only the temperature calculation is differential */
 	  
@@ -1232,8 +1291,6 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 		  nslavnode,ntie,ielprop,prop,iactive,energyini,energy,
 		  iponoel,inoel,orname,network,ipobody,xbodyact,ibody);
 	  SFREE(inum);
-	  
-	  SFREE(ad);SFREE(au);
 	  
 	  if(*ithermal!=2){
 	      if(cam[0]>uam[0]){uam[0]=cam[0];}      
@@ -1335,6 +1392,8 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       /*********************************************************/
       /*   end of the iteration loop                          */
       /*********************************************************/
+	  
+      if(*nmethod==2) break;
       
       /* icutb=0 means that the iterations in the increment converged,
 	 icutb!=0 indicates that the increment has to be reiterated with
@@ -1447,25 +1506,33 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   /*********************************************************/
   
   if(jprint!=0){
+ 
+      if(*nmethod==2){
+	  maxmode=1;
+      }else{
+	  maxmode=0;
+      }
+
+      for(mode=-1;mode<maxmode;mode++){
+     
+	  /* calculating the displacements and the stresses and storing  
+	     the results in frd format */
       
-      /* calculating the displacements and the stresses and storing  
-	 the results in frd format */
-      
-      NNEW(v,double,mt**nk);
-      NNEW(fn,double,mt**nk);
-      if(*ithermal>1) NNEW(qfn,double,3**nk);
-      if(strcmp1(&filab[3741],"EMF ")==0) NNEW(stn,double,6**nk);
-      NNEW(inum,ITG,*nk);
-      
-      memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
-      iout=2;
-      icmd=3;
-      
-      resultsinduction(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
+	  NNEW(v,double,mt**nk);
+	  NNEW(fn,double,mt**nk);
+	  if(*ithermal>1) NNEW(qfn,double,3**nk);
+	  if(strcmp1(&filab[3741],"EMF ")==0) NNEW(stn,double,6**nk);
+	  NNEW(inum,ITG,*nk);
+	  
+	  memcpy(&v[0],&vold[0],sizeof(double)*mt**nk);
+	  iout=2;
+	  icmd=3;
+	  
+	  resultsinduction(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
 	      ielorien,norien,orab,ntmat_,t0,t1act,ithermal,
 	      prestr,iprestr,filab,eme,emn,een,iperturb,
-	      f,fn,nactdof,&iout,qa,vold,b,nodeboun,
+	      f,fn,nactdof,&iout,qa,vold,&b[(mode+1)*neq[1]],nodeboun,
 	      ndirboun,xbounact,nboun,ipompc,
 	      nodempc,coefmpc,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
 	      &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
@@ -1478,39 +1545,39 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
 	      sideload,xloadact,xloadold,&icfd,inomat,h0,islavnode,
 	      nslavnode,ntie,ielprop,prop,iactive,energyini,energy,
 	      iponoel,inoel,orname,network,ipobody,xbodyact,ibody);
-      
-      memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
-      
-      iout=0;
-      icmd=0;
-//      FORTRAN(networkinum,(ipkon,inum,kon,lakon,ne,itg,&ntg));
-      
-      ++*kode;
-      if(*mcs>0){
-	  ptime=*ttime+time;
-	  frdcyc(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,
-		 t1act,fn,&ptime,epn,ielmat,matname,cs,mcs,nkon,enern,xstaten,
-		 nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,qfn,
-		 ialset,istartset,iendset,trab,inotr,ntrans,orab,ielorien,
-		 norien,stx,veold,&noddiam,set,nset,emn,thicke,jobnamec,ne,
-                 cdn,&mortar,nmat,qfx,ielprop,prop);
-      }else{
 	  
-	  ptime=*ttime+time;
-	  frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
-	      kode,filab,een,t1act,fn,&ptime,epn,ielmat,matname,enern,xstaten,
-	      nstate_,istep,&iinc,ithermal,qfn,&mode,&noddiam,trab,inotr,
-	      ntrans,orab,ielorien,norien,description,ipneigh,neigh,
-	      mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
-	      cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
-	      thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,
-              ielprop,prop);
+	  memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
 	  
+	  iout=0;
+	  icmd=0;
+	  
+	  ++*kode;
+	  if(*mcs>0){
+	      ptime=*ttime+time;
+	      frdcyc(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,kode,filab,een,
+		     t1act,fn,&ptime,epn,ielmat,matname,cs,mcs,nkon,enern,xstaten,
+		     nstate_,istep,&iinc,iperturb,ener,mi,output,ithermal,qfn,
+		     ialset,istartset,iendset,trab,inotr,ntrans,orab,ielorien,
+		     norien,stx,veold,&noddiam,set,nset,emn,thicke,jobnamec,ne,
+		     cdn,&mortar,nmat,qfx,ielprop,prop);
+	  }else{
+	      
+	      ptime=*ttime+time;
+	      frd(co,nk,kon,ipkon,lakon,ne,v,stn,inum,nmethod,
+		  kode,filab,een,t1act,fn,&ptime,epn,ielmat,matname,enern,xstaten,
+		  nstate_,istep,&iinc,ithermal,qfn,&mode,&noddiam,trab,inotr,
+		  ntrans,orab,ielorien,norien,description,ipneigh,neigh,
+		  mi,stx,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,ne,
+		  cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emn,
+		  thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,
+		  ielprop,prop);
+	      
+	  }
+	  
+	  SFREE(v);SFREE(fn);SFREE(inum);
+	  if(*ithermal>1){SFREE(qfn);}
+	  if(strcmp1(&filab[3741],"EMF ")==0) SFREE(stn);
       }
-      
-      SFREE(v);SFREE(fn);SFREE(inum);
-      if(*ithermal>1){SFREE(qfn);}
-      if(strcmp1(&filab[3741],"EMF ")==0) SFREE(stn);
       
   }
 
@@ -1607,7 +1674,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
       SFREE(adb);SFREE(aub);SFREE(cv);SFREE(cvini);
   }
   
-  SFREE(aux);SFREE(iaux);SFREE(vini);SFREE(h0ref);SFREE(h0);SFREE(inomat);
+  SFREE(vini);SFREE(h0ref);SFREE(h0);SFREE(inomat);
   
   /* reset icascade */
   
@@ -1616,7 +1683,7 @@ void electromagnetics(double **cop, ITG *nk, ITG **konp, ITG **ipkonp,
   mpcinfo[0]=memmpc_;mpcinfo[1]=mpcfree;mpcinfo[2]=icascade;
   mpcinfo[3]=maxlenmpc;
   
-  *icolp=icol;*irowp=irow;*cop=co;*voldp=vold;
+  *icolp=icol;*irowp=irow;*jqp=jq;*cop=co;*voldp=vold;
   
   *ipompcp=ipompc;*labmpcp=labmpc;*ikmpcp=ikmpc;*ilmpcp=ilmpc;
   *fmpcp=fmpc;*nodempcp=nodempc;*coefmpcp=coefmpc;

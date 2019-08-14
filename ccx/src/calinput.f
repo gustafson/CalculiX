@@ -39,11 +39,12 @@
      &  irstrt,ttime,qaold,output,typeboun,inpc,
      &  ipoinp,inp,tieset,tietol,ntie,fmpc,cbody,ibody,xbody,
      &  nbody,nbody_,xbodyold,nam_,ielprop,nprop,nprop_,prop,itpamp,
-     &  iviewfile,ipoinpc,cfd,nslavs,t0g,t1g,network,cyclicsymmetry,
+     &  iviewfile,ipoinpc,nslavs,t0g,t1g,network,cyclicsymmetry,
      &  idefforc,idefload,idefbody,mortar,ifacecount,islavsurf,
      &  pslavsurf,clearini,heading,iaxial,nobject,objectset,nprint_,
      &  iuel,nuel_,nodempcref,coefmpcref,ikmpcref,memmpcref_,
-     &  mpcfreeref,maxlenmpcref,memmpc_,isens,namtot,nstam,dacon)
+     &  mpcfreeref,maxlenmpcref,memmpc_,isens,namtot,nstam,dacon,
+     &  vel,nef,velo,veloo)
 !
       implicit none
 !
@@ -97,7 +98,7 @@
      &  infree(4),ixfree,ikfree,inoelfree,iponoelmax,rig(*),nshcon(*),
      &  ncocon(2,*),nodebounold(*),ielprop(*),nprop,nprop_,maxsectors,
      &  ndirbounold(*),ipoinp(2,*),inp(3,*),nintpoint,ifacecount,
-     &  ianisoplas,cfd,ifile_output,ichangefriction,nslavs,
+     &  ianisoplas,ifile_output,ichangefriction,nslavs,
      &  nalset,nalset_,nmat,nmat_,ntmat_,norien,norien_,islavsurf(2,*),
      &  nmethod,nk,ne,nboun,nmpc,nmpc_,mpcfree,i,istat,n,
      &  key,nk_,ne_,nboun_,ncs_,namtot_,nstate_,iviewfile,
@@ -112,7 +113,7 @@
      &  ichangesurfacebehavior,nobject,ibasemotion,iuel(4,*),nuel_,
      &  nodempcref(3,*),ikmpcref(*),memmpcref_,mpcfreeref,
      &  maxlenmpcref,memmpc_,isens,iamplitudedefault,namtot,
-     &  nstam,ier
+     &  nstam,ier,nef
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),fmpc(*),
      &  xload(2,*),alzero(*),offset(2,*),prop(*),pslavsurf(3,*),
@@ -127,7 +128,7 @@
      &  xstate(nstate_,mi(1),*),ttime,qaold(2),cs(17,*),tietol(2,*),
      &  xbody(7,*),xbodyold(7,*),t0g(2,*),t1g(2,*),
      &  fei(3),tinc,tper,xmodal(*),tmin,tmax,tincf,
-     &  alpha,physcon(*),coefmpcref(*)
+     &  alpha,physcon(*),coefmpcref(*),vel(nef,*),velo(*),veloo(*)
 !
       save solid,ianisoplas,out3d,pretension
 !
@@ -262,12 +263,13 @@ c         write(*,*) textpart(1)
             call basemotions(inpc,textpart,amname,nam,ibasemotion,
      &           xboun,ndirboun,iamboun,typeboun,nboun,istep,istat,n,
      &           iline,ipol,inl,ipoinp,inp,ipoinpc,iamplitudedefault,
-     &           ier)
+     &           ier,xmodal,nmethod)
 !
          elseif(textpart(1)(1:19).eq.'*BEAMGENERALSECTION') then
             write(*,*) '*WARNING in calinput'
             write(*,*) '         *BEAM GENERAL SECTION is obsolete'
             write(*,*) '         please use *BEAM SECTION'
+            write(*,*)
             call beamgeneralsections(inpc,textpart,set,istartset,
      &           iendset,ialset,nset,ielmat,matname,nmat,ielorien,
      &           orname,norien,thicke,ipkon,iponor,xnor,ixfree,
@@ -421,7 +423,7 @@ c         write(*,*) textpart(1)
             call noelfiles(inpc,textpart,jout,filab,nmethod,
      &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
-     &           amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag,
+     &           amname,nam,itpamp,idrct,ipoinpc,nef,contactfile_flag,
      &           set,nset,xmodal,ier)
             contactfile_flag=.true.
 !
@@ -486,7 +488,7 @@ c
      &        ics(3*ncs_+1),ics(5*ncs_+1),ics(7*ncs_+1),ics(8*ncs_+1),
      &        dcs(12*ncs_+1),ne,ipkon,kon,lakon,ics(14*ncs_+1),
      &        ics(16*ncs_+1),ics(18*ncs_+1),ipoinpc,
-     &        maxsectors,trab,ntrans,ntrans_,jobnamec,vold,cfd,mi,
+     &        maxsectors,trab,ntrans,ntrans_,jobnamec,vold,nef,mi,
      &        iaxial,ier)
 !
          elseif(textpart(1)(1:8).eq.'*DAMPING') then
@@ -557,7 +559,7 @@ c
          elseif(textpart(1)(1:8).eq.'*DYNAMIC') then
             call dynamics(inpc,textpart,nmethod,iperturb,tinc,tper,
      &        tmin,tmax,idrct,alpha,iexpl,isolver,istep,
-     &        istat,n,iline,ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd,
+     &        istat,n,iline,ipol,inl,ipoinp,inp,ithermal,ipoinpc,nef,
      &        ctrl,tincf,nener,ier)
 !
          elseif(textpart(1)(1:8).eq.'*ELASTIC') then
@@ -581,7 +583,7 @@ c
             call elements(inpc,textpart,kon,ipkon,lakon,nkon,
      &        ne,ne_,set,istartset,iendset,ialset,nset,nset_,nalset,
      &        nalset_,mi(1),ixfree,iponor,xnor,istep,istat,n,iline,
-     &        ipol,inl,ipoinp,inp,iaxial,ipoinpc,solid,cfd,
+     &        ipol,inl,ipoinp,inp,iaxial,ipoinpc,solid,
      &        network,filab,nlabel,out3d,iuel,nuel_,ier)
 !
          elseif((textpart(1)(1:7).eq.'*ELFILE').or.
@@ -595,7 +597,7 @@ c
             call noelfiles(inpc,textpart,jout,filab,nmethod,
      &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
-     &           amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag,
+     &           amname,nam,itpamp,idrct,ipoinpc,nef,contactfile_flag,
      &           set,nset,xmodal,ier)
             elfile_flag=.true.
 !
@@ -604,7 +606,7 @@ c
      &        nset,nprint,nprint_,jout,
      &        prlab,prset,nmethod,elprint_flag,nener,ithermal,
      &        istep,istat,n,iline,ipol,inl,ipoinp,inp,amname,nam,itpamp,
-     &        idrct,ipoinpc,cfd)
+     &        idrct,ipoinpc,nef)
             elprint_flag=.true.
 !
          elseif(textpart(1)(1:6).eq.'*ELSET') then
@@ -640,7 +642,7 @@ c
             call sectionprints(inpc,textpart,set,istartset,iendset,
      &        ialset,nset,nset_,nalset,nprint,nprint_,jout,prlab,
      &        prset,sectionprint_flag,ithermal,istep,istat,n,iline,
-     &        ipol,inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,cfd,
+     &        ipol,inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,nef,
      &        ier)
             sectionprint_flag=.true.
 !
@@ -823,7 +825,7 @@ c
             call noelfiles(inpc,textpart,jout,filab,nmethod,
      &           nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &           istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
-     &           amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag,
+     &           amname,nam,itpamp,idrct,ipoinpc,nef,contactfile_flag,
      &           set,nset,xmodal,ier)
             nodefile_flag=.true.
 !
@@ -831,7 +833,7 @@ c
             call nodeprints(inpc,textpart,set,istartset,iendset,ialset,
      &        nset,nset_,nalset,nprint,nprint_,jout,
      &        prlab,prset,nodeprint_flag,ithermal,istep,istat,n,iline,
-     &        ipol,inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,cfd,
+     &        ipol,inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,nef,
      &        ier)
             nodeprint_flag=.true.
 !
@@ -891,6 +893,10 @@ c
             call randomfields(inpc,textpart,istep,istat,n,iline,
      &        ipol,inl,ipoinp,inp,ipoinpc,nener,physcon,ier)        
 !
+         elseif(textpart(1)(1:11).eq.'*REFINEMESH') then
+            call refinemeshs(inpc,textpart,filab,istep,istat,n,iline,
+     &           ipol,inl,ipoinp,inp,ipoinpc,ier)
+!
          elseif(textpart(1)(1:8).eq.'*RESTART') then
             call restarts(istep,nset,nload,nforc, nboun,nk,ne,
      &           nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,
@@ -915,7 +921,7 @@ c
      &           cs,mcs,output,physcon,ctrl,typeboun,iline,ipol,inl,
      &           ipoinp,inp,fmpc,tieset,ntie,tietol,ipoinpc,nslavs,
      &           t0g,t1g,nprop,ielprop,prop,mortar,nintpoint,ifacecount,
-     &           islavsurf,pslavsurf,clearini,ier)
+     &           islavsurf,pslavsurf,clearini,ier,vel,nef,velo,veloo)
 !
             elseif(textpart(1)(1:18).eq.'*RETAINEDNODALDOFS') then
                call retainednodaldofss(inpc,textpart,set,istartset,
@@ -984,7 +990,7 @@ c
      &        istat,n,tinc,tper,tmin,tmax,idrct,iline,ipol,inl,ipoinp,
      &        inp,ithermal,cs,ics,tieset,istartset,
      &        iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
-     &        ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,cfd,ttime,
+     &        ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,nef,ttime,
      &        iaxial,nelcon,nmat,tincf,ier)
 !
          elseif(textpart(1)(1:20).eq.'*STEADYSTATEDYNAMICS') then
@@ -998,7 +1004,7 @@ c
      &                 nload,ithermal,t0,t1,nk,irstrt,istep,istat,n,
      &                 jmax,ctrl,iline,ipol,inl,ipoinp,inp,newstep,
      &                 ipoinpc,network,iamplitudedefault,amname,nam,
-     &                 nam_,namta,amta,namtot,nstam,ier)
+     &                 nam_,namta,amta,namtot,nstam,ier,namtot_)
 !
          elseif(textpart(1)(1:9).eq.'*SUBMODEL') then
             call submodels(inpc,textpart,set,istartset,iendset,ialset,
@@ -1055,6 +1061,7 @@ c
                write(*,*) '*WARNING in calinput: SPCs or MPCs have'
                write(*,*) '         been defined before the definition'
                write(*,*) '         of a transformation'
+               write(*,*)
             endif
             call transforms(inpc,textpart,trab,ntrans,ntrans_,
      &        inotr,set,istartset,iendset,ialset,nset,istep,istat,
@@ -1065,6 +1072,7 @@ c
                write(*,*) '*WARNING in calinput: SPCs or MPCs have'
                write(*,*) '         been defined before the definition'
                write(*,*) '         of a transformation'
+               write(*,*)
             endif
             call transformfs(inpc,textpart,trab,ntrans,ntrans_,
      &           set,istartset,iendset,ialset,nset,istep,istat,
@@ -1199,7 +1207,7 @@ c
      &  iperturb,tinc,tper,tmin,tmax,ctrl,typeboun,nmethod,nset,set,
      &  istartset,iendset,ialset,prop,ielprop,vold,mi,nkon,ielmat,
      &  icomposite,t0g,t1g,idefforc,iamt1,orname,orab,norien,norien_,
-     &  ielorien)
+     &  ielorien,jobnamec)
 !
 !     New multistage Routine Call
 !
@@ -1231,6 +1239,7 @@ c
             write(*,*) '         buckling or a modal dynamic'
             write(*,*) '         calculation; the output option is'
             write(*,*) '         removed.'
+            write(*,*)
             filab(11)(1:4)='    '
             filab(18)(1:4)='    '
             filab(19)(1:4)='    '
@@ -1242,6 +1251,7 @@ c
          if(filab(6)(1:4).eq.'PEEQ') then
             write(*,*) '*WARNING in calinput: PEEQ-output requested'
             write(*,*) '         yet no (visco)plastic calculation'
+            write(*,*)
             filab(6)='      '
          endif
          ii=0
@@ -1249,6 +1259,7 @@ c
             if(prlab(i)(1:4).eq.'PEEQ') then
                write(*,*) '*WARNING in calinput: PEEQ-output requested'
                write(*,*) '         yet no (visco)plastic calculation'
+               write(*,*)
                cycle
             endif
             ii=ii+1
@@ -1270,6 +1281,7 @@ c
                write(*,*) '         is deactivated in this and all'
                write(*,*) '         subsequent steps (unless reactived'
                write(*,*) '         explicitly)'
+               write(*,*)
                cycle
             endif
             ii=ii+1
@@ -1284,6 +1296,7 @@ c
             write(*,*) '*WARNING in calinput: temperature output'
             write(*,*) '         requested, yet no thermal loading'
             write(*,*) '         active'
+            write(*,*)
             filab(2)='      '
          endif
          ii=0
@@ -1292,6 +1305,7 @@ c
                write(*,*) '*WARNING in calinput: temperature output'
                write(*,*) '         requested, yet no thermal loading'
                write(*,*) '         active'
+               write(*,*)
                cycle
             endif
             ii=ii+1
@@ -1306,30 +1320,35 @@ c
             write(*,*) '*WARNING in calinput: heat flux output'
             write(*,*) '         requested, yet no heat transfer'
             write(*,*) '         calculation'
+            write(*,*)
             filab(9)='      '
          endif
          if(filab(10)(1:3).eq.'RFL') then
             write(*,*) '*WARNING in calinput: heat source output'
             write(*,*) '         requested, yet no heat transfer'
             write(*,*) '         calculation'
+            write(*,*)
             filab(10)='      '
          endif
          if(filab(14)(1:2).eq.'MF') then
             write(*,*) '*WARNING in calinput: mass flow output'
             write(*,*) '         requested, yet no heat transfer'
             write(*,*) '         calculation'
+            write(*,*)
             filab(14)='      '
          endif
          if(filab(15)(1:2).eq.'PT') then
             write(*,*) '*WARNING in calinput: total pressure output'
             write(*,*) '         requested, yet no heat transfer'
             write(*,*) '         calculation'
+            write(*,*)
             filab(15)='      '
          endif
          if(filab(16)(1:2).eq.'TT') then
             write(*,*) '*WARNING in calinput: total temperature output'
             write(*,*) '         requested, yet no heat transfer'
             write(*,*) '         calculation'
+            write(*,*)
             filab(16)='      '
          endif
          ii=0
@@ -1338,27 +1357,32 @@ c
                write(*,*) '*WARNING in calinput: heat flux output'
                write(*,*) '         requested, yet no heat transfer'
                write(*,*) '         calculation'
+               write(*,*)
                cycle
             elseif(prlab(i)(1:4).eq.'RFL ') then
                write(*,*) '*WARNING in calinput: heat source output'
                write(*,*) '         requested, yet no heat transfer'
                write(*,*) '         calculation'
+               write(*,*)
                cycle
             elseif(prlab(i)(1:4).eq.'MF  ') then
                write(*,*) '*WARNING in calinput: mass flow output'
                write(*,*) '         requested, yet no heat transfer'
                write(*,*) '         calculation'
+               write(*,*)
                cycle
             elseif(prlab(i)(1:4).eq.'PN  ') then
                write(*,*) '*WARNING in calinput: pressure output'
                write(*,*) '         requested, yet no heat transfer'
                write(*,*) '         calculation'
+               write(*,*)
                cycle
             elseif(prlab(i)(1:4).eq.'TS  ') then
                write(*,*) 
      &           '*WARNING in calinput: total temperature output'
                write(*,*) '         requested, yet no heat transfer'
                write(*,*) '         calculation'
+               write(*,*)
                cycle
             endif
             ii=ii+1
@@ -1398,7 +1422,7 @@ c
 !     and transient thermal calculations
 !
       if(((nbody.gt.0).or.
-     &   (nmethod.eq.2).or.(nmethod.eq.4)).and.(cfd.eq.0)) then
+     &   (nmethod.eq.2).or.(nmethod.eq.4)).and.(nef.eq.0)) then
          ierror=0
          do i=1,nmat
             if((nrhcon(i).ne.0).or.(matname(i)(1:6).eq.'SPRING').or.
@@ -1411,6 +1435,7 @@ c
      &              ' in a dynamic'
                write(*,*) '         calculation or a calculation with'
                write(*,*) '         centrifugal or gravitational loads'
+               write(*,*)
             endif
          enddo
          if(ierror.eq.0) then
@@ -1446,6 +1471,7 @@ c
                write(*,*) '       assigned to any material ',
      &              ' in a transient'
                write(*,*) '       heat transfer calculation'
+               write(*,*)
                call exit(201)
             endif
          endif
@@ -1454,7 +1480,7 @@ c
 !     check whether a *FLUID CONSTANTS card was used for 
 !     3D compressible fluid calculations
 !
-      if((cfd.eq.1).or.(network.gt.0)) then
+      if((nef.gt.0).or.(network.gt.0)) then
          ierror=0
          do i=1,nmat
             if(nshcon(i).ne.0) then
@@ -1473,6 +1499,7 @@ c
             write(*,*) '       assigned to any material ',
      &           ' in a transient'
             write(*,*) '       heat transfer calculation'
+            write(*,*)
             call exit(201)
          endif
       endif
@@ -1497,6 +1524,7 @@ c
             write(*,*) '*ERROR in calinput: no elastic constants'
             write(*,*) '       were assigned to any material in a'
             write(*,*) '       (thermo)mechanical calculation'
+            write(*,*)
             call exit(201)
          endif
       endif
@@ -1521,13 +1549,14 @@ c
             write(*,*) '*ERROR in calinput: no magnetic constants'
             write(*,*) '       were assigned to any material in a'
             write(*,*) '       electromagnetic calculation'
+            write(*,*)
             call exit(201)
          endif
       endif
 !
 !     check whether the conductivity was defined for thermal calculations
 !
-      if((ithermal(1).ge.2).and.(cfd.eq.0)) then
+      if((ithermal(1).ge.2).and.(nef.eq.0)) then
          ierror=0
          do i=1,nmat
             if(ncocon(1,i).ne.0) then
@@ -1543,7 +1572,7 @@ c
          enddo
       endif
 !
-      if(cfd.eq.1) then
+      if(nef.gt.0) then
          if(iperturb(1).eq.0) then
             iperturb(1)=2
          elseif(iperturb(1).eq.1) then

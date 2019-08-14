@@ -513,7 +513,7 @@ c     write(*,*) '**regular solution'
                      pproj(l)=p(l)
                   enddo
 !
-                  call attach(pl,pproj,nopes,ratio,dist,xi,et)
+                  call attach_2d(pl,pproj,nopes,ratio,dist,xi,et)
 !
                   do l=1,3
                      al(l)=p(l)-pproj(l)

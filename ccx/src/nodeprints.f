@@ -19,7 +19,7 @@
       subroutine nodeprints(inpc,textpart,set,istartset,iendset,ialset,
      &  nset,nset_,nalset,nprint,nprint_,jout,prlab,prset,
      &  nodeprint_flag,ithermal,istep,istat,n,iline,ipol,inl,ipoinp,
-     &  inp,amname,nam,itpamp,idrct,ipoinpc,cfd,ier)
+     &  inp,amname,nam,itpamp,idrct,ipoinpc,nef,ier)
 !
 !     reading the *NODE PRINT cards in the input deck
 !
@@ -36,7 +36,7 @@
       integer istartset(*),iendset(*),ialset(*),ii,i,nam,itpamp,
      &  jout(2),joutl,ithermal,nset,nset_,nalset,nprint,nprint_,istep,
      &  istat,n,key,ipos,iline,ipol,inl,ipoinp(2,*),inp(3,*),idrct,
-     &  ipoinpc(0:*),cfd,ier
+     &  ipoinpc(0:*),nef,ier
 !
       if(istep.lt.1) then
          write(*,*) 
@@ -232,7 +232,7 @@ c      jout=max(jout,1)
      &         (textpart(ii)(1:4).eq.'PTF ').or.
      &         (textpart(ii)(1:4).eq.'CP  ').or.
      &         (textpart(ii)(1:4).eq.'TURB')) then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &               '*WARNING reading *NODE PRINT: VF, PSF, TSF,'
                   write(*,*) '         MACH, TTF, PTF, CP or TURB '

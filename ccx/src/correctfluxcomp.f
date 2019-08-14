@@ -18,7 +18,7 @@
 !
       subroutine correctfluxcomp(nef,ipnei,neifa,neiel,flux,vfa,advfa,
      &  area,vel,xlet,ielfa,xle,ifabou,ielmatf,mi,shcon,
-     &  ntmat_)
+     &  ntmat_,nefa,nefb)
 !
 !     correction of v due to the balance of mass
 !     the correction is in normal direction to the face
@@ -31,21 +31,20 @@
 !
       implicit none
 !
-      integer i,nef,indexf,ipnei(*),neifa(*),neiel(*),iel2,ielfa(4,*),
-     &  iel,ifa,ifabou(*),mi(*),ielmatf(mi(3),*),ntmat_,imat,indexb
+      integer i,nef,indexf,ipnei(*),neifa(*),neiel(*),ielfa(4,*),
+     &  iel,ifa,ifabou(*),mi(*),ielmatf(mi(3),*),ntmat_,imat,indexb,
+     &  nefa,nefb
 !
       real*8 flux(*),vfa(0:7,*),advfa(*),area(*),vel(nef,0:7),xlet(*),
-     &  xle(*),totflux,maxflux,r,xflux,
-     &  shcon(0:3,ntmat_,*)
+     &  xle(*),r,xflux,shcon(0:3,ntmat_,*)
 !
-c      maxflux=0.d0
-c$omp parallel default(none)
-c$omp& shared(nef,ipnei,neifa,neiel,flux,vfa,advfa,area,vel,xlet,ielfa,
-c$omp&        xle,ifabou,ielmatf,shcon)
-c$omp& private(i,indexf,ifa,iel,iel2,totflux,maxflux,imat,r,xflux,
-c$omp&        indexb)
-c$omp do
-      do i=1,nef
+      intent(in) nef,ipnei,neifa,neiel,vfa,advfa,
+     &  area,vel,xlet,ielfa,xle,ifabou,ielmatf,mi,shcon,
+     &  ntmat_,nefa,nefb
+!
+      intent(inout) flux
+!
+      do i=nefa,nefb
 c         totflux=0.d0
          imat=ielmatf(1,i)
          r=shcon(3,1,imat)
@@ -134,8 +133,6 @@ c         totflux=0.d0
             endif
          enddo
       enddo
-c$omp end do
-c$omp end parallel
 ! 
       return
       end

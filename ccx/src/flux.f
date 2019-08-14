@@ -71,6 +71,15 @@
      &        nodef,idirf,df,cp,r,physcon,dvi,numf,set,mi,ider,
      &        ttime,time,iaxial,iplausi)
 !
+!	 proprietary
+!
+      elseif(lakon(nelem)(2:5).eq.'AVLV') then 
+!
+         call air_valve(node1,node2,nodem,nelem,lakon,kon,ipkon,
+     &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
+     &     nodef,idirf,df,cp,R,physcon,dvi,numf,set,co,vold,mi,
+     &     ttime,time,iaxial,iplausi)
+!
       elseif(lakon(nelem)(2:6).eq.'CARBS') then  
 !
 !        carbon seal
@@ -282,7 +291,7 @@
          call wye(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,kflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
-     &     iaxial,iplausi)
+     &     iaxial,iplausi,dvi)
 !
       else
          identity=.true.

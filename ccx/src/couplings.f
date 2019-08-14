@@ -49,7 +49,7 @@
 !
       real*8 coefmpc(*),co(3,*),orab(7,*),dcs(*),areanodal(8),xl2(3,8),
      &  shp2(7,8),xsj2(3),xsj,xi,et,weight,xs2(3,2),area,a(3,3),cgx(3),
-     &  aa(3),pi(3),c1,c4,c9,c10,amax,xcoef,coef(3),xboun(*)
+     &  aa(3),pi(3),c1,c4,c9,c10,amax,xcoef,coef(3),xboun(*),stdev
 !
       include "gauss.f"
 !
@@ -697,6 +697,7 @@
 !              contribution to the location of the center of gravity
 !
                cgx(k)=cgx(k)+dcs(m)*co(k,node)
+c               cgx(k)=cgx(k)+co(k,node)
 !     
                nmpc=nmpc+1
                if(nmpc.gt.nmpc_) then
@@ -749,7 +750,22 @@
 !
          do k=1,3
             cgx(k)=cgx(k)/area
+c            cgx(k)=cgx(k)/npt
          enddo
+!
+!        calculating a standard deviation; this quantity will
+!        serve as a limit for checking the closeness of individual
+!        nodes to the center of gravity
+!
+         stdev=0.d0
+         do m=1,npt
+            node=ics(1,m)
+            do k=1,3
+c               stdev=stdev+(dcs(m)*co(k,node)-cgx(k))**2
+               stdev=stdev+(co(k,node)-cgx(k))**2
+            enddo
+         enddo
+         stdev=stdev/npt
 !
 !        generating the translational MPC's (default)
 !
@@ -952,6 +968,7 @@ c               enddo
                      aa(j)=a(j,k)
                   enddo
                endif
+c               write(*,*) 'couplings aa ',(aa(j),j=1,3)
 !
 !              storing the axis of rotation as coordinates of the
 !              rotation nodes
@@ -969,10 +986,12 @@ c               enddo
                endif
 !     
                ipompc(nmpc)=mpcfree
-               labmpc(nmpc)='MEANROTDISTRIB      '
+c               labmpc(nmpc)='MEANROTDISTRIB      '
+               labmpc(nmpc)='                    '
 !
 !              defining the terms of the MPC
 !
+c               write(*,*) 'couplings, npt ',npt
                do m=1,npt
                   do j=1,3
                      nodempc(1,mpcfree)=ics(1,m)
@@ -980,6 +999,7 @@ c               enddo
                      coefmpc(mpcfree)=0.d0
                      mpcfree=nodempc(3,mpcfree)
                   enddo
+c                  write(*,*) 'couplings, co',m,(co(j,ics(1,m)),j=1,3)
                enddo
                nodempc(1,mpcfree)=irotnode(k)
                nodempc(2,mpcfree)=1
@@ -987,7 +1007,9 @@ c               enddo
                mpcfree=nodempc(3,mpcfree)
                nodempc(1,mpcfree)=inhomnode
                nodempc(2,mpcfree)=k
-               coefmpc(mpcfree)=0.d0
+c changed on 2. november 2018
+               coefmpc(mpcfree)=1.d0
+c               coefmpc(mpcfree)=0.d0
                mpcfreeold=mpcfree
                mpcfree=nodempc(3,mpcfree)
                nodempc(3,mpcfreeold)=0
@@ -1013,6 +1035,8 @@ c               enddo
                enddo
                ikboun(id+1)=idof
                ilboun(id+1)=nboun
+c               write(*,*) 'couplings cgx',(cgx(l),l=1,3)
+c               write(*,*) 'couplings stdev',stdev
 !
 !              calculating the coefficients of the rotational MPC
 !
@@ -1028,6 +1052,7 @@ c               enddo
                   do j=1,3
                      pi(j)=co(j,node)-cgx(j)
                   enddo
+c                  write(*,*) 'couplings pi',(pi(j),j=1,3)
 !     
 !              projection on a plane orthogonal to the rotation vector
 !
@@ -1035,9 +1060,11 @@ c               enddo
                   do j=1,3
                      pi(j)=pi(j)-c1*aa(j)
                   enddo
+c                  write(*,*) 'couplings c1 pi',c1,(pi(j),j=1,3)
 !     
                   c1=pi(1)*pi(1)+pi(2)*pi(2)+pi(3)*pi(3)
-                  if(c1.lt.1.d-20) then
+c                  if(c1.lt.1.d-20) then
+                  if(c1.lt.stdev*1.d-10) then
                      write(*,*) 
      &                    '*WARNING reading *DISTRIBUTING: node ',node
                      write(*,*) '         is very close to the '
@@ -1060,6 +1087,7 @@ c               enddo
                         c4=aa(1)*pi(2)-aa(2)*pi(1)
                      endif
                      c9=c4/c1
+c                     write(*,*) 'couplings c4,c9',j,c4,c9
 !     
                      index1=ipompc(nmpc)
                      do
@@ -1072,12 +1100,18 @@ c               enddo
                         endif
                         if(j.eq.1) then
                            coefmpc(index1)=coefmpc(index1)+c10
+c                           write(*,*) 'couplings c10',
+c     &                        j,c10,coefmpc(index1)
                         elseif(j.eq.2) then
                            coefmpc(nodempc(3,index1))=
      &                          coefmpc(nodempc(3,index1))+c10
+c                           write(*,*) 'couplings c10',
+c     &                        j,c10,coefmpc(nodempc(3,index1))
                         else
                            coefmpc(nodempc(3,nodempc(3,index1)))=
      &                         coefmpc(nodempc(3,nodempc(3,index1)))+c10
+c                           write(*,*) 'couplings c10',
+c     &                       j,c10,coefmpc(nodempc(3,nodempc(3,index1)))
                         endif
                         index1=
      &                       nodempc(3,nodempc(3,nodempc(3,index1)))
@@ -1095,6 +1129,7 @@ c               enddo
                   j=j+1
                   if(j.gt.3) j=1
                   nodempc(2,index2)=j
+c                  write(*,*) 'couplings a',(coefmpc(index2))
                   index2=nodempc(3,index2)
                   if(nodempc(1,index2).eq.irotnode(k)) exit
                enddo
@@ -1120,7 +1155,16 @@ c               enddo
                   if(dabs(coefmpc(index2)).gt.amax) then
                      idir=nodempc(2,index2)
 !
-                     if(dabs(coefmpc(index2)-coef(idir)).lt.1.d-10) then
+!                    in the translational mpcs the coefficients of
+!                    all npt terms are equal to 1
+!                    in the rotational mpcs the coefficient of the
+!                    dependent term should be different from the
+!                    coefficient of the node corresponding to the
+!                    translational dependent term with the same dof
+!
+c                     if(dabs(coefmpc(index2)-coef(idir)).lt.1.d-10) then
+                     if(dabs(coefmpc(index2)-coef(idir)).lt.
+     &                       dabs(coefmpc(index2))/1000.)then
                         index2=nodempc(3,index2)
                         cycle
                      endif
@@ -1276,6 +1320,46 @@ c               enddo
 !
             enddo
          enddo
+!
+!        generating the translational MPC's (default)
+!
+c         do m=1,3
+c            node=ics(1,1)
+c            idof=8*(node-1)+m
+c            call nident(ikmpc,idof,nmpc,id)
+c!     
+c            nmpc=nmpc+1
+c            if(nmpc.gt.nmpc_) then
+c               write(*,*) '*ERROR reading *COUPLING: increase nmpc_'
+c               ier=1
+c               return
+c            endif
+c            labmpc(nmpc)='                    '
+c            ipompc(nmpc)=mpcfree
+c!     
+c!           updating ikmpc and ilmpc
+c!     
+c            do j=nmpc,id+2,-1
+c               ikmpc(j)=ikmpc(j-1)
+c               ilmpc(j)=ilmpc(j-1)
+c            enddo
+c            ikmpc(id+1)=idof
+c            ilmpc(id+1)=nmpc
+c!
+c            do j=1,npt
+c               node=ics(1,j)
+c               nodempc(1,mpcfree)=node
+c               nodempc(2,mpcfree)=m
+c               coefmpc(mpcfree)=1.d0
+c               mpcfree=nodempc(3,mpcfree)
+c            enddo
+c            nodempc(1,mpcfree)=irefnode
+c            nodempc(2,mpcfree)=m
+c            coefmpc(mpcfree)=-npt
+c            mpcfreeold=mpcfree
+c            mpcfree=nodempc(3,mpcfree)
+c            nodempc(3,mpcfreeold)=0
+c         enddo
       else
          write(*,*)
      &        '*ERROR reading *COUPLING: the line following'

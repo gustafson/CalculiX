@@ -30,7 +30,8 @@ static ITG num_cpus,*nef1,*ipnei1,*neifa1,*neiel1,*jq1,*irow1,*nzs1,
 static double *au1,*ad1,*b1,*vfa1,*xxn1,*area1,*vel1,
     *umfa1,*xlet1,*xle1,*gradtfa1,*xxi1,*body1,*volume1,*dtimef1,*velo1,
     *veloo1,*cvfa1,*hcfa1,*cvel1,*gradvel1,*xload1,*gamma1,*xrlfa1,
-    *xxj1,*a11,*a21,*a31,*flux1,*xxni1,*xxnj1;
+    *xxj1,*a11,*a21,*a31,*flux1,*xxni1,*xxnj1,*f11,*of21,*yy1,*umel1,
+    *gradkel1,*gradoel1;
 
 void mafillkmain(ITG *nef,ITG *ipnei,ITG *neifa,
                ITG *neiel,double *vfa,double *xxn,double *area,
@@ -43,7 +44,8 @@ void mafillkmain(ITG *nef,ITG *ipnei,ITG *neifa,
 	       double *gradvel,double *xload,double *gamma,double *xrlfa,
 	       double *xxj,ITG *nactdohinv,double *a1,double *a2,double *a3,
 	       double *flux,ITG *iau6,double *xxni,double *xxnj,
-               ITG *iturbulent){
+	       ITG *iturbulent,double *f1,double *of2,double *yy,
+	       double *umel,double *gradkel,double *gradoel){
 
     ITG i;
       
@@ -114,7 +116,8 @@ void mafillkmain(ITG *nef,ITG *ipnei,ITG *neifa,
     cvfa1=cvfa;hcfa1=hcfa;cvel1=cvel;gradvel1=gradvel;xload1=xload;
     gamma1=gamma;xrlfa1=xrlfa;xxj1=xxj;nactdohinv1=nactdohinv;a11=a1;
     a21=a2;a31=a3;flux1=flux;iau61=iau6;ad1=ad;au1=au;b1=b;xxni1=xxni;
-    xxnj1=xxnj,iturbulent1=iturbulent;
+    xxnj1=xxnj,iturbulent1=iturbulent,f11=f1,of21=of2;yy1=yy;umel1=umel;
+    gradkel1=gradkel;gradoel1=gradoel;
     
     /* create threads and wait */
     
@@ -152,7 +155,7 @@ void *mafillkmt(ITG *i){
 			 nbody1,neq1,dtimef1,velo1,veloo1,cvfa1,hcfa1,cvel1,
 			 gradvel1,xload1,gamma1,xrlfa1,xxj1,nactdohinv1,
 		         a11,a21,a31,flux1,&nefa,&nefb,iau61,xxni1,xxnj1,
-                         iturbulent1));
+		         iturbulent1,f11,of21,yy1,umel1,gradkel1,gradoel1));
 
     return NULL;
 }

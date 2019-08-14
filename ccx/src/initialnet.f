@@ -566,7 +566,8 @@ c      if(network.le.2) then
 !     
 !     for liquids: determine the gravity vector
 !     
-            if(lakon(nelem)(2:3).eq.'LI') then
+            if((lakon(nelem)(2:3).eq.'LI').or.
+     &         (lakon(nelem)(2:3).eq.'LP')) then
                gravity=.false.
                do j=1,3
                   g(j)=0.d0
@@ -592,10 +593,12 @@ c      if(network.le.2) then
                endif
                if(.not.gravity) then
                   write(*,*) 
-     &                 '*ERROR in initialnet: no gravity vector'
+     &                 '*WARNING in initialnet: no gravity vector'
                   write(*,*) 
      &                 '       was defined for liquid element',nelem
-                  call exit(201)
+                  z1=0.d0
+                  z2=0.d0
+c                  call exit(201)
                endif
             endif
 !     

@@ -16,7 +16,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       real*8 function calc_residual_tee(pt1,Tt1,xflow1,xflow2,
-     &pt2,Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)
+     &pt2,Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)
 !
 !     Function for calculating the residual of both branches of a tee
 !
@@ -172,17 +172,17 @@ c      w1w2=w1/w2
          pspt2 = (Ts2/Tt2)**(kappa/(kappa-1))
          call machpi(M2,pspt2,kappa,R)
       
-         write(1,80)'Inlet: Tt1= ',Tt1,
-     &              ', pt1= ',pt1,', M1= ',M1
-     
-         write(1,77)'mass flow = ',xflow2,', kappa = ',kappa,
-     &              ', zeta= ',zeta
-
-         write(1,80)'Outlet: Tt2= ',Tt2,
-     &              ', pt2= ',pt2,', M2= ',M2
-     
- 80   format(3x,a,f10.6,a,f10.2,a,f10.6)
- 77   format(3x,a,f10.6,a,f10.2,a,f10.6)
+!         write(1,80)'Inlet: Tt1= ',Tt1,
+!     &              ', pt1= ',pt1,', M1= ',M1
+!     
+!         write(1,77)'mass flow = ',xflow2,', kappa = ',kappa,
+!     &              ', zeta= ',zeta
+!
+!         write(1,80)'Outlet: Tt2= ',Tt2,
+!     &              ', pt2= ',pt2,', M2= ',M2
+!     
+! 80   format(3x,a,f10.6,a,f10.2,a,f10.6)
+! 77   format(3x,a,f10.6,a,f10.2,a,f10.6)
       endif
 !
       calc_residual_tee=f

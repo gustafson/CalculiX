@@ -55,7 +55,7 @@
 !
       intent(inout) elas,wavspd
 !     
-      write(*,*)'++cMT: calculating max. speed in ANISOTROPIC...'
+c      write(*,*)'++cMT: calculating max. speed in ANISOTROPIC...'
 !     
 !--------IF IORTHTROPIC-----------------------------     
       if(iorth.eq.1)then

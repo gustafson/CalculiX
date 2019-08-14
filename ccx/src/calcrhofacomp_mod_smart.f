@@ -16,28 +16,32 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calcrhofacomp_mod_smart(nface,vfa,shcon,ielmat,ntmat_,
-     &  mi,ielfa,ipnei,vel,nef,flux,gradpel,gradtel,xxj,betam,
-     &  xlet)
+      subroutine calcrhofacomp_mod_smart(vfa,shcon,ielmat,ntmat_,
+     &  mi,ielfa,ipnei,vel,nef,flux,gradpel,gradtel,xxj,
+     &  xlet,nfacea,nfaceb)
 !
 !     calculation of the density at the face centers
 !     (compressible fluids)
 !
+!     facial temperature and pressure is only used for external
+!     faces
+!
       implicit none
 !
-      integer nface,i,j,imat,ntmat_,mi(*),ipnei(*),nef,iel1,iel2,
-     &  ielmat(mi(3),*),ielfa(4,*),indexf
+      integer i,j,imat,ntmat_,mi(*),ipnei(*),nef,iel1,iel2,
+     &  ielmat(mi(3),*),ielfa(4,*),indexf,nfacea,nfaceb
 !
       real*8 t1l,vfa(0:7,*),shcon(0:3,ntmat_,*),vel(nef,0:7),flux(*),
-     &  r,gradpel(3,*),gradtel(3,*),xxj(3,*),gamma,betam,phic,vud,
+     &  r,gradpel(3,*),gradtel(3,*),xxj(3,*),phic,vud,
      &  vcd,xlet(*)
+!
+      intent(in) shcon,ielmat,ntmat_,
+     &  mi,ielfa,ipnei,vel,nef,flux,gradpel,gradtel,xxj,
+     &  xlet,nfacea,nfaceb
+!
+      intent(inout) vfa
 !     
-c$omp parallel default(none)
-c$omp& shared(nface,vfa,ielmat,ielfa,shcon,ipnei,flux,gradpel,gradtel,
-c$omp&        xxj,betam,xlet,vel)
-c$omp& private(i,j,t1l,imat,iel1,iel2,indexf,vcd,vud,r,gamma,phic)
-c$omp do
-      do i=1,nface
+      do i=nfacea,nfaceb
          t1l=vfa(0,i)
 !
 !        take the material of the first adjacent element
@@ -54,13 +58,26 @@ c$omp do
          iel2=ielfa(2,i)
 !
 !        faces with only one neighbor need not be treated
+!        unless outlet
 !
+c         if((iel2.le.0).and.(ielfa(3,i).ge.0)) cycle
          if(iel2.le.0) cycle
          iel1=ielfa(1,i)
          j=ielfa(4,i)
          indexf=ipnei(iel1)+j
 !
          if(flux(indexf).ge.0.d0) then
+!
+!           outflow && (neighbor || outlet)
+!
+!           outlet
+!
+            if(iel2.le.0) then
+               vfa(5,i)=vel(iel1,5)
+               cycle
+            endif
+!
+!           neighbor
 !
             vcd=vel(iel1,5)-vel(iel2,5)
             if(dabs(vcd).lt.1.d-3*dabs(vel(iel1,5))) vcd=0.d0
@@ -82,7 +99,6 @@ c$omp do
             endif
 !     
             phic=1.d0+vcd/vud
-c            write(*,*) 'calcvfa1 ',i,phic
 !     
             if((phic.ge.1.d0).or.(phic.le.0.d0)) then
 !
@@ -96,7 +112,7 @@ c            write(*,*) 'calcvfa1 ',i,phic
             else
                vfa(5,i)=vel(iel1,5)/3.d0+2.d0*vel(iel2,5)/3.d0
             endif
-         else
+         elseif(iel2.gt.0) then
 !
             vcd=vel(iel2,5)-vel(iel1,5)
             if(dabs(vcd).lt.1.d-3*dabs(vel(iel2,5))) vcd=0.d0
@@ -118,7 +134,6 @@ c            write(*,*) 'calcvfa1 ',i,phic
             endif
 !     
             phic=1.d0+vcd/vud
-c            write(*,*) 'calcvfa2 ',i,phic
 !     
             if((phic.ge.1.d0).or.(phic.le.0.d0)) then
 !
@@ -134,36 +149,7 @@ c            write(*,*) 'calcvfa2 ',i,phic
             endif
          endif
 !
-c         if(dabs(vud).lt.1.d-20) then
-c            gamma=0.d0
-c         else
-c!            
-c            phic=1.d0-vcd/vud
-c!     
-c            if(phic.ge.1.d0) then
-c               gamma=0.d0
-c            elseif(phic.le.0.d0) then
-c               gamma=0.d0
-c            elseif(betam.le.phic) then
-c               gamma=1.d0
-c            else
-c               gamma=phic/betam
-c            endif
-c         endif
-c!
-c!        mixture of central difference and upwind difference
-c!
-c         gamma=0.d0
-c         if(flux(indexf).ge.0.d0) then
-c            vfa(5,i)=gamma*vfa(5,i)+(1.d0-gamma)*vel(iel1,5)
-c         else
-c            vfa(5,i)=gamma*vfa(5,i)+(1.d0-gamma)*vel(iel2,5)
-c         endif
-!    
-c         write(*,*) 'calcrhofacomp ',i,gamma
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

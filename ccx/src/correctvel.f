@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine correctvel(adv,nef,volume,gradpel,vel)
+      subroutine correctvel(adv,nef,volume,gradpcel,vel,nefa,nefb)
 !
 !     correction of the velocity at the element centers due to the
 !     pressure change (balance of mass)
@@ -25,21 +25,19 @@
 !
       implicit none
 !
-      integer i,k,nef
+      integer i,k,nef,nefa,nefb
 !
-      real*8 adv(*),volume(*),gradpel(3,*),vel(nef,0:7)
+      real*8 adv(*),volume(*),gradpcel(3,*),vel(nef,0:7)
 !
-c$omp parallel default(none)
-c$omp& shared(nef,vel,volume,gradpel,adv)
-c$omp& private(i,k)
-c$omp do
-      do i=1,nef
+      intent(in) adv,nef,volume,gradpcel,nefa,nefb
+!
+      intent(inout) vel
+!
+      do i=nefa,nefb
          do k=1,3
-            vel(i,k)=vel(i,k)-volume(i)*gradpel(k,i)/adv(i)
+            vel(i,k)=vel(i,k)-volume(i)*gradpcel(k,i)/adv(i)
          enddo
       enddo
-c$omp end do
-c$omp end parallel
 !  
       return
       end

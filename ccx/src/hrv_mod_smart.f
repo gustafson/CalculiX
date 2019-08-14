@@ -16,34 +16,51 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine hrv_mod_smart(nface,ielfa,vel,gradvel,gamma,xlet,
-     &  xxn,xxj,ipnei,betam,nef,flux,vfa)
+      subroutine hrv_mod_smart(ielfa,vel,gradvel,xlet,
+     &  xxj,ipnei,nef,flux,vfa,nfacea,nfaceb,gamma)
 !
 !     use the modified smart scheme to determine the facial
 !     velocity
 !
       implicit none
 !
-      integer nface,ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef
+      integer ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef,
+     &  nfacea,nfaceb
 !
-      real*8 vel(nef,0:7),gradvel(3,3,*),xxn(3,*),xxj(3,*),vud,vcd,
-     &  gamma(*),phic,xlet(*),betam,flux(*),vfa(0:7,*)
+      real*8 vel(nef,0:7),gradvel(3,3,*),xxj(3,*),vud,vcd,
+     &  phic,xlet(*),flux(*),vfa(0:7,*),gamma(*)
 !
-c$omp parallel default(none)
-c$omp& shared(nface,ielfa,ipnei,vel,vfa,flux,gradvel,xxj,xlet)
-c$omp& private(i,iel2,iel1,j,indexf,vcd,vud,phic)
-c$omp do
-      do i=1,nface
+      intent(in) ielfa,vel,gradvel,xlet,
+     &  xxj,ipnei,nef,flux,nfacea,nfaceb
+!
+      intent(inout) vfa
+!
+      do i=nfacea,nfaceb
          iel2=ielfa(2,i)
 !
 !        faces with only one neighbor need not be treated
+!        unless outlet
 !
+c         if((iel2.le.0).and.(ielfa(3,i).ge.0)) cycle
          if(iel2.le.0) cycle
          iel1=ielfa(1,i)
          j=ielfa(4,i)
          indexf=ipnei(iel1)+j
 !
          if(flux(indexf).ge.0.d0) then
+!
+!           outflow && (neighbor || outlet)
+!
+!           outlet
+!
+            if(iel2.le.0) then
+               do j=1,3
+                  vfa(j,i)=vel(iel1,j)
+               enddo
+               cycle
+            endif
+!
+!           neighbor
 !
             do j=1,3
                vcd=vel(iel1,j)-vel(iel2,j)
@@ -78,7 +95,7 @@ c$omp do
                   vfa(j,i)=vel(iel1,j)/3.d0+2.d0*vel(iel2,j)/3.d0
                endif
             enddo
-         else
+         elseif(iel2.gt.0) then
 !
             do j=1,3
                vcd=vel(iel2,j)-vel(iel1,j)
@@ -115,8 +132,6 @@ c$omp do
             enddo
          endif
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

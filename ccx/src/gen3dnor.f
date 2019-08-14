@@ -826,12 +826,12 @@ c
 !           of freedom (in that case rig(i)=-1 was assigned in 
 !           subroutine gen3delem); if so, a rigid MPC must be defined
 !
-         if(rig(i).ne.0) then
-            rig(i)=0
-            if(nexp.le.1) then
-               nexp=2
-            endif
-         endif
+c         if(rig(i).ne.0) then
+c            rig(i)=0
+c            if(nexp.le.1) then
+c               nexp=2
+c            endif
+c         endif
 !
 !        storing the expanded nodes
 !
@@ -852,6 +852,10 @@ c
 !                 coincide; only DOF1 and DOF2 are linked.
 !                 rig(i)=-1 to indicate that a knot has
 !                 been generated without rotational node
+!
+                  write(27,*) 'a KNOT without rotation was generated'
+                  write(27,*) '       in node ',i
+                  write(27,*)
 !
                   do k=1,ndepnodes
                      node=idepnodes(k)
@@ -899,6 +903,8 @@ c
                   endif
                   irotnode=nk
                   rig(i)=irotnode
+                  write(27,*) 'a KNOT was generated in node ',i
+                  write(27,*)
                   nk=nk+1
                   if(nk.gt.nk_) then
                      write(*,*) '*ERROR in rigidbodies: increase nk_'

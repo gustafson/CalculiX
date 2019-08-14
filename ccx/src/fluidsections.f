@@ -116,19 +116,26 @@
 !
       if(typename(1:18).eq.'ABSOLUTETORELATIVE') then
          elname='ATR    '
-         ndprop=3
+         ndprop=4
 !
 !     version of Yavor Dobrev
 !
       elseif(typename(1:10).eq.'ACCTUBEONE') then
          elname ='ACCTUBO'
-         ndprop=19 
+         ndprop=60 
 !
 !     version of Stefanie Asenbauer
 !
       elseif(typename(1:7).eq.'ACCTUBE') then
          elname ='ACCTUBE'
          ndprop=24
+!
+!	Air Valve
+!
+      elseif(typename(1:8).eq.'AIRVALVE') then
+         elname ='AVLV'
+!
+         ndprop=3
 !
       elseif(typename(1:12).eq.'BLEEDTAPPING') then
          elname='ORBT   '
@@ -220,12 +227,12 @@
          endif
 !
       elseif(typename(1:14).eq.'CHARACTERISTIC') then
-         ndprop=25
+         ndprop=65
          elname='CHAR   '
 !      
       elseif(typename(1:10).eq.'CROSSSPLIT')then
          elname='CROSPL'
-         ndprop=12
+         ndprop=13
 !     
       elseif (typename(1:18).eq.'FREECONVECTIONFLOW') then
          elname='FCVF '
@@ -404,10 +411,10 @@ C         ndprop=20
          elseif(typename(5:19).eq.'WHITE-COLEBROOK') then
             if(typename(20:27).eq.'FLEXIBLE') then
                elname='LIPIWCF'
-               ndprop=5
+               ndprop=6
             else
                elname='LIPIWC '
-               ndprop=5
+               ndprop=6
             endif
          endif
 !
@@ -633,9 +640,9 @@ c               ndprop=ndprop+1
                      return
                   endif
                elseif(elname(1:4).eq.'CHAR') then
-                  if(ndprop.gt.25) then
+                  if(ndprop.gt.65) then
                      write(*,*) 'ERROR reading *FLUID SECTION: more'
-                     write(*,*) '      than 10 pairs were defined for'
+                     write(*,*) '      than 30 pairs were defined for'
                      write(*,*) 
      &              '      fluid section type CHARACTERISTIC'
                      ier=1
@@ -724,63 +731,63 @@ c            return
 !         
 !        Read the first 20 elements
 ! 
-         lprop=0
-         ndpropread=ndprop
-!         
-         do j=1,(ndpropread-1)/8+1
-            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &              ipoinp,inp,ipoinpc)
-            if((istat.lt.0).or.(key.eq.1)) exit
-            do k=1,8
-               lprop=lprop+1
-               if(lprop.gt.ndpropread) exit
-               read(textpart(k),'(f40.0)',iostat=istat)
-     &                 prop(nprop+lprop)
-               
-               if(istat.gt.0) then
-                  call inputerror(inpc,ipoinpc,iline,
-     &                 "*FLUID SECTION%",ier)
-                  return
-               endif
-               
-!              If 20 elements have been read, check how many more
-!              are to be read
-               if (lprop.eq.20) then
-                  ndpropread = lprop +
-     &                        (prop(nprop+19)+prop(nprop+20))*2
-                  ndprop = ndpropread
-               endif
-            enddo
-         enddo
-!         
-!        Until now 3 lines have been read
-!        If necessary read the rest
-!
-         if(ndpropread.gt.lprop) then
-            do j=3,(ndpropread-1)/8+1
-               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &              ipoinp,inp,ipoinpc)
-               if((istat.lt.0).or.(key.eq.1)) exit
-               do k=1,8
-                  lprop=lprop+1
-                  if(lprop.gt.ndpropread) exit
-                  read(textpart(k),'(f40.0)',iostat=istat)
-     &                 prop(nprop+lprop)
-               
-                  if(istat.gt.0) then
-                     call inputerror(inpc,ipoinpc,iline,
-     &                    "*FLUID SECTION%",ier)
-                     return
-                  endif
-               enddo
-            enddo
-         endif
-!
-         nprop=nprop+ndprop
-!
-         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-     &              ipoinp,inp,ipoinpc)
-!         
+c         lprop=0
+c         ndpropread=ndprop
+c!         
+c         do j=1,(ndpropread-1)/8+1
+c            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+c     &              ipoinp,inp,ipoinpc)
+c            if((istat.lt.0).or.(key.eq.1)) exit
+c            do k=1,8
+c               lprop=lprop+1
+c               if(lprop.gt.ndpropread) exit
+c               read(textpart(k),'(f40.0)',iostat=istat)
+c     &                 prop(nprop+lprop)
+c               
+c               if(istat.gt.0) then
+c                  call inputerror(inpc,ipoinpc,iline,
+c     &                 "*FLUID SECTION%",ier)
+c                  return
+c               endif
+c               
+c!              If 20 elements have been read, check how many more
+c!              are to be read
+c               if (lprop.eq.20) then
+c                  ndpropread = lprop +
+c     &                        (prop(nprop+19)+prop(nprop+20))*2
+c                  ndprop = ndpropread
+c               endif
+c            enddo
+c         enddo
+c!         
+c!        Until now 3 lines have been read
+c!        If necessary read the rest
+c!
+c         if(ndpropread.gt.lprop) then
+c            do j=3,(ndpropread-1)/8+1
+c               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+c     &              ipoinp,inp,ipoinpc)
+c               if((istat.lt.0).or.(key.eq.1)) exit
+c               do k=1,8
+c                  lprop=lprop+1
+c                  if(lprop.gt.ndpropread) exit
+c                  read(textpart(k),'(f40.0)',iostat=istat)
+c     &                 prop(nprop+lprop)
+c               
+c                  if(istat.gt.0) then
+c                     call inputerror(inpc,ipoinpc,iline,
+c     &                    "*FLUID SECTION%",ier)
+c                     return
+c                  endif
+c               enddo
+c            enddo
+c         endif
+c!
+c         nprop=nprop+ndprop
+c!
+c         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+c     &              ipoinp,inp,ipoinpc)
+c!         
       elseif(ndprop.gt.0) then
 !
 !        reading the element properties

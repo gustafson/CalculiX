@@ -21,7 +21,7 @@
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
      &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
      &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iau6,xxni,xxnj,
-     &  iturbulent,gradkel,gradoel)
+     &  iturbulent,f1,of2,gradkel,gradoel)
 !
 !     filling the matrix for the conservation of energy
 !
@@ -42,33 +42,41 @@
      &  veloo(nef,0:7),rhovol,cvel(*),gradvel(3,3,*),sw,be,ga,
      &  cvfa(*),hcfa(*),div,xload(2,*),gamma(*),xrlfa(3,*),
      &  xxj(3,*),a1,a2,a3,flux(*),xxnj(3,*),xxni(3,*),difcoef,
-     &  gradkel(3,*),gradoel(3,*)
+     &  gradkel(3,*),gradoel(3,*),f1(*),of2(*),term
 !
       intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,gradkel,
      &  jq,irow,nzs,vel,umfa,xlet,xle,gradofa,xxi,gradoel,
      &  body,volume,ielfa,lakonf,ifabou,nbody,neq,
      &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,gamma,xrlfa,
-     &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iturbulent
+     &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iturbulent,f1,of2
 !
       intent(inout) au,ad,b
 !
-      if(iturbulent.eq.1) then
-!
-!        k-epsilon
-!
-         sw=0.856d0
-         be=0.0828d0
-         ga=0.4404d0
-      else
-!
-!        k-omega
-!
-         sw=0.5d0
-         be=0.075d0
-         ga=0.5532d0
-      endif
-!
       do i=nefa,nefb
+!
+         if(iturbulent.eq.1) then
+!     
+!           k-epsilon
+!     
+            sw=0.856d0
+            be=0.0828d0
+            ga=0.4404d0
+         elseif(iturbulent.eq.2) then
+!     
+!           k-omega
+!     
+            sw=0.5d0
+            be=0.075d0
+            ga=0.5532d0
+         else
+!
+!           BSL and SST model
+!            
+            sw=f1(i)*0.5d0+(1.d0-f1(i))*0.856d0
+            be=f1(i)*0.075d0+(1.d0-f1(i))*0.0828d0
+            ga=f1(i)*0.5532d0+(1.d0-f1(i))*0.4404d0
+         endif
+!
          do indexf=ipnei(i)+1,ipnei(i+1)
 !
 !     convection
@@ -105,30 +113,25 @@
      &                   (ifabou(indexb+3).ne.0)).or.
      &                    (dabs(xflux).lt.1.d-10)) then
                         b(i)=b(i)-vfa(7,ifa)*xflux
-                     else
-                        write(*,*) '*ERROR in mafillo: the turbulence'
-                        write(*,*) '       frequency'
-                        write(*,*) '       of an incoming flux'
-                        write(*,*) '       through face ',
-     &                        indexf-ipnei(i),'of'
-                        write(*,*)'       element ',nactdohinv(i),
-     &                          ' is not given'
                      endif
-                  else
-                     write(*,*) '*ERROR in mafillk: the turbulence'
-                     write(*,*) '       frequency'
-                     write(*,*) '       of an incoming flux'
-                     write(*,*) '       through face ',
-     &                         indexf-ipnei(i),'of'
-                     write(*,*)'       element ',nactdohinv(i),
-     &                   ' is not given'
                   endif
                endif
             endif
 !
 !           diffusion
 !
-            difcoef=umfa(ifa)+sw*vfa(5,ifa)*vfa(6,ifa)/vfa(7,ifa)
+            if(iturbulent.le.3) then
+!
+!              k-epsilon, k-omega or BSL model
+!
+               difcoef=umfa(ifa)+sw*vfa(5,ifa)*vfa(6,ifa)/vfa(7,ifa)
+            else
+!
+!              SST model
+!
+               difcoef=umfa(ifa)+sw*vfa(5,ifa)*(0.31d0*vfa(6,ifa))/
+     &                           max(0.31d0*vfa(7,ifa),of2(i))
+            endif
 !
             if(iel.ne.0) then
 !     
@@ -188,25 +191,39 @@
 !
 !        sink terms are treated implicitly (lhs)
 !
-         ad(i)=ad(i)+rhovol*2.d0*be*vel(i,7)
+         ad(i)=ad(i)+rhovol*be*vel(i,7)
 !
 !        source terms are treated explicitly (rhs)
 !
-         b(i)=b(i)+rhovol*((ga*
+         b(i)=b(i)+rhovol*ga*
      &        (2.d0*(gradvel(1,1,i)**2+gradvel(2,2,i)**2+
      &        gradvel(3,3,i)**2)+
      &        (gradvel(1,2,i)+gradvel(2,1,i))**2+
      &        (gradvel(1,3,i)+gradvel(3,1,i))**2+
-     &        (gradvel(2,3,i)+gradvel(3,2,i))**2))
-c     &        -be*vel(i,7)*vel(i,7)
-     &        +be*vel(i,7)*vel(i,7)
-     &        )
+     &        (gradvel(2,3,i)+gradvel(3,2,i))**2)
 !
-         if(iturbulent.eq.1) then
-            b(i)=b(i)+2.d0*rhovol*sw*
+         term=2.d0*rhovol*sw*
      &                 (gradkel(1,i)*gradoel(1,i)+
      &                  gradkel(2,i)*gradoel(2,i)+
      &                  gradkel(3,i)*gradoel(3,i))/vel(i,7)
+         if(term.gt.0.d0) then
+!
+!           source terms are treated explicitly
+!
+            if(iturbulent.eq.1) then
+               b(i)=b(i)+term
+            elseif(iturbulent.ge.3) then
+               b(i)=b(i)+term*(1.d0-f1(i))
+            endif
+         else
+!
+!           sink terms are treated implicitly
+!
+            if(iturbulent.eq.1) then
+               ad(i)=ad(i)-term/vel(i,7)
+            elseif(iturbulent.ge.3) then
+               ad(i)=ad(i)-term*(1.d0-f1(i))/vel(i,7)
+            endif
          endif
 !
 !        transient term

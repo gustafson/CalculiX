@@ -56,14 +56,14 @@ void checkdivergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	  double *temax, double *sizemaxinc, ITG* ne0, ITG* neini,
 	  double *dampwk, double *dampwkini, double *energystartstep) {
 
-    ITG ia,ngraph=1,k,*ipneigh=NULL,*neigh=NULL,*inum=NULL,mt=mi[1]+1;
+    ITG ia,ngraph=1,k,*ipneigh=NULL,*neigh=NULL,*inum=NULL,mt=mi[1]+1,kscalemax;
 
     double *vr=NULL,*vi=NULL,*stnr=NULL,
 	*stni=NULL,*vmax=NULL,*stnmax=NULL,*cs=NULL,
         *fn=NULL,*eenmax=NULL,*fnr=NULL,*fni=NULL,*qfx=NULL,*cdn=NULL,
         *cdnr=NULL,*cdni=NULL;
 
-    ia=ctrl[7];
+    ia=ctrl[7];kscalemax=ctrl[54];
 
     /* check whether divergence was signaled in radflowload.c
        => repeat the increment with a smaller size */
@@ -110,8 +110,8 @@ void checkdivergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	*icntrl=1;
 	(*icutb)++;
 	if(*mortar==1){
-	    *kscale=100;
-	    printf("\n reducing the constant stiffnesses by a factor of 100 \n\n");
+	    *kscale=kscalemax;
+	    printf("\n reducing the constant stiffnesses by a factor of %d \n\n",*kscale);
 	}
 	
 	/* check whether too many cutbacks */

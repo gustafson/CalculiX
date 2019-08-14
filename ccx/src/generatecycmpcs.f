@@ -22,7 +22,7 @@
      &  mcs,triangulation,csab,xn,yn,zn,phi,noded,ncsnodes,
      &  rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,lcs,
      &  kontri,straight,ne,ipkon,kon,lakon,ifacetet,inodface,ncounter,
-     &  jobnamec,vold,cfd,mi,indepset)
+     &  jobnamec,vold,nef,mi,indepset,ithermal)
 !
 !     generate cyclic mpc's
 !
@@ -44,7 +44,7 @@
      &     number,idof,ndir,node,ncsnodes,id,mpcfreeold,
      &     mcs,nrcg(*),nzcg(*),jcs(*),lcs(*),nodef(8),
      &     netri,ifacetet(*),inodface(*),lathyp(3,6),inum,one,i,
-     &     noden(10),ncounter,ier,ipos,cfd,mi(*),ilen
+     &     noden(10),ncounter,ier,ipos,nef,mi(*),ilen,ithermal(2)
 !     
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &  csab(7),xn,yn,zn,xap,yap,zap,rp,zp,al(3,3),ar(3,3),phi,
@@ -98,16 +98,6 @@
 !     sides of the mpc's do no agree: interpolation is
 !     necessary. 
 !     
-c         write(*,*) '*WARNING in generatecycmpcs: no cyclic'
-c         write(*,*) '         symmetric partner found for'
-c         write(*,*) '         dependent node ',noded,'.'
-c         write(*,*) '         allowed tolerance:',tolloc
-c         write(*,*) '         best partner node number:',nodei
-c         write(*,*) '         actual distance in a radial plane: ',
-c     &           dsqrt((rp-rcs0(node))**2+(zp-zcs0(node))**2)
-c         write(*,*) '         Remedy: the node is connected to an'
-c         write(*,*) '         independent element side.'
-c         write(*,*)
 !     
          interpolation=.true.
 !     
@@ -322,10 +312,7 @@ c            close(70)
          enddo
          nodempc(3,mpcfreeold)=0
       enddo
-!     
-!     generating the thermal MPC's; the generated MPC's are for nodal
-!     diameter 0. BETTER: based on ithermal(2), cf. gen3dfrom2d.f
-!     
+!
       nmpc=nmpc+1
       labmpc(nmpc)='CYCLIC              '
       if(mcs.lt.10) then
@@ -393,7 +380,7 @@ c            close(70)
 !     generating the static pressure MPC's for 3D fluid calculations; 
 !     the generated MPC's are for nodal diameter 0. 
 !     
-      if(cfd.eq.1) then
+      if(nef.gt.0) then
          nmpc=nmpc+1
          labmpc(nmpc)='CYCLIC              '
          if(mcs.lt.10) then

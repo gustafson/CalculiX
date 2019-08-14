@@ -21,7 +21,7 @@
      &  ntrans,ncs,namtot,ncmat,memmpc,ne1d,ne2d,nflow,
      &  set,meminset,rmeminset,jobnamec,irestartstep,icntrl,ithermal,
      &  nener,nstate_,ntie,nslavs,nkon,mcs,nprop,mortar,ifacecount,
-     &  nintpoint,infree)
+     &  nintpoint,infree,nef)
 !
 !     istartset := meminset
 !     iendset := rmeminset
@@ -38,7 +38,7 @@
      &  nmethod,iperturb(2),meminset(*),rmeminset(*),nintpoint,
      &  i,j,k,ipos,icntrl,nener,irestartstep,im0,im1,im2,mem,iact,
      &  istat,nkon,nlabel,iplas,ithermal,nstate_,iprestr,maxlenmpc,
-     &  mcs,ntie,nbody,nslavs,ifacecount,iversion
+     &  mcs,ntie,nbody,nslavs,ifacecount,iversion,nef
 !
       if(icntrl.eq.0) then
 !
@@ -111,6 +111,7 @@
 !
             read(15)nk
             read(15)ne
+            read(15)nef
             read(15)nkon
             read(15)(mi(i),i=1,3)
 !
@@ -184,7 +185,8 @@
      &         mi,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,
      &         ntrans,nam,nprint,nlabel,ncs,ne1d,ne2d,infree,
      &         nmethod,iperturb,nener,ithermal,nstate_,iprestr,
-     &         mcs,ntie,nslavs,nprop,mortar,ifacecount,nintpoint)
+     &         mcs,ntie,nslavs,nprop,mortar,ifacecount,nintpoint,
+     &         nef)
 !
          enddo
 !
@@ -245,6 +247,7 @@
 !
          read(15)nk
          read(15)ne
+         read(15)nef
          read(15)nkon
          read(15)(mi(i),i=1,3)
 !
@@ -319,7 +322,7 @@
      &      mi,nmpc,memmpc,nmat,ntmat,npmat,ncmat,norien,ntrans,
      &      nam,nprint,nlabel,ncs,ne1d,ne2d,infree,nmethod,
      &      iperturb,nener,ithermal,nstate_,iprestr,mcs,ntie,
-     &      nslavs,nprop,mortar,ifacecount,nintpoint)
+     &      nslavs,nprop,mortar,ifacecount,nintpoint,nef)
 !
       enddo
 !

@@ -55,12 +55,6 @@
             et=al*et
             ze=al*ze
          endif
-c         if(xi+et+ze.gt.1.d0) then
-c            dummy=2.d0*(1.d0-xi-et-ze)/3.d0
-c            xi=dummy+xi
-c            et=dummy+et
-c            ze=dummy+ze
-c         endif
 !
 !        shape functions
 !

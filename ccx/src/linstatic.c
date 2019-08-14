@@ -85,7 +85,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       *iponoels=NULL,*inoels=NULL,*ipe=NULL,*ime=NULL,iit=-1,iflagact=0,
       icutb=0,*kon=NULL,*ipkon=NULL,*ielmat=NULL,ialeatoric=0,kscale=1,
       *iponoel=NULL,*inoel=NULL,zero=0,nherm=1,nev=*nforc,node,idir,
-      *ielorien=NULL,network=0,nrhs=1;
+      *ielorien=NULL,network=0,nrhs=1,iperturbsav;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,*tper,
          *f=NULL,*fn=NULL,qa[4],*fext=NULL,*epn=NULL,*xstateini=NULL,
@@ -99,7 +99,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
          *adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,*cdn=NULL,*cdnr=NULL,
          *cdni=NULL,*submatrix=NULL,*xnoels=NULL,*cg=NULL,*straight=NULL,
          *areaslav=NULL,*xmastnor=NULL,theta=0.,*ener=NULL,*xstate=NULL,
-      *fnext=NULL,*energyini=NULL,*energy=NULL,*d=NULL;
+         *fnext=NULL,*energyini=NULL,*energy=NULL,*d=NULL,alea=0.1;
 
   FILE *f1,*f2;
   
@@ -128,9 +128,13 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   /* determining the global values to be used as boundary conditions
      for a submodel */
 
+  /* iglob=-1 if global results are from a *FREQUENCY calculation
+     iglob=0 if no global results are used by boundary conditions
+     iglob=1 if global results are from a *STATIC calculation */
+
   getglobalresults(jobnamec,&integerglob,&doubleglob,nboun,iamboun,xboun,
 		   nload,sideload,iamload,&iglob,nforc,iamforc,xforc,
-                   ithermal,nk,t1,iamt1);
+                   ithermal,nk,t1,iamt1,&sigma);
 
   /* allocating fields for the actual external loading */
 
@@ -269,7 +273,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	     itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
 	     imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
 	     xnoels,mortar,pslavsurf,pmastsurf,clearini,&theta,
-	     xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef);
+	     xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef,
+             &alea);
 	  
 	  printf("number of contact spring elements=%" ITGFORMAT "\n\n",*ne-ne0);
 	  
@@ -317,6 +322,16 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   NNEW(xstiff,double,(long long)27*mi[0]**ne);
 
+  /* for a *STATIC,PERTURBATION analysis with submodel boundary
+     conditions from a *FREQUENCY analysis iperturb[0]=1 has to be
+     temporarily set to iperturb[0]=0 in order for f to be calculated in
+     resultsini and subsequent results* routines */
+
+  if((*nmethod==1)&&(iglob<0)&&(iperturb[0]>0)){
+      iperturbsav=iperturb[0];
+      iperturb[0]=0;
+  }
+
   iout=-1;
   NNEW(v,double,mt**nk);
   NNEW(fn,double,mt**nk);
@@ -339,9 +354,13 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	  mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-          inoel,nener,orname,&network,ipobody,xbodyact,ibody);
+          inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun);
   SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
   iout=1;
+
+  if((*nmethod==1)&&(iglob<0)&&(iperturb[0]>0)){
+      iperturb[0]=iperturbsav;
+  }
   
   /* determining the system matrix and the external forces */
 
@@ -382,7 +401,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
       NNEW(au,double,nzs[2]);
       rhsi=0;
-      nmethodl=2;
+//      nmethodl=2;
+      nmethodl=*nmethod;
 
       /* providing for the mass matrix in case of Green functions */
 
@@ -393,8 +413,22 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       }
 
   }else{
+
+      /* linear static calculation */
+
       NNEW(au,double,*nzs);
       nmethodl=*nmethod;
+
+      /* if submodel calculation with a global model obtained by
+         a *FREQUENCY calculation: replace stiffness matrix K by
+         K-sigma*M */
+
+      if(iglob<0){
+	  mass[0]=1;
+	  NNEW(adb,double,*neq);
+	  NNEW(aub,double,nzs[1]);
+      }
+	  
   }
 
   mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xbounact,nboun,
@@ -452,7 +486,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   }
   SFREE(fext);SFREE(f);
 
-  /* generation of a substructure stiffness matrix */
+  /* generation of a substructure stiffness matrix (nretain>0) or treating
+     Green functions (nretain=0) */
 
   if(*nmethod==11){
 
@@ -488,6 +523,8 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     /* solving the system of equations with appropriate rhs */
 
       if(nretain>0){
+
+          /* substructure calculations */
 
 	  NNEW(submatrix,double,nretain*nretain);
 	  
@@ -555,7 +592,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		   sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		   mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 		   islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-		   inoel,nener,orname,&network,ipobody,xbodyact,ibody);
+		   inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun);
 	      
 	      xbounact[iretain[i]-1]=0.;
 	      
@@ -585,7 +622,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
       }else{
 
-	  /* Green function applications */
+	  /* Green function applications (nretain=0) */
 
           /* storing omega_0^2 into d */
 
@@ -733,7 +770,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		   sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		   mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 		   islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-		   inoel,nener,orname,&network,ipobody,xbodyact,ibody);
+		   inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun);
 	      
 	      SFREE(eei);
 	      if(*nener==1){
@@ -792,7 +829,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       SFREE(xbounact);SFREE(xforcact);SFREE(xloadact);SFREE(t1act);SFREE(ampli);
       SFREE(xbodyact);if(*nbody>0) SFREE(ipobody);SFREE(xstiff);
       
-      if(iglob==1){SFREE(integerglob);SFREE(doubleglob);}
+      if(iglob!=0){SFREE(integerglob);SFREE(doubleglob);}
       
       return;
 
@@ -908,6 +945,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     }
     
     SFREE(ad);SFREE(au);
+    if(iglob<0){SFREE(adb);SFREE(aub);}
 
     /* calculating the displacements and the stresses and storing */
     /* the results in frd format for each valid eigenmode */
@@ -945,7 +983,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
             sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
             mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-            inoel,nener,orname,&network,ipobody,xbodyact,ibody);
+            inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun);
 
     SFREE(eei);
     if(*nener==1){
@@ -1066,7 +1104,7 @@ void linstatic(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   SFREE(xbounact);SFREE(xforcact);SFREE(xloadact);SFREE(t1act);SFREE(ampli);
   SFREE(xbodyact);if(*nbody>0) SFREE(ipobody);SFREE(xstiff);
 
-  if(iglob==1){SFREE(integerglob);SFREE(doubleglob);}
+  if(iglob!=0){SFREE(integerglob);SFREE(doubleglob);}
 
   *irowp=irow;*enerp=ener;*xstatep=xstate;*ipkonp=ipkon;*lakonp=lakon;
   *konp=kon;*ielmatp=ielmat;*ielorienp=ielorien;*icolp=icol;

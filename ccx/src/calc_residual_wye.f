@@ -19,7 +19,7 @@
 !
       real*8 function calc_residual_wye(pt1,Tt1,xflow1,xflow2,
      &pt2,Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,
-     &R,ider,iflag)
+     &R,ider,iflag,zeta)
 !
       implicit none
 !
@@ -144,15 +144,17 @@ c      w1w2=w1/w2
          hq=dh2/dh1
 !
 !        Interpolation as in CalculiX
-         if(alpha.le.60.or.hq.le.2.d0/3.d0) then
+         if((alpha.le.60.and.hq.le.1.d0).or.
+     &      (alpha.le.90.d0.and.hq.le.2.d0/3.d0)) then
             zeta=0.95d0*((W2W1-2d0*dcos(alpha*pi/180))
      &                 *W2W1+1.d0)
             zeta=zeta*(W1W2)**2
-         else
+         elseif(alpha.le.90.d0.and.hq.le.1.d0) then
             z2d390=0.95d0*((W2W1-2d0*dcos(90.d0*pi/180))
      &                 *W2W1+1.d0)
 !
-            z1p090=0.95d0*(0.34d0+W2W1**2)
+!            z1p090=0.95d0*(0.34d0+W2W1**2)
+	    z1p090=0.95d0*(1.d0+0.3d0*W2W1**2)     
 !
             z90=z2d390+(3*hq-2.d0)*(z1p090-z2d390)
 !
@@ -161,6 +163,46 @@ c      w1w2=w1/w2
 !
             zeta=z60+(alpha/30.d0-2.d0)*(z90-z60)
             zeta=zeta*(W1W2)**2
+	 elseif(alpha.le.60.d0.and.hq.gt.1.d0) then
+!
+!           extrapolation for hq>1 (not part of Idelchik
+!           but the previous definition results sometimes 
+!           into zeta<0 values
+!	
+            write(*,*)'WARNING in calc_residual_wye:'
+	    write(*,*)'   Branch element is 
+     &outside valid range defined by Idelchik'
+            zeta=0.95d0*((W2W1-2d0*dcos(alpha*pi/180))
+     &                 *W2W1+1.d0)
+            zeta=zeta*(W1W2)**2	 
+	 elseif(alpha.le.90.d0.and.hq.gt.1.d0) then
+!
+!           extrapolation for hq>1 (not part of Idelchik
+!           but the previous definition results sometimes 
+!           into zeta<0 values
+!	
+            write(*,*)'WARNING in calc_residual_wye:'
+	    write(*,*)'   Branch element is 
+     &outside valid range defined by Idelchik'
+            Z60=0.95d0*((W2W1-2d0*dcos(60.d0*pi/180))
+     &                 *W2W1+1.d0)
+!
+            z1p090=0.95d0*(1.d0+0.3d0*W2W1**2)    
+!
+            zeta=Z60+(z1p090-Z60)/(90.d0-60.d0)*(alpha-60)     
+!                             
+            zeta=zeta*(W1W2)**2	
+!           interpolation between exit loss zeta=1
+!           and last point of definition range (hq=1)
+	    zeta=zeta+(1-zeta)/(50.d0-1.d0)*(hq-1) 	         
+	 else
+!	 
+!	    values are absolutely out of def. range 
+!	 
+	    write(*,*)'ERROR in wye.f:' 
+	    write(*,*)'   Branch element is 
+     &outside valid range'
+	    call exit(201)  
          endif
       endif
 !
@@ -186,14 +228,14 @@ c      w1w2=w1/w2
          pspt2 = (Ts2/Tt2)**(kappa/(kappa-1))
          call machpi(M2,pspt2,kappa,R)
          
-         write(1,80)'Inlet: Tt1= ',Tt1,
-     &        ', pt1= ',pt1,', M1= ',M1
+!         write(1,80)'Inlet: Tt1= ',Tt1,
+!     &        ', pt1= ',pt1,', M1= ',M1
          
-         write(1,77)'mass flow = ',xflow2,', kappa = ',kappa,
-     &        ', zeta= ',zeta
+!         write(1,77)'mass flow = ',xflow2,', kappa = ',kappa,
+!     &        ', zeta= ',zeta
          
-         write(1,80)'Outlet: Tt2= ',Tt2,
-     &        ', pt2= ',pt2,', M2= ',M2
+!         write(1,80)'Outlet: Tt2= ',Tt2,
+!     &        ', pt2= ',pt2,', M2= ',M2
          
  80      format(3x,a,f10.6,a,f10.2,a,f10.6)
  77      format(3x,a,f10.6,a,f10.2,a,f10.6)

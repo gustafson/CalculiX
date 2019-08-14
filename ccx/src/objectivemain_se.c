@@ -295,11 +295,11 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		if(ipkon[i]<-1) ipkon[i]=-2-ipkon[i];
 	    }
 	    
-	}else if(strcmp1(&objectset[m*324],"SHAPEENERGY")==0){
+	}else if(strcmp1(&objectset[m*324],"STRAINENERGY")==0){
 	    iobject=m+1;
 	    iobject1=iobject;
 	    
-	    /* OBJECTIVE: SHAPE ENERGY */
+	    /* OBJECTIVE: STRAIN ENERGY */
 	    
 	    NNEW(xener1,double,*ne);
 
@@ -346,12 +346,12 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
             ialdesi1=ialdesi;xdesi1=xdesi;idesvar1=idesvar;
 	    
 	    if(((*nmethod!=4)&&(*nmethod!=5))||(iperturb[0]>1)){
-		printf(" Using up to %" ITGFORMAT " cpu(s) for the shape energy sensitivity.\n\n", num_cpuse);
+		printf(" Using up to %" ITGFORMAT " cpu(s) for the strain energy sensitivity.\n\n", num_cpuse);
 	    }
 	    
 	    NNEW(ithread,ITG,num_cpuse);
 	    
-	    /* Total difference of the internal shape energy */
+	    /* Total difference of the internal strain energy */
 	    /* create threads and wait */
 	    
 	    for(i=0;i<num_cpuse;i++)  {
@@ -657,10 +657,13 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 
 	    }
 
-	}else if(strcmp1(&objectset[m*324],"DISPLACEMENT")==0){
+	}else if((strcmp1(&objectset[m*324],"DISPLACEMENT")==0)||
+	         (strcmp1(&objectset[m*324],"X-DISP")==0)||
+		 (strcmp1(&objectset[m*324],"Y-DISP")==0)||
+		 (strcmp1(&objectset[m*324],"Z-DISP")==0)){
 	    iobject=m+1;
 
-            /* OBJECTIVE: DISPLACEMENT */
+            /* OBJECTIVE: DISP* */
 	    
 	    /* createinum is called in order to determine the nodes belonging
 	       to elements; this information is needed in frd_se */
@@ -670,9 +673,6 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		    nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat,
 		    ielprop,prop));
 	    
-	    NNEW(b,double,neq[1]);
-	    NNEW(temp,double,mt**nk);
-
             /* if the design variables are the coordinates:
                check for the existence of a target node set */
 
@@ -689,69 +689,116 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 		}
 		FORTRAN(objective_disp,(&nodeset,istartset,iendset,
 			ialset,nk,&idesvar,&iobject,mi,g0,
-			nobject,vold));
+			nobject,vold,objectset));
 	    }
 	    
-	    for(idesvar=0;idesvar<*ndesi;idesvar++){
+	    if(*icoordinate!=1){
+
+	       NNEW(b,double,neq[1]);
+	       NNEW(temp,double,mt**nk);
+
+	       for(idesvar=0;idesvar<*ndesi;idesvar++){
 		
-                /* copying the RHS from field df */
+                   /* copying the RHS from field df */
 
-		DMEMSET(b,0,neq[1],0.);
-		for(j=jqs[idesvar]-1;j<jqs[idesvar+1]-1;j++){
-		    b[irows[j]-1]=df[j];
-		}
+		   DMEMSET(b,0,neq[1],0.);
+		   for(j=jqs[idesvar]-1;j<jqs[idesvar+1]-1;j++){
+		       b[irows[j]-1]=df[j];
+		   }
 
-                /* solve the system */
+                   /* solve the system */
 
-		if(*isolver==0){
+		   if(*isolver==0){
 #ifdef SPOOLES
-		    spooles_solve(b,&neq[1]);
+		       spooles_solve(b,&neq[1]);
 #endif
-		}
-		else if(*isolver==4){
+		   }
+		   else if(*isolver==4){
 #ifdef SGI
-		    sgi_solve(b,token);
+		       sgi_solve(b,token);
 #endif
-		}
-		else if(*isolver==5){
+		   }
+		   else if(*isolver==5){
 #ifdef TAUCS
-		    tau_solve(b,&neq[1]);
+		       tau_solve(b,&neq[1]);
 #endif
-		}
-		else if(*isolver==7){
+		   }
+		   else if(*isolver==7){
 #ifdef PARDISO
-		    pardiso_solve(b,&neq[1],&symmetryflag,&nrhs);
+		       pardiso_solve(b,&neq[1],&symmetryflag,&nrhs);
 #endif
-		}
+		   }
 
-		if(*icoordinate!=1){
 		    
-		    /* store the answer in temp w.r.t. node and direction
-		       instead of w.r.t. dof */
+		       /* store the answer in temp w.r.t. node and direction
+		          instead of w.r.t. dof */
 		    
-		    DMEMSET(temp,0,mt**nk,0.);
-		    FORTRAN(resultsnoddir,(nk,temp,nactdof,b,ipompc,nodempc,
+		       DMEMSET(temp,0,mt**nk,0.);
+		       FORTRAN(resultsnoddir,(nk,temp,nactdof,b,ipompc,nodempc,
 				      coefmpc,nmpc,mi));
 		    
-		    /* storing the results to file */
+		       /* storing the results to file */
 		    
-		    ++*kode;
-		    frd_sen(co,nk,stn,inum,nmethod,kode,filab,
-                       &ptime,nstate_,
-		       istep,iinc,&mode,&noddiam,description,mi,&ngraph,
-                       ne,cs,set,nset,istartset,iendset,ialset,
-		       jobnamec,output,temp,&iobject,objectset,ntrans,
-		       inotr,trab,&idesvar,orname,icoordinate,&inorm,
-                       &irand); 
+		       ++*kode;
+		       frd_sen(co,nk,stn,inum,nmethod,kode,filab,
+                          &ptime,nstate_,
+		          istep,iinc,&mode,&noddiam,description,mi,&ngraph,
+                          ne,cs,set,nset,istartset,iendset,ialset,
+		          jobnamec,output,temp,&iobject,objectset,ntrans,
+		          inotr,trab,&idesvar,orname,icoordinate,&inorm,
+                          &irand); 
 
-		}else{
-		    FORTRAN(objective_disp_dx,(&nodeset,istartset,iendset,
-			    ialset,nk,&idesvar,&iobject,mi,nactdof,dgdx,
-                            ndesi,nobject,vold,b));
-		}
-	    }
+                }       
+		
+		SFREE(b);SFREE(temp);
+		
+		
+            }else{
 
-	    SFREE(b);SFREE(temp);SFREE(inum);
+               /* nodal coordinates as design variables */
+	       
+	       printf(" Calculating the sensitivity of the displacements w.r.t. the displacements.\n\n");
+	       
+	       NNEW(dgdu,double,*neq);
+	       
+               FORTRAN(disp_sen_dv,(&nodeset,istartset,iendset,ialset,&iobject,
+		       mi,nactdof,dgdu,vold,objectset,nactdofinv,&neq[1]));
+                       
+	       /* Multiplication of dg/du with K^-1 */	    	      
+	    
+	       /* solve the system */
+	
+	       if(*isolver==0){
+#ifdef SPOOLES
+	           spooles_solve(dgdu,&neq[1]);
+#endif
+	       }
+	       else if(*isolver==4){
+#ifdef SGI
+	           sgi_solve(dgdu,token);
+#endif
+	       }
+	       else if(*isolver==5){
+#ifdef TAUCS
+	           tau_solve(dgdu,&neq[1]);
+#endif
+	       }
+	       else if(*isolver==7){
+#ifdef PARDISO
+	           pardiso_solve(dgdu,&neq[1],&symmetryflag,&nrhs);
+#endif
+	       }
+	      
+	       /* calculation of total differential */
+	      
+	       FORTRAN(objective_disp_tot,(dgdx,df,ndesi,&iobject,jqs,
+                      irows,dgdu));
+	    	    
+	       SFREE(dgdu);
+	       
+            }
+	    
+            SFREE(inum);
 	    
 	}else if(strcmp1(&objectset[m*324],"STRESS")==0){
 	    iobject=m+1;
@@ -767,7 +814,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 	    NNEW(nkinsetinv,ITG,*nk);
 
 	    FORTRAN(actideactistr,(set,nset,istartset,iendset,ialset,objectset,
-                                ipkon,&iobject,ne,neinset,iponoel,inoel,&nepar,
+                                   ipkon,&iobject,ne,neinset,iponoel,inoel,&nepar,
 				   nkinsetinv,nk));
 
 	    if(*icoordinate==1){
@@ -1552,7 +1599,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne
 }
 
 /* ----------------------------------------------------------------*/
-/* subroutine for multithreading: Differentiation of shape energy  */
+/* subroutine for multithreading: Differentiation of strain energy  */
 /* ----------------------------------------------------------------*/
 
 void *objectivemt_shapeener_dx(ITG *i){

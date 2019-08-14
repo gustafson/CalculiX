@@ -211,7 +211,7 @@ c     write(*,*) '**regular solution'
             p(3)=0.d0
             nterms=3
 !
-            call attach(pneigh,p,nterms,ratio,dist,xil,etl)
+            call attach_2d(pneigh,p,nterms,ratio,dist,xil,etl)
 !
             do m=1,2
                p(m)=0.d0

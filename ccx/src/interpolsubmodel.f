@@ -45,7 +45,7 @@
       integer integerglob(*),nselect,iselect(nselect),nodeface,
      &  istartset(*),iendset(*),ialset(*),ntie,i,islavset,iset,
      &  nlength,id,jfaces,nelems,nktet,netet,ne,nkon,nfaces,nfield,
-     &  imastset,nterms,konl(20)
+     &  imastset,nterms,konl(20),nelem,loopa
 !
       real*8 doubleglob(*),value(*),coords(3),ratio(20)
 !
@@ -120,6 +120,7 @@
 !
 !     perform the interpolation
 !
+      loopa=8
       call basis(doubleglob(1),doubleglob(netet+1),
      &   doubleglob(2*netet+1),
      &   doubleglob(3*netet+1),doubleglob(4*netet+1),
@@ -132,7 +133,7 @@
      &   integerglob(2*ne+7*netet+6),integerglob(nkon+2*ne+7*netet+6),
      &   coords(1),coords(2),coords(3),value,ratio,iselect,nselect,
      &   istartset,iendset,ialset,imastset,
-     &   integerglob(nkon+2*ne+8*netet+6),nterms,konl)
+     &   integerglob(nkon+2*ne+8*netet+6),nterms,konl,nelem,loopa)
 !
       return
       end

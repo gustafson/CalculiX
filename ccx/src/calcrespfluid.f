@@ -19,7 +19,7 @@
 !     Calculating the residual in CFD-calculations: 
 !     special case: dp-equation (change in pressure)
 !
-      subroutine calcrespfluid(n,b,au,nflnei,x,res)
+      subroutine calcrespfluid(n,b,au,x,res)
 !
       implicit none
 !
@@ -32,7 +32,7 @@
       res=0.d0
 !
       do i=1,n
-         res=res+(b(i)/au(nflnei+i))**2
+         res=res+(b(i)/au(i))**2
          xmax=max(xmax,x(i))
          xmin=min(xmin,x(i))
       enddo

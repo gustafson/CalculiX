@@ -18,11 +18,11 @@
 !
 !     Calculating the residual in CFD-calculations
 !
-      subroutine calcresfluid(n,a,b,au,ia,ja,nflnei,x,res)
+      subroutine calcresfluid(n,a,b,au,ia,ja,x,res)
 !
       implicit none
 !
-      integer i,j,n,ia(*),ja(*),nflnei
+      integer i,j,n,ia(*),ja(*)
 !
       real*8 xmax,xmin,a(*),b(*),au(*),x(*),res,resi
 !
@@ -35,7 +35,7 @@
          do j=ja(i)+2,ja(i+1)
             resi=resi+a(j)*x(ia(j))
          enddo
-         res=res+((resi-b(i))/au(nflnei+i))**2
+         res=res+((resi-b(i))/au(i))**2
          xmax=max(xmax,x(i))
          xmin=min(xmin,x(i))
       enddo

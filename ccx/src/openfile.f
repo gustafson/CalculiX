@@ -20,9 +20,9 @@
 !
       implicit none
 !
-      logical exi
+c      logical exi
       character*3 output
-      character*132 jobname,fnin,fndat,fnfrd,fnsta,fncvg,fncel
+      character*132 jobname,fndat,fnfrd,fnsta,fncvg,fncel
       integer i
 !
 !     opening the input and output file
@@ -61,14 +61,14 @@ c      endif
 !
 !     delete the f.frd file (it is reopened in openfilefluid.f)
 !
-      fnfrd=jobname(1:i)//'f.frd'
-      open(13,file=fnfrd(1:i+5),status='unknown',err=71)
-      close(13,status='delete',err=73)
+c      fnfrd=jobname(1:i)//'f.frd'
+c      open(13,file=fnfrd(1:i+5),status='unknown',err=71)
+c      close(13,status='delete',err=73)
 !
-!     delete the f.cvg file (it is reopened in compfluid.c)
+!     delete the .fcv file (it is reopened in compfluid.c)
 !
-      fnfrd=jobname(1:i)//'f.cvg'
-      open(12,file=fnfrd(1:i+5),status='unknown',err=71)
+      fnfrd=jobname(1:i)//'.fcv'
+      open(12,file=fnfrd(1:i+4),status='unknown',err=71)
       close(12,status='delete',err=73)
 !
 !     .sta-file
@@ -109,8 +109,8 @@ c      endif
 !
       return
 !
- 1    write(*,*) '*ERROR in openfile: could not open file ',fnin(1:i+4)
-      call exit(201)
+c 1    write(*,*) '*ERROR in openfile: could not open file ',fnin(1:i+4)
+c      call exit(201)
  51   write(*,*) '*ERROR in openfile: could not open file ',fndat(1:i+4)
       call exit(201)
  52   write(*,*) '*ERROR in openfile: could not delete file ',

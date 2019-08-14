@@ -37,7 +37,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
              ITG *nasym,double *xnoels,ITG *mortar,double *pslavsurf,
              double *pmastsurf,double *clearini,double *theta,
              double *xstateini,double *xstate,ITG *nstate_,ITG *icutb,
-             ITG *ialeatoric,char *jobnamef){
+             ITG *ialeatoric,char *jobnamef,double *alea){
 
     ITG i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,im;
     
@@ -92,7 +92,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
           ielmat,elcon,istep,iinc,iit,ncmat_,ntmat_,mi,imastop,islavsurf,
 	  itiefac,springarea,tietol,reltime,filab,nasym,pslavsurf,pmastsurf,
 	  clearini,theta,xstateini,xstate,nstate_,ne0,icutb,ialeatoric,
-	  nmethod,jobnamef));
+	  nmethod,jobnamef,alea));
 
     }
 

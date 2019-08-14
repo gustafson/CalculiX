@@ -44,7 +44,7 @@
      &  nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ielorien(mi(3),*),
      &  ipkon(*),ielprop(*),nstate_,idummy,rhsi,ntrans,inotr(2,*),
      &  nk,ne,nmpc,nforc,nload,neq,nmethod,nom,m,idm,idir,itr,
-     &  ithermal,iprestr,iperturb,i,j,k,idist,jj,node,
+     &  ithermal,iprestr,iperturb(*),i,j,k,idist,jj,node,
      &  id,ist,index,jdof1,jdof,node1,ntmat_,indexe,nope,norien,
      &  iexpl,idof1,iinc,istep,icalccg,nplicon(0:ntmat_,*),
      &  nplkcon(0:ntmat_,*),npmat_,ikactmech(*),nactmech
@@ -61,7 +61,8 @@
 !
       icalccg=0
 !
-      if((nmethod.ge.4).and.(iperturb.lt.2).and.(nactmech.lt.neq/2))then
+      if((nmethod.ge.4).and.(iperturb(1).lt.2).and.(nactmech.lt.neq/2))
+     &       then
 !
 !        modal dynamics and steady state dynamics: 
 !        only nonzeros are reset to zero
@@ -173,7 +174,7 @@
 !           modal dynamics and steady state dynamics: 
 !           location of nonzeros is stored
 !
-            if((nmethod.ge.4).and.(iperturb.lt.2)) then
+            if((nmethod.ge.4).and.(iperturb(1).lt.2)) then
                do jj=1,3*nope
 !
                   j=(jj-1)/3+1
@@ -324,7 +325,7 @@
 !           modal dynamics and steady state dynamics: 
 !           location of nonzeros is stored
 !
-            if((nmethod.ge.4.and.(iperturb.lt.2))) then
+            if((nmethod.ge.4.and.(iperturb(1).lt.2))) then
                do jj=1,nope
 !     
                   j=jj
@@ -441,7 +442,7 @@
 !     modal dynamics and steady state dynamics: 
 !     location of nonzeros is stored
 !
-      if((nmethod.ge.4).and.(iperturb.lt.2)) then
+      if((nmethod.ge.4).and.(iperturb(1).lt.2)) then
          do i=1,nforc
             if(ndirforc(i).gt.3) cycle
             if(dabs(xforc(i)).lt.1.d-30) cycle

@@ -23,7 +23,7 @@
      &  ithermal,nener,nstate,irestartstep,inpc,ipoinp,inp,
      &  ntie,nbody,nprop,ipoinpc,nevdamp,npt,nslavs,nkon,mcs,
      &  mortar,ifacecount,nintpoint,infree,nheading,nobject,
-     &  iuel,iprestr,nstam,ndamp)
+     &  iuel,iprestr,nstam,ndamp,nef)
 !
 !     calculates a conservative estimate of the size of the 
 !     fields to be allocated
@@ -66,7 +66,7 @@
      &  ifacecount,nintpoint,mortar,infree(4),nheading,icfd,
      &  multslav,multmast,nobject,numnodes,iorientation,id,
      &  irotation,itranslation,nuel,iuel(4,*),number,four,
-     &  iprestr,nstam,ier,ndamp
+     &  iprestr,nstam,ier,ndamp,nef
 !
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !
@@ -1066,6 +1066,8 @@ c    Bernhardi end
                      neb32=neb32+1
                   elseif(label(1:1).eq.'D') then
                      nflow=nflow+1
+                  elseif(label(1:1).eq.'F') then
+                     nef=nef+1
                   endif
                endif
                nteller=n-1
@@ -1784,7 +1786,7 @@ c!                 + 1 MPC in tension direction
      &              ne1d,ne2d,nflow,set,meminset,rmeminset,jobnamec,
      &              irestartstep,icntrl,ithermal,nener,nstate,ntie,
      &              nslavs,nkon,mcs,nprop,mortar,ifacecount,nintpoint,
-     &              infree)
+     &              infree,nef)
                irstrt(1)=-1
             else
             endif
@@ -1904,7 +1906,12 @@ c!                 + 1 MPC in tension direction
                   call getnewline(inpc,textpart,istat,n,key,iline,ipol,
      &                 inl,ipoinp,inp,ipoinpc)
                   if((istat.lt.0).or.(key.eq.1)) then
-                     if(label(2:2).eq.'8') then
+!
+!                     conservative upper limit
+!                     "label" is not necessary the label of the
+!                     composite shell element
+!
+c                     if(label(2:2).eq.'8') then
                         mi(1)=max(mi(1),8*nlayer)
                         mi(3)=max(mi(3),nlayer)
                         if(js.le.nset) then
@@ -1912,15 +1919,15 @@ c!                 + 1 MPC in tension direction
                            nkon=nkon+20*nlayer*meminset(js)
                         endif
                         exit
-                     else
-                        mi(1)=max(mi(1),6*nlayer)
-                        mi(3)=max(mi(3),nlayer)
-                        if(js.le.nset) then
-                           nk=nk+15*nlayer*meminset(js)
-                           nkon=nkon+15*nlayer*meminset(js)
-                        endif
-                        exit
-                     endif
+c                     else
+c                        mi(1)=max(mi(1),6*nlayer)
+c                        mi(3)=max(mi(3),nlayer)
+c                        if(js.le.nset) then
+c                           nk=nk+15*nlayer*meminset(js)
+c                           nkon=nkon+15*nlayer*meminset(js)
+c                        endif
+c                        exit
+c                     endif
                   endif
                   nlayer=nlayer+1
                enddo
@@ -1977,14 +1984,17 @@ c!                 + 1 MPC in tension direction
                if(ncmat.ge.9) ncmat=max(19,ncmat)
             endif
          elseif(textpart(1)(1:5).eq.'*STEP') then
-            do i=1,n
-               if((textpart(i)(1:14).eq.'AMPLITUDE=STEP').or.
-     &            (textpart(i)(1:14).eq.'AMPLITUDE=RAMP')) then
-                  nam=nam+2
-                  nstam=1
-                  exit
-               endif
-            enddo
+            if(nstam.eq.0) then
+               do i=1,n
+                  if((textpart(i)(1:14).eq.'AMPLITUDE=STEP').or.
+     &                 (textpart(i)(1:14).eq.'AMPLITUDE=RAMP')) then
+                     nam=nam+2
+                     namtot=namtot+4
+                     nstam=1
+                     exit
+                  endif
+               enddo
+            endif
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
          elseif(textpart(1)(1:9).eq.'*SUBMODEL') then

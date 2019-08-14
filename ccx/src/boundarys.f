@@ -153,25 +153,6 @@
                enddo
             endif
 !
-!           removing the boundary conditions defined by a *BOUNDARY
-!           statement
-!
-c            loop1: do
-c               if(nboun.gt.0) then
-c                  do j=1,nboun
-c                     if(typeboun(j).eq.'B') then
-c                        node=nodeboun(j)
-c                        is=ndirboun(j)
-c                        ie=ndirboun(j)
-c                        call bounrem(node,is,j,nodeboun,ndirboun,xboun,
-c     &                       nboun,iamboun,nam,ikboun,ilboun,typeboun)
-c                        cycle loop1
-c                     endif
-c                  enddo
-c                  exit
-c               endif
-c               exit
-c            enddo loop1
             nbounnew=0
             do j=1,nboun
                if(typeboun(j).ne.'B') then
@@ -232,11 +213,6 @@ c            enddo loop1
             endif
             namta(3,nam)=sign(iamplitude,namta(3,iamplitude))
             iamplitude=nam
-c            if(nam.eq.1) then
-c               namtot=0
-c            else
-c               namtot=namta(2,nam-1)
-c            endif
             namtot=namtot+1
             if(namtot.gt.namtot_) then
                write(*,*) '*ERROR boundaries: increase namtot_'
@@ -245,7 +221,6 @@ c            endif
             endif
             namta(1,nam)=namtot
             namta(2,nam)=namtot
-c            call reorderampl(amname,namta,nam)
             read(textpart(i)(11:30),'(f20.0)',iostat=istat) 
      &           amta(1,namtot)
             if(istat.gt.0) then
@@ -282,6 +257,18 @@ c            call reorderampl(amname,namta,nam)
      &              "*BOUNDARY%",ier)
                return
             endif
+         elseif(textpart(i)(1:8).eq.'DATASET=') then
+            read(textpart(i)(9:18),'(i10)',iostat=istat) iglobstep
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BOUNDARY%",ier)
+               return
+            endif
+!
+!           the mode number for submodels
+!           is stored as a negative global step
+!
+            iglobstep=-iglobstep
          else
             write(*,*) 
      &        '*WARNING reading *BOUNDARY: parameter not recognized:'

@@ -19,7 +19,7 @@
       subroutine elprints(inpc,textpart,set,
      &  nset,nprint,nprint_,jout,prlab,prset,
      &  nmethod,elprint_flag,nener,ithermal,istep,istat,n,iline,ipol,
-     &  inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,cfd,ier)
+     &  inl,ipoinp,inp,amname,nam,itpamp,idrct,ipoinpc,nef,ier)
 !
 !     reading the *ELEMENT PRINT cards in the input deck
 !
@@ -35,7 +35,7 @@
 !
       integer nset,nprint,nprint_,istep,istat,n,i,ii,key,ier,
      &  jout(2),joutl,ipos,nmethod,nener,ithermal,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),nam,itpamp,idrct,ipoinpc(0:*),cfd
+     &  ipoinp(2,*),inp(3,*),nam,itpamp,idrct,ipoinpc(0:*),nef
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *EL PRINT: *EL PRINT should only be'
@@ -230,7 +230,7 @@
                endif
             elseif((textpart(ii)(1:4).eq.'SVF ').or.
      &             (textpart(ii)(1:4).eq.'HFLF')) then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &               '*WARNING reading *EL PRINT: SVF or HFLF only'
                   write(*,*) '         make sense for 3D fluid'

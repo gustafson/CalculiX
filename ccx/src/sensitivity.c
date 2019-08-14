@@ -128,7 +128,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   getglobalresults(jobnamec,&integerglob,&doubleglob,nboun,iamboun,xboun,
 		   nload,sideload,iamload,&iglob,nforc,iamforc,xforc,
-                   ithermal,nk,t1,iamt1);
+                   ithermal,nk,t1,iamt1,&sigma);
   
   /* check which design variables are active */
   
@@ -155,7 +155,10 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   /* check which targets are active */
   
   for(i=0;i<*nobject;i++){
-      if(strcmp1(&objectset[i*324],"DISPLACEMENT")==0){
+      if((strcmp1(&objectset[i*324],"DISPLACEMENT")==0)||
+	 (strcmp1(&objectset[i*324],"X-DISP")==0)||
+	 (strcmp1(&objectset[i*324],"Y-DISP")==0)||
+	 (strcmp1(&objectset[i*324],"Z-DISP")==0)){
 	  idisplacement=1;
       }else if(strcmp1(&objectset[i*324],"EIGENFREQUENCY")==0){
 	  ieigenfrequency=1;
@@ -164,7 +167,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  igreen=1;
       }else if(strcmp1(&objectset[i*324],"MASS")==0){
 	  imass=1;
-      }else if(strcmp1(&objectset[i*324],"SHAPEENERGY")==0){
+      }else if(strcmp1(&objectset[i*324],"STRAINENERGY")==0){
 	  ishapeenergy=1;
       }else if(strcmp1(&objectset[i*324],"STRESS")==0){
 	  idisplacement=1;
@@ -685,7 +688,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	   matrix (in mastruct.c)
         */
 
-        /* for mass and shape energy the stiffness matrix is not needed */
+        /* for mass and strain energy the stiffness matrix is not needed */
 	
 	strcpy(stiffmatrix,jobnamec);
 	strcat(stiffmatrix,".stm");
@@ -774,7 +777,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
       NNEW(f,double,*neq); /* FAKE */
       
-      /* needed for nonlinear shape energy */
+      /* needed for nonlinear strain energy */
 
       if((iperturb[1]==1)&&(ishapeenergy==1)){
          NNEW(fint,double,*neq);
@@ -817,7 +820,7 @@ void sensitivity(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
           islavsurf,ielprop,prop,energyini,energy,df,&distmin,
 	  &ndesi,nodedesi,sti,nkon,jqs,irows,nactdofinv,
 	  &icoordinate,dxstiff,istartdesi,ialdesi,xdesi,
-	  &ieigenfrequency,fint,&ishapeenergy);
+	  &ieigenfrequency,fint,&ishapeenergy,typeboun);
 	  
       iout=1;SFREE(v);
       

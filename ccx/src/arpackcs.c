@@ -119,7 +119,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *workev=NULL,*temp_array2=NULL,*ener=NULL,*xstate=NULL,cdnimag,
     sigmai=0,amp,ampmax,*zstorage=NULL,*au=NULL,*ad=NULL,cdnreal,
     *b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,
-    *cdnt=NULL,*cdnr=NULL,*cdni=NULL,*eme=NULL,
+    *cdnt=NULL,*cdnr=NULL,*cdni=NULL,*eme=NULL,alea=0.1,
     *pslavsurfold=NULL,*energyini=NULL,*energy=NULL;
 
   FILE *f1;
@@ -331,7 +331,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
 		  imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
 		  xnoels,mortar,pslavsurf,pmastsurf,clearini,&theta,
-	          xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef);
+	          xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef,
+                  &alea);
 	  
 	  printf("number of contact spring elements=%" ITGFORMAT "\n\n",*ne-ne0);
 	  
@@ -389,7 +390,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
               mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-              inoel,nener,orname,&network,ipobody,xbody,ibody);
+              inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);
   }else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	      elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -408,7 +409,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
               mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-              inoel,nener,orname,&network,ipobody,xbody,ibody);
+              inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);
   }
   SFREE(f);SFREE(v);SFREE(fn);SFREE(stx);SFREE(eme);SFREE(inum);
   iout=1;
@@ -619,7 +620,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 #ifdef MATRIXSTORAGE
 	  matrixstorage(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1],
 			ntrans,inotr,trab,co,nk,nactdof,jobnamec,mi,ipkon,
-			lakon,kon,ne,mei,nboun,nmpc,cs,mcs);
+			lakon,kon,ne,mei,nboun,nmpc,cs,mcs,ithermal,nmethod);
 #else
 	  printf("*ERROR in arpack: the MATRIXSTORAGE library is not linked\n\n");
 	  FORTRAN(stop,());
@@ -1245,7 +1246,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		    mortar,islavact,&cdn[kk6],islavnode,nslavnode,ntie,clearini,
 		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-		    inoel,nener,orname,&network,ipobody,xbody,ibody);}
+		    inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);}
 	      else{
 		  results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
 		    &stx[kkx],elcon,
@@ -1265,7 +1266,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		    mortar,islavact,&cdn[kk6],islavnode,nslavnode,ntie,clearini,
 		    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-		    inoel,nener,orname,&network,ipobody,xbody,ibody);
+		    inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);
 	      }
 	      
 	  }

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2018 Guido Dhondt                          */
+/*              Copyright (C) 1998-2018 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -26,7 +26,7 @@
 #include<windows.h>
 #define dlopen(name, mode) LoadLibrary (TEXT (name))
 #define dlsym(handle, func) GetProcAddress (handle, func)
-typedef HINSTANCE__* lib_handler;
+typedef HINSTANCE* lib_handler;
 #else
 #include"dlfcn.h"
 typedef void* lib_handler;
@@ -213,24 +213,24 @@ calculix_searchExternalBehaviour(const char* n){
   return NULL;
 }
 
-void calculix_registerExternalBehaviour(const char * n){
+void calculix_registerExternalBehaviour(const char* n) {
   // buffers to avoid memory allocation
   char b1[80] = {'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
   char b2[80] = {'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
-		 '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0',
+         '\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
   // library name
   const char * l;
   // function name
@@ -256,14 +256,21 @@ void calculix_registerExternalBehaviour(const char * n){
   }
   p1 = c;
   p2 = c = search(c,e,'_');
-  p2 = c = search(c,e,'_');
-  p3 = search(c,e,'@');
-  // library and function
-  l = memcpy(b1,p1,p2-p1);
-  f = memcpy(b2,p2+1,p3-p2-1);
-  check(strlen(l)!=0,n,"empty library name");
-  check(strlen(f)!=0,n,"empty function name");
-  treatExternalBehaviour(n,i,l,f);
+  if(c==e){
+    p3 = search(p1,e,'@');
+    l = memcpy(b1,p1,p3-p1);
+    check(strlen(l)!=0,n,"empty library name");
+    treatExternalBehaviour(n,i,l,"umat_");
+  } else {
+    // library and function
+    p2 = c = search(c,e,'_');
+    p3 = search(c,e,'@');
+    l = memcpy(b1,p1,p2-p1);
+    f = memcpy(b2,p2+1,p3-p2-1);
+    check(strlen(l)!=0,n,"empty library name");
+    check(strlen(f)!=0,n,"empty function name");
+    treatExternalBehaviour(n,i,l,f);
+  }
 }
 
 #endif /* CALCULIX_EXTERNAL_BEHAVIOURS_SUPPORT */

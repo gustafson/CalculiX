@@ -128,7 +128,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
     *xmastnor=NULL,*emeini=NULL,*xstate=NULL,*clearini=NULL,
     *shcon=NULL,*xmr=NULL,*xmi=NULL,*xnoels=NULL,*pslavsurf=NULL,
     *pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,*tmin,*tmax,
-    *energyini=NULL,*energy=NULL;
+    *energyini=NULL,*energy=NULL,alea;
 
   FILE *f1;
 
@@ -184,7 +184,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
   alpham=xmodal[0];
   betam=xmodal[1];
 
-  dd=ctrl[16];deltmx=ctrl[26];
+  dd=ctrl[16];deltmx=ctrl[26];alea=ctrl[53];
 
   /* determining nzl */
 
@@ -1004,6 +1004,13 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
   for(i=0;i<*nboun;i++){
       if(fabs(xboun[i])>1.e-10){
 	  iprescribedboundary=1;
+	  if((*isolver==2)||(*isolver==3)){
+	      printf(" *ERROR in dyna: the iterative\n");
+	      printf("        solver cannot be used for modal dynamic\n");
+	      printf("        calculations with prescribed boundary\n");
+	      printf("        conditions\n");
+	      FORTRAN(stop,());
+	  }
 	  nmdnode=0;nmddof=0;nmdboun=0;nmdmpc=0;
 	  break;
       }
@@ -1132,7 +1139,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
               itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,
               &nasym,xnoels,&mortar,pslavsurf,pmastsurf,clearini,&theta,
-	      xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef);
+	      xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef,&alea);
 
       RENEW(ikactcont,ITG,nactcont_);
       DMEMSET(ikactcont,0,nactcont_,0.);
@@ -1884,7 +1891,7 @@ void dyna(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp, ITG *n
 		sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		&mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
                 islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                inoel,nener,orname,&network,ipobody,xbodyact,ibody);
+                inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun);
 
 	/* restoring */
 

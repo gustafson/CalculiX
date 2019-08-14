@@ -1,6 +1,6 @@
 
 ========
-LOG-BOOK Version 2.14
+LOG-BOOK Version 2.15
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -3294,10 +3294,10 @@ Dec 2002        - started to work on single crystal plasticity
                - fineshed *MODEL CHANGE,ADD=STRAIN FREE
 	       - checked for negative pressures in frictionheating.f
                - changed gen3dboun.f: for beam elements and rotational
-                 boundary conditions knots are always creaded (no
+                 boundary conditions knots are always created (no
                  mean rotation MPC)
                - fixed the midnodes in quadratic beam cross sections subject
-                 do moments (bending,torque) (gen3dboun.f)
+                 to moments (bending,torque) (gen3dboun.f)
                - coded the umat_undo_nlgeom_lin_iso_el.f routine
 
  19 Jan 2018   - umat_undo_nlgeom_lin_iso_el materials work
@@ -3311,7 +3311,7 @@ Dec 2002        - started to work on single crystal plasticity
  26 Jan 2018   - user defined *boundary and *cload cards are kept from one
                  step to the next; needed to do a correction for this in
                  dyna.c and steadystate.c
-               - corrected an error inthe umatht call in thermmodel.f
+               - corrected an error in the umatht call in thermmodel.f
                - updated the interface fields of cflux, networkmpc_lhs,
                  networkmpc_rhs, uboun and utemp.
 
@@ -3487,3 +3487,234 @@ Dec 2002        - started to work on single crystal plasticity
                - detected and corrected an error for pretension with
                  linear 2d-elements
                - started looking into Craig-Bampton
+
+ 29 Apr 2018   - posted version 2.14
+
+ 30 Apr 2018   - expanded the number of pairs for CHARACTERISTIC
+               - removed an error in extrapolate in connection with
+                 SPRING2-elements
+               - checked eigenfrequencies of beam fixed by kinematic coupling
+                 at both ends
+               - checked spring2-elements in local coordinates
+               - continued work on Craig-Bampton
+            
+ 1 May 2018    - removed MPC's from extrapol_*.f and applyboun.f
+
+ 4 May 2018    - issued an info for mechanical cyclic symmetry calculations
+                 with non-cyclic-symmetric initial temperatures or temperature
+                 loading: may lead to stresses
+               - update the documentation for thickness definitions (shells..)
+                 in axisymmetric calculations
+               - removed a discrepancy between CalculiX and Abaqus concerning
+                 the use of *NODAL THICKNESS   
+               - removed some errors in shellsections.f and beamsections.f
+               - coded *BASE MOTION for acceleration in harmonic steady
+                 state dynamics calculations
+               - worked on tet-meshing
+
+ 5 May 2018    - worked on parallellizing extrapol_*el.f
+
+ 8 May 2018    - removed matvec and msolve as arguments in dgmres ->
+                 dgmres1
+               - wrote dgmresmain.c
+               - changed createblock.f
+               - prepared for the parallellization of the matrix
+                 solving routines in CFD
+
+ 10 May 2018   - continued to work on parallellization for CFD
+ 
+ 25 May 2018   - allocated i10 instead of i5 for the output of the 
+                 element expansion in genelem3d.f
+               - transferred the parent element in generatetet.f
+               - modified the documentation for *INITIAL CONDITIONS,	
+                 TYPE=SOLUTION
+               - postponed the check for iterative solvers in modal
+                 dynamic and steady state dynamic calculations to
+		 dyna.c and steadystate.c
+               - worked on the extrapolation of the creep curves for
+                 anisotropic materials
+
+ 1 June 2018   - corrected an error regarding *STEP,AMPLITUDE and updated
+                 the documentation
+               - corrected an error regarding the simultaneous use of
+                 composite shells and volume elements
+               - updated the calculation of sensitivities
+               - coded the detection of composed surfaces in tetmesh
+
+ 3 June 2018   - continued parellellization of CFD code
+
+ 8 June 2018   - adapted the triangulation of the outer surface in case of
+                 broken edges in tetmesh
+               - started automatic mesh refinement based on the error
+                 estimator
+
+ 17 June 2018  - completed parallellization of laminar flow (CFD)
+
+ 22 June 2018  - added argument ier in interface list of inputerror.f
+               - corrected errors in solidsections.f, forcadd.f
+                 and gen3delem.f
+               - expanded basis.f with a fourth loop over all elements
+                 (only if a master element set is given)
+               - created an extra file with ending 12d to store info
+                 on the 3d-expansion of 1d and 2d-elements
+               - worked on field-dependent remeshing
+
+ 29 June 2018  - continued to work on field-dependent remeshing
+
+ 2 July 2018   - continued to work on turbulence for incompressible CFD
+
+ 4 July 2018   - started testing turbulence for incompressible CFD
+
+ 6 July 2018   - continued to work on field-dependent remeshing
+
+ 13 July 2018  - finished field-dependent remeshing for linear tets
+               - worked on mapping the middle nodes for quadratic tets
+
+ 15 July 2018  - modified cavityext.f
+
+ 20 July 2018  - removed a print statement in anisomaxwavspd.f
+               - added kode as argument to uout.f
+               - changed iperturb in e_c3d_rhs.f and rhs.f in order
+                 to take nonlinear geometric behavior into account in
+                 modal dynamic calculations (for coupling with CFD)
+               - worked on the projection of the nodes of a refined
+                 mesh on the original surface
+
+ 22 July 2018  - worked on turbulent compressible flow
+
+ 27 July 2018  - optimized attach_3d.f in the same way as attach.f and
+                 attach_1d.f; changed attach.f into attach_2d.f
+               - finished the refined mesh projection on the 
+                 original surface
+               - tested the effect of solution based mesh refinement
+                 on the error
+
+ 7 Sept 2018   - corrected an error in changekon (dynamic allocation of
+                 fields koncp and thickecp)
+               - corrected errors in getlocalresults.c
+               - removed the "E" and "N" on the set names in the warning
+                 and error messages in noelsets.f
+               - updated the section on the gradient error estimator in 
+                 the documentation.
+               - documented the refinemesh procedure on paper (definition
+                 of the fields and the method)
+               - formulated electromagnetics for steady state solutions
+
+ 14 Sept 2018  - documented the refinemesh procedure in the CalculiX
+                 manual
+               - improved convergence criteria for fluid networks
+
+ 28 Sept 2018  - implemented the submodel technique for global
+                 frequency calculations; updated the documentation
+                 appropriately
+               - allowed for perturbation analysis in a *STATIC
+                 calculation: needed for submodel frequency calculations
+                 with preload
+               - changed line 160 in resultini.f: for perturbation
+                 analysis f is also calculated
+
+ 5 Oct 2018    - complemented submodel frequency calculations with
+                 static preloading
+               - inserted an optimization example in the documentation
+               - checked the combination of *DYNAMIC and *RESTART: works
+               - continued study of measure differential inclusions
+
+ 8 Oct 2018    - corrected an error in the improved version of hrv_ud1.f
+                 (using the velocity gradient to get a better approximation
+                  of the facial velocity based on the element center
+                  velocity through upwind difference in the case of slanted
+                  elements)
+
+ 12 Oct 2018   - coded dgmres for mechanical calculations
+                 (predgmres_struct_mt.c and createblock_struct.f); converges
+                 for example oneel.inp but not for beamp.inp (both with
+                 nlgeom); seems that this idea has to be abandoned.
+                 (ier=1 from dgmres.f)
+                 
+ 20 Oct 2018   - changed parameter MODE into DATA SET for frequency
+                 submodel calculations; increased the accuracy of the
+                 frequency stored in the .frd file
+               - set small coordinate numbers in writerefinemesh.f to
+                 zero
+
+ 26 Oct 2018   - added PARAMETERS=CONTACT to *CONTROLS to control the
+                 allowed change in number of contact elements for
+                 convergence
+               - introduced the option to change important face-to-face
+                 penalty contact convergence parameters
+               - updated the documentation for *CONTROLS
+               - worked on improving *COUPLING with *DISTRIBUTING
+                
+ 27 Oct 2018   - improved couplings.f (rotational MPC's have to satisfy
+                 certain conditions on the coefficients not to collide
+                 with the translational MPC's)
+ 
+ 30 Oct 2018   - removed a serious error in the CFD-routines
+                 (field rf(3,*) was defined as constant in space in the
+                  FORTRAN routines)
+      
+ 1 Nov 2018    - corrected an important error in extrapol_*main.c
+                 (iteration did not inprove the gradient at the center
+                  of the elements since the improved cell center values
+                  were not taken)
+
+ 2 Nov 2018    - slightly modified convergence check for f2f in 
+                 checkconvergence.c
+               - introduced a standard deviation to check the closeness
+                 of individual nodes to the center of gravity for mean
+                 rotation MPC's
+               - changed the surface projection method in projectnodes.f:
+                 should be more stable now.
+
+ 4 Nov 2018    - changed the frd-filename for CFD from *f.frd to *.frd
+
+ 12 Nov 2018   - removed an error in projectnodes.f
+               - corrected an error in frd.c
+
+ 16 Nov 2018   - corrected an error in gen3dforc (plane stress with cload and
+                 transformations did not work)
+               - corrected an error in map3dto1d2d (section forces for
+                 hollow sections did not work)
+               - introduced SOLVER=MATRIXSTORAGE for heat transfer
+                 calculations: the conductivity and specific heat matrices
+                 are stored
+
+ 23 Nov 2018   - changed the *ERROR statement for a drilling moment on a
+                 shell into a *WARNING; the moment is projected onto the
+                 shell surface
+               - changed the *COUPLING + *DISTRIBUTING constraint into a
+                 linear constraint (i.e. no update of the coefficients during
+                 the calculation). Check needed whether the implementation 
+                 (area weighted mean rotation) corresponds to what the user 
+                 wants
+               - worked on the expansion of the electromagnetic equation
+                 system for alternating current (steady state results only;
+                 leads to a complex equation system)
+               - coded mafillfreq_em.f
+
+ 24 Nov 2018   - finished the restart option for CFD
+
+ 30 Nov 2018   - continued work on steady state electromagnetics
+               - corrected an error in beamextscheme.f
+               - updated the sensitivity calculations for displacements
+
+ 2 Dec 2018    - defined convective face velocity for outlet faces too
+
+ 7 Dec 2018    - improved the projection of the middle nodes of the
+                 refined mesh onto the unrefined surface in projectnodes.f
+               - included a refinement example in the documentation
+               - included programming rules in the documentation
+
+ 9 Dec 2018    - ran valgrind on all test examples; worked on memory
+                 errors reported by valgrind
+
+ 10 Dec 2018   - accelerated steady state compressible flow by
+                 adaptive time increments
+
+ 14 Dec 2018   - complemented the documentation for mesh refinement with the
+                 modified projection procedure in projectnodes.f
+               - improved the documentation of node-to-face contact
+               - corrected an error in springdamp_n2f.f
+               - inserted a note on the use of elastic potentials for
+                 the elastic material behavior in the User's manual.
+               - corrected frd-output for more than 99 internal variables (SDV)

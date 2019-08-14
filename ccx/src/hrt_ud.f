@@ -16,42 +16,48 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine hrt_ud(nface,ielfa,vel,gradtel,gamma,xlet,
-     &  xxn,xxj,ipnei,betam,nef,flux,vfa)
+      subroutine hrt_ud(ielfa,vel,ipnei,nef,flux,vfa,nfacea,nfaceb,
+     &           xxi,xle,gradtel,neij)
 !
-!     determine gamma for the temperature:
-!        upwind difference: gamma=0
-!        central difference: gamma=1
+!     determine the facial temperature using upwind difference
 !
       implicit none
 !
-      integer nface,ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef
+      integer ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef,nfacea,
+     &  nfaceb,neij(*)
 !
-      real*8 vel(nef,0:7),gradtel(3,*),xxn(3,*),xxj(3,*),vud,vcd,
-     &  gamma(*),phic,xlet(*),betam,flux(*),vfa(0:7,*)
+      real*8 vel(nef,0:7),flux(*),vfa(0:7,*),dd,xxv(3),xxi(3,*),
+     &  qp(3),xle(*),gradtel(3,*)
 !
-c$omp parallel default(none)
-c$omp& shared(nface,ielfa,ipnei,vel,vfa,flux)
-c$omp& private(i,iel2,iel1,j,indexf)
-c$omp do
-      do i=1,nface
+      intent(in) ielfa,vel,ipnei,nef,flux,nfacea,nfaceb,xxi,xle,
+     &           gradtel,neij
+!
+      intent(inout) vfa
+!
+      do i=nfacea,nfaceb
          iel2=ielfa(2,i)
 !
 !        faces with only one neighbor need not be treated
+!        unless outlet
 !
+c         if((iel2.le.0).and.(ielfa(3,i).ge.0)) cycle
          if(iel2.le.0) cycle
          iel1=ielfa(1,i)
          j=ielfa(4,i)
          indexf=ipnei(iel1)+j
 !
          if(flux(indexf).ge.0.d0) then
+!
+!           outflow && (neighbor || outlet)
+!
             vfa(0,i)=vel(iel1,0)
-         else
+         elseif(iel2.gt.0) then
+!
+!           inflow && neighbor
+!
             vfa(0,i)=vel(iel2,0)
          endif
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

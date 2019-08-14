@@ -21,7 +21,7 @@
      &  isolidsurf,nsolidsurf,set,nset,istartset,iendset,ialset,
      &  vel,vold,mi,neij,nef,nactdoh,ipkonf,lakonf,ielmatf,ielmat,
      &  ielorienf,ielorien,norien,cs,mcs,tieset,x,y,z,xo,yo,zo,nx,
-     &  ny,nz,co,ifatie)
+     &  ny,nz,co,ifatie,velo,veloo,initial)
 !
 !     gathering topological information for computational fluid 
 !     dynamics calculations
@@ -41,11 +41,11 @@
      &  nope,ielorien(mi(3),*),ielorienf(mi(3),*),norien,jopposite8(6),
      &  jopposite6(5),itie,nx(*),ny(*),nz(*),noden(1),nelemm,nelems,
      &  n,mcs,l,jfacem,jfaces,islav,imast,ifaces,ifacem,ifatie(*),
-     &  nodeinface,nodeoutface,nopes,jop
+     &  nodeinface,nodeoutface,nopes,jop,initial
 !
       real*8 vel(nef,0:7),vold(0:mi(2),*),coords(3),cs(17,*),x(*),
      &  y(*),z(*),xo(*),yo(*),zo(*),co(3,*),a(3),b(3),xn(3),p(3),
-     &  q(3),c(3,3),dot,dc,ds,dd,theta,pi
+     &  q(3),c(3,3),dot,dc,ds,dd,theta,pi,velo(nef,0:7),veloo(nef,0:7)
 !
 !     nodes belonging to the element faces
 !
@@ -121,6 +121,7 @@ c         write(*,*) 'precfd ',i,nactdoh(i)
                   nodes(k)=kon(indexe+ifaceq(k,j))
                enddo
                call isortii(nodes,iaux,ifour,kflag)
+c               write(*,*) 'precfd ',i,(nodes(k),k=1,4)
                indexold=0
                index=ipoface(nodes(1))
                do
@@ -714,24 +715,36 @@ c         write(*,*) 'precfd solidsurf ',i,isolidsurf(i)
 c      enddo
 !
 !     initial conditions: element values
-!     vel was initialized at allocation
+!     (unless some value is nonzero which points to a restart
+!      or an ongoing calculation)
 !
-      do i=1,nef
-         indexe=ipkonf(i)
-         if(lakonf(i)(4:4).eq.'8') then
-            nope=8
-         elseif(lakonf(i)(4:4).eq.'6') then
-            nope=6
-         else
-            nope=4
-         endif
+      initial=1
+      loop1: do i=1,nef
          do j=0,4
-            do k=1,nope
-               vel(i,j)=vel(i,j)+vold(j,kon(indexe+k))
-            enddo
-            vel(i,j)=vel(i,j)/nope
+            if(vel(i,j).ne.0.d0) then
+               initial=0
+               exit loop1
+            endif
          enddo
-      enddo
+      enddo loop1
+      if(initial.eq.1) then
+         do i=1,nef
+            indexe=ipkonf(i)
+            if(lakonf(i)(4:4).eq.'8') then
+               nope=8
+            elseif(lakonf(i)(4:4).eq.'6') then
+               nope=6
+            else
+               nope=4
+            endif
+            do j=0,4
+               do k=1,nope
+                  vel(i,j)=vel(i,j)+vold(j,kon(indexe+k))
+               enddo
+               vel(i,j)=vel(i,j)/nope
+            enddo
+         enddo
+      endif
 c      do i=1,nef
 c         write(*,*) 'precfd vel ',i,(vel(j,i),j=1,3)
 c      enddo

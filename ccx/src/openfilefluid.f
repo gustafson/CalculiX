@@ -20,7 +20,7 @@
 !
       implicit none
 !
-      character*132 jobname,fnfrd,fncvg
+      character*132 jobname,fnfrd
       integer i
 !
 !     opening frd file
@@ -37,7 +37,7 @@
          call exit(201)
       endif
 !
-      fnfrd=jobname(1:i)//'f.frd'
+      fnfrd=jobname(1:i)//'.frd'
       open(13,file=fnfrd(1:i+5),status='unknown',position='append')
 !
       return

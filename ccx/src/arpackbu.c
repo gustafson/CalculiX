@@ -64,7 +64,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
              ITG *inotr, ITG *ntrans, double *ttime,double *fmpc,
 	     char *cbody, ITG *ibody,double *xbody, ITG *nbody, 
 	     double *thicke,char *jobnamec,ITG *nmat,ITG *ielprop,
-	     double *prop,char *orname){
+	     double *prop,char *orname,char *typeboun){
   
   char bmat[2]="G", which[3]="LM", howmny[2]="A",
       description[13]="            ",*tieset=NULL;
@@ -162,7 +162,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	     islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-             inoel,nener,orname,&network,ipobody,xbody,ibody);
+             inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);
   }else{
      results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	     elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -181,7 +181,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	     sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	     &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	     islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-             inoel,nener,orname,&network,ipobody,xbody,ibody);
+             inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);
   }
 
   SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
@@ -343,7 +343,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-            inoel,nener,orname,&network,ipobody,xbody,ibody);}
+            inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);}
   else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	    stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -362,7 +362,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	    &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-            inoel,nener,orname,&network,ipobody,xbody,ibody);
+            inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);
   }
 
   for(k=0;k<mt**nk;++k){
@@ -683,7 +683,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-              inoel,nener,orname,&network,ipobody,xbody,ibody);}
+              inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);}
     else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	      stx,elcon,
@@ -703,7 +703,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 	      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-              inoel,nener,orname,&network,ipobody,xbody,ibody);
+              inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun);
     }
 
     ++*kode;

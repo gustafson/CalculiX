@@ -23,10 +23,13 @@
 !     reading the input deck: *OBJECTIVE
 !
 !     criteria: DISPLACEMENT
+!               X-DISP
+!               Y-DISP
+!               Z-DISP
 !               EIGENFREQUENCY
 !               GREEN
 !               MASS
-!               SHAPE ENERGY
+!               STRAIN ENERGY
 !               STRESS
 !            
       implicit none
@@ -121,6 +124,96 @@
                   endif
                endif
             endif
+         elseif(textpart(1)(1:6).eq.'X-DISP') then
+            nobject=nobject+1
+            objectset(1,nobject)(1:6)='X-DISP'
+            do k=7,20
+               objectset(1,nobject)(k:k)=' '
+            enddo
+            if(n.ge.2) then
+               read(textpart(2)(1:80),'(a80)',iostat=istat) 
+     &              objectset(3,nobject)(1:80) 
+               objectset(3,nobject)(81:81)=' '
+               ipos=index(objectset(3,nobject),' ')
+               if(ipos.ne.1) then
+                  objectset(3,nobject)(ipos:ipos)='N'
+!
+!              check the existence of the set
+!
+                  do i=1,nset
+                     if(set(i).eq.objectset(3,nobject)) exit
+                  enddo
+                  if(i.gt.nset) then
+                     objectset(3,nobject)(ipos:ipos)=' '
+                     write(*,*) '*ERROR reading *OBJECTIVE: node set ',
+     &                    objectset(3,nobject)
+                     write(*,*) '       has not yet been defined. '
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*OBJECTIVE%",ier)
+                     return
+                  endif
+               endif
+            endif
+         elseif(textpart(1)(1:6).eq.'Y-DISP') then
+            nobject=nobject+1
+            objectset(1,nobject)(1:6)='Y-DISP'
+            do k=7,20
+               objectset(1,nobject)(k:k)=' '
+            enddo
+            if(n.ge.2) then
+               read(textpart(2)(1:80),'(a80)',iostat=istat) 
+     &              objectset(3,nobject)(1:80) 
+               objectset(3,nobject)(81:81)=' '
+               ipos=index(objectset(3,nobject),' ')
+               if(ipos.ne.1) then
+                  objectset(3,nobject)(ipos:ipos)='N'
+!
+!              check the existence of the set
+!
+                  do i=1,nset
+                     if(set(i).eq.objectset(3,nobject)) exit
+                  enddo
+                  if(i.gt.nset) then
+                     objectset(3,nobject)(ipos:ipos)=' '
+                     write(*,*) '*ERROR reading *OBJECTIVE: node set ',
+     &                    objectset(3,nobject)
+                     write(*,*) '       has not yet been defined. '
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*OBJECTIVE%",ier)
+                     return
+                  endif
+               endif
+            endif
+         elseif(textpart(1)(1:6).eq.'Z-DISP') then
+            nobject=nobject+1
+            objectset(1,nobject)(1:6)='Z-DISP'
+            do k=7,20
+               objectset(1,nobject)(k:k)=' '
+            enddo
+            if(n.ge.2) then
+               read(textpart(2)(1:80),'(a80)',iostat=istat) 
+     &              objectset(3,nobject)(1:80) 
+               objectset(3,nobject)(81:81)=' '
+               ipos=index(objectset(3,nobject),' ')
+               if(ipos.ne.1) then
+                  objectset(3,nobject)(ipos:ipos)='N'
+!
+!              check the existence of the set
+!
+                  do i=1,nset
+                     if(set(i).eq.objectset(3,nobject)) exit
+                  enddo
+                  if(i.gt.nset) then
+                     objectset(3,nobject)(ipos:ipos)=' '
+                     write(*,*) '*ERROR reading *OBJECTIVE: node set ',
+     &                    objectset(3,nobject)
+                     write(*,*) '       has not yet been defined. '
+                     call inputerror(inpc,ipoinpc,iline,
+     &                    "*OBJECTIVE%",ier)
+                     return
+                  endif
+               endif
+            endif
          elseif(textpart(1)(1:14).eq.'EIGENFREQUENCY') then
             nobject=nobject+1
             objectset(1,nobject)(1:14)='EIGENFREQUENCY'
@@ -164,10 +257,10 @@
                   endif
                endif
             endif
-         elseif(textpart(1)(1:11).eq.'SHAPEENERGY') then
+         elseif(textpart(1)(1:12).eq.'STRAINENERGY') then
             nobject=nobject+1
-            objectset(1,nobject)(1:11)='SHAPEENERGY'
-            do k=12,20
+            objectset(1,nobject)(1:12)='STRAINENERGY'
+            do k=13,20
                objectset(1,nobject)(k:k)=' '
             enddo
             if(n.ge.2) then

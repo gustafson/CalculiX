@@ -35,7 +35,7 @@
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt(*),nset,nmat,
-     &  norien,nlayer,iset,icomposite,nelcon(2,*),ier,
+     &  norien,nlayer,iset,icomposite,nelcon(2,*),ier,numnod,
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),iaxial,ipoinpc(0:*)
 !
@@ -161,7 +161,21 @@
      &              "*SHELL SECTION%",ier)
                return
             endif
+            if(thickness.le.0.d0) then
+               write(*,*) 
+     &    '*ERROR reading *SHELL SECTION: shell thickness is zero'
+               write(*,*) '       or negative'
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*SHELL SECTION%",ier)
+            endif
             if(iaxial.eq.180) thickness=thickness/iaxial
+         else
+!
+!           for those elements for which nodal thickness is activated
+!           the thickness is set to -1.d0
+!
+            thickness=-1.d0
+         endif
             do j=istartset(iset),iendset(iset)
                if(ialset(j).gt.0) then
                   if(lakon(ialset(j))(1:1).ne.'S') then
@@ -175,7 +189,8 @@
                      return
                   endif
                   indexe=ipkon(ialset(j))
-                  do l=1,8
+                  read(lakon(ialset(j))(2:2),'(i1)') numnod
+                  do l=1,numnod
                      thicke(1,indexe+l)=thickness
                   enddo
                   ielmat(1,ialset(j))=imaterial
@@ -197,7 +212,8 @@
                         return
                      endif
                      indexe=ipkon(k)
-                     do l=1,8
+                     read(lakon(k)(2:2),'(i1)') numnod
+                     do l=1,numnod
                         thicke(1,indexe+l)=thickness
                      enddo
                      ielmat(1,k)=imaterial
@@ -208,7 +224,7 @@
             enddo
             call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &           ipoinp,inp,ipoinpc)
-         endif
+c         endif
 !     
       else
          if(nodalthickness) then
@@ -299,7 +315,8 @@ c            else
                      return
                   endif
                   indexe=ipkon(ialset(j))
-                  do l=1,8
+                  read(lakon(ialset(j))(2:2),'(i1)') numnod
+                  do l=1,numnod
                      thicke(nlayer,indexe+l)=thickness
                   enddo
                   ielmat(nlayer,ialset(j))=imaterial
@@ -325,7 +342,8 @@ c            else
                         return
                      endif
                      indexe=ipkon(k)
-                     do l=1,8
+                     read(lakon(k)(2:2),'(i1)') numnod
+                     do l=1,numnod
                         thicke(nlayer,indexe+l)=thickness
                      enddo
                      ielmat(nlayer,k)=imaterial

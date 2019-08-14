@@ -18,7 +18,7 @@
 !
       subroutine dynamics(inpc,textpart,nmethod,iperturb,tinc,tper,
      &  tmin,tmax,idrct,alpha,iexpl,isolver,istep,istat,n,iline,
-     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc,cfd,ctrl,tincf,nener,
+     &  ipol,inl,ipoinp,inp,ithermal,ipoinpc,nef,ctrl,tincf,nener,
      &  ier)
 !
 !     reading the input deck: *DYNAMIC
@@ -41,7 +41,7 @@
 !
       integer nmethod,istep,istat,n,key,i,iperturb,idrct,iexpl,
      &  isolver,iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,
-     &  ipoinpc(0:*),cfd,nener,ier
+     &  ipoinpc(0:*),nef,nener,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha,ctrl(*),tincf
 !
@@ -145,7 +145,7 @@
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         if((iperturb.ge.2).or.(cfd.eq.1)) then
+         if((iperturb.ge.2).or.(nef.gt.0)) then
             write(*,*)'*WARNING reading *DYNAMIC: a nonlinear analysis i
      &s requested'
             write(*,*) '         but no time increment nor step is speci
@@ -203,7 +203,7 @@
          write(*,*)'*ERROR reading *DYNAMIC: initial increment size exce
      &eds step size'
       endif
-      if((cfd.eq.1).and.(tincf.le.0.d0)) then
+      if((nef.gt.0).and.(tincf.le.0.d0)) then
          write(*,*) '*WARNING reading *DYNAMIC: initial CFD increment si
      &ze is zero or negative; the default of 0.01 is taken'
          tincf=1.d-2

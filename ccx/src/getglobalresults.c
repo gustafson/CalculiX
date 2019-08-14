@@ -30,7 +30,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
                        ITG *nboun,ITG *iamboun,double *xboun, ITG *nload,
                        char *sideload,ITG *iamload, ITG *iglob,ITG *nforc,
                        ITG *iamforc,double *xforc,ITG *ithermal,ITG *nk,
-                       double *t1,ITG *iamt1)
+                       double *t1,ITG *iamt1,double *sigma)
 {
  
     char  datin[MAX_LINE_LENGTH],text[13]="            ";
@@ -124,7 +124,19 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     if(istep==0){
 	return;
     }else{
-	*iglob=1;
+
+        /* iglob=-1 if global results are from a frequency analysis
+           iglob=1  if global results are from a static analysis */
+
+	if(istep<0){
+	    *iglob=-1;
+
+            /* mode number is reverted into a positive number */
+
+	    istep=-istep;
+	}else{
+	    *iglob=1;
+	}
     }
     
     /* initialization of the size of fields used in readfrd.c */
@@ -245,8 +257,9 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 		nodes[3]=kon[indexe+i1[4*j+3]];
 		iparent[netet]=i+1;
 		netet++;
-		FORTRAN(generatetet,(kontet,ifatet,&netet,inodfa,
-				     &ifreefa,planfa,ipofa,nodes,cotet));
+		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
+				     &ifreefa,planfa,ipofa,nodes,cotet,
+				     &iparent[netet]));
 	    }
 	}
 	else if(type==2){
@@ -260,8 +273,9 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 		nodes[3]=kon[indexe+i2[4*j+3]];
 		iparent[netet]=i+1;
 		netet++;
-		FORTRAN(generatetet,(kontet,ifatet,&netet,inodfa,
-				     &ifreefa,planfa,ipofa,nodes,cotet));
+		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
+				     &ifreefa,planfa,ipofa,nodes,cotet,
+				     &iparent[netet]));
 	    }
 	}
 	else if(type==3){
@@ -274,8 +288,9 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 	    nodes[3]=kon[indexe+4];
 	    iparent[netet]=i+1;
 	    netet++;
-	    FORTRAN(generatetet,(kontet,ifatet,&netet,inodfa,
-				 &ifreefa,planfa,ipofa,nodes,cotet));
+	    FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
+				 &ifreefa,planfa,ipofa,nodes,cotet,
+				 &iparent[netet]));
 	}
 	else if(type==4){
 	    
@@ -288,8 +303,9 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 		nodes[3]=kon[indexe+i4[4*j+3]];
 		iparent[netet]=i+1;
 		netet++;
-		FORTRAN(generatetet,(kontet,ifatet,&netet,inodfa,
-				     &ifreefa,planfa,ipofa,nodes,cotet));
+		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
+				     &ifreefa,planfa,ipofa,nodes,cotet,
+				     &iparent[netet]));
 	    }
 	}
 	else if(type==5){
@@ -303,8 +319,9 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 		nodes[3]=kon[indexe+i5[4*j+3]];
 		iparent[netet]=i+1;
 		netet++;
-		FORTRAN(generatetet,(kontet,ifatet,&netet,inodfa,
-				     &ifreefa,planfa,ipofa,nodes,cotet));
+		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
+				     &ifreefa,planfa,ipofa,nodes,cotet,
+				     &iparent[netet]));
 	    }
 	}
 	else if(type==6){
@@ -318,8 +335,9 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
 		nodes[3]=kon[indexe+i6[4*j+3]];
 		iparent[netet]=i+1;
 		netet++;
-		FORTRAN(generatetet,(kontet,ifatet,&netet,inodfa,
-				     &ifreefa,planfa,ipofa,nodes,cotet));
+		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
+				     &ifreefa,planfa,ipofa,nodes,cotet,
+				     &iparent[netet]));
 	    }
 	}
     }
@@ -385,16 +403,21 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
     loadcase=-1;
     for(i=0;i<anz[0].l;i++){
-	for(j=0;j<lcase[i].npheader;j++){
-	    if(strcmp1(&lcase[i].pheader[j][5],"PSTEP")==0){
-		strcpy1(text,&lcase[i].pheader[j][48],12);
-		istep_global=atoi(text);
-		break;
+	if(*iglob>0){
+	    for(j=0;j<lcase[i].npheader;j++){
+		if(strcmp1(&lcase[i].pheader[j][5],"PSTEP")==0){
+		    strcpy1(text,&lcase[i].pheader[j][48],12);
+		    istep_global=atoi(text);
+		    break;
+		}
 	    }
+	}else if(*iglob<0){
+	    istep_global=lcase[i].step_number;
 	}
 	if((istep_global==istep)&&
 	   (strcmp1(lcase[i].name,"NDTEMP")==0)){
 	    loadcase=i;
+	    if(*iglob<0) *sigma=(6.283185307*(double)lcase[i].value)*(6.283185307*(double)lcase[i].value);
 	}else if(istep_global>istep){
 	    break;
 	}
@@ -425,17 +448,22 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
     loadcase=-1;
     for(i=0;i<anz[0].l;i++){
-	for(j=0;j<lcase[i].npheader;j++){
-	    if(strcmp1(&lcase[i].pheader[j][5],"PSTEP")==0){
-		strcpy1(text,&lcase[i].pheader[j][48],12);
-		istep_global=atoi(text);
-		break;
+	if(*iglob>0){
+	    for(j=0;j<lcase[i].npheader;j++){
+		if(strcmp1(&lcase[i].pheader[j][5],"PSTEP")==0){
+		    strcpy1(text,&lcase[i].pheader[j][48],12);
+		    istep_global=atoi(text);
+		    break;
+		}
 	    }
+	}else if(*iglob<0){
+	    istep_global=(ITG)lcase[i].step_number;
 	}
 	if((istep_global==istep)&&
 	   (strcmp1(lcase[i].name,"DISPR")!=0)&&
 	   (strcmp1(lcase[i].name,"DISP")==0)){
 	    loadcase=i;
+	    if(*iglob<0) *sigma=(6.283185307*(double)lcase[i].value)*(6.283185307*(double)lcase[i].value);
 	}else if(istep_global>istep){
 	    break;
 	}
@@ -468,16 +496,21 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
     loadcase=-1;
     for(i=0;i<anz[0].l;i++){
-	for(j=0;j<lcase[i].npheader;j++){
-	    if(strcmp1(&lcase[i].pheader[j][5],"PSTEP")==0){
-		strcpy1(text,&lcase[i].pheader[j][48],12);
-		istep_global=atoi(text);
-		break;
+	if(*iglob>0){
+	    for(j=0;j<lcase[i].npheader;j++){
+		if(strcmp1(&lcase[i].pheader[j][5],"PSTEP")==0){
+		    strcpy1(text,&lcase[i].pheader[j][48],12);
+		    istep_global=atoi(text);
+		    break;
+		}
 	    }
+	}else if(*iglob<0){
+	    istep_global=(ITG)lcase[i].step_number;
 	}
 	if((istep_global==istep)&&
 	   (strcmp1(lcase[i].name,"STRESS")==0)){
 	    loadcase=i;
+	    if(*iglob<0) *sigma=(6.283185307*(double)lcase[i].value)*(6.283185307*(double)lcase[i].value);
 	}else if(istep_global>istep){
 	    break;
 	}
@@ -513,16 +546,21 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
     loadcase=-1;
     for(i=0;i<anz[0].l;i++){
-	for(j=0;j<lcase[i].npheader;j++){
-	    if(strcmp1(&lcase[i].pheader[j][5],"PSTEP")==0){
-		strcpy1(text,&lcase[i].pheader[j][48],12);
-		istep_global=atoi(text);
-		break;
+	if(*iglob>0){
+	    for(j=0;j<lcase[i].npheader;j++){
+		if(strcmp1(&lcase[i].pheader[j][5],"PSTEP")==0){
+		    strcpy1(text,&lcase[i].pheader[j][48],12);
+		    istep_global=atoi(text);
+		    break;
+		}
 	    }
+	}else if(*iglob<0){
+	    istep_global=(ITG)lcase[i].step_number;
 	}
 	if((istep_global==istep)&&
 	   (strcmp1(lcase[i].name,"FORC")==0)){
 	    loadcase=i;
+	    if(*iglob<0) *sigma=(6.283185307*(double)lcase[i].value)*(6.283185307*(double)lcase[i].value);
 	}else if(istep_global>istep){
 	    break;
 	}

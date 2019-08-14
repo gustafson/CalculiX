@@ -118,7 +118,7 @@
          pnode(3)=0.d0
       endif
 !
-      call attach(pneigh,pnode,nterms,ratio,dist,xi,et)
+      call attach_2d(pneigh,pnode,nterms,ratio,dist,xi,et)
 !
       if(multistage) then
 !

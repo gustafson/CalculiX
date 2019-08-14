@@ -17,25 +17,29 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine calcflux(area,vfa,xxn,ipnei,nef,neifa,flux,xxj,
-     &  gradpfa,xlet,xle,vel,advfa,ielfa,neiel,ifabou,hfa)
+     &  gradpfa,xlet,xle,vel,advfa,ielfa,neiel,ifabou,hfa,nefa,
+     &  nefb)
 !
 !     calculate the mass flow using the newly calculated velocity
 !     and based on the Rhie-Chow interpolation
 !
+!     vfa(1..3,*) is only used for external faces
+!
       implicit none
 !
       integer i,indexf,ipnei(*),ifa,nef,neifa(*),ielfa(4,*),
-     &  neiel(*),iwall,iel,ipointer,ifabou(*)
+     &  neiel(*),iwall,iel,ipointer,ifabou(*),nefa,nefb
 !
       real*8 area(*),vfa(0:7,*),xxn(3,*),flux(*),xxj(3,*),gradpfa(3,*),
      &  xlet(*),xle(*),vel(nef,0:7),advfa(*),coef,hfa(3,*)
 !
-c$omp parallel default(none)
-c$omp& shared(nef,ipnei,neifa,flux,area,vfa,xxn,xxj,gradpfa,xlet,xle,
-c$omp&        vel,advfa,ielfa,neiel,ifabou,hfa)
-c$omp& private(i,indexf,ifa,iwall,iel,ipointer,coef)
-c$omp do
-      do i=1,nef
+      intent(in) area,vfa,xxn,ipnei,nef,neifa,xxj,
+     &  gradpfa,xlet,xle,vel,advfa,ielfa,neiel,ifabou,hfa,nefa,
+     &  nefb
+!
+      intent(inout) flux
+!
+      do i=nefa,nefb
          do indexf=ipnei(i)+1,ipnei(i+1)
             ifa=neifa(indexf)
             iel=neiel(indexf)
@@ -101,8 +105,6 @@ c$omp do
              endif
          enddo
       enddo
-c$omp end do
-c$omp end parallel
 !  
       return
       end

@@ -19,7 +19,7 @@
       subroutine noelfiles(inpc,textpart,jout,filab,nmethod,
      &  nodefile_flag,elfile_flag,ifile_output,nener,ithermal,
      &  istep,istat,n,iline,ipol,inl,ipoinp,inp,out3d,nlabel,
-     &  amname,nam,itpamp,idrct,ipoinpc,cfd,contactfile_flag,
+     &  amname,nam,itpamp,idrct,ipoinpc,nef,contactfile_flag,
      &  set,nset,xmodal,ier)
 !
 !     reading the *NODE FILE, *EL FILE and *CONTACT FILE cards in the 
@@ -39,7 +39,7 @@
       integer istep,istat,n,key,ii,jout(2),joutl,nmethod,nener,
      &  ithermal,ier,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),j,nlabel,nam,itpamp,i,
-     &  idrct,ipoinpc(0:*),cfd,ifile_output,ipos,nset
+     &  idrct,ipoinpc(0:*),nef,ifile_output,ipos,nset
 !
       real*8 xmodal(*)
 !
@@ -503,7 +503,7 @@
                   filab(20)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'V   ') then
-                if((nmethod.eq.4).or.(cfd.ne.0)) then
+                if((nmethod.eq.4).or.(nef.gt.0)) then
                    filab(21)(1:4)='V   '
                    filab(21)(6:6)=nodesys
                    filab(21)(7:87)=noset
@@ -518,7 +518,7 @@
                filab(22)(6:6)=nodesys
                filab(22)(7:87)=noset
             elseif(textpart(ii)(1:4).eq.'MACH') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: MACH only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -528,7 +528,7 @@
                   filab(23)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'CP  ') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: CP only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -538,7 +538,7 @@
                   filab(24)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'TURB') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: TURB only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -600,7 +600,7 @@
                filab(33)(6:6)=elemsys
                filab(33)(7:87)=noset
             elseif(textpart(ii)(1:4).eq.'VF  ') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: VF only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -610,7 +610,7 @@
                   filab(34)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'PSF ') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: PSF only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -620,7 +620,7 @@
                   filab(35)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'TSF ') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: TSF only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -630,7 +630,7 @@
                   filab(36)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'PTF ') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: PTF only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -640,7 +640,7 @@
                   filab(37)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'TTF ') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: TTF only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -650,7 +650,7 @@
                   filab(38)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'SF  ') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: SF only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -660,7 +660,7 @@
                   filab(39)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'HFLF') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: HFLF only makes'
                   write(*,*) '         sense for 3D fluid calculations'
@@ -670,7 +670,7 @@
                   filab(40)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'SVF ') then
-               if(cfd.eq.0) then
+               if(nef.eq.0) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: SVF only makes'
                   write(*,*) '         sense for 3D fluid calculations'

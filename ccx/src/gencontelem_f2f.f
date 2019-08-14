@@ -21,7 +21,7 @@
      &  ielmat,elcon,istep,iinc,iit,ncmat_,ntmat_,mi,imastop,islavsurf,
      &  itiefac,springarea,tietol,reltime,filab,nasym,pslavsurf,
      &  pmastsurf,clearini,theta,xstateini,xstate,nstate_,ne0,icutb,
-     &  ialeatoric,nmethod,jobnamef)
+     &  ialeatoric,nmethod,jobnamef,alea)
 !
 !     generate contact elements for the slave contact nodes
 !
@@ -47,7 +47,7 @@
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),clearini(3,9,*),
-     &  elcon(0:ncmat_,ntmat_,*),weight,theta,harvest,
+     &  elcon(0:ncmat_,ntmat_,*),weight,theta,harvest,alea,
      &  springarea(2,*),xl2(3,9),area,xi,et,shp2(7,9),
      &  xs2(3,2),xsj2(3),tietol(3,*),reltime,xstate(nstate_,mi(1),*),
      &  clear,ratio(9),pl(3,9),xstateini(nstate_,mi(1),*),
@@ -303,7 +303,8 @@ c$omp&        imastop,springarea,koncont,ipkon,lakon,kon,ifacet,
 c$omp&        ifacew1,ifacew2,ifaceq,co,vold,nmethod,elcon,
 c$omp&        imat,istep,theta,reltime,iloop,iinc,ncmat_,xstateini,
 c$omp&        ne0,iprev,ialeatoric,icutb,iact,ne,ifree,nasym,indexel,
-c$omp&        xstate,nstate_,ielmat,nodefs,jj,filab,lenset,setname)
+c$omp&        xstate,nstate_,ielmat,nodefs,jj,filab,lenset,setname,
+c$omp&        alea)
 c$omp& private(igauss,xi,et,weight,m,xsj2,xs2,shp2,area,k,p,j,isol,
 c$omp&         neigh,itriold,itri,ntriangle,ntriangle_,l,ll,dist,
 c$omp&         itrinew,itriangle,id,ifacem,nelemm,jfacem,indexe,
@@ -517,7 +518,7 @@ c     write(*,*) '**regular solution'
                         do nn=1,3
                            pproj(nn)=p(nn)
                         enddo
-                        call attach(pl,pproj,nopem,ratio,dist,xi,et)
+                        call attach_2d(pl,pproj,nopem,ratio,dist,xi,et)
                         pmastsurf(1,indexf+m)=xi
                         pmastsurf(2,indexf+m)=et
                      else
@@ -621,7 +622,8 @@ c$omp atomic
 !     
                               if(ialeatoric.eq.1) then
                                  call random_number(harvest)
-                                 if(harvest.gt.0.9d0) isol=0
+c                                 if(harvest.gt.0.9d0) isol=0
+                                 if(harvest.gt.(1.d0-alea)) isol=0
                               endif
 ! 
                               if(isol.ne.0) then

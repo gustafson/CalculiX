@@ -20,7 +20,7 @@
      &  ielfa,area,ipnei,neiel,xxn,xxi,xle,xlen,xlet,xrlfa,cosa,
      &  volume,neifa,xxj,cosb,dmin,ifatie,cs,tieset,icyclic,c,neij,
      &  physcon,isolidsurf,nsolidsurf,dy,xxni,xxnj,xxicn,nflnei,
-     &  iturbulent,rf)
+     &  iturbulent,rf,yy,vel,velo,veloo)
 !
 !     calculating geometric variables of the cells and their faces
 !
@@ -30,19 +30,23 @@
       character*81 tieset(3,*)
 !
       integer nef,ipkonf(*),konf(*),nface,ielfa(4,*),ipnei(*),neiel(*),
-     &  ifaceq(8,6),i,j,k,indexe,kflag,index1,index2,j1,j2,nope,
+     &  ifaceq(8,6),i,j,k,indexe,kflag,index1,index2,j1,nope,
      &  nodes(4),iel1,iel2,iel3,iface,indexf,neifa(*),nf(5),ifacet(7,4),
-     &  ifacew(8,5),numfaces,ied4(2,6),ied6(2,9),ied8(2,12),ifatie(*),
+     &  ifacew(8,5),ied4(2,6),ied6(2,9),ied8(2,12),ifatie(*),
      &  ics,itie,neighface,ifirst_occurrence,icyclic,neij(*),jface,
      &  isolidsurf(*),nsolidsurf,iopp8(4,6),iopp6(3,5),iopp4(1,4),
-     &  node,nelem,nflnei,iturbulent
+     &  node,nelem,nflnei,iturbulent,nx(nsolidsurf),ny(nsolidsurf),
+     &  nz(nsolidsurf),kneigh,neigh(1),nfa(nsolidsurf)
 !
       real*8 co(3,*),coel(3,*),cofa(3,*),area(*),xxn(3,*),xxi(3,*),
      &  xle(*),xlen(*),xlet(*),xrlfa(3,*),cosa(*),xsj2(3),xi,et,
      &  shp2(7,4),xs2(3,7),xl2(3,8),xl13,volume(*),dxsj2,xl(3,8),
      &  xxj(3,*),cosb(*),dmin,cs(17,*),xn(3),theta,pi,dc,ds,dd,
      &  c(3,3),diff(3),p(3),q(3),a(3),physcon(*),dy(*),xs(3,3),
-     &  aa,bb,cc,dist,xxni(3,*),xxnj(3,*),xxicn(3,*),rf(3,*),x13(3)
+     &  aa,bb,cc,dist,xxni(3,*),xxnj(3,*),xxicn(3,*),rf(3,*),x13(3),
+     &  yy(*),x(nsolidsurf),y(nsolidsurf),z(nsolidsurf),xo(nsolidsurf),
+     &  yo(nsolidsurf),zo(nsolidsurf),xp,yp,zp,vel(nef,0:7),
+     &  velo(nef,0:7),veloo(nef,0:7)
 !
 !     nodes belonging to the cell faces
 !
@@ -612,6 +616,10 @@ c      endif
                enddo
             endif
 !
+!           determine the face number in field ielfa
+!
+            nfa(i)=neifa(ipnei(nelem)+jface)
+!
 !           determine the plane through the face (exact for
 !           3-node face, approximate for a 4-node face)
 !
@@ -685,7 +693,7 @@ c      endif
                   enddo
                endif
             else
-               node=konf(indexe+iopp8(1,jface))
+               node=konf(indexe+iopp4(1,jface))
                dist=min(dist,-(aa*co(1,node)+bb*co(2,node)
      &                        +cc*co(3,node)+dd))
             endif
@@ -696,6 +704,44 @@ c      endif
          enddo
       endif
 !
+!     calculate for each element center the shortest distance to a solid
+!     surface (only for the BSL and SST turbulence model)
+!
+      if(iturbulent.gt.2) then
+!
+         do i=1,nsolidsurf
+            iface=nfa(i)
+            x(i)=cofa(1,iface)
+            y(i)=cofa(2,iface)
+            z(i)=cofa(3,iface)
+            xo(i)=x(i)
+            yo(i)=y(i)
+            zo(i)=z(i)
+            nx(i)=i
+            ny(i)=i
+            nz(i)=i
+         enddo
+!
+         kflag=2
+         call dsort(x,nx,nsolidsurf,kflag)
+         call dsort(y,ny,nsolidsurf,kflag)
+         call dsort(z,nz,nsolidsurf,kflag)
+!
+         kneigh=1
+         do i=1,nef
+            xp=coel(1,i)
+            yp=coel(2,i)
+            zp=coel(3,i)
+            call near3d(xo,yo,zo,x,y,z,nx,ny,nz,xp,yp,zp,nsolidsurf,
+     &            neigh,kneigh)
+            yy(i)=dsqrt((xp-xo(neigh(1)))**2+
+     &                  (yp-yo(neigh(1)))**2+
+     &                  (zp-zo(neigh(1)))**2)
+         enddo
+      endif
+!
+!     auxiliary fields
+!
       do i=1,nflnei
          do k=1,3
             xxni(k,i)=xxn(k,i)-xxi(k,i)
@@ -705,6 +751,20 @@ c            xxicn(k,i)=xxi(k,i)-cosa(i)*xxn(k,i)
             xxicn(k,i)=xxn(k,i)-xxj(k,i)/cosb(i)
          enddo
       enddo
+c
+c     initial conditions
+c
+c         do i=1,nef
+c            vel(i,0)=1.d0+coel(2,i)*(1.d0-coel(2,i))/2.d0
+c            vel(i,1)=coel(2,i)
+c            vel(i,2)=0.d0
+c            vel(i,3)=0.d0
+c            vel(i,4)=1.d0
+cc            do j=0,4
+cc               velo(i,j)=vel(i,j)
+cc               veloo(i,j)=vel(i,j)
+cc            enddo
+c         enddo
 c      write(*,*) 'initialcfd neifa,neiel'
 c      do i=1,6*nef
 c         write(*,*) (i-1)/6+1,i-6*((i-1)/6),neifa(i),neiel(i)
@@ -728,6 +788,15 @@ c      enddo
 c      write(*,*) 'initialcfd cosa,cosb'
 c      do i=1,6*nef
 c         write(*,*) (i-1)/6+1,i-6*((i-1)/6),cosa(i),cosb(i)
+c      enddo
+c      do i=1,nef
+c         write(*,*) 'coef ',i,(coel(j,i),j=1,3)
+c      enddo
+c      do i=1,nface
+c         write(*,*) 'cofa ',i,(cofa(j,i),j=1,3)
+c      enddo
+c      do i=1,nface
+c         write(*,*) 'rf ',i,(rf(j,i),j=1,3)
 c      enddo
 !
       return

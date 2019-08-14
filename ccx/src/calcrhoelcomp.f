@@ -16,31 +16,29 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine calcrhoelcomp(nef,vel,shcon,ielmat,ntmat_,
-     &  mi)
+      subroutine calcrhoelcomp(nef,vel,shcon,ielmatf,ntmat_,
+     &  mi,nefa,nefb)
 !
 !     calculation of rho in the element centers (compressible
 !     fluids)
 !
       implicit none
 !
-      integer nef,i,imat,ntmat_,mi(*),
-     &  ielmat(mi(3),*)
+      integer nef,i,imat,ntmat_,mi(*),ielmatf(mi(3),*),nefa,nefb
 !
       real*8 t1l,vel(nef,0:7),shcon(0:3,ntmat_,*)
+!
+      intent(in) nef,shcon,ielmatf,ntmat_,mi,nefa,nefb
+!
+      intent(inout) vel
 !     
-c$omp parallel default(none)
-c$omp& shared(nef,vel,ielmat,shcon)
-c$omp& private(i,t1l,imat)
-c$omp do
-      do i=1,nef
+      do i=nefa,nefb
          t1l=vel(i,0)
-         imat=ielmat(1,i)
+         imat=ielmatf(1,i)
          vel(i,5)=vel(i,4)/(shcon(3,1,imat)*t1l)
-c         write(*,*) 'calcrhoelcomp ',i,vel(i,4),shcon(3,1,imat),t1l
+c         write(*,*) 'calcrhoelcomp ',i,t1l,vel(i,4),vel(i,5),
+c     &         shcon(3,1,imat)
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

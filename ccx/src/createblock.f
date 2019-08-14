@@ -32,7 +32,7 @@
 !     nestart(i) points to the element before the block for which
 !     cpu i is responsible
 !
-      numd=int(nef/num_cpus)
+      numd=int(nef/num_cpus)+1
       nestart(1)=0
       do i=2,num_cpus
          nestart(i)=nestart(i-1)+numd
@@ -113,14 +113,14 @@
 !     subtracting from iam the number of elements belonging
 !     to the preceding blocks
 !
-c      do k=2,num_cpus
-c         isubtract=nestart(k)
-c         do i=nestart(k)+1,nestart(k+1)
-c            do j=jam(i)+1,jam(i+1)
-c               iam(j)=iam(j)-isubtract
-c            enddo
-c         enddo
-c      enddo
+      do k=2,num_cpus
+         isubtract=nestart(k)
+         do i=nestart(k)+1,nestart(k+1)
+            do j=jam(i)+1,jam(i+1)
+               iam(j)=iam(j)-isubtract
+            enddo
+         enddo
+      enddo
 !
       return
       end

@@ -90,11 +90,11 @@
                endif
             endif
             if(prop(index+4)/prop(index+2).lt.0.d0) then
-               write(*,*) '*WARNING in checkinputvaluesnet: '
+               write(*,*) '*ERROR in checkinputvaluesnet: '
                write(*,*) 
      &          '        r/d of an orifice must not be negative'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if(prop(index+4)/prop(index+2).gt.0.82d0) then
                write(*,*)
@@ -113,11 +113,11 @@ c               call exit(201)
             endif
             if(prop(index+5).gt.90.d0) then
                write(*,*)
-     &              '*WARNING in checkinputvaluesnet: '
+     &              '*ERROR in checkinputvaluesnet: '
                write(*,*) '       the chamfer angle of an
      &                     orifice must not exceed 90°'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if(prop(index+6).lt.0.d0) then
                write(*,*) '*ERROR in checkinputvaluesnet:'
@@ -126,18 +126,18 @@ c               call exit(201)
                call exit(201)
             endif
             if(prop(index+6).gt.0.5d0) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*) '       d/D (orifice)must not exceed 0.5'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if(prop(index+3)/prop(index+2).lt.0.d0) then
                write(*,*)
-     &              '*WARNING in checkinputvaluesnet:'
+     &              '*ERROR in checkinputvaluesnet:'
                write(*,*) '        L/d of an orifice
      &                     must not be negative'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if(lakon(nelem)(4:4).eq.'P') then
                if(prop(index+3)/prop(index+2).gt.2.d0) then
@@ -146,7 +146,7 @@ c               call exit(201)
                   write(*,*) '       L/d of an orifice
      &                        with Parker must not exceed 2'
                   write(*,*) '       element number: ',nelem
-c                  call exit(201)
+!                  call exit(201)
                endif
             endif
          elseif((lakon(nelem)(2:5).eq.'ORBT'))then
@@ -158,11 +158,11 @@ c                  call exit(201)
                call exit(201)
             endif
             if(prop(index+2).gt.1.d0) then
-               write(*,*) '*WARNING in checkinputvaluesnet: '
+               write(*,*) '*ERROR in checkinputvaluesnet: '
                write(*,*) '       ps1/pt1 (bleed tapping)
      &                     must not exceed 1'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
          elseif((lakon(nelem)(2:5).eq.'ORPN'))then
             if(prop(index+2).lt.0.d0) then
@@ -173,11 +173,11 @@ c               call exit(201)
                call exit(201)
             endif
             if(prop(index+2).gt.90.d0) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*) '       theta (preswirl nozzle)
      &                     must not exceed 90°'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if(prop(index+3).lt.0.d0) then
                write(*,*) '*ERROR in checkinputvaluesnet: '
@@ -187,11 +187,11 @@ c               call exit(201)
                call exit(201)
             endif
             if(prop(index+3).gt.1.05d0) then
-               write(*,*) '*WARNING in checkinputvaluesnet: '
+               write(*,*) '*ERROR in checkinputvaluesnet: '
                write(*,*) '       k_phi (preswirlnozzle)
      &                     must not exceed 1.05'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
          elseif((lakon(nelem)(2:5).eq.'ORBG'))then
             if(prop(index+1).lt.0.d0) then
@@ -202,13 +202,13 @@ c               call exit(201)
             endif
             if(prop(index+2).lt.0.d0 .or.
      &           prop(index+2).ge.1.d0) then
-               write(*,*) '*WARNING in checkinputvaluesnet: '
+               write(*,*) '*ERROR in checkinputvaluesnet: '
                write(*,*) '       using Bragg Method'
                write(*,*) '       Cd by crtitical pressure ratio '
                write(*,*) '       *FLUID SECTIONS position 2'
                write(*,*) '       0 < Cd _crit < 1'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
 !
          elseif((lakon(nelem)(2:4).eq.'LAB').and.
@@ -217,95 +217,95 @@ c               call exit(201)
             if((prop(index+1).gt.1000.d0)
      &           .or.(prop(index+1).lt.0.d0)) then
                write(*,*)
-     &              '*WARNING in checkinputvaluesnet:
+     &              '*ERROR in checkinputvaluesnet:
      &               the selected pitch t'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=t<=1000 mm'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if((prop(index+2).gt.100d0)
      &           .or.(prop(index+2).lt.0.d0)) then
                write(*,*)
-     &              '*WARNING in checkinputvaluesnet:
+     &              '*ERROR in checkinputvaluesnet:
      &               the selected gap s'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=s<=100 mm'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if((prop(index+3).gt.5000.d0)
      &           .or.(prop(index+3).lt.0.d0)) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*) '       the selected diameter d'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=d<=5000'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if((prop(index+5).gt.9.d0)
      &           .or.(prop(index+5).lt.0.d0)) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*)'       the selected spike number n'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=n<=9'
                write(*,*) prop(index+4)
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if((prop(index+5).gt.100.d0)
      &           .or.(prop(index+5).lt.0.d0)) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*) '       the selected spike breadth'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=b<=100 mm'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if((prop(index+6).gt.9.d0)
      &           .or.(prop(index+6).lt.0.d0)) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*) '       the selected spike height'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=b<=20 mm'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if((prop(index+7).gt.4.d0)
      &           .or.(prop(index+7).lt.0.d0)) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*) '       the selected Honeycomb cell width'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=L<=4 mm'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if((prop(index+8).gt.5.d0)
      &           .or.(prop(index+8).lt.0.d0)) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*) '       the selected edge radius'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=r<=5 mm'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if((prop(index+9).gt.100.d0)
      &           .or.(prop(index+9).lt.0.d0)) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*) '       the selected position of the spike'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=X<=0.1 mm'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
             if((prop(index+10).gt.100.d0)
      &           .or.(prop(index+10).lt.0.d0)) then
-               write(*,*) '*WARNING in checkinputvaluesnet:'
+               write(*,*) '*ERROR in checkinputvaluesnet:'
                write(*,*) '       the selected height of the step'
                write(*,*) '       for the labyrinth is not correct'
                write(*,*) '       0<=Hst<=0.1 mm'
                write(*,*) '       element number: ',nelem
-c               call exit(201)
+               call exit(201)
             endif
 !
          elseif((lakon(nelem)(2:6).eq.'CARBS'))then
@@ -524,12 +524,12 @@ c               call exit(201)
                   call exit(201)
                endif
                if(prop(index+4).gt.1.d0) then
-                  write(*,*)'*ERROR in checkinputvaluesnet:'
+                  write(*,*)'*WARNING in checkinputvaluesnet:'
                   write(*,*)'       trying to define a FORCED VORTEX'
                   write(*,*)'       Core swirl ratio Kr is
      &                       greater than 1'
                   write(*,*) '       element number: ',nelem
-                  call exit(201)
+!                  call exit(201)
                endif
 !
 !         Rotation speed must be defined and positive
@@ -556,18 +556,6 @@ c               call exit(201)
                write(*,*)'       Rotation speed is strictly positive'
                write(*,*)'       element number: ',nelem
                call exit(201)
-            elseif(prop(index+2).eq.0) then
-               if(prop(index+3).eq.0) then
-                  write(*,*)'*ERROR in checkinputvaluesnet:'
-                  write(*,*)'       trying to define an element'
-                  write(*,*)'       TYPE= ABSOLUTE TO RELATIVE or'
-                  write(*,*)'       TYPE= RELATIVE TO ABSOLUTE'
-                  write(*,*)'       Tengential velocity is 0 but'
-                  write(*,*)'       no reference element has been 
-     &                       provided'
-                  write(*,*)'       element number: ',nelem
-                  call exit(201)
-               endif            
             elseif(prop(index+3).ne.0.d0) then
                if(prop(index+2).ne.0.d0) then
                   write(*,*)'*ERROR in checkinputvaluesnet:'

@@ -26,6 +26,8 @@
 !
       implicit none
 !
+      logical nodalthickness
+!
       character*1 inpc(*)
       character*4 section
       character*8 lakon(*)
@@ -34,15 +36,14 @@
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),mi(*),ielmat(mi(3),*),
-     &  ipoinpc(0:*),
+     &  ipoinpc(0:*),numnod,
      &  ielorien(mi(3),*),ipkon(*),iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),nset,nmat,norien,istep,istat,n,key,i,j,k,l,imaterial,
      &  iorientation,ipos,m,iponor(2,*),ixfree,
      &  indexx,indexe,irstrt(*),nelcon(2,*),ier
 !
       real*8 thicke(mi(3),*),thickness1,thickness2,p(3),xnor(*),
-     &  offset(2,*),
-     &  offset1,offset2,dd
+     &  offset(2,*),offset1,offset2,dd
 !
       if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) 
@@ -52,6 +53,7 @@
          return
       endif
 !
+      nodalthickness=.false.
       offset1=0.d0
       offset2=0.d0
       orientation='                    
@@ -69,6 +71,8 @@
             elset(81:81)=' '
             ipos=index(elset,' ')
             elset(ipos:ipos)='E'
+         elseif(textpart(i)(1:14).eq.'NODALTHICKNESS') then
+            nodalthickness=.true.
          elseif(textpart(i)(1:8).eq.'SECTION=') then
             if(textpart(i)(9:12).eq.'CIRC') then
                section='CIRC'
@@ -218,31 +222,43 @@
 !
 !     assigning a thickness to the elements
 !
-      read(textpart(1)(1:20),'(f20.0)',iostat=istat) thickness1
-      if(istat.gt.0) then
-         write(*,*) 
-     &   '*ERROR reading *BEAM SECTION: first beam thickness is lacking'
-         call inputerror(inpc,ipoinpc,iline,
-     &        "*BEAM SECTION%",ier)
-         return
-      endif
-      if(n.gt.1) then
-         read(textpart(2)(1:20),'(f20.0)',iostat=istat) thickness2
+      if(.not.nodalthickness) then
+         read(textpart(1)(1:20),'(f20.0)',iostat=istat) thickness1
          if(istat.gt.0) then
             write(*,*) 
-     &        '*ERROR reading *BEAM SECTION: ',
-     &        'second beam thickness is lacking'
+     &   '*ERROR reading *BEAM SECTION: first beam thickness is lacking'
             call inputerror(inpc,ipoinpc,iline,
-     &           "*BEAM SECTION%",ier)
+     &        "*BEAM SECTION%",ier)
             return
          endif
+         if(n.gt.1) then
+            read(textpart(2)(1:20),'(f20.0)',iostat=istat) thickness2
+            if(istat.gt.0) then
+               write(*,*) 
+     &              '*ERROR reading *BEAM SECTION: ',
+     &              'second beam thickness is lacking'
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*BEAM SECTION%",ier)
+               return
+            endif
+         else
+            thickness2=thickness1
+         endif
       else
+!
+!        for those elements for which nodal thickness is activated
+!        the thickness is set to -1.d0
+!     
+         thickness1=-1.d0
          thickness2=thickness1
       endif
+!
       do j=istartset(i),iendset(i)
          if(ialset(j).gt.0) then
             indexe=ipkon(ialset(j))
-            do l=1,8
+            read(lakon(ialset(j))(3:3),'(i1)') numnod
+            numnod=numnod+1
+            do l=1,numnod
                thicke(1,indexe+l)=thickness1
                thicke(2,indexe+l)=thickness2
             enddo
@@ -252,7 +268,9 @@
                k=k-ialset(j)
                if(k.ge.ialset(j-1)) exit
                indexe=ipkon(k)
-               do l=1,8
+               read(lakon(k)(3:3),'(i1)') numnod
+               numnod=numnod+1
+               do l=1,numnod
                   thicke(1,indexe+l)=thickness1
                   thicke(2,indexe+l)=thickness2
                enddo
@@ -299,7 +317,9 @@
       do j=istartset(i),iendset(i)
          if(ialset(j).gt.0) then
             indexe=ipkon(ialset(j))
-            do l=1,8
+            read(lakon(ialset(j))(3:3),'(i1)') numnod
+            numnod=numnod+1
+            do l=1,numnod
                if(indexx.eq.-1) then
                   indexx=ixfree
                   do m=1,3
@@ -315,7 +335,9 @@
                k=k-ialset(j)
                if(k.ge.ialset(j-1)) exit
                indexe=ipkon(k)
-               do l=1,8
+               read(lakon(k)(3:3),'(i1)') numnod
+               numnod=numnod+1
+               do l=1,numnod
                if(indexx.eq.-1) then
                   indexx=ixfree
                   do m=1,3

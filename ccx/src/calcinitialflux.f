@@ -30,14 +30,7 @@
 !
       real*8 area(*),vfa(0:7,*),xxn(3,*),flux(*)
 !
-c$omp parallel default(none)
-c$omp& shared(nef,ipnei,neifa,flux,area,vfa,xxn)
-c$omp& private(i,indexf,ifa)
-c$omp do
       do i=1,nef
-c         indexf=ipnei(i)
-c         do j=1,ipnei(i+1)-ipnei(i)
-c            indexf=indexf+1
          do indexf=ipnei(i)+1,ipnei(i+1)
             ifa=neifa(indexf)
             flux(indexf)=area(ifa)*vfa(5,ifa)*
@@ -45,10 +38,7 @@ c            indexf=indexf+1
      &                vfa(2,ifa)*xxn(2,indexf)+
      &                vfa(3,ifa)*xxn(3,indexf))
          enddo
-c         write(*,*) 'correctvfa mass check ',i,totflux
       enddo
-c$omp end do
-c$omp end parallel
 !  
       return
       end

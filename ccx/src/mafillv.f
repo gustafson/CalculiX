@@ -21,7 +21,7 @@
      &  body,volume,ielfa,lakonf,ifabou,nbody,
      &  dtimef,velo,veloo,sel,xrlfa,gamma,xxj,nactdohinv,a1,
      &  a2,a3,flux,nefa,nefb,icyclic,c,ifatie,iau6,xxni,xxnj,
-     &  iturbulent,gradvel)
+     &  iturbulent,gradvel,of2,yy,umel)
 !
       implicit none
 !
@@ -37,15 +37,15 @@
      &  xxi(3,*),body(0:3,*),volume(*),coef2,dtimef,velo(nef,0:7),
      &  veloo(nef,0:7),rhovel,constant,sel(3,*),xrlfa(3,*),gamma(*),
      &  xxj(3,*),a1,a2,a3,flux(*),c(3,3),xxni(3,*),xxnj(3,*),difcoef,
-     &  xl1,xl2,aa,bb,gradvel(3,3,*)
+     &  xl1,xl2,aa,bb,gradvel(3,3,*),of2(*),f2,arg2,yy(*),umel(*)
 !
       intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,
      &  jq,irow,nzs,vel,cosa,umfa,xlet,xle,gradvfa,xxi,
      &  body,volume,ielfa,lakonf,ifabou,nbody,
      &  dtimef,velo,veloo,xrlfa,gamma,xxj,nactdohinv,a1,
-     &  a2,a3,flux,gradvel
+     &  a2,a3,flux,gradvel,yy,umel,iturbulent
 !
-      intent(inout) adv,auv,bv,sel
+      intent(inout) adv,auv,bv,sel,of2
 !
       do i=nefa,nefb
          do indexf=ipnei(i)+1,ipnei(i+1)
@@ -105,12 +105,27 @@ c   retarded gamma
                endif
             endif
 !
-!              diffusion
+!              diffusion (laminar + turbulent)
 !
             if(iturbulent.eq.0) then
                difcoef=umfa(ifa)
-            else
+            elseif(iturbulent.le.3) then
+!
+!              k-epsilon, k-omega or BSL model
+!
                difcoef=umfa(ifa)+vfa(5,ifa)*vfa(6,ifa)/vfa(7,ifa)
+            else
+!
+!              SST model
+!
+               arg2=max(2.d0*dsqrt(vel(i,6))/(0.09d0*vel(i,7)*yy(i)),
+     &                  500.d0*umel(i)/(vel(i,5)*yy(i)**2*vel(i,7)))
+               f2=dtanh(arg2**2)
+               of2(i)=dsqrt((gradvel(3,2,i)-gradvel(2,3,i))**2+
+     &                      (gradvel(1,3,i)-gradvel(3,1,i))**2+
+     &                      (gradvel(2,1,i)-gradvel(1,2,i))**2)*f2
+               difcoef=umfa(ifa)+vfa(5,ifa)*0.31d0*vfa(6,ifa)/
+     &                 max(0.31d0*vfa(7,ifa),of2(i))
             endif
 !
             if(iel.ne.0) then
@@ -152,7 +167,7 @@ c   retarded gamma
             else
 !
 !                 boundary; check whether wall (specified by user),
-!                           outlet (no velocity boundary conditions or
+!                           outlet (no velocity boundary conditions) or
 !                           none of those
 !
                iwall=0

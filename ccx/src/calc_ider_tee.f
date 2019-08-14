@@ -18,7 +18,7 @@
 !     author: Yannick Muller
 !
       subroutine calc_ider_tee(df,pt1,Tt1,xflow1,xflow2,pt2,
-     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)
+     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)
 !
       implicit none
 !
@@ -42,54 +42,55 @@
 !     Step for the derivative
      &h,
      &f0,
-     &zeta_fac
+     &zeta_fac,
+     &zeta
 !
       eps = 1.0e-8
 !
       f0 = calc_residual_tee(pt1,Tt1,xflow1,xflow2,pt2,
-     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)
+     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)
 !
       h = eps*dabs(pt1)
       if(h.eq.0)then
          h = eps
       endif
       df(1) = (calc_residual_tee(pt1+h,Tt1,xflow1,xflow2,pt2,
-     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)-f0)/h
+     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)-f0)/h
 !
       h = eps*dabs(Tt1)
       if(h.eq.0)then
          h = eps
       endif
       df(2) = (calc_residual_tee(pt1,Tt1+h,xflow1,xflow2,pt2,
-     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)-f0)/h
+     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)-f0)/h
 !
       h = eps*dabs(xflow1)
       if(h.eq.0)then
          h = eps
       endif
       df(3) = (calc_residual_tee(pt1,Tt1,xflow1+h,xflow2,pt2,
-     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)-f0)/h
+     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)-f0)/h
 !
       h = eps*dabs(xflow2)
       if(h.eq.0)then
          h = eps
       endif
       df(4) = (calc_residual_tee(pt1,Tt1,xflow1,xflow2+h,pt2,
-     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)-f0)/h
+     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)-f0)/h
 !
       h = eps*dabs(pt2)
       if(h.eq.0)then
          h = eps
       endif
       df(5) = (calc_residual_tee(pt1,Tt1,xflow1,xflow2,pt2+h,
-     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag)-f0)/h
+     &Tt2,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)-f0)/h
 !
       h = eps*dabs(Tt2)
       if(h.eq.0)then
          h = eps
       endif
       df(6) = (calc_residual_tee(pt1,Tt1,xflow1,xflow2,pt2,
-     &Tt2+h,A1,A2,zeta_fac,kappa,R,ider,iflag)-f0)/h
+     &Tt2+h,A1,A2,zeta_fac,kappa,R,ider,iflag,zeta)-f0)/h
 !
       return
       end

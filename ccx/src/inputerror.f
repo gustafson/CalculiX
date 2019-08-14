@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine inputerror(inpc,ipoinpc,iline,text)
+      subroutine inputerror(inpc,ipoinpc,iline,text,ier)
 !
 !     input error message subroutine
 !

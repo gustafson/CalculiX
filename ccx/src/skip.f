@@ -21,7 +21,7 @@
      &  mi,nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
      &  nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
      &  iperturb,nener,ithermal,nstate_,iprestr,mcs,ntie,
-     &  nslavs,nprop,mortar,ifacecount,nintpoint)
+     &  nslavs,nprop,mortar,ifacecount,nintpoint,nef)
 !
       implicit none
 !
@@ -29,7 +29,7 @@
      &  nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
      &  nprint,nlabel,ncs_,ne1d,ne2d,infree(4),i,mt,nprop,mortar,
      &  nmethod,iperturb(*),nener,ithermal,nstate_,iprestr,i4,
-     &  maxamta,mcs,ntie,nbody,nslavs,nintpoint,ifacecount
+     &  maxamta,mcs,ntie,nbody,nslavs,nintpoint,ifacecount,nef
 !
       character*1 c1
       character*3 c3
@@ -213,6 +213,14 @@
       if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) 
      &     then
          read(15)(r8,i=1,mt*nk)
+      endif
+!
+!     CFD results at the element centers
+!
+      if(nef.gt.0) then
+         read(15)(r8,i=1,8*nef)
+         read(15)(r8,i=1,8*nef)
+         read(15)(r8,i=1,8*nef)
       endif
 !
 !     1d and 2d elements

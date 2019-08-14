@@ -34,6 +34,24 @@
          write(5,*)
          write(5,'(7x,e14.7)') g0(i)
 !
+      elseif(objectset(1,i)(1:6).eq.'X-DISP') then
+         write(5,*)
+         write(5,*)'OBJECTIVE: X-DISP'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
+!
+      elseif(objectset(1,i)(1:6).eq.'Y-DISP') then
+         write(5,*)
+         write(5,*)'OBJECTIVE: Y-DISP'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
+!
+      elseif(objectset(1,i)(1:6).eq.'Z-DISP') then
+         write(5,*)
+         write(5,*)'OBJECTIVE: Z-DISP'  
+         write(5,*)
+         write(5,'(7x,e14.7)') g0(i)
+!
       elseif(objectset(1,i)(1:14).eq.'EIGENFREQUENCY') then
          write(5,*)
          write(5,*)'OBJECTIVE: EIGENFREQUENCY'  
@@ -46,9 +64,9 @@
          write(5,*)
          write(5,'(7x,e14.7)') g0(i)
 !
-      elseif(objectset(1,i)(1:11).eq.'SHAPEENERGY') then
+      elseif(objectset(1,i)(1:12).eq.'STRAINENERGY') then
          write(5,*)
-         write(5,*)'OBJECTIVE: SHAPE ENERGY' 
+         write(5,*)'OBJECTIVE: STRAIN ENERGY' 
          write(5,*) 
          write(5,'(7x,e14.7)') g0(i)
 !

@@ -16,29 +16,32 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine hrv_ud(nface,ielfa,vel,gradvel,gamma,xlet,
-     &  xxn,xxj,ipnei,betam,nef,flux,vfa)
+      subroutine hrv_ud(ielfa,vel,ipnei,nef,flux,vfa,nfacea,nfaceb,
+     &           xxi,xle,gradvel,neij)
 !
-!     determine gamma for the temperature:
-!        upwind difference: gamma=0
-!        central difference: gamma=1
+!     extrapolate the velocity from the center to the faces:
+!     upwind difference
 !
       implicit none
 !
-      integer nface,ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef
+      integer ielfa(4,*),i,j,indexf,ipnei(*),iel1,iel2,nef,
+     &  nfacea,nfaceb,neij(*)
 !
-      real*8 vel(nef,0:7),gradvel(3,3,*),xxn(3,*),xxj(3,*),vud,vcd,
-     &  gamma(*),phic,xlet(*),betam,flux(*),vfa(0:7,*)
+      real*8 vel(nef,0:7),flux(*),vfa(0:7,*),dd,xxv(3),
+     &  xxi(3,*),qp(3),xle(*),gradvel(3,3,*)
 !
-c$omp parallel default(none)
-c$omp& shared(nface,ielfa,ipnei,vel,vfa,flux)
-c$omp& private(i,iel2,iel1,j,indexf)
-c$omp do
-      do i=1,nface
+      intent(in) ielfa,vel,ipnei,nef,flux,nfacea,nfaceb,xxi,xle,
+     &           gradvel,neij
+!
+      intent(inout) vfa
+!
+      do i=nfacea,nfaceb
          iel2=ielfa(2,i)
 !
 !        faces with only one neighbor need not be treated
+!        unless outlet
 !
+c         if((iel2.le.0).and.(ielfa(3,i).ge.0)) cycle
          if(iel2.le.0) cycle
          iel1=ielfa(1,i)
          j=ielfa(4,i)
@@ -46,18 +49,20 @@ c$omp do
 !
          if(flux(indexf).ge.0.d0) then
 !
+!           outflow && (neighbor || outlet)
+!
             do j=1,3
                vfa(j,i)=vel(iel1,j)
             enddo
-         else
+         elseif(iel2.gt.0) then
+!
+!           inflow && neighbor
 !
             do j=1,3
                vfa(j,i)=vel(iel2,j)
             enddo
          endif
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

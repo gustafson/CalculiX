@@ -110,8 +110,10 @@
                physcon(9)=1.5d0
             elseif(textpart(i)(17:23).eq.'K-OMEGA') then
                physcon(9)=2.5d0
-            elseif(textpart(i)(17:19).eq.'SST') then
+            elseif(textpart(i)(17:19).eq.'BSL') then
                physcon(9)=3.5d0
+            elseif(textpart(i)(17:19).eq.'SST') then
+               physcon(9)=4.5d0
             endif
          elseif(textpart(i)(1:9).eq.'SCHEME=UD') then
             ctrl(48)=1.5d0

@@ -214,12 +214,6 @@
       elseif(lakon(nelel)(4:4).eq.'6') then
          mint3d=2
       elseif(lakon(nelel)(1:1).eq.'U') then
-c         if(lakon(nelel)(4:4).eq.' ') then
-c            mint3d=ichar(lakon(nelel)(5:5))-48
-c         else
-c            mint3d=10*(ichar(lakon(nelel)(4:4))-48)
-c     &             +ichar(lakon(nelel)(5:5))-48
-c         endif
          mint3d=ichar(lakon(nelel)(6:6))
       else
          return
@@ -243,7 +237,6 @@ c         endif
             nope=6
          endif
 !
-c         indexe=ipkon(nelel)
          do j=1,nope
             konl=konf(indexe+j)
             do k=1,3

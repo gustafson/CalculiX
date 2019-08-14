@@ -16,9 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine extrapolate_d_v_simplec(nface,ielfa,xrlfa,adv,advfa,
+      subroutine extrapolate_d_v_simplec(ielfa,xrlfa,adv,advfa,
      &                  hfa,icyclic,c,ifatie,vel,nef,volume,
-     &                  auv,ipnei)
+     &                  auv,ipnei,nfacea,nfaceb)
 !
 !     inter/extrapolation of volume/adv at the center of the elements
 !     to the center of the faces
@@ -28,18 +28,19 @@
 !
       implicit none
 !
-      integer nface,ielfa(4,*),iel1,iel2,iel3,i,j,icyclic,ifatie(*),
-     &  nef,ipnei(*),indexf
+      integer ielfa(4,*),iel1,iel2,iel3,i,j,icyclic,ifatie(*),
+     &  nef,ipnei(*),indexf,nfacea,nfaceb
 !
       real*8 xrlfa(3,*),xl1,xl2,advfa(*),adv(*),vel(nef,0:7),hfa(3,*),
      &     c(3,3),volume(*),auv(*),a1,a2,a3
+!
+      intent(in) ielfa,xrlfa,adv,
+     &                  icyclic,c,ifatie,vel,nef,volume,
+     &                  auv,ipnei,nfacea,nfaceb
+!
+      intent(inout) advfa,hfa
 !     
-c$omp parallel default(none)
-c$omp& shared(nface,ielfa,xrlfa,advfa,adv,hfa,vel,icyclic,c,ifatie,
-c$omp&        volume,auv,ipnei)
-c$omp& private(i,iel1,xl1,iel2,j,iel3,xl2,a1,a2,a3)
-c$omp do
-      do i=1,nface
+      do i=nfacea,nfaceb
          iel1=ielfa(1,i)
          xl1=xrlfa(1,i)
          iel2=ielfa(2,i)
@@ -114,15 +115,12 @@ c$omp do
             enddo
 !
             advfa(i)=volume(iel1)/a1
-c            advfa(i)=volume(iel1)/adv(iel1)
 !
             do j=1,3
                hfa(j,i)=vel(iel1,j)
             enddo
          endif
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

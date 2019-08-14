@@ -134,7 +134,7 @@ c      write(*,*) loc(index1)
 !
       do i=nea,neb
 !
-        if(ipkon(i).lt.0) cycle
+        if((ipkon(i).lt.0).or.(lakon(i)(1:1).eq.'F')) cycle
         indexe=ipkon(i)
 c     Bernhardi start
         if(lakon(i)(1:5).eq.'C3D8I') then
@@ -490,7 +490,7 @@ c           ndof=ichar(lakon(i)(6:6))-48
 !
       do i=nea,neb
 !
-        if(ipkon(i).lt.0) cycle
+        if((ipkon(i).lt.0).or.(lakon(i)(1:1).eq.'F')) cycle
         indexe=ipkon(i)
         if(lakon(i)(4:5).eq.'20') then
            nope=20

@@ -35,7 +35,7 @@
      &  ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,output,
      &  physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,t0g,t1g,
      &  nprop,ielprop,prop,mortar,nintpoint,ifacecount,islavsurf,
-     &  pslavsurf,clearini,irstrt)
+     &  pslavsurf,clearini,irstrt,vel,nef,velo,veloo)
 !
 !     writes all information needed for a restart to file
 !
@@ -70,7 +70,7 @@
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),
      &  nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,
      &  nener,iprestr,istepnew,maxlenmpc,mcs,ntie,
-     &  ibody(*),nbody,mt,nslavs,namtot
+     &  ibody(*),nbody,mt,nslavs,namtot,nef
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
@@ -79,7 +79,7 @@
      &  xnor(*),thicke(*),offset(*),t0g(*),t1g(*),clearini(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),pslavsurf(*),
      &  qaold(2),cs(*),physcon(*),ctrl(*),prop(*),
-     &  ttime,fmpc(*),xbody(*),xbodyold(*)
+     &  ttime,fmpc(*),xbody(*),xbodyold(*),vel(*),velo(*),veloo(*)
 !
       mt=mi(2)+1
 !
@@ -118,7 +118,7 @@
       do i=1,80
          version(i:i)=' '
       enddo
-      version(1:20)='Version 2.14'
+      version(1:20)='Version 2.15'
       write(15) version
 !
       write(15)istepnew
@@ -140,6 +140,7 @@
 !
       write(15)nk
       write(15)ne
+      write(15)nef
       write(15)nkon
       write(15)(mi(i),i=1,3)
 !
@@ -384,6 +385,14 @@
       write(15)(vold(i),i=1,mt*nk)
       if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) then
          write(15)(veold(i),i=1,mt*nk)
+      endif
+!
+!     CFD results at the element centers
+!
+      if(nef.gt.0) then
+         write(15)(vel(i),i=1,8*nef)
+         write(15)(velo(i),i=1,8*nef)
+         write(15)(veloo(i),i=1,8*nef)
       endif
 !
 !     1d and 2d elements

@@ -122,14 +122,14 @@
          write(*,*) '         the default solver is used'
       endif
 !
-      if((isolver.eq.2).or.(isolver.eq.3)) then
-        write(*,*) '*ERROR reading *MODAL DYNAMIC: the default solver ',
-     & solver
-         write(*,*) '       cannot be used for modal dynamic'
-         write(*,*) '       calculations '
-         ier=1
-         return
-      endif
+c      if((isolver.eq.2).or.(isolver.eq.3)) then
+c        write(*,*) '*ERROR reading *MODAL DYNAMIC: the default solver ',
+c     & solver
+c         write(*,*) '       cannot be used for modal dynamic'
+c         write(*,*) '       calculations '
+c         ier=1
+c         return
+c      endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

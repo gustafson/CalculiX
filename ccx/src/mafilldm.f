@@ -182,6 +182,7 @@ c      enddo
 !     check whether one of the DOF belongs to a SPC or MPC
 !     
                   if((jdof1.gt.0).and.(jdof2.gt.0)) then
+c                     write(*,*) 'mafilldm1',jdof1,jdof2,jj,ll,s(jj,ll)
                      call add_sm_st(au,ad,jq,irow,jdof1,jdof2,
      &                    s(jj,ll),jj,ll)
                   elseif((jdof1.gt.0).or.(jdof2.gt.0)) then
@@ -217,6 +218,7 @@ c                           id=ilmpc(id)
      &                                        coefmpc(ist)
                               if(idof1.eq.idof2) value=2.d0*value
                               if(idof2.gt.0) then
+c                     write(*,*) 'mafilldm2',idof1,idof2,i0,i0,value
                                  call add_sm_st(au,ad,jq,irow,idof1,
      &                                idof2,value,i0,i0)
                               endif
@@ -263,6 +265,7 @@ c                        id2=ilmpc(id2)
                                  value=coefmpc(index1)*coefmpc(index2)*
      &                                s(jj,ll)/coefmpc(ist)/coefmpc(ist)
                                  if((idof1.gt.0).and.(idof2.gt.0)) then
+c                     write(*,*) 'mafilldm3',idof1,idof2,i0,i0,value
                                     call add_sm_st(au,ad,jq,irow,
      &                                   idof1,idof2,value,i0,i0)
                                  endif
@@ -301,6 +304,7 @@ c                        id2=ilmpc(id2)
      &                                         coefmpc(ist2)
                                  if(idof1.eq.idof2) value=2.d0*value
                                  if((idof1.gt.0).and.(idof2.gt.0)) then
+c                     write(*,*) 'mafilldm4',idof1,idof2,i0,i0,value
                                     call add_sm_st(au,ad,jq,irow,
      &                                   idof1,idof2,value,i0,i0)
                                  endif
@@ -369,6 +373,7 @@ c                          id=ilmpc(id)
      &                              nodempc(1,index))
                              value=-coefmpc(index)*s(jj,ll)/coefmpc(ist)
                              if(idof1.gt.0) then
+c                     write(*,*) 'mafilldm6',idof1,idof2,i0,i0,value
                                 call add_sm_st_as(au,ad,jq,irow,idof1,
      &                               idof2,value,i0,i0,nzs)
                              endif
@@ -399,6 +404,7 @@ c                          id=ilmpc(id)
      &                             nodempc(1,index))
                              value=-coefmpc(index)*s(jj,ll)/coefmpc(ist)
                              if(idof2.gt.0) then
+c                     write(*,*) 'mafilldm7',idof1,idof2,i0,i0,value
                                 call add_sm_st_as(au,ad,jq,irow,idof1,
      &                               idof2,value,i0,i0,nzs)
                              endif
@@ -458,6 +464,7 @@ c     &                            s(jj,ll)/coefmpc(ist)/coefmpc(ist)
                              value=coefmpc(index1)*coefmpc(index2)*
      &                            s(jj,ll)/coefmpc(ist1)/coefmpc(ist2)
                              if((idof1.gt.0).and.(idof2.gt.0)) then
+c                     write(*,*) 'mafilldm8',idof1,idof2,i0,i0,value
                                 call add_sm_st_as(au,ad,jq,irow,
      &                               idof1,idof2,value,i0,i0,nzs)
                              endif
@@ -494,6 +501,7 @@ c     &                            s(jj,ll)/coefmpc(ist)/coefmpc(ist)
                              value=coefmpc(index1)*coefmpc(index2)*
      &                            s(jj,ll)/coefmpc(ist1)/coefmpc(ist2)
                              if((idof1.gt.0).and.(idof2.gt.0)) then
+c                     write(*,*) 'mafilldm9',idof1,idof2,i0,i0,value
                                 call add_sm_st_as(au,ad,jq,irow,
      &                               idof1,idof2,value,i0,i0,nzs)
                              endif

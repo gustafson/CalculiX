@@ -54,7 +54,7 @@
 !
       real*8 x(3,*),u(3,*),f,a(*),aa(3),cgx(3),cgu(3),pi(3),b(3),
      &  xi(3),dd,al,a1,amax,c1,c2,c3,c4,c9,c10,force,xcoef,
-     &  transcoef(3)
+     &  transcoef(3),stdev
 !
       nkn=(n-1)/3
       if(3*nkn.ne.n-1) then
@@ -79,6 +79,7 @@
       do i=1,3
          aa(i)=aa(i)/dd
       enddo
+c      write(*,*) 'umpc_mean_rot aa',(aa(i),i=1,3)
 !
 !     finding the center of gravity of the position and the
 !     displacements of the nodes involved in the MPC
@@ -88,17 +89,34 @@
          cgu(i)=0.d0
       enddo
 !
+c      write(*,*) 'umpc_mean_rot, nkn',nkn
       do i=1,nkn
          do j=1,3
             cgx(j)=cgx(j)+x(j,3*i-2)
             cgu(j)=cgu(j)+u(j,3*i-2)
          enddo
+c         write(*,*) 'umpc_mean_rot x',i,(x(j,3*i-2),j=1,3)
+c         write(*,*) 'umpc_mean_rot u',i,(u(j,3*i-2),j=1,3)
       enddo
 !
       do i=1,3
          cgx(i)=cgx(i)/nkn
          cgu(i)=cgu(i)/nkn
       enddo
+c      write(*,*) 'umpc_mean_rot cgx',(cgx(i),i=1,3)
+!
+!     calculating a standard deviation; this quantity will
+!     serve as a limit for checking the closeness of individual
+!     nodes to the center of gravity
+!
+      stdev=0.d0
+      do i=1,nkn
+         do j=1,3
+            stdev=stdev+(x(j,3*i-2)-cgx(j))**2
+         enddo
+      enddo
+      stdev=stdev/nkn
+c      write(*,*) 'umpc_mean_rot stdev',stdev
 !
 !     initializing a
 !
@@ -117,6 +135,7 @@
             pi(j)=x(j,3*i-2)-cgx(j)
             xi(j)=u(j,3*i-2)-cgu(j)+pi(j)
          enddo
+c         write(*,*) 'umpc_mean_rot pi',(pi(j),j=1,3)
 !
 !              projection on a plane orthogonal to the rotation vector
 !
@@ -124,6 +143,7 @@
          do j=1,3
             pi(j)=pi(j)-c1*aa(j)
          enddo
+c         write(*,*) 'umpc_mean_rot c1 pi',c1,(pi(j),j=1,3)
 !
          c1=xi(1)*aa(1)+xi(2)*aa(2)+xi(3)*aa(3)
          do j=1,3
@@ -131,7 +151,8 @@
          enddo
 !
          c1=pi(1)*pi(1)+pi(2)*pi(2)+pi(3)*pi(3)
-         if(c1.lt.1.d-20) then
+c         if(c1.lt.1.d-20) then
+         if(c1.lt.stdev*1.d-10) then
             if(label(8:9).ne.'BS') then
                write(*,*) '*WARNING in meanrotmpc: node ',jnode(3*i-2)
                write(*,*) '         is very close to the '
@@ -162,6 +183,7 @@
                c4=aa(1)*pi(2)-aa(2)*pi(1)
             endif
             c9=(c4/c2-al*xi(j)/c3)/dsqrt(1.d0-al*al)
+c            write(*,*) 'umpc_mean_rot c4,c9',j,c4,c9
 !
             do k=1,nkn
                if(i.eq.k) then
@@ -170,9 +192,13 @@
                   c10=-c9/real(nkn)
                endif
                a(k*3-3+j)=a(k*3-3+j)+c10
+c               write(*,*) 'umpc_mean_rot c10',j,c10,a(k*3-3+j)
             enddo
          enddo
       enddo
+c      do j=1,n
+c         write(*,*) 'umpc_mean_rot a ',a(j)
+c      enddo
       a(n)=-nkn
       f=f-nkn*u(1,n)
 !

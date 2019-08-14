@@ -36,7 +36,7 @@
      &  nendnode
 !
       real*8 coefmpc(*),co(3,*),aa(3),dd,cgx(3),pi(3),c1,c4,c9,
-     &  c10,amax,xcoef,transcoef(3),xboun(*)
+     &  c10,amax,xcoef,transcoef(3),xboun(*),stdev
 !
       save nodevector
 !
@@ -59,6 +59,7 @@
      &                   '         on the dependent side of another'
                      write(*,*) '         MPC. ',label
                      write(*,*) '         constraint cannot be applied'
+                     write(*,*)
                      return
                   endif
                endif
@@ -196,6 +197,23 @@
                cgx(i)=cgx(i)/nkn
             enddo
 !
+!           calculating a standard deviation; this quantity will
+!           serve as a limit for checking the closeness of individual
+!           nodes to the center of gravity
+!     
+            stdev=0.d0
+!
+            index=ipompc(nmpc)
+            do
+               node=nodempc(1,index)
+               if(node.eq.nodevector) exit
+               do j=1,3
+                  stdev=stdev+(co(j,node)-cgx(j))**2
+               enddo
+               index=nodempc(3,nodempc(3,nodempc(3,index)))
+            enddo
+            stdev=stdev/nkn
+!
 !           calculating the derivatives
 !
 !           loop over all nodes belonging to the mean rotation MPC
@@ -219,7 +237,8 @@
                enddo
 !
                c1=pi(1)*pi(1)+pi(2)*pi(2)+pi(3)*pi(3)
-               if(c1.lt.1.d-20) then
+c               if(c1.lt.1.d-20) then
+               if(c1.lt.stdev*1.d-10) then
                   if(label(8:9).ne.'BS') then
                      write(*,*) '*WARNING in usermpc: node ',node
                      write(*,*) '         is very close to the '
@@ -229,6 +248,7 @@
                      write(*,*) '         mean rotation MPC.'
                      write(*,*) '         This node is not taken'
                      write(*,*) '         into account in the MPC'
+                     write(*,*)
                   endif
                   index=nodempc(3,nodempc(3,nodempc(3,index)))
                   cycle
@@ -376,11 +396,13 @@
                   write(*,*) '         generated for the mean'
                   write(*,*) '         rotation in node ',noderef
                   write(*,*) '         and direction ',idirref+3
+                  write(*,*)
                else
                   write(*,*) '*WARNING in usermpc: no MPC is '
                   write(*,*) '         generated for the mean'
                   write(*,*) '         rotation definition starting '
                   write(*,*) '         with node ',noderef
+                  write(*,*)
                endif
 !
 !              removing the MPC

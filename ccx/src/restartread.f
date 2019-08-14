@@ -35,7 +35,7 @@
      &  cbody,ibody,xbody,nbody,xbodyold,ttime,qaold,cs,mcs,
      &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,
      &  t0g,t1g,nprop,ielprop,prop,mortar,nintpoint,ifacecount,
-     &  islavsurf,pslavsurf,clearini,irstrt)
+     &  islavsurf,pslavsurf,clearini,irstrt,vel,nef,velo,veloo)
 !
       implicit none
 !
@@ -63,7 +63,7 @@
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),
      &  nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,
      &  nener,irestartstep,istat,iprestr,irstrt(*),
-     &  maxlenmpc,mcs,mpcend,ntie,ibody(*),nbody,nslavs
+     &  maxlenmpc,mcs,mpcend,ntie,ibody(*),nbody,nslavs,nef
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
@@ -72,7 +72,7 @@
      &  xnor(*),thicke(*),offset(*),t0g(*),t1g(*),clearini(*),
      &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),prestr(*),ttime,
      &  qaold(2),physcon(*),ctrl(*),cs(*),fmpc(*),xbody(*),
-     &  xbodyold(*),prop(*)
+     &  xbodyold(*),prop(*),vel(*),velo(*),veloo(*)
 !
       ipos=index(jobnamec(1),char(0))
       fnrstrt(1:ipos-1)=jobnamec(1)(1:ipos-1)
@@ -123,6 +123,7 @@
 !
          read(15)nk
          read(15)ne
+         read(15)nef
          read(15)nkon
          read(15)(mi(i),i=1,3)
          mt=mi(2)+1
@@ -198,7 +199,7 @@
      &     mi(1),nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,
      &     nam,nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
      &     iperturb,nener,ithermal,nstate_,iprestr,mcs,ntie,
-     &     nslavs,nprop,mortar,ifacecount,nintpoint)
+     &     nslavs,nprop,mortar,ifacecount,nintpoint,nef)
 !
       enddo
 !
@@ -367,6 +368,14 @@
       read(15)(vold(i),i=1,mt*nk)
       if((nmethod.eq.4).or.((nmethod.eq.1).and.(iperturb(1).ge.2))) then
          read(15)(veold(i),i=1,mt*nk)
+      endif
+!
+!     CFD results at the element centers
+!
+      if(nef.gt.0) then
+         read(15)(vel(i),i=1,8*nef)
+         read(15)(velo(i),i=1,8*nef)
+         read(15)(veloo(i),i=1,8*nef)
       endif
 !
 !     1d and 2d elements

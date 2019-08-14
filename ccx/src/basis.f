@@ -21,19 +21,19 @@
      &         cotet,kontyp,ipkon,kon,iparent,
      &         xp,yp,zp,value,ratio,iselect,nselect,
      &         istartset,iendset,ialset,imastset,ielemnr,
-     &         nterms,konl)
+     &         nterms,konl,nelem,loopa)
 !
       implicit none
 !
 !     100 nearest nodes: node(100),idummy1(100),idummy2(100),iparentel(100)
 !
-      integer ifatet(4,*),id,node(100),near,nx(*),ny(*),nz(*),
+      integer ifatet(4,*),id,node(netet),near,nx(*),ny(*),nz(*),
      &  ifs,iface,i,konl(20),nfield,nktet,ielement,ielmax,netet,k,
      &  j,iselect(nselect),nselect,kontyp(*),ipkon(*),kon(*),iparent(*),
-     &  nterms,indexe,nelem,konl_opt(20),idummy1(100),idummy2(100),
-     &  iparentel(100),nparentel,kflag,ii,inside,nterms_opt,
+     &  nterms,indexe,nelem,konl_opt(20),idummy1(netet),idummy2(netet),
+     &  iparentel(netet),nparentel,kflag,ii,inside,nterms_opt,
      &  istartset(*),iendset(*),ialset(*),imastset,ielemnr(*),
-     &  ielementnr,nlength,nearset
+     &  ielementnr,nlength,nearset,nelem_opt,loopa,ielement2
 !
       real*8 cotet(3,*),planfa(4,*),dface,dfacemax,tolerance,
      &  dist,field(nfield,nktet),ratio(20),pneigh(3,20),pnode(3),xi,et,
@@ -46,41 +46,69 @@
      &         xp,yp,zp,iselect,nselect,
      &         istartset,iendset,ialset,imastset,ielemnr
 !
-      intent(inout) konl,value,nterms,ratio
+      intent(inout) konl,value,nterms,ratio,nelem
 !
       tolerance=1.d-6
 !
+      if(imastset.ne.0) then
+         nlength=iendset(imastset)-istartset(imastset)+1
+      endif
+!
 !     look for the global element encompassing point (xp,yp,zp) 
 !     
-      do ii=1,3
+      do ii=1,4
 !     
-!        three-level algorithm
+!        three/four-level algorithm
 !        - start with the search for the nearest neighboring element
 !        - if this element is not the right one search for the 10
 !          nearest neighbors
 !        - if no fitting element was found, search for the 100 nearest
 !          neighbors
+!        - fourth level (only if a master element set is given)
+!          if none of the 100 nearest neighbors belongs to the given
+!          master element set, loop over all elements
 !
          if(ii.eq.1) then
             near=1
          elseif(ii.eq.2) then
-            near=10
+            near=min(10,netet)
+         elseif(ii.eq.3) then
+            near=min(100,netet)
          else
-            near=100
+            write(*,*) '*WARNING in basis: more than 100'
+            write(*,*) '         neighbors are needed in order'
+            write(*,*) '         to find a global element to'
+            write(*,*) '         which the local node belongs;'
+            write(*,*) '         the global element set may not'
+            write(*,*) '         be correctly selected by the'
+            write(*,*) '         user;'
+            write(*,*) '         global coordinates of the local'
+            write(*,*) '         node: ',xp,yp,zp
+            near=netet
          endif
-         call near3d(xo,yo,zo,x,y,z,nx,ny,nz,xp,yp,zp,netet,
+c         write(*,*) 'basis ',ii
+!
+         if(ii.lt.4) then
+!
+!           looking for the nearest linear tetrahedral element
+!
+            call near3d(xo,yo,zo,x,y,z,nx,ny,nz,xp,yp,zp,netet,
      &        node,near)
+         endif
 !     
          inside=0
          nearset=0
          ielmax=0
 !     
          do i=1,near
-            ielement=node(i)
-c            write(*,*) 'basis tetrahedron ',ielement,iparent(ielement)
+            if(ii.lt.4) then
+               ielement=node(i)
+            else
+               ielement=i
+            endif
 !
-!           check whether the element belongs to the right set,
-!           if a set is specified
+!           check whether the linear tetrahedral element belongs to the 
+!           right set, if a set is specified
 !
 !           ielement is a tetrahedral element number
 !           iparent(ielement) is a running number from 1 to the
@@ -90,7 +118,6 @@ c            write(*,*) 'basis tetrahedron ',ielement,iparent(ielement)
 !
             if(imastset.ne.0) then
                ielementnr=ielemnr(iparent(ielement))
-               nlength=iendset(imastset)-istartset(imastset)+1
                call nident(ialset(istartset(imastset)),ielementnr,
      &                    nlength,id)
                if(id.le.0) cycle
@@ -100,7 +127,7 @@ c            write(*,*) 'basis tetrahedron ',ielement,iparent(ielement)
             else
                nearset=near
             endif
-
+!
             dface=0.d0
             do j=1,4
 !
@@ -119,6 +146,34 @@ c            write(*,*) 'basis tetrahedron ',ielement,iparent(ielement)
 c            write(*,*) 'basis dface ',dface
             if(dface.gt.-1.d-10) then
                inside=1
+!
+!              check whether the other parent elements are in the
+!              master set (the fact that the node is inside a linear
+!              tetrahedron does not mean that the node is within the
+!              parent element; if not, all parent elements are checked;
+!              therefore the other parent elements have
+!              to be checked on whether they belong to the master set;
+!
+               if(imastset.ne.0) then
+                  do j=i+1,near
+                     if(ii.lt.4) then
+                        ielement2=node(j)
+                     else
+                        ielement2=j
+                     endif
+                     ielementnr=ielemnr(iparent(ielement2))
+                     call nident(ialset(istartset(imastset)),ielementnr,
+     &                    nlength,id)
+                     if(id.le.0) cycle
+                     if(ialset(istartset(imastset)+id-1).ne.ielementnr)
+     &                           cycle
+                     nearset=nearset+1
+                     node(nearset)=node(j)
+                  enddo
+               else
+                  nearset=near
+               endif
+!
                exit
             endif
 c            if(i.eq.1) then
@@ -138,7 +193,7 @@ c            if(i.eq.1) then
 !
          if(imastset.ne.0) then
             if(nearset.eq.0) then
-               if(ii.lt.3) then
+               if(ii.lt.4) then
                   cycle
                else
                   write(*,*) '*ERROR: no suitable global element found'
@@ -148,15 +203,16 @@ c            if(i.eq.1) then
             endif
          endif
 !     
-!     if no element was found, the element with the smallest
-!     dfacemax (in absolute value; summed distance) is taken 
+!     if no linear tetrahedral element was found, the linear tetrahedral
+!     element with the smallest dfacemax (in absolute value; summed distance)
+!     is taken 
 !     
          if(inside.eq.0) then
             ielement=ielmax
          endif
 !     
          nelem=iparent(ielement)
-c         write(*,*) 'basis element ',nelem
+c         write(*,*) 'basis element ',nelem,kontyp(nelem)
          if(kontyp(nelem).eq.1) then
             nterms=8
          elseif(kontyp(nelem).eq.2) then
@@ -219,8 +275,11 @@ c         write(*,*) 'basis element ',nelem
 !     attaching slave node to master element
 !     
          if(nterms.ne.0) then
-            call attach_3d(pneigh,pnode,nterms,ratio,dist,xi,et,ze)
+            call attach_3d(pneigh,pnode,nterms,ratio,dist,xi,et,ze,
+     &                     loopa)
          endif
+c         write(*,123) xi,et,ze,dist
+c 123     format('basis ',4(1x,e11.4))
 !     
 !     checking the parent elements of the "best" tetrahedra
 !     in case the distance between slave node and location of
@@ -231,10 +290,12 @@ c         write(*,*) 'basis element ',nelem
                konl_opt(i)=konl(i)
                ratio_opt(i)=ratio(i)
             enddo
+            nelem_opt=nelem
             nterms_opt=nterms
             dist_opt=dist
 !     
-!     sorting the parent elements
+!     sorting the parent elements (different linear tetrahedrals
+!     may have the same parent element)
 !     
             do i=1,nearset
                idummy1(i)=iparent(node(i))
@@ -320,16 +381,19 @@ c         write(*,*) 'basis element ',nelem
 !     
                if(nterms.ne.0) then
                   call attach_3d(pneigh,pnode,nterms,ratio,dist,
-     &                 xi,et,ze)
+     &                 xi,et,ze,loopa)
                endif
+c               write(*,*) 'basis ii ',ii,nelem,dist
 !     
 !     check whether the present element yields better results
 !     
                if(dist.lt.dist_opt) then
+c                  write(*,123) xi,et,ze,dist
                   do i=1,nterms
                      konl_opt(i)=konl(i)
                      ratio_opt(i)=ratio(i)
                   enddo
+                  nelem_opt=nelem
                   nterms_opt=nterms
                   dist_opt=dist
                endif
@@ -338,7 +402,11 @@ c         write(*,*) 'basis element ',nelem
 !     
 !     storing the optimal configuration
 !     
+            nelem=nelem_opt
             nterms=nterms_opt
+c
+            dist=dist_opt
+c
             do i=1,nterms
                konl(i)=konl_opt(i)
                ratio(i)=ratio_opt(i)
@@ -351,6 +419,7 @@ c         write(*,*) 'basis element ',nelem
 !     
 !     interpolating the fields
 !     
+c      write(*,*) 'basis ',dist,tolerance,near
       do k=1,nselect
          i=iselect(k)
          value(k)=0.d0

@@ -117,7 +117,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       df,i0,ic,ia,dbjmaxOLD1,dbjmaxOLD2,*xloaddiff=NULL,*dbcont=NULL,
       zl=0.0,*xbodydiff=NULL,*t1diff=NULL,*xboundiff=NULL,*bdiff=NULL,
       *pslavsurf=NULL,*pmastsurf=NULL,*clearini=NULL,venergy=0.0,
-      *shcon=NULL;
+      *shcon=NULL,alea;
 
   ikactcont=*ikactcontp;ikactmech=*ikactmechp;
   
@@ -147,7 +147,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 
   /* load the convergence constants from ctrl*/
 
-  i0=ctrl[0];ic=ctrl[3];ia=ctrl[7];df=ctrl[10];
+  i0=ctrl[0];ic=ctrl[3];ia=ctrl[7];df=ctrl[10];alea=ctrl[53];
 
   /* set the convergence parameters*/
 
@@ -169,7 +169,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
           itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
 	  imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
           xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta,
-	  xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef);
+	  xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef,
+          &alea);
 
   NNEW(ikactcont1,ITG,nactcont1_);
 
@@ -726,7 +727,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
               itiefac,areaslav,iponoels,inoels,springarea,tietol,reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
               xnoels,&mortar,pslavsurf,pmastsurf,clearini,theta,
-	      xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef);
+	      xstateini,xstate,nstate_,&icutb,&ialeatoric,jobnamef,
+              &alea);
 
       for(i=*ne0;i<*ne;i++){
 	indexe=ipkon[i];

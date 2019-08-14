@@ -113,11 +113,10 @@
 !
          lakonl=lakon(i)
 !
-         if(ipkon(i).lt.0) cycle
+!        only structural elements (no fluid elements)
 !
-!        no 3D-fluid elements
+         if((ipkon(i).lt.0).or.(lakonl(1:1).eq.'F')) cycle
 !
-         if(lakonl(1:1).eq.'F') cycle
          if(lakonl(1:7).eq.'DCOUP3D') cycle
 !
 !        user elements

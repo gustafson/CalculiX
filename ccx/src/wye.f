@@ -18,7 +18,7 @@
       subroutine wye(node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,identity,ielprop,prop,iflag,v,xflow,f,
      &     nodef,idirf,df,cp,r,physcon,numf,set,mi,ider,ttime,time,
-     &     iaxial,iplausi)
+     &     iaxial,iplausi,dvi)
 !
 !     A wye split element(zeta calculation according to Idel'chik)
 !     Written by Yavor Dobrev
@@ -40,7 +40,7 @@
       real*8 prop(*),v(0:mi(2),*),xflow,f,df(*),kappa,R,Tt1,Tt2,pt1,pt2,
      &cp,physcon(*),km1,kp1,kdkm1,pt2pt1,pt1pt2,pt2pt1_crit,tdkp1,
      &A,A1,A2,A_s,calc_residual_wye,dh1,dh2,alpha,xflow1,xflow2,
-     &pi,zeta_fac,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time
+     &pi,zeta_fac,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time,zeta,dvi
 !
       intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
      &     nactdog,ielprop,prop,iflag,v,
@@ -186,11 +186,13 @@
          if(ider.eq.0.d0) then
 !           Residual
             f=calc_residual_wye(pt1,Tt1,xflow1,xflow2,pt2,
-     &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,iflag)
+     &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,iflag
+     &,zeta)
          else
 !           Derivatives
             call calc_ider_wye(df,pt1,Tt1,xflow1,xflow2,pt2,
-     &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,iflag)
+     &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,iflag
+     &,zeta)
          endif
 !
       elseif(iflag.eq.3) then
@@ -285,7 +287,7 @@
 !     Calculate the element one last time with enabled output
          f=calc_residual_wye(pt1,Tt1,xflow1,xflow2,pt2,
      &           Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,
-     &           kappa,R,ider,iflag)
+     &           kappa,R,ider,iflag,zeta)
 !     
          write(1,56)'      Outlet node ',node2,':   Tt2= ',Tt2,
      &        ' , Ts2= ',Ts2,' , Pt2= ',pt2,

@@ -619,6 +619,7 @@ c            write(*,*) 'gen3dfrom2d xnor',(xnor(l),l=1,3)
 !           dd=e1.n
 !            
             dd=a(1,1)*xno(1)+a(2,1)*xno(2)+a(3,1)*xno(3)
+c            write(*,*) 'gen3dfrom2d ',i,dd
 !
 !           check whether e1 is within 0.1° from n
 !           e1 is the local 1-direction in the shell plane
@@ -627,6 +628,7 @@ c            write(*,*) 'gen3dfrom2d xnor',(xnor(l),l=1,3)
 !
 !              project the z-axis
 !
+c               write(*,*) 'gen3dfrom2d project z'
                dd=a(1,3)*xno(1)+a(2,3)*xno(2)+a(3,3)*xno(3)
                do l=1,3
                   e1(l)=a(l,3)-dd*xno(l)
@@ -635,6 +637,7 @@ c            write(*,*) 'gen3dfrom2d xnor',(xnor(l),l=1,3)
 !
 !              project the x-axis
 !
+c               write(*,*) 'gen3dfrom2d project x'
                do l=1,3
                   e1(l)=a(l,1)-dd*xno(l)
                enddo

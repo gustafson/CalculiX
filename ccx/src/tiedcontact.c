@@ -27,7 +27,7 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
                ITG *nmpc, ITG *mpcfree, ITG *memmpc_,
                ITG **ipompcp, char **labmpcp, ITG **ikmpcp, ITG **ilmpcp,
                double **fmpcp, ITG **nodempcp, double **coefmpcp,
-	       ITG *ithermal, double *co, double *vold, ITG *cfd,
+	       ITG *ithermal, double *co, double *vold, ITG *nef,
 	       ITG *nmpc_, ITG *mi, ITG *nk,ITG *istep,ITG *ikboun,
 	       ITG *nboun,char *kind1,char *kind2){
 
@@ -110,7 +110,7 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
 
   /* determining the maximum number of equations neq */
 
-  if(*cfd==1){
+  if(*nef>0){
     if(ithermal[1]<=1){
       neq=4;
     }else{
@@ -175,7 +175,7 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
 	  koncont,co,xo,yo,zo,x,y,z,nx,ny,nz,nset,
 	  ifaceslave,istartfield,iendfield,ifield,
 	  ipompc,nodempc,coefmpc,nmpc,&nmpctied,mpcfree,ikmpc,ilmpc,
-	  labmpc,ithermal,tietol,cfd,&ncont,imastop,ikboun,nboun,kind1));
+	  labmpc,ithermal,tietol,nef,&ncont,imastop,ikboun,nboun,kind1));
 
   (*nmpc_)+=nmpctied;
   

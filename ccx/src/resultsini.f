@@ -21,7 +21,7 @@
      &  xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
      &  veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
      &  intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,
-     &  ikin,intpointvart)
+     &  ikin,intpointvart,typeboun)
 !
 !     initialization 
 !
@@ -32,6 +32,7 @@
 !
       implicit none
 !
+      character*1 typeboun(*)
       character*6 prlab(*)
       character*20 labmpc(*)
       character*87 filab(*)
@@ -157,6 +158,7 @@
 !     determining which quantities have to be calculated
 !     
       if((iperturb(1).ge.2).or.((iperturb(1).le.0).and.(iout.lt.0))) 
+c      if((iperturb(1).ge.2).or.((iperturb(1).le.1).and.(iout.lt.0))) 
      &     then
          if((iout.lt.1).and.(iout.gt.-2)) then
             calcul_fn=1
@@ -208,7 +210,7 @@
 !     inserting the boundary conditions
 !     
          do i=1,nboun
-            if(ndirboun(i).gt.mi(2)) cycle
+            if((ndirboun(i).gt.mi(2)).or.(typeboun(i).eq.'F')) cycle
             fixed_disp=xboun(i)
 !
 !           a discontinuity in the displacements in an initial
@@ -248,6 +250,7 @@ c
 c     incrementalmpc=iperturb(2)
 !
          do i=1,nmpc
+            if(labmpc(i)(1:5).eq.'FLUID') cycle
             if((labmpc(i)(1:20).eq.'                    ').or.
      &           (labmpc(i)(1:6).eq.'CYCLIC').or.
      &           (labmpc(i)(1:9).eq.'SUBCYCLIC')) then

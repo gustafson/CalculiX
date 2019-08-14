@@ -847,6 +847,13 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       for(i=0;i<*nboun;i++){
 	  if(fabs(xboun[i])>1.e-10){
 	      iprescribedboundary=1;
+	      if((*isolver==2)||(*isolver==3)){
+		  printf(" *ERROR in steadystate: the iterative solver\n");
+		  printf("        cannot be used for steady state dynamic\n");
+		  printf("        calculations with prescribed boundary\n");
+		  printf("        conditions\n");
+		  FORTRAN(stop,());
+	      }
 	      nmdnode=0;nmddof=0;nmdboun=0;nmdmpc=0;
 	      break;
 	  }
@@ -1084,26 +1091,13 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		  &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 		  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-		  inoel,nener,orname,&network,ipobody,xbodyact,ibody);
+		  inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun);
 	      SFREE(v);SFREE(f);
 	      if(intpointvar!=1){SFREE(fn);SFREE(stx);}
 	      iout=2;
 	      
 	      NNEW(adc,double,neq[1]);
 	      NNEW(auc,double,nzs[1]);
-/*	      FORTRAN(mafilldm,(co,nk,kon,ipkon,lakon,ne,nodeboun,
-                ndirboun,xboun,nboun,
-	        ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
-	        nforc,nelemload,sideload,xload,nload,xbody,ipobody,nbody,cgr,
-	        adc,auc,nactdof,icol,jq,irow,neq,nzl,nmethod,
-	        ikmpc,ilmpc,ikboun,ilboun,
-	        elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-	        ielorien,norien,orab,ntmat_,
-	        t0,t0,ithermal,prestr,iprestr,vold,iperturb,sti,
-	        nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	        xstiff,npmat_,&dtime,matname,mi,ncmat_,
-	        ttime,&time,istep,&iinc,ibody,clearini,&mortar,springarea,
-                pslavsurf,pmastsurf,&reltime,&nasym));*/
 
 	      mafilldmssmain(co,nk,kon,ipkon,lakon,ne,
 		  ipompc,nodempc,coefmpc,nmpc,
@@ -1281,6 +1275,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      
 	      for (i=0;i<*nboun;i++){
 		  xbounr[i]=xbounact[i]*(1-iphaseboun[i]);
+		  if(typeboun[i]=='A') xbounr[i]/=(-freq[l]*freq[l]);
 	      }
 	      
 	      for(j=0;j<neq[1];j++){fr[j]=0.;ubr[j]=0.;}
@@ -1428,6 +1423,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      
 	      for (i=0;i<*nboun;i++){
 		  xbouni[i]=xbounact[i]*iphaseboun[i];
+		  if(typeboun[i]=='A') xbouni[i]/=(-freq[l]*freq[l]);
 	      }
 	      
 	      for(j=0;j<neq[1];j++){fi[j]=0.;ubi[j]=0.;}
@@ -1759,7 +1755,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
                       islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                      inoel,nener,orname,&network,ipobody,xbodyact,ibody);}
+                      inoel,nener,orname,&network,ipobody,xbodyact,ibody,
+                      typeboun);}
 	  else{
       
               /* calculating displacements/temperatures */
@@ -1789,7 +1786,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
 		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
                       iponoel,inoel,nener,orname,&network,ipobody,xbodyact,
-                      ibody);
+                      ibody,typeboun);
 	      
 	      if(nmdnode==0){
 		  DMEMSET(br,0,neq[1],0.);
@@ -1849,7 +1846,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
                       islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                      inoel,nener,orname,&network,ipobody,xbodyact,ibody);}
+                      inoel,nener,orname,&network,ipobody,xbodyact,ibody,
+                      typeboun);}
 	  else{ 
       
               /* calculating displacements/temperatures */
@@ -1879,7 +1877,7 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,
 		      clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
                       iponoel,inoel,nener,orname,&network,ipobody,xbodyact,
-                      ibody);
+                      ibody,typeboun);
 
 	      if(nmdnode==0){
 		  DMEMSET(bi,0,neq[1],0.);
@@ -2438,26 +2436,13 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 			  sideload,xloadact,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 			  &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
 			  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
-			  inoel,nener,orname,&network,ipobody,xbodyact,ibody);
+			  inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun);
 		  SFREE(v);SFREE(f);
 		  if(intpointvar!=1){SFREE(fn);SFREE(stx);}
 		  iout=2;
 
 		  NNEW(adc,double,neq[1]);
 		  NNEW(auc,double,nzs[1]);
-		  /*	  FORTRAN(mafilldm,(co,nk,kon,ipkon,lakon,ne,nodeboun,
-                    ndirboun,xboun,nboun,
-	            ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
-	            nforc,nelemload,sideload,xload,nload,xbody,ipobody,
-                    nbody,cgr,adc,auc,nactdof,icol,jq,irow,neq,nzl,nmethod,
-	            ikmpc,ilmpc,ikboun,ilboun,
-	            elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-	            ielorien,norien,orab,ntmat_,
-	            t0,t0,ithermal,prestr,iprestr,vold,iperturb,sti,
-	            nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	            xstiff,npmat_,&dtime,matname,mi,ncmat_,
-	            ttime,&freq[l],istep,&iinc,ibody,clearini,&mortar,springarea,
-                    pslavsurf,pmastsurf,&reltime,&nasym));*/
 
 		  mafilldmssmain(co,nk,kon,ipkon,lakon,ne,
 		    ipompc,nodempc,coefmpc,nmpc,
@@ -2949,7 +2934,8 @@ void steadystate(double **cop, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		      sideload,xload,xloadold,&icfd,inomat,pslavsurf,pmastsurf,
 		      &mortar,islavact,cdn,islavnode,nslavnode,&ntie,clearini,
                       islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
-                      inoel,nener,orname,&network,ipobody,xbodyact,ibody);
+                      inoel,nener,orname,&network,ipobody,xbodyact,ibody,
+                      typeboun);
 	  
 	      (*kode)++;
 	      mode=-1;

@@ -64,7 +64,7 @@
          if(n.eq.2) then
             thickness2=0.d0
          else
-            read(textpart(2)(1:20),'(f20.0)',iostat=istat) thickness2
+            read(textpart(3)(1:20),'(f20.0)',iostat=istat) thickness2
             if(istat.gt.0) then
                call inputerror(inpc,ipoinpc,iline,
      &              "*NODAL THICKNESS%",ier)

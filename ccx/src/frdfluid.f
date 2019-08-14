@@ -18,7 +18,8 @@
 !
       subroutine frdfluid(co,nk,konf,ipkonf,lakonf,nef,vold,
      &  kode,time,ielmat,matname,filab,inum,ntrans,inotr,trab,mi,
-     &  istep,stn,qfn,nactdohinv,xmach,xkappa,physcon,xturb)
+     &  istep,stn,qfn,nactdohinv,xmach,xkappa,physcon,xturb,
+     &  coel,vel,cofa,vfa,nface)
 !
 !     stores the results in frd format
 !
@@ -36,13 +37,20 @@
 !
       integer konf(*),nk,nef,kode,i,j,ipkonf(*),indexe,inum(*),mi(*),
      &  one,ielmat(mi(3),*),null,inotr(2,*),ntrans,nout,istep,
-     &  nactdohinv(*)
+     &  nactdohinv(*),nface
 !
       real*8 co(3,*),vold(0:mi(2),*),time,pi,oner,trab(7,*),xturb(2,*),
-     &  a(3,3),stn(6,*),qfn(3,*),xmach(*),xkappa(*),physcon(*)
+     &  a(3,3),stn(6,*),qfn(3,*),xmach(*),xkappa(*),physcon(*),
+     &  coel(3,*),vel(nef,0:7),vfa(0:7,*),cofa(3,*)     
 !
       save nout
 !
+c      do i=1,nef
+c         write(*,*) 'frdfluid vel',i,coel(2,i),vel(i,1)/coel(2,i)
+c      enddo
+c      do i=1,nface
+c         write(*,*) 'frdfluid vfa',i,cofa(2,i),vfa(1,i)/cofa(2,i)
+c      enddo
       kode=kode+1
       pi=4.d0*datan(1.d0)
 !
@@ -71,6 +79,10 @@
       null=0
       one=1
       oner=1.d0
+
+!     first time something is written in the frd-file: store
+!     computational metadata, the nodal coordinates and the
+!     topology */
 !
       if(kode.eq.1) then
 !

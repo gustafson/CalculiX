@@ -56,7 +56,7 @@ void randomfieldmain(ITG *kon,ITG *ipkon,char *lakon,ITG *ne,ITG *nmpc,
       *nx=NULL,*ny=NULL,*nz=NULL,symmetryflag=0,inputformat=0,mei[4],ido,ldz,
       iparam[11],mxiter,info,ncv,jrow,lworkl,nev,ipntr[14],m,
       *select=NULL,rvec=1,i,k,kflag,idesvar,node,j,inorm=0,irand=1,
-      iinc=1,mode,noddiam=-1,ngraph,iobject,icoordinate,nrhs=1;
+      iinc=1,mode,noddiam=-1,ngraph,iobject,icoordinate,nrhs=1,ithermal=0;
   
   double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,*au=NULL,*ad=NULL,
          *adb=NULL,*aub=NULL,sigma,*resid=NULL,*workd=NULL,*workl=NULL,tol,
@@ -194,7 +194,7 @@ void randomfieldmain(ITG *kon,ITG *ipkon,char *lakon,ITG *ne,ITG *nmpc,
 #ifdef MATRIXSTORAGE
     matrixstorage(ad,&au,adb,aub,&sigma,icols,&irows,ndesi,&nzss,
 		  ntrans,inotr,trab,co,nk,nactdof,jobnamec,mi,ipkon,
-                  lakon,kon,ne,mei,nboun,nmpc,cs,mcs);
+                  lakon,kon,ne,mei,nboun,nmpc,cs,mcs,&ithermal,nmethod);
 #else
     printf("*ERROR in arpack: the MATRIXSTORAGE library is not linked\n\n");
     FORTRAN(stop,());

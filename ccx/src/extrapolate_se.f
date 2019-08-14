@@ -408,7 +408,9 @@
             nope=15
          elseif(lakonl(4:4).eq.'6') then
             nope=6
-         elseif((lakonl(1:1).eq.'E').and.(lakonl(7:7).eq.'A'))then
+         elseif((lakonl(1:1).eq.'E').and.
+     &          ((lakonl(7:7).eq.'A').or.
+     &           (lakonl(7:7).eq.'2'))) then
 !
             inum(kon(indexe+1))=inum(kon(indexe+1))+1
             inum(kon(indexe+2))=inum(kon(indexe+2))+1

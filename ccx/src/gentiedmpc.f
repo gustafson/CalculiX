@@ -21,7 +21,7 @@
      &  koncont,co,xo,yo,zo,x,y,z,nx,ny,nz,nset,
      &  ifaceslave,istartfield,iendfield,ifield,
      &  ipompc,nodempc,coefmpc,nmpc,nmpctied,mpcfree,ikmpc,ilmpc,
-     &  labmpc,ithermal,tietol,cfd,ncont,imastop,ikboun,nboun,kind)
+     &  labmpc,ithermal,tietol,nef,ncont,imastop,ikboun,nboun,kind)
 !
 !     generates MPC's for the slave tied contact nodes
 !
@@ -40,7 +40,7 @@
      &  nnodelem,nface,nope,nodef(8),idof,kstart,kend,jstart,id,
      &  jend,ifield(*),istartfield(*),iendfield(*),ifaceslave(*),
      &  ipompc(*),nodempc(3,*),nmpc,nmpctied,mpcfree,ikmpc(*),
-     &  ilmpc(*),ithermal(2),cfd,ncont,mpcfreeold,m,id1,ikboun(*),
+     &  ilmpc(*),ithermal(2),nef,ncont,mpcfreeold,m,id1,ikboun(*),
      &  itriold,itrinew,ntriangle,ntriangle_,itriangle(100)
 !
       real*8 cg(3,*),straight(16,*),co(3,*),p(3),
@@ -118,7 +118,7 @@
 !
 !           thermomechanical ties or CFD
 !
-            if(cfd.eq.1) then
+            if(nef.gt.0) then
                if(ithermal(2).le.1) then
                   kstart=1
                   kend=4
@@ -368,7 +368,7 @@ c     &                       tietol(1,i)
                         pl(l,k)=co(l,nodef(k))
                      enddo
                   enddo
-                  call attach(pl,p,nnodelem,ratio,dist,xi,et)
+                  call attach_2d(pl,p,nnodelem,ratio,dist,xi,et)
 !
 !                 adjusting the coordinates of the node (only
 !                 if the user did not specify ADJUST=NO on the
@@ -621,7 +621,7 @@ c     &                                tietol(1,i)
                            pl(l,k)=co(l,nodef(k))
                         enddo
                      enddo
-                     call attach(pl,p,nnodelem,ratio,dist,xi,et)
+                     call attach_2d(pl,p,nnodelem,ratio,dist,xi,et)
 !
 !                    adjusting the coordinates of the node (only
 !                    if the user did not specify ADJUST=NO on the

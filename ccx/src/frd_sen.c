@@ -245,12 +245,18 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc); 
       
-      if(strcmp1(&objectset[*iobject*324],"SHAPEENERGY")==0){
+      if(strcmp1(&objectset[*iobject*324],"STRAINENERGY")==0){
 	  fprintf(f1," -4  SENENER     2    1\n");
       }else if(strcmp1(&objectset[*iobject*324],"MASS")==0){
 	  fprintf(f1," -4  SENMASS     2    1\n");
       }else if(strcmp1(&objectset[*iobject*324],"DISPLACEMENT")==0){
-	  fprintf(f1," -4  SENDISP     2    1\n");
+	  fprintf(f1," -4  SENDISA     2    1\n");
+      }else if(strcmp1(&objectset[*iobject*324],"X-DISP")==0){
+	  fprintf(f1," -4  SENDISX     2    1\n");
+      }else if(strcmp1(&objectset[*iobject*324],"Y-DISP")==0){
+	  fprintf(f1," -4  SENDISY     2    1\n");
+      }else if(strcmp1(&objectset[*iobject*324],"Z-DISP")==0){
+	  fprintf(f1," -4  SENDISZ     2    1\n");
       }else if(strcmp1(&objectset[*iobject*324],"STRESS")==0){
 	  fprintf(f1," -4  SENSTRE     2    1\n");
       }else if(strcmp1(&objectset[*iobject*324],"EIGENFREQUENCY")==0){

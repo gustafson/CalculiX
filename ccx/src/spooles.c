@@ -510,8 +510,8 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 	          and au (first lower triangle, then upper triangle; lower
 	          and upper triangle have nonzero's at symmetric positions)
 	       2: full matrix in field ad
-	       3: sparse upper triangular matrix in ad (diagonal)
-	          and au (upper triangle)  */
+	       3: sparse full matrix in ad (diagonal)
+	          and au (off-diagonal positions)  */
 	    
 	    if(*inputformat==0){
 		ipoint = 0;
@@ -589,7 +589,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 			InpMtx_inputRealEntry(mtxA, col, col, ad[col]);
 			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
 			    int row = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, row, col,
+			    InpMtx_inputRealEntry(mtxA, col, row,
 						  au[ipo]);
 			}
 			ipoint = ipoint + icol[col];
@@ -600,7 +600,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 			InpMtx_inputRealEntry(mtxA, col, col, ad[col]-*sigma*adb[col]);
 			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
 			    int row = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, row, col, 
+			    InpMtx_inputRealEntry(mtxA, col, row, 
 						  au[ipo]-*sigma*aub[ipo]);
 			}
 			ipoint = ipoint + icol[col];
@@ -1101,7 +1101,12 @@ void spooles(double *ad, double *au, double *adb, double *aub, double *sigma,
              ITG *symmetryflag, ITG *inputformat, ITG *nzs3)
 {
 
-  if(*neq==0) return;
+    if(*neq==0){
+	return;
+    }else if(*neq==1){
+	b[0]/=ad[0];
+	return;
+    }
 
   spooles_factor(ad,au,adb,aub,sigma,icol,irow,neq,nzs,symmetryflag,
 		 inputformat,nzs3);

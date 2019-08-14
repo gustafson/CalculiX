@@ -185,6 +185,18 @@ c            call reorderampl(amname,namta,nam)
      &              "*DLOAD%",ier)
                return
             endif
+         elseif(textpart(i)(1:8).eq.'DATASET=') then
+            read(textpart(i)(9:18),'(i10)',iostat=istat) iglobstep
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*DLOAD%",ier)
+               return
+            endif
+!
+!           the mode number for submodels
+!           is stored as a negative global step
+!
+            iglobstep=-iglobstep
          else
             write(*,*) 
      &        '*WARNING reading *DLOAD: parameter not recognized:'

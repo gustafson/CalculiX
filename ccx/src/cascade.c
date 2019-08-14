@@ -92,7 +92,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     nodempc=*nodempcp;
     coefmpc=*coefmpcp;
     
-    /*     for(i=0;i<*nmpc;i++){
+    /*      for(i=0;i<*nmpc;i++){
 	j=i+1;
 	FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	}*/
@@ -110,10 +110,10 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	if(id>0){
 	    if(ikboun[id-1]==ikmpc[i]){
 		if(strcmp1(&labmpc[20*i],"FLUID")!=0){
-		    printf("*ERROR in cascade: the DOF corresponding to \n node %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n",
+		    printf("*ERROR in cascade: the DOF corresponding to \n node %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n\n",
 			   (ikmpc[i])/8+1,ikmpc[i]-8*((ikmpc[i])/8));
 		}else{
-		    printf("*ERROR in cascade: the DOF corresponding to \n face %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n",
+		    printf("*ERROR in cascade: the DOF corresponding to \n face %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n\n",
 			   (-ikmpc[i])/8+1,-ikmpc[i]-8*((-ikmpc[i])/8));
 		}
 		FORTRAN(stop,());
@@ -256,11 +256,11 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 		    /* check for zero coefficients on the dependent side */
 		    
 		    	    index1=ipompc[i];
-			if(fabs(coefmpc[index1-1])<1.e-10){
+			    if(fabs(coefmpc[index1-1])<1.e-10){
 				printf("*ERROR in cascade: zero coefficient on the\n");
 				printf("       dependent side of an equation\n");
 				printf("       dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
-				printf("       direction: %" ITGFORMAT "",nodempc[3*index1-2]);
+				printf("       direction: %" ITGFORMAT "\n\n",nodempc[3*index1-2]);
 				FORTRAN(stop,());
 			    }
 		    
@@ -349,12 +349,13 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	    do {
 //		printf("index1=%d\n",index1);
 //		printf("coefmpc=%e\n",coefmpc[index1-1]);
+
 		if(fabs(coefmpc[index1-1])<1.e-10){
 		    if(index1old==0){
 			printf("*ERROR in cascade: zero coefficient on the\n");
 			printf("       dependent side of an equation\n");
 			printf("       dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
-			printf("       direction: %" ITGFORMAT "",nodempc[3*index1-2]);
+			printf("       direction: %" ITGFORMAT "\n\n",nodempc[3*index1-2]);
 			FORTRAN(stop,());
 		    }
 		    else{
@@ -439,7 +440,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 		    if((irownl==1)||(icolnl==1)){
 			*icascade=2;
 			InpMtx_free(mtxA);
-			printf("*ERROR in cascade: linear and nonlinear MPCs depend on each other");
+			printf("*ERROR in cascade: linear and nonlinear MPCs depend on each other\n\n");
 			FORTRAN(stop,());
 		    }
 		}

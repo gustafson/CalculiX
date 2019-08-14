@@ -16,17 +16,21 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine reorderlhs(au,am,iamorig,nz_num)
+      subroutine reorderlhs(au,am,iamorig,nz_numa,nz_numb)
 !
 !     reorders matrix elements into compressed row format
 !
       implicit none
 !
-      integer iamorig(*),nz_num,i
+      integer iamorig(*),nz_numa,nz_numb,i
 !
       real*8 au(*),am(*)
 !
-      do i=1,nz_num
+      intent(in) au,iamorig,nz_numa,nz_numb
+!
+      intent(inout) am
+!
+      do i=nz_numa,nz_numb
          am(i)=au(iamorig(i))
       enddo
 !

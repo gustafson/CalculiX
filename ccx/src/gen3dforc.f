@@ -45,7 +45,7 @@
      &  idepnodes(80),l,iexpnode,indexx,irefnode,imax,isol,mpcfreeold,
      &  nod,impc,istep,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),
      &  nboun,nboun_,iamboun(*),nmethod,iperturb,nrhs,ipiv(3),info,m,
-     &  mi(*),idefforc(*),nedge
+     &  mi(*),idefforc(*),nedge,idirstart,idirend,idirl
 !
       real*8 xforc(*),trab(7,*),coefmpc(*),xnor(*),val,co(3,*),dot,
      &  thicke(mi(3),*),pi,xboun(*),xnoref(3),dmax,d(3,3),e(3,3,3),
@@ -92,7 +92,7 @@
          endif
          ielem=inoel(1,index)
 !
-!        checking whether element is linear or quardratic
+!        checking whether element is linear or quadratic
 !
          if((lakon(ielem)(4:4).eq.'6').or.
      &      (lakon(ielem)(4:4).eq.'8')) then
@@ -196,6 +196,8 @@ c               val=xforc(i)
                endif
                irotnode=nk
                rig(node)=irotnode
+               write(27,*) 'a KNOT was generated in node ',node
+               write(27,*)
                nk=nk+1
                if(nk.gt.nk_) then
                   write(*,*) '*ERROR in rigidbodies: increase nk_'
@@ -622,22 +624,50 @@ c               vold(1,iexpnode)=alpha
                   dot=a(1,idirref)*xn(1)+a(2,idirref)*xn(2)+
      &                a(3,idirref)*xn(3)
                   if(dot.gt.0.05d0) then
-                     write(*,*) '*ERROR in gen3dforc: applied'
-                     write(*,*) '       moment in node ',node
-                     write(*,*) '       and direction ',idir-1
-                     write(*,*) '       has a significant'
+                     write(*,*) '*WARNING in gen3dforc: applied'
+                     write(*,*) '         moment in node ',node
+                     write(*,*) '         and direction ',idir-1
+                     write(*,*) '         has a significant'
                      write(*,*) 
-     &                    '       component along the drilling'
-                     write(*,*) '       direction; this is not'
-                     write(*,*) '       allowed'
-                     call exit(201)
+     &                    '         component along the drilling'
+                     write(*,*) '         direction; projection is'
+                     write(*,*) '         applied'
+                     write(*,*)
+c                     call exit(201)
                   endif
+!
+!                 projecting the rotation vector on the tangent plane
+!
+                  do k=1,3
+                     a(k,idirref)=a(k,idirref)-dot*xn(k)
+                  enddo
+!
+                  dd=0.d0
+                  do k=1,3
+                     dd=dd+a(k,idirref)**2
+                  enddo
+                  dd=dsqrt(dd)
+                  do k=1,3
+                     a(k,idirref)=a(k,idirref)/dd
+                  enddo
                endif
+!
+c               dd=0.d0
+c               do k=1,3
+c                  dd=dd+a(k,idirref)**2
+c               enddo
+c               dd=dsqrt(dd)
+c               do k=1,3
+c                  a(k,idirref)=a(k,idirref)/dd
+c               enddo
 !
 !              specific label for mean rotations for beams and
 !              shells
 !
                label='MEANROTBS           '
+               write(27,*) 'a MEAN ROTATION MPC was generated in node ',
+     &              node
+               write(27,*)
                nnodes=0
                do j=lstart,lend,linc
                   nodeact=knor(indexk+j)
@@ -698,107 +728,138 @@ c               vold(1,iexpnode)=alpha
 !
             if(lakon(ielem)(7:7).eq.'L') then
                newnode=knor(indexk+1)
-               idof=8*(newnode-1)+idir
-               call nident(ikmpc,idof,nmpc,id)
-               if((id.le.0).or.(ikmpc(id).ne.idof)) then
-                  nmpc=nmpc+1
-                  if(nmpc.gt.nmpc_) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dforc: increase nmpc_'
-                     call exit(201)
-                  endif
-                  labmpc(nmpc)='                    '
-                  ipompc(nmpc)=mpcfree
-                  do k=nmpc,id+2,-1
-                     ikmpc(k)=ikmpc(k-1)
-                     ilmpc(k)=ilmpc(k-1)
-                  enddo
-                  ikmpc(id+1)=idof
-                  ilmpc(id+1)=nmpc
 !
-!                 for middle nodes: u_1+u_3-2*u_node=0
-!                 for end nodes: -u_1+4*u_2-u_3-2*u_node=0
+!              if a transformation applies to the node all
+!              dofs have to be connected
 !
-!                 u_1 corresponds to knor(indexk+1)....
-!
-                  nodempc(1,mpcfree)=newnode
-                  nodempc(2,mpcfree)=idir
-                  if((j.gt.nedge).or.(.not.quadratic)) then
-                     coefmpc(mpcfree)=1.d0
-                  else
-                     coefmpc(mpcfree)=-1.d0
-                  endif
-                  mpcfree=nodempc(3,mpcfree)
-                  if(mpcfree.eq.0) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dforc: increase memmpc_'
-                     call exit(201)
-                  endif
-!
-                  if((j.le.nedge).and.(quadratic)) then
-                     nodempc(1,mpcfree)=knor(indexk+2)
-                     nodempc(2,mpcfree)=idir
-                     coefmpc(mpcfree)=4.d0
+               if(ntrans.le.0) then
+                  idirstart=idir
+                  idirend=idir
+               elseif(inotr(1,node).eq.0) then
+                  idirstart=idir
+                  idirend=idir
+               else
+                  idirstart=1
+                  idirend=3
+               endif
+               do idirl=idirstart,idirend
+                  idof=8*(newnode-1)+idirl
+                  call nident(ikmpc,idof,nmpc,id)
+                  if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                     nmpc=nmpc+1
+                     if(nmpc.gt.nmpc_) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dforc: increase nmpc_'
+                        call exit(201)
+                     endif
+                     labmpc(nmpc)='                    '
+                     ipompc(nmpc)=mpcfree
+                     do k=nmpc,id+2,-1
+                        ikmpc(k)=ikmpc(k-1)
+                        ilmpc(k)=ilmpc(k-1)
+                     enddo
+                     ikmpc(id+1)=idof
+                     ilmpc(id+1)=nmpc
+!     
+!                    for middle nodes: u_1+u_3-2*u_node=0
+!                    for end nodes: -u_1+4*u_2-u_3-2*u_node=0
+!     
+!                    u_1 corresponds to knor(indexk+1)....
+!     
+                     nodempc(1,mpcfree)=newnode
+                     nodempc(2,mpcfree)=idirl
+                     if((j.gt.nedge).or.(.not.quadratic)) then
+                        coefmpc(mpcfree)=1.d0
+                     else
+                        coefmpc(mpcfree)=-1.d0
+                     endif
                      mpcfree=nodempc(3,mpcfree)
                      if(mpcfree.eq.0) then
                         write(*,*) 
      &                       '*ERROR in gen3dforc: increase memmpc_'
                         call exit(201)
                      endif
+!     
+                     if((j.le.nedge).and.(quadratic)) then
+                        nodempc(1,mpcfree)=knor(indexk+2)
+                        nodempc(2,mpcfree)=idirl
+                        coefmpc(mpcfree)=4.d0
+                        mpcfree=nodempc(3,mpcfree)
+                        if(mpcfree.eq.0) then
+                           write(*,*) 
+     &                          '*ERROR in gen3dforc: increase memmpc_'
+                           call exit(201)
+                        endif
+                     endif
+!     
+                     nodempc(1,mpcfree)=knor(indexk+3)
+                     nodempc(2,mpcfree)=idirl
+                     if((j.gt.nedge).or.(.not.quadratic)) then
+                        coefmpc(mpcfree)=1.d0
+                     else
+                        coefmpc(mpcfree)=-1.d0
+                     endif
+                     mpcfree=nodempc(3,mpcfree)
+                     if(mpcfree.eq.0) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dforc: increase memmpc_'
+                        call exit(201)
+                     endif
+!     
+                     nodempc(1,mpcfree)=node
+                     nodempc(2,mpcfree)=idirl
+                     coefmpc(mpcfree)=-2.d0
+                     mpcfreenew=nodempc(3,mpcfree)
+                     if(mpcfreenew.eq.0) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dforc: increase memmpc_'
+                        call exit(201)
+                     endif
+!     
+                     nodempc(3,mpcfree)=0
+                     mpcfree=mpcfreenew
                   endif
-!
-                  nodempc(1,mpcfree)=knor(indexk+3)
-                  nodempc(2,mpcfree)=idir
-                  if((j.gt.nedge).or.(.not.quadratic)) then
-                     coefmpc(mpcfree)=1.d0
-                  else
-                     coefmpc(mpcfree)=-1.d0
-                  endif
-                  mpcfree=nodempc(3,mpcfree)
-                  if(mpcfree.eq.0) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dforc: increase memmpc_'
-                     call exit(201)
-                  endif
-!
-                  nodempc(1,mpcfree)=node
-                  nodempc(2,mpcfree)=idir
-                  coefmpc(mpcfree)=-2.d0
-                  mpcfreenew=nodempc(3,mpcfree)
-                  if(mpcfreenew.eq.0) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dforc: increase memmpc_'
-                     call exit(201)
-                  endif
-!
-                  nodempc(3,mpcfree)=0
-                  mpcfree=mpcfreenew
-               endif
+               enddo
             elseif(lakon(ielem)(7:7).eq.'B') then
-!
+!     
 !                       1d beam element: generate MPC's
 !
                newnode=knor(indexk+1)
-               idof=8*(newnode-1)+idir
-               call nident(ikmpc,idof,nmpc,id)
-               if((id.le.0).or.(ikmpc(id).ne.idof)) then
-                  nmpc=nmpc+1
-                  if(nmpc.gt.nmpc_) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dforc: increase nmpc_'
-                     call exit(201)
-                  endif
-                  labmpc(nmpc)='                    '
-                  ipompc(nmpc)=mpcfree
-                  do k=nmpc,id+2,-1
-                     ikmpc(k)=ikmpc(k-1)
-                     ilmpc(k)=ilmpc(k-1)
-                  enddo
-                  ikmpc(id+1)=idof
-                  ilmpc(id+1)=nmpc
+!
+!              if a transformation applies to the node all
+!              dofs have to be connected
+!
+               if(ntrans.le.0) then
+                  idirstart=idir
+                  idirend=idir
+               elseif(inotr(1,node).eq.0) then
+                  idirstart=idir
+                  idirend=idir
+               else
+                  idirstart=1
+                  idirend=3
+               endif
+               do idirl=idirstart,idirend
+                  idof=8*(newnode-1)+idirl
+                  call nident(ikmpc,idof,nmpc,id)
+                  if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                     nmpc=nmpc+1
+                     if(nmpc.gt.nmpc_) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dforc: increase nmpc_'
+                        call exit(201)
+                     endif
+                     labmpc(nmpc)='                    '
+                     ipompc(nmpc)=mpcfree
+                     do k=nmpc,id+2,-1
+                        ikmpc(k)=ikmpc(k-1)
+                        ilmpc(k)=ilmpc(k-1)
+                     enddo
+                     ikmpc(id+1)=idof
+                     ilmpc(id+1)=nmpc
                      do k=1,4
                         nodempc(1,mpcfree)=knor(indexk+k)
-                        nodempc(2,mpcfree)=idir
+                        nodempc(2,mpcfree)=idirl
                         coefmpc(mpcfree)=1.d0
                         mpcfree=nodempc(3,mpcfree)
                         if(mpcfree.eq.0) then
@@ -807,63 +868,81 @@ c               vold(1,iexpnode)=alpha
                            call exit(201)
                         endif
                      enddo
-                  nodempc(1,mpcfree)=node
-                  nodempc(2,mpcfree)=idir
-                  coefmpc(mpcfree)=-4.d0
-                  mpcfreenew=nodempc(3,mpcfree)
-                  if(mpcfreenew.eq.0) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dforc: increase memmpc_'
-                     call exit(201)
+                     nodempc(1,mpcfree)=node
+                     nodempc(2,mpcfree)=idirl
+                     coefmpc(mpcfree)=-4.d0
+                     mpcfreenew=nodempc(3,mpcfree)
+                     if(mpcfreenew.eq.0) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dforc: increase memmpc_'
+                        call exit(201)
+                     endif
+                     nodempc(3,mpcfree)=0
+                     mpcfree=mpcfreenew
                   endif
-                  nodempc(3,mpcfree)=0
-                  mpcfree=mpcfreenew
-               endif
+               enddo
             else
 !
 !              2d plane stress, plane strain or axisymmetric
 !              element: MPC in all but z-direction
 !
                newnode=knor(indexk+2)
-               idof=8*(newnode-1)+idir
-               call nident(ikmpc,idof,nmpc,id)
-               if(((id.le.0).or.(ikmpc(id).ne.idof)).and.
-     &              (idir.ne.3)) then
-                  nmpc=nmpc+1
-                  if(nmpc.gt.nmpc_) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dmpc: increase nmpc_'
-                     call exit(201)
-                  endif
-                  labmpc(nmpc)='                    '
-                  ipompc(nmpc)=mpcfree
-                  do j=nmpc,id+2,-1
-                     ikmpc(j)=ikmpc(j-1)
-                     ilmpc(j)=ilmpc(j-1)
-                  enddo
-                  ikmpc(id+1)=idof
-                  ilmpc(id+1)=nmpc
-                  nodempc(1,mpcfree)=newnode
-                  nodempc(2,mpcfree)=idir
-                  coefmpc(mpcfree)=1.d0
-                  mpcfree=nodempc(3,mpcfree)
-                  if(mpcfree.eq.0) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dmpc: increase memmpc_'
-                     call exit(201)
-                  endif
-                  nodempc(1,mpcfree)=node
-                  nodempc(2,mpcfree)=idir
-                  coefmpc(mpcfree)=-1.d0
-                  mpcfreenew=nodempc(3,mpcfree)
-                  if(mpcfreenew.eq.0) then
-                     write(*,*) 
-     &                    '*ERROR in gen3dmpc: increase memmpc_'
-                     call exit(201)
-                  endif
-                  nodempc(3,mpcfree)=0
-                  mpcfree=mpcfreenew
+!
+               if(idir.eq.3) cycle
+!
+!              if a transformation applies to the node all
+!              dofs have to be connected
+!
+               if(ntrans.le.0) then
+                  idirstart=idir
+                  idirend=idir
+               elseif(inotr(1,node).eq.0) then
+                  idirstart=idir
+                  idirend=idir
+               else
+                  idirstart=1
+                  idirend=2
                endif
+               do idirl=idirstart,idirend
+                  idof=8*(newnode-1)+idirl
+                  call nident(ikmpc,idof,nmpc,id)
+                  if((id.le.0).or.(ikmpc(id).ne.idof)) then
+                     nmpc=nmpc+1
+                     if(nmpc.gt.nmpc_) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dmpc: increase nmpc_'
+                        call exit(201)
+                     endif
+                     labmpc(nmpc)='                    '
+                     ipompc(nmpc)=mpcfree
+                     do j=nmpc,id+2,-1
+                        ikmpc(j)=ikmpc(j-1)
+                        ilmpc(j)=ilmpc(j-1)
+                     enddo
+                     ikmpc(id+1)=idof
+                     ilmpc(id+1)=nmpc
+                     nodempc(1,mpcfree)=newnode
+                     nodempc(2,mpcfree)=idirl
+                     coefmpc(mpcfree)=1.d0
+                     mpcfree=nodempc(3,mpcfree)
+                     if(mpcfree.eq.0) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dmpc: increase memmpc_'
+                        call exit(201)
+                     endif
+                     nodempc(1,mpcfree)=node
+                     nodempc(2,mpcfree)=idirl
+                     coefmpc(mpcfree)=-1.d0
+                     mpcfreenew=nodempc(3,mpcfree)
+                     if(mpcfreenew.eq.0) then
+                        write(*,*) 
+     &                       '*ERROR in gen3dmpc: increase memmpc_'
+                        call exit(201)
+                     endif
+                     nodempc(3,mpcfree)=0
+                     mpcfree=mpcfreenew
+                  endif
+               enddo
             endif
          endif
       enddo

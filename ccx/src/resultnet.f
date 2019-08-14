@@ -136,23 +136,23 @@
             bnac=bc(idof)
 !
             if(j.eq.0) then
-               if(dabs(bnac).gt.camt(1)) then
-                  camt(1)=dabs(bc(idof))
+               if(dabs(bnac).gt.dabs(camt(1))) then
+                  camt(1)=bnac
                   camt(2)=node+0.5d0
                endif
             elseif(j.eq.1) then
-               if(dabs(bnac).gt.camf(1)) then
-                  camf(1)=dabs(bc(idof))
+               if(dabs(bnac).gt.dabs(camf(1))) then
+                  camf(1)=bnac
                   camf(2)=node+0.5d0
                endif
             elseif(j.eq.2) then
-               if(dabs(bnac).gt.camp(1)) then
-                  camp(1)=dabs(bc(idof))
+               if(dabs(bnac).gt.dabs(camp(1))) then
+                  camp(1)=bnac
                   camp(2)=node+0.5d0
                endif
             else
-               if(dabs(bnac).gt.cama(1)) then
-                  cama(1)=dabs(bc(idof))
+               if(dabs(bnac).gt.dabs(cama(1))) then
+                  cama(1)=bnac
                   cama(2)=node+0.5d0
                endif
             endif
@@ -821,7 +821,8 @@ c               A=prop(index+1)
 !     
 !     for liquids: determine the gravity vector
 !     
-            if(lakon(nelem)(2:3).eq.'LI') then
+            if((lakon(nelem)(2:3).eq.'LI').or.
+     &         (lakon(nelem)(2:3).eq.'LP')) then
                do j=1,3
                   g(j)=0.d0
                enddo

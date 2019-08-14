@@ -219,29 +219,27 @@
 !
       nterms=nope-1
 !
-!     vector vr connects the dependent node with its projection
-!     on the independent face
+!     vector al connects the dependent node with its projection
+!     on the independent face = vec_r (User's
+!     manual -> theory -> boundary conditions -> node-to-face
+!     penalty contact)
 !
       do i=1,3
          pproj(i)=pl(i,nope)
       enddo
-      call attach(pl,pproj,nterms,ratio,dist,xi,et)
+      call attach_2d(pl,pproj,nterms,ratio,dist,xi,et)
       do i=1,3
          al(i)=pl(i,nope)-pproj(i)
       enddo
 !
 !     determining the jacobian vector on the surface 
 !
-c      if(nterms.eq.9) then
-c         call shape9q(xi,et,pl,xsj2,xs2,shp2,iflag)
       if(nterms.eq.8) then
          call shape8q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.4) then
          call shape4q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.6) then
          call shape6tri(xi,et,pl,xsj2,xs2,shp2,iflag)
-c      elseif(nterms.eq.7) then
-c         call shape7tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       else
          call shape3tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       endif
@@ -262,17 +260,7 @@ c         call shape7tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       if(nmethod.eq.1) then
          clear=clear-springarea(2)*(1.d0-reltime)
       endif
-c      if(clear.le.0.d0) cstr(1)=clear
       cstr(1)=clear
-!     
-!     MPADD start 
-!     (keep also positive clearance in the frd file)
-c      if(nmethod.eq.4) then
-c         cstr(1)=clear
-c      else
-c         if(clear.le.0.d0) cstr(1)=clear
-c      endif
-!     MPADD end
 !
 !     representative area: usually the slave surface stored in
 !     springarea; however, if no area was assigned because the
@@ -440,17 +428,17 @@ c      endif
             enddo
 !     
 !     calculating the difference in relative displacement since
-!     the start of the increment = lamda^*
+!     the start of the increment = vec_s
 !     
             do i=1,3
                al(i)=alnew(i)-xstateini(3+i,1,ne0+konl(nope+1))
             enddo
 !     
-!     ||lambda^*||
+!     s=||vec_s||
 !     
             val=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
 !     
-!     update the relative tangential displacement
+!     update the relative tangential displacement vec_t
 !     
             do i=1,3
                t(i)=xstateini(6+i,1,ne0+konl(nope+1))+al(i)-val*xn(i)
@@ -486,7 +474,6 @@ c      endif
                ftrial(i)=xk*te(i)
             enddo
             dftrial=xk*dte
-c            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
 !     
 !     check whether stick or slip
 !     

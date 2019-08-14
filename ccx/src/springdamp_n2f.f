@@ -21,6 +21,8 @@
      &  reltime,nasym)
 !
 !     calculates the contact damping matrix (node-to-face penalty)
+!     (User's manual -> theory -> boundary conditions -> 
+!      node-to-face penalty contact)
 !
       implicit none
 !
@@ -34,7 +36,7 @@
      &  a11,a12,a22,b1(3,10),b2(3,10),dal(3,3,10),qxxy(3),fnl(3),
      &  qxyy(3),dxi(3,10),det(3,10),determinant,c11,c12,c22,
      &  qxyx(3),qyxy(3),springarea(2),dist,tu(3,3,10),
-     &  clear,reltime
+     &  clear,reltime,alnew(3)
 !
       data iflag /4/
 !
@@ -52,34 +54,32 @@
       nterms=nope-1
 !
 !     vector al connects the actual position of the slave node 
-!     with its projection on the master face
+!     with its projection on the master face = vec_r (User's
+!     manual -> theory -> boundary conditions -> node-to-face
+!     penalty contact)
 !
       do i=1,3
          pproj(i)=pl(i,nope)
       enddo
-      call attach(pl,pproj,nterms,ratio,dist,xi,et)
+      call attach_2d(pl,pproj,nterms,ratio,dist,xi,et)
       do i=1,3
          al(i)=pl(i,nope)-pproj(i)
       enddo
 !
 !     determining the jacobian vector on the surface 
 !
-c      if(nterms.eq.9) then
-c         call shape9q(xi,et,pl,xm,xs2,shp2,iflag)
       if(nterms.eq.8) then
          call shape8q(xi,et,pl,xm,xs2,shp2,iflag)
       elseif(nterms.eq.4) then
          call shape4q(xi,et,pl,xm,xs2,shp2,iflag)
       elseif(nterms.eq.6) then
          call shape6tri(xi,et,pl,xm,xs2,shp2,iflag)
-c      elseif(nterms.eq.7) then
-c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
       else
          call shape3tri(xi,et,pl,xm,xs2,shp2,iflag)
       endif
 !
-!     dxi(i,j) is the derivative of xi w.r.t. pl(i,j),
-!     det(i,j) is the derivative of eta w.r.t. pl(i,j)
+!     d xi / d vec_u_j
+!     d eta / d vec_u_j
 !
 !     dxi and det are determined from the orthogonality
 !     condition
@@ -112,8 +112,7 @@ c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
          enddo
       enddo
 !
-!     dal(i,j,k) is the derivative of al(i) w.r.t pl(j,k)
-!     ( d al / d u_k)
+!     d vec_r / d vec_u_k
 !
       do i=1,nope
          do j=1,3
@@ -273,7 +272,28 @@ c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
 !     
          xk=elcon(8,1,imat)*elcon(5,1,imat)*springarea(1)
 !     
-!     d al/d u_k -> d al^*/d u_k
+!     calculating the relative displacement between the slave node
+!     and its projection on the master surface
+!     
+         do i=1,3
+            alnew(i)=voldl(i,nope)
+            do j=1,nterms
+               alnew(i)=alnew(i)-ratio(j)*voldl(i,j)
+            enddo
+         enddo
+!     
+!     calculating the difference in relative displacement since
+!     the start of the increment = vec_s
+!     
+         do i=1,3
+            al(i)=alnew(i)
+         enddo
+!     
+!     s=||vec_s||
+!     
+         val=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
+!     
+!     d vec_s/ d vec_u_k
 !     notice: xi & et are const.
 !     
          do k=1,nope
@@ -294,7 +314,7 @@ c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
             dal(j,j,nope)=1.d0
          enddo
 !     
-!     (d al/d u_k).||m|| -> (d al^*/d u_k).||m||
+!     d s/ dvec_u_k.||m||
 !     
          do k=1,nope
             do i=1,3
@@ -305,7 +325,7 @@ c         call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
             enddo
          enddo
 !     
-!     d t/d u_k
+!     d vec_t/d vec_u_k
 !     
          do k=1,nope
             do j=1,3

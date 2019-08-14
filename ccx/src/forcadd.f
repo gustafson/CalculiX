@@ -45,7 +45,7 @@
 !     checking for boundary conditions on rotational dofs of
 !     distributing couplings 
 !
-      if((i.ge.5).and.(i.le.7)) then
+      if((i.ge.4).and.(i.le.6)) then
 !
 !        rotational dof
 !

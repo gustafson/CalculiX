@@ -16,412 +16,150 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine attach_3d(pneigh,pnode,nterms,ratio,dist,xil,etl,zel)
+      subroutine attach_3d(pneigh,pnode,nterms,ratio,dist,xil,etl,zel,
+     &  loopa)
 !
 !     ataches node with coordinates in "pnode" to the face containing 
-!     "nterms" nodes with coordinates in field "pneigh" (nterms < 21).
+!     "nterms" nodes with coordinates in field "pneigh" (nterms < 20).
 !     cave: the coordinates are stored in pneigh(1..3,*)
 !
       implicit none
 !
-      integer nterms,i,j,k,imin,jmin,kmin,kflag,n,iy
+      integer nterms,i,j,k,m,imin,jmin,kmin,im,jm,km,kflag,n,iy,loopa
 !
-      real*8 ratio(20),pneigh(3,20),pnode(3),dummy,
-     &  a(-1:1,-1:1,-1:1),xi(-1:1,-1:1,-1:1),et(-1:1,-1:1,-1:1),p(3),
-     &  aold(-1:1,-1:1,-1:1),ze(-1:1,-1:1,-1:1),zeold(-1:1,-1:1,-1:1),
-     &  xiold(-1:1,-1:1,-1:1),etold(-1:1,-1:1,-1:1),distmin,xiopt,etopt,
-     &  d1,d2,d3,d4,dist,xil,etl,zel,zeopt,dx(3),al
+      real*8 ratio(20),pneigh(3,20),pnode(3),a,xi(-1:1,-1:1,-1:1),
+     &  et(-1:1,-1:1,-1:1),ze(-1:1,-1:1,-1:1),p(3),distmin,d1,dist,
+     &  xil,etl,zel,dx(3),al,dummy
 !
       intent(in) pneigh,nterms
 !
-      intent(inout) xil,etl,zel,dist,pnode,ratio
+      intent(inout) xil,etl,zel,pnode,dist,ratio
 !
       kflag=1
       n=3
 !
-c      d1=0.25d0
-c      d2=3.125d-2
-c      d3=3.9063d-3
-c      d4=1.d-3
-      d1=1.d-2
-      d2=1.d-4
-      d3=1.d-6
-      d4=1.d-7
+      d1=1.d0
+!
+      xi(0,0,0)=0.d0
+      et(0,0,0)=0.d0
+      ze(0,0,0)=0.d0
+      call distattach_3d(xi(0,0,0),et(0,0,0),ze(0,0,0),pneigh,pnode,a,p,
+     &     ratio,nterms)
+      distmin=a
+      imin=0
+      jmin=0
+      kmin=0
+!
+      do m=1,loopa
 !
 !     initialisation
 !
-      do i=-1,1
-        do j=-1,1
-           do k=-1,1
-              xi(i,j,k)=i*d1
-              et(i,j,k)=j*d1
-              ze(i,j,k)=k*d1
-              call distattach_3d(xi(i,j,k),et(i,j,k),ze(i,j,k),pneigh,
-     &                        pnode,a(i,j,k),p,ratio,nterms)
-c              write(*,'(3(1x,i5),4(1x,e11.4))') 
-c     &          i,j,k,xi(i,j,k),et(i,j,k),ze(i,j,k),a(i,j,k)
-           enddo
-        enddo
-      enddo
+         d1=d1/10.d0
+!     
+         do i=-1,1
+            do j=-1,1
+               do k=-1,1
+                  if((i.eq.0).and.(j.eq.0).and.(k.eq.0)) cycle
 !
+                  xi(i,j,k)=xi(0,0,0)+i*d1
+                  et(i,j,k)=et(0,0,0)+j*d1
+                  ze(i,j,k)=ze(0,0,0)+k*d1
+!
+!              check whether inside the (-1,1)x(-1,1)x(-1,1) domain
+!
+                  if((xi(i,j,k).le.1.d0).and.
+     &               (xi(i,j,k).ge.-1.d0).and.
+     &               (et(i,j,k).le.1.d0).and.
+     &               (et(i,j,k).ge.-1.d0).and.
+     &               (ze(i,j,k).le.1.d0).and.
+     &               (ze(i,j,k).ge.-1.d0)) then
+                     call distattach_3d(xi(i,j,k),et(i,j,k),ze(i,j,k),
+     &                    pneigh,pnode,a,p,ratio,nterms)
+!     
+!     checking for smallest initial distance
+!     
+                     if(a.lt.distmin) then
+                        distmin=a
+                        imin=i
+                        jmin=j
+                        kmin=k
+                     endif
+                  endif
+!
+               enddo
+            enddo
+         enddo
+!     
 !     minimizing the distance from the face to the node
+!     
+         do
+!     
+!     exit if minimum found
+!     
+c            write(*,*) 'attach_3d',m,imin,jmin,kmin
+            if((imin.eq.0).and.(jmin.eq.0).and.(kmin.eq.0)) exit
 !
-      do
-        distmin=a(0,0,0)
-        imin=0
-        jmin=0
-        kmin=0
-c        write(*,*) '1 ',xi(0,0,0),et(0,0,0),
-c     &         ze(0,0,0),distmin
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                if(a(i,j,k).lt.distmin) then
-                   distmin=a(i,j,k)
-                   imin=i
-                   jmin=j
-                   kmin=k
-                endif
-             enddo
-          enddo
-        enddo
-c        write(*,*) '1 ',xi(imin,jmin,kmin),et(imin,jmin,kmin),
-c     &         ze(imin,jmin,kmin),distmin
-cc        write(*,*) '1 ',xi(0,0,0),et(0,0,0),ze(0,0,0)
+!           new center of 3x3x3 matrix
 !
-!       exit if minimum found
+            xi(0,0,0)=xi(imin,jmin,kmin)
+            et(0,0,0)=et(imin,jmin,kmin)
+            ze(0,0,0)=ze(imin,jmin,kmin)
 !
-        if((imin.eq.0).and.(jmin.eq.0).and.(kmin.eq.0)) exit
+            im=imin
+            jm=jmin
+            km=kmin
 !
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                aold(i,j,k)=a(i,j,k)
-                xiold(i,j,k)=xi(i,j,k)
-                etold(i,j,k)=et(i,j,k)
-                zeold(i,j,k)=ze(i,j,k)
-             enddo
-          enddo
-        enddo
+            imin=0
+            jmin=0
+            kmin=0
+!     
+            do i=-1,1
+               do j=-1,1
+                  do k=-1,1
+                     if((i+im.lt.-1).or.(i+im.gt.1).or.
+     &                  (j+jm.lt.-1).or.(j+jm.gt.1).or.
+     &                  (k+km.lt.-1).or.(k+km.gt.1)) then
 !
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                if((i+imin.ge.-1).and.(i+imin.le.1).and.
-     &             (j+jmin.ge.-1).and.(j+jmin.le.1).and.
-     &             (k+kmin.ge.-1).and.(k+kmin.le.1)) then
-                   a(i,j,k)=aold(i+imin,j+jmin,k+kmin)
-                   xi(i,j,k)=xiold(i+imin,j+jmin,k+kmin)
-                   et(i,j,k)=etold(i+imin,j+jmin,k+kmin)
-                   ze(i,j,k)=zeold(i+imin,j+jmin,k+kmin)
-                else
-                   xi(i,j,k)=xi(i,j,k)+imin*d1
-                   et(i,j,k)=et(i,j,k)+jmin*d1
-                   ze(i,j,k)=ze(i,j,k)+kmin*d1
+                        xi(i,j,k)=xi(0,0,0)+i*d1
+                        et(i,j,k)=et(0,0,0)+j*d1
+                        ze(i,j,k)=ze(0,0,0)+k*d1
 !
-                   xi(i,j,k)=min(xi(i,j,k),1.d0)
-                   xi(i,j,k)=max(xi(i,j,k),-1.d0)
-                   et(i,j,k)=min(et(i,j,k),1.d0)
-                   et(i,j,k)=max(et(i,j,k),-1.d0)
-                   ze(i,j,k)=min(ze(i,j,k),1.d0)
-                   ze(i,j,k)=max(ze(i,j,k),-1.d0)
+!              check whether inside the (-1,1)x(-1,1)x(-1,1) domain
 !
-                   call distattach_3d(xi(i,j,k),et(i,j,k),ze(i,j,k),
-     &                  pneigh,
-     &                  pnode,a(i,j,k),p,ratio,nterms)
-c              write(*,'(3(1x,i5),4(1x,e11.4))') 
-c     &          i,j,k,xi(i,j,k),et(i,j,k),ze(i,j,k),a(i,j,k)
-!              write(*,*) a(i,j,k)
-                endif
-             enddo
-          enddo
-        enddo
+                        if((xi(i,j,k).le.1.d0).and.
+     &                     (xi(i,j,k).ge.-1.d0).and.
+     &                     (et(i,j,k).le.1.d0).and.
+     &                     (et(i,j,k).ge.-1.d0).and.
+     &                     (ze(i,j,k).le.1.d0).and.
+     &                     (ze(i,j,k).ge.-1.d0)) then
+                           call distattach_3d(xi(i,j,k),et(i,j,k),
+     &                          ze(i,j,k),pneigh,pnode,a,p,ratio,nterms)
+!
+!                       check for new minimum
+!
+                           if(a.lt.distmin) then
+                              distmin=a
+                              imin=i
+                              jmin=j
+                              kmin=k
+                           endif
+                        endif
+!
+                     endif
+                  enddo
+               enddo
+            enddo
+         enddo
       enddo
 !
-!     2nd run
-!     initialisation
-!
-      xiopt=xi(0,0,0)
-      etopt=et(0,0,0)
-      zeopt=ze(0,0,0)
-      do i=-1,1
-        do j=-1,1
-           do k=-1,1
-              xi(i,j,k)=xiopt+i*d2
-              et(i,j,k)=etopt+j*d2
-              ze(i,j,k)=zeopt+k*d2
-              xi(i,j,k)=min(xi(i,j,k),1.d0)
-              xi(i,j,k)=max(xi(i,j,k),-1.d0)
-              et(i,j,k)=min(et(i,j,k),1.d0)
-              et(i,j,k)=max(et(i,j,k),-1.d0)
-              ze(i,j,k)=min(ze(i,j,k),1.d0)
-              ze(i,j,k)=max(ze(i,j,k),-1.d0)
-              call distattach_3d(xi(i,j,k),et(i,j,k),ze(i,j,k),pneigh,
-     &             pnode,a(i,j,k),p,ratio,nterms)
-           enddo
-        enddo
-      enddo
-!
-!     minimizing the distance from the face to the node
-!
-      do
-        distmin=a(0,0,0)
-        imin=0
-        jmin=0
-        kmin=0
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                if(a(i,j,k).lt.distmin) then
-                   distmin=a(i,j,k)
-                   imin=i
-                   jmin=j
-                   kmin=k
-                endif
-             enddo
-          enddo
-        enddo
-cc        write(*,*) '2 ',xi(0,0,0),et(0,0,0),ze(0,0,0)
-!
-!       exit if minimum found
-!
-        if((imin.eq.0).and.(jmin.eq.0).and.(kmin.eq.0)) exit
-!
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                aold(i,j,k)=a(i,j,k)
-                xiold(i,j,k)=xi(i,j,k)
-                etold(i,j,k)=et(i,j,k)
-                zeold(i,j,k)=ze(i,j,k)
-             enddo
-          enddo
-        enddo
-!
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                if((i+imin.ge.-1).and.(i+imin.le.1).and.
-     &             (j+jmin.ge.-1).and.(j+jmin.le.1).and.
-     &             (k+kmin.ge.-1).and.(k+kmin.le.1)) then
-                   a(i,j,k)=aold(i+imin,j+jmin,k+kmin)
-                   xi(i,j,k)=xiold(i+imin,j+jmin,k+kmin)
-                   et(i,j,k)=etold(i+imin,j+jmin,k+kmin)
-                   ze(i,j,k)=zeold(i+imin,j+jmin,k+kmin)
-                else
-                   xi(i,j,k)=xi(i,j,k)+imin*d2
-                   et(i,j,k)=et(i,j,k)+jmin*d2
-                   ze(i,j,k)=ze(i,j,k)+kmin*d2
-!
-                   xi(i,j,k)=min(xi(i,j,k),1.d0)
-                   xi(i,j,k)=max(xi(i,j,k),-1.d0)
-                   et(i,j,k)=min(et(i,j,k),1.d0)
-                   et(i,j,k)=max(et(i,j,k),-1.d0)
-                   ze(i,j,k)=min(ze(i,j,k),1.d0)
-                   ze(i,j,k)=max(ze(i,j,k),-1.d0)
-!
-                   call distattach_3d(xi(i,j,k),et(i,j,k),ze(i,j,k),
-     &                  pneigh,
-     &                  pnode,a(i,j,k),p,ratio,nterms)
-!              write(*,*) a(i,j,k)
-                endif
-             enddo
-          enddo
-        enddo
-      enddo
-!
-!     3rd run
-!     initialisation
-!
-      xiopt=xi(0,0,0)
-      etopt=et(0,0,0)
-      zeopt=ze(0,0,0)
-      do i=-1,1
-        do j=-1,1
-           do k=-1,1
-              xi(i,j,k)=xiopt+i*d3
-              et(i,j,k)=etopt+j*d3
-              ze(i,j,k)=zeopt+k*d3
-              xi(i,j,k)=min(xi(i,j,k),1.d0)
-              xi(i,j,k)=max(xi(i,j,k),-1.d0)
-              et(i,j,k)=min(et(i,j,k),1.d0)
-              et(i,j,k)=max(et(i,j,k),-1.d0)
-              ze(i,j,k)=min(ze(i,j,k),1.d0)
-              ze(i,j,k)=max(ze(i,j,k),-1.d0)
-              call distattach_3d(xi(i,j,k),et(i,j,k),ze(i,j,k),pneigh,
-     &             pnode,a(i,j,k),p,ratio,nterms)
-           enddo
-        enddo
-      enddo
-!
-!     minimizing the distance from the face to the node
-!
-      do
-        distmin=a(0,0,0)
-        imin=0
-        jmin=0
-        kmin=0
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                if(a(i,j,k).lt.distmin) then
-                   distmin=a(i,j,k)
-                   imin=i
-                   jmin=j
-                   kmin=k
-                endif
-             enddo
-          enddo
-        enddo
-cc        write(*,*) '3 ',xi(0,0,0),et(0,0,0),ze(0,0,0)
-!
-!       exit if minimum found
-!
-        if((imin.eq.0).and.(jmin.eq.0).and.(kmin.eq.0)) exit
-!
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                aold(i,j,k)=a(i,j,k)
-                xiold(i,j,k)=xi(i,j,k)
-                etold(i,j,k)=et(i,j,k)
-                zeold(i,j,k)=ze(i,j,k)
-             enddo
-          enddo
-        enddo
-!
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                if((i+imin.ge.-1).and.(i+imin.le.1).and.
-     &               (j+jmin.ge.-1).and.(j+jmin.le.1).and.
-     &               (k+kmin.ge.-1).and.(k+kmin.le.1)) then
-                   a(i,j,k)=aold(i+imin,j+jmin,k+kmin)
-                   xi(i,j,k)=xiold(i+imin,j+jmin,k+kmin)
-                   et(i,j,k)=etold(i+imin,j+jmin,k+kmin)
-                   ze(i,j,k)=zeold(i+imin,j+jmin,k+kmin)
-                else
-                   xi(i,j,k)=xi(i,j,k)+imin*d3
-                   et(i,j,k)=et(i,j,k)+jmin*d3
-                   ze(i,j,k)=ze(i,j,k)+kmin*d3
-!
-                   xi(i,j,k)=min(xi(i,j,k),1.d0)
-                   xi(i,j,k)=max(xi(i,j,k),-1.d0)
-                   et(i,j,k)=min(et(i,j,k),1.d0)
-                   et(i,j,k)=max(et(i,j,k),-1.d0)
-                   ze(i,j,k)=min(ze(i,j,k),1.d0)
-                   ze(i,j,k)=max(ze(i,j,k),-1.d0)
-!
-                   call distattach_3d(xi(i,j,k),et(i,j,k),ze(i,j,k),
-     &                  pneigh,
-     &                  pnode,a(i,j,k),p,ratio,nterms)
-!              write(*,*) a(i,j,k)
-                endif
-             enddo
-          enddo
-        enddo
-      enddo
-!
-!     4th run
-!     initialisation
-!
-      xiopt=xi(0,0,0)
-      etopt=et(0,0,0)
-      zeopt=ze(0,0,0)
-      do i=-1,1
-        do j=-1,1
-           do k=-1,1
-              xi(i,j,k)=xiopt+i*d4
-              et(i,j,k)=etopt+j*d4
-              ze(i,j,k)=zeopt+k*d4
-              xi(i,j,k)=min(xi(i,j,k),1.d0)
-              xi(i,j,k)=max(xi(i,j,k),-1.d0)
-              et(i,j,k)=min(et(i,j,k),1.d0)
-              et(i,j,k)=max(et(i,j,k),-1.d0)
-              ze(i,j,k)=min(ze(i,j,k),1.d0)
-              ze(i,j,k)=max(ze(i,j,k),-1.d0)
-              call distattach_3d(xi(i,j,k),et(i,j,k),ze(i,j,k),pneigh,
-     &           pnode,a(i,j,k),p,ratio,nterms)
-           enddo
-        enddo
-      enddo
-!
-!     minimizing the distance from the face to the node
-!
-      do
-        distmin=a(0,0,0)
-        imin=0
-        jmin=0
-        kmin=0
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                if(a(i,j,k).lt.distmin) then
-                   distmin=a(i,j,k)
-                   imin=i
-                   jmin=j
-                   kmin=k
-                endif
-             enddo
-          enddo
-        enddo
-cc        write(*,*) '4 ',xi(0,0,0),et(0,0,0),ze(0,0,0)
-!
-!       exit if minimum found
-!
-        if((imin.eq.0).and.(jmin.eq.0).and.(kmin.eq.0)) exit
-!
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                aold(i,j,k)=a(i,j,k)
-                xiold(i,j,k)=xi(i,j,k)
-                etold(i,j,k)=et(i,j,k)
-                zeold(i,j,k)=ze(i,j,k)
-             enddo
-          enddo
-        enddo
-!
-        do i=-1,1
-          do j=-1,1
-             do k=-1,1
-                if((i+imin.ge.-1).and.(i+imin.le.1).and.
-     &               (j+jmin.ge.-1).and.(j+jmin.le.1).and.
-     &               (k+kmin.ge.-1).and.(k+kmin.le.1)) then
-                   a(i,j,k)=aold(i+imin,j+jmin,k+kmin)
-                   xi(i,j,k)=xiold(i+imin,j+jmin,k+kmin)
-                   et(i,j,k)=etold(i+imin,j+jmin,k+kmin)
-                   ze(i,j,k)=zeold(i+imin,j+jmin,k+kmin)
-                else
-                   xi(i,j,k)=xi(i,j,k)+imin*d4
-                   et(i,j,k)=et(i,j,k)+jmin*d4
-                   ze(i,j,k)=ze(i,j,k)+kmin*d4
-!
-                   xi(i,j,k)=min(xi(i,j,k),1.d0)
-                   xi(i,j,k)=max(xi(i,j,k),-1.d0)
-                   et(i,j,k)=min(et(i,j,k),1.d0)
-                   et(i,j,k)=max(et(i,j,k),-1.d0)
-                   ze(i,j,k)=min(ze(i,j,k),1.d0)
-                   ze(i,j,k)=max(ze(i,j,k),-1.d0)
-!
-                   call distattach_3d(xi(i,j,k),et(i,j,k),ze(i,j,k),
-     &                  pneigh,
-     &                  pnode,a(i,j,k),p,ratio,nterms)
-!     write(*,*) a(i,j,k)
-                endif
-             enddo
-          enddo
-        enddo
-      enddo
-!
-      call distattach_3d(xi(0,0,0),et(0,0,0),ze(0,0,0),pneigh,pnode,
-     &     a(0,0,0),p,ratio,nterms)
+      call distattach_3d(xi(0,0,0),et(0,0,0),ze(0,0,0),pneigh,pnode,a,p,
+     &     ratio,nterms)
 !
       do i=1,3
         pnode(i)=p(i)
       enddo
 !
-      dist=a(0,0,0)
+      dist=dsqrt(a)
 !
       if((nterms.eq.20).or.(nterms.eq.8)) then
          xil=xi(0,0,0)
@@ -441,12 +179,6 @@ cc        write(*,*) '4 ',xi(0,0,0),et(0,0,0),ze(0,0,0)
             etl=al*etl
             zel=al*zel
          endif
-c         if(xil+etl+zel.gt.1.d0) then
-c            dummy=2.d0*(1.d0-xil-etl-zel)/3.d0
-c            xil=dummy+xil
-c            etl=dummy+etl
-c            zel=dummy+zel
-c         endif
       elseif((nterms.eq.6).or.(nterms.eq.15)) then
          xil=(xi(0,0,0)+1.d0)/2.d0
          etl=(et(0,0,0)+1.d0)/2.d0
@@ -457,7 +189,7 @@ c         endif
          endif
          zel=ze(0,0,0)
       endif
-!     
+!
       return
       end
       

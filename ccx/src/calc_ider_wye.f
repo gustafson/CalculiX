@@ -18,7 +18,8 @@
 !     author: Yannick Muller
 !     
       subroutine calc_ider_wye(df,pt1,Tt1,xflow1,xflow2,pt2,
-     &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,iflag)
+     &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,iflag
+     &,zeta)
 !
       implicit none
 !
@@ -44,13 +45,14 @@
      &eps,
      &h,
      &f0,
-     &zeta_fac
+     &zeta_fac,
+     &zeta
 !
       eps = 1.0e-4
 !
       f0 = calc_residual_wye(pt1,Tt1,xflow1,xflow2,pt2,
      &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,
-     &R,ider,iflag)
+     &R,ider,iflag,zeta)
 !
       h = eps*dabs(pt1)
       if(h.eq.0)then
@@ -58,7 +60,7 @@
       endif
       df(1) = (calc_residual_wye(pt1+h,Tt1,xflow1,xflow2,pt2,
      &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,
-     &iflag)-f0)/h
+     &iflag,zeta)-f0)/h
 !
       h = eps*dabs(Tt1)
       if(h.eq.0)then
@@ -66,7 +68,7 @@
       endif
       df(2) = (calc_residual_wye(pt1,Tt1+h,xflow1,xflow2,pt2,
      &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,
-     &iflag)-f0)/h
+     &iflag,zeta)-f0)/h
 !
       h = eps*dabs(xflow1)
       if(h.eq.0)then
@@ -74,7 +76,7 @@
       endif
       df(3) = (calc_residual_wye(pt1,Tt1,xflow1+h,xflow2,pt2,
      &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,
-     &iflag)-f0)/h
+     &iflag,zeta)-f0)/h
 !
       h = eps*dabs(xflow2)
       if(h.eq.0)then
@@ -82,7 +84,7 @@
       endif
       df(4) = (calc_residual_wye(pt1,Tt1,xflow1,xflow2+h,pt2,
      &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,
-     &iflag)-f0)/h
+     &iflag,zeta)-f0)/h
 !
       h = eps*dabs(pt2)
       if(h.eq.0)then
@@ -90,7 +92,7 @@
       endif
       df(5) = (calc_residual_wye(pt1,Tt1,xflow1,xflow2,pt2+h,
      &Tt2,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,
-     &iflag)-f0)/h
+     &iflag,zeta)-f0)/h
 !
       h = eps*dabs(Tt2)
       if(h.eq.0)then
@@ -98,7 +100,7 @@
       endif
       df(6) = (calc_residual_wye(pt1,Tt1,xflow1,xflow2,pt2,
      &Tt2+h,ichan_num,A1,A2,A_s,dh1,dh2,alpha,zeta_fac,kappa,R,ider,
-     &iflag)-f0)/h
+     &iflag,zeta)-f0)/h
 !
       return
       end

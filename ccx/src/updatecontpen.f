@@ -175,6 +175,13 @@
                      else
                         nopem=8
                      endif
+                  else
+                     write(*,*) '*ERROR in updatecontpen'
+                     write(*,*) '       unknown element type'
+                     write(*,*) '       in contact master set'
+                     write(*,*) '       element number :',nelemm
+                     write(*,*) '       element label:',lakon(nelemm)
+                     call exit(201)
                   endif
 !     
 !     actual position of the nodes belonging to the

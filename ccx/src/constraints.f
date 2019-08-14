@@ -23,9 +23,12 @@
 !     reading the input deck: *CONSTRAINT
 !
 !     criteria: DISPLACEMENT
+!               X-DISP
+!               Y-DISP
+!               Z-DISP
 !               EIGENFREQUENCY
 !               MASS
-!               SHAPE ENERGY
+!               STRAIN ENERGY
 !               STRESS
 !               THICKNESS
 !            
@@ -91,6 +94,237 @@
             nobject=nobject+1
             objectset(1,nobject)(1:12)='DISPLACEMENT'
             do k=13,81
+               objectset(1,nobject)(k:k)=' '
+            enddo
+!
+!           set definition
+!
+            if(n.ge.2) then
+               read(textpart(2)(1:80),'(a80)',iostat=istat) 
+     &              objectset(3,nobject)(1:80) 
+               objectset(3,nobject)(81:81)=' '
+               ipos=index(objectset(3,nobject),' ')
+               if(ipos.ne.1) objectset(3,nobject)(ipos:ipos)='N'
+!
+!              check the existence of the set
+!
+               do i=1,nset
+                  if(set(i).eq.objectset(3,nobject)) exit
+               enddo
+               if(i.gt.nset) then
+                  objectset(3,nobject)(ipos:ipos)=' '
+                  write(*,*) '*ERROR reading *CONSTRAINT: node set ',
+     &                   objectset(3,nobject)
+                  write(*,*) '       has not yet been defined. '
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONSTRAINT%",ier)
+                  return
+               endif
+!
+            endif
+!
+!           LE or GE for constraint
+!
+            if(n.ge.3) then
+               read(textpart(3)(1:2),'(a2)') consttype 
+               if((consttype.ne.'LE').and.
+     &            (consttype.ne.'GE')) then
+                  write(*,*) '*ERROR reading *CONSTRAINT'
+                  write(*,*) '       type of constraint must be'
+                  write(*,*) '       LE or GE'
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONSTRAINT%",ier)
+                  return
+               endif
+               objectset(1,nobject)(19:20)=textpart(3)(1:2)
+            endif
+!
+!           relative constraint value
+!
+            if(n.ge.4) then
+               read(textpart(4)(1:20),'(f20.0)',iostat=istat) rel
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONSTRAINT%",ier)
+                  return
+               endif
+               objectset(1,nobject)(41:60)=textpart(4)(1:20)
+            endif
+!
+!           absolute constraint value
+!
+            if(n.ge.5) then
+               read(textpart(5)(1:20),'(f20.0)',iostat=istat) abs
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &              "*CONSTRAINT%",ier)
+                  return
+               endif
+               if(istat.le.0) then
+                  objectset(1,nobject)(61:80)=textpart(5)(1:20)
+               endif
+            endif
+!
+!        X-DISPLACEMENT
+!
+         elseif(textpart(1)(1:6).eq.'X-DISP') then
+            nobject=nobject+1
+            objectset(1,nobject)(1:6)='X-DISP'
+            do k=7,81
+               objectset(1,nobject)(k:k)=' '
+            enddo
+!
+!           set definition
+!
+            if(n.ge.2) then
+               read(textpart(2)(1:80),'(a80)',iostat=istat) 
+     &              objectset(3,nobject)(1:80) 
+               objectset(3,nobject)(81:81)=' '
+               ipos=index(objectset(3,nobject),' ')
+               if(ipos.ne.1) objectset(3,nobject)(ipos:ipos)='N'
+!
+!              check the existence of the set
+!
+               do i=1,nset
+                  if(set(i).eq.objectset(3,nobject)) exit
+               enddo
+               if(i.gt.nset) then
+                  objectset(3,nobject)(ipos:ipos)=' '
+                  write(*,*) '*ERROR reading *CONSTRAINT: node set ',
+     &                   objectset(3,nobject)
+                  write(*,*) '       has not yet been defined. '
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONSTRAINT%",ier)
+                  return
+               endif
+!
+            endif
+!
+!           LE or GE for constraint
+!
+            if(n.ge.3) then
+               read(textpart(3)(1:2),'(a2)') consttype 
+               if((consttype.ne.'LE').and.
+     &            (consttype.ne.'GE')) then
+                  write(*,*) '*ERROR reading *CONSTRAINT'
+                  write(*,*) '       type of constraint must be'
+                  write(*,*) '       LE or GE'
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONSTRAINT%",ier)
+                  return
+               endif
+               objectset(1,nobject)(19:20)=textpart(3)(1:2)
+            endif
+!
+!           relative constraint value
+!
+            if(n.ge.4) then
+               read(textpart(4)(1:20),'(f20.0)',iostat=istat) rel
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONSTRAINT%",ier)
+                  return
+               endif
+               objectset(1,nobject)(41:60)=textpart(4)(1:20)
+            endif
+!
+!           absolute constraint value
+!
+            if(n.ge.5) then
+               read(textpart(5)(1:20),'(f20.0)',iostat=istat) abs
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &              "*CONSTRAINT%",ier)
+                  return
+               endif
+               if(istat.le.0) then
+                  objectset(1,nobject)(61:80)=textpart(5)(1:20)
+               endif
+            endif
+!
+!        Y-DISPLACEMENT
+!
+         elseif(textpart(1)(1:6).eq.'Y-DISP') then
+            nobject=nobject+1
+            objectset(1,nobject)(1:6)='Y-DISP'
+            do k=7,81
+               objectset(1,nobject)(k:k)=' '
+            enddo
+!
+!           set definition
+!
+            if(n.ge.2) then
+               read(textpart(2)(1:80),'(a80)',iostat=istat) 
+     &              objectset(3,nobject)(1:80) 
+               objectset(3,nobject)(81:81)=' '
+               ipos=index(objectset(3,nobject),' ')
+               if(ipos.ne.1) objectset(3,nobject)(ipos:ipos)='N'
+!
+!              check the existence of the set
+!
+               do i=1,nset
+                  if(set(i).eq.objectset(3,nobject)) exit
+               enddo
+               if(i.gt.nset) then
+                  objectset(3,nobject)(ipos:ipos)=' '
+                  write(*,*) '*ERROR reading *CONSTRAINT: node set ',
+     &                   objectset(3,nobject)
+                  write(*,*) '       has not yet been defined. '
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONSTRAINT%",ier)
+                  return
+               endif
+!
+            endif
+!
+!           LE or GE for constraint
+!
+            if(n.ge.3) then
+               read(textpart(3)(1:2),'(a2)') consttype 
+               if((consttype.ne.'LE').and.
+     &            (consttype.ne.'GE')) then
+                  write(*,*) '*ERROR reading *CONSTRAINT'
+                  write(*,*) '       type of constraint must be'
+                  write(*,*) '       LE or GE'
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONSTRAINT%",ier)
+                  return
+               endif
+               objectset(1,nobject)(19:20)=textpart(3)(1:2)
+            endif
+!
+!           relative constraint value
+!
+            if(n.ge.4) then
+               read(textpart(4)(1:20),'(f20.0)',iostat=istat) rel
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &                 "*CONSTRAINT%",ier)
+                  return
+               endif
+               objectset(1,nobject)(41:60)=textpart(4)(1:20)
+            endif
+!
+!           absolute constraint value
+!
+            if(n.ge.5) then
+               read(textpart(5)(1:20),'(f20.0)',iostat=istat) abs
+               if(istat.gt.0) then
+                  call inputerror(inpc,ipoinpc,iline,
+     &              "*CONSTRAINT%",ier)
+                  return
+               endif
+               if(istat.le.0) then
+                  objectset(1,nobject)(61:80)=textpart(5)(1:20)
+               endif
+            endif
+!
+!        Z-DISPLACEMENT
+!
+         elseif(textpart(1)(1:6).eq.'Z-DISP') then
+            nobject=nobject+1
+            objectset(1,nobject)(1:6)='Z-DISP'
+            do k=7,81
                objectset(1,nobject)(k:k)=' '
             enddo
 !
@@ -263,11 +497,11 @@
                endif
             endif
 !
-!        SHAPEENERGY
+!        STRAINENERGY
 !
-         elseif(textpart(1)(1:11).eq.'SHAPEENERGY') then
+         elseif(textpart(1)(1:12).eq.'STRAINENERGY') then
             nobject=nobject+1
-            objectset(1,nobject)(1:11)='SHAPEENERGY'
+            objectset(1,nobject)(1:12)='STRAINENERGY'
             do k=12,81
                objectset(1,nobject)(k:k)=' '
             enddo

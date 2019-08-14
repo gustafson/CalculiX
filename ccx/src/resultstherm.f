@@ -76,11 +76,10 @@
 !
       do i=nea,neb
 !
-         if(ipkon(i).lt.0) cycle
+!        only structural elements (no fluid elements)
 !
-!        no 3D-fluid elements
+         if((ipkon(i).lt.0).or.(lakon(i)(1:1).eq.'F')) cycle
 !
-         if(lakon(i)(1:1).eq.'F') cycle
          if(lakon(i)(1:7).eq.'DCOUP3D') cycle
 !
 !        strainless reactivated elements are labeled by a negative

@@ -283,11 +283,11 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  if((ITG)camt[1]==0){
 		      printf
 		      ("      largest correction to gas temperature in present network iteration= %e\n\n",
-                       camt[0]);
+                       fabs(camt[0]));
 		  }else{
 		      printf
 		      ("      largest correction to gas temperature in present network iteration= %e in node %" ITGFORMAT "\n\n",
-                       camt[0],(ITG)camt[1]);
+                       fabs(camt[0]),(ITG)camt[1]);
 		  }
 	      }
 	      
@@ -302,10 +302,10 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  printf("      largest change of gas massflow since start of network iterations= %e\n",vamf);
 		  if((ITG)camf[1]==0){
 		      printf("      largest correction to gas massflow in present network iteration= %e\n\n",
-			 camf[0]);
+			     fabs(camf[0]));
 		  }else{
 		      printf("      largest correction to gas massflow in present network iteration= %e in node %" ITGFORMAT "\n\n",
-			 camf[0],(ITG)camf[1]);
+			     fabs(camf[0]),(ITG)camf[1]);
 		  }
 		  
 		  cam2p=cam1p;
@@ -316,10 +316,10 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  printf("      largest change of gas pressure since start of network iterations= %e\n",vamp);
 		  if((ITG)camp[1]==0){
 		      printf("      largest correction to gas pressure in present network iteration= %e\n\n",
-                         camp[0]);
+			     fabs(camp[0]));
 		  }else{
 		      printf("      largest correction to gas pressure in present network iteration= %e in node %" ITGFORMAT "\n\n",
-                         camp[0],(ITG)camp[1]);
+			     fabs(camp[0]),(ITG)camp[1]);
 		  }
 		  
 		  cam2a=cam1a;
@@ -328,10 +328,10 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		  printf("      largest change of geometry since start of network iterations= %e\n",vama);
 		  if((ITG)cama[1]==0){
 		      printf("      largest correction to geometry in present network iteration= %e\n",
-                         cama[0]);
+			     fabs(cama[0]));
 		  }else{
 		      printf("      largest correction to geometry in present network iteration= %e in node %" ITGFORMAT "\n",
-                         cama[0],(ITG)cama[1]);
+			     fabs(cama[0]),(ITG)cama[1]);
 		  }
 	      }	      
 	  }

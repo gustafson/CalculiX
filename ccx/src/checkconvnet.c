@@ -40,7 +40,7 @@ void checkconvnet(ITG *icutb, ITG *iin,
                   double *ramt, double *ramf, double *ramp, ITG *iplausi,
                   ITG *ichannel){
   
-  ITG i0,ir,ip,ic,il,ig,ia,idivergence;
+  ITG i0,ir,ip,ic,il,ig,ia,idivergence,iin_dyn,dyna_flag_1,dyna_flag_2;
   
   double c2t,c2f,c2p,c2a,c1t,c1f,c1p,a2t,a2f,a2p,a2a,a1t,a1f,a1p,qamp=1.,
          df,dc,db,dd,ran,can,rap,ea,cae,ral;
@@ -52,41 +52,46 @@ void checkconvnet(ITG *icutb, ITG *iin,
   a1t=ctrl[40];a1f=ctrl[41];a1p=ctrl[42];a2t=ctrl[43];a2f=ctrl[44],a2p=ctrl[45];
   a2a=ctrl[46];
   
-  /* temperature */
+  /* checks for dynamic convergence
+     - to avoid oscillations the check is done after a special number
+       inn_dyn of iterations */
+
+  iin_dyn=50;
+  if(*iin%iin_dyn==0){
   
-  if(*iin<=ip){c2t=0.0001*ran;}
-  else{c2t=0.0001*rap;}
+  /* criteria 1: change of sign */
+     dyna_flag_1=0;
+     if(*camt**cam1t>=0 && *camt**cam2t>=0){dyna_flag_1=dyna_flag_1;}
+     else{dyna_flag_1=dyna_flag_1+1;}
+     if(*camf**cam1f>=0 && *camf**cam2f>=0){dyna_flag_1=dyna_flag_1;}
+     else{dyna_flag_1=dyna_flag_1+1;}
+     if(*camp**cam1p>=0 && *camp**cam2p>=0){dyna_flag_1=dyna_flag_1;}
+     else{dyna_flag_1=dyna_flag_1+1;}
+     if(*cama**cam1a>=0 && *cama**cam2a>=0){dyna_flag_1=dyna_flag_1;}
+     else{dyna_flag_1=dyna_flag_1+1;}  
   
-  if(*iin<=ip){c1t=0.0001*ran;}
-  else{c1t=0.0001*rap;}
+  /* criteria 2: progression check */
+     dyna_flag_2=0;
+     if(fabs(*camt)<=fabs(*cam1t) && fabs(*cam1t)<=fabs(*cam2t)){dyna_flag_2=dyna_flag_2;}
+     else{dyna_flag_2=dyna_flag_2+1;}
+     if(fabs(*camf)<=fabs(*cam1f) && fabs(*cam1f)<=fabs(*cam2f)){dyna_flag_2=dyna_flag_2;}
+     else{dyna_flag_2=dyna_flag_2+1;}  
+     if(fabs(*camp)<=fabs(*cam1p) && fabs(*cam1p)<=fabs(*cam2p)){dyna_flag_2=dyna_flag_2;}
+     else{dyna_flag_2=dyna_flag_2+1;}  
+     if(fabs(*cama)<=fabs(*cam1a) && fabs(*cam1a)<=fabs(*cam2a)){dyna_flag_2=dyna_flag_2;}
+     else{dyna_flag_2=dyna_flag_2+1;}    
   
-  /* mass flow */
+  }
   
-  if(*iin<=ip){c2f=0.0001*ran;}
-  else{c2f=0.0001*rap;}
   
-  if(*iin<=ip){c1f=0.0001*ran;}
-  else{c1f=0.0001*rap;}
-  
-  /* pressure */
-  
-  if(*iin<=ip){c2p=0.0001*ran;}
-  else{c2p=0.0001*rap;}
-  
-  if(*iin<=ip){c1p=0.0001*ran;}
-  else{c1p=0.5*rap;}
-//  else{c1p=0.0001*rap;}
-  
-  /* geometry */
-  
-  if(*iin<=ip){c2a=0.0001*ran;}
-  else{c2a=0.0001*rap;}
-  
+/* Das wird aus meiner Sicht nicht mehr benoetigt 
   if(*cam1t<*cam2t) {*cam2t=*cam1t;}
   if(*cam1f<*cam2f) {*cam2f=*cam1f;}
   if(*cam1p<*cam2p) {*cam2p=*cam1p;}
   if(*cam1a<*cam2a) {*cam2a=*cam1a;}
+  */
   
+    
   /* check for convergence or divergence; 
      the convergence check consists of 
      - a comparison of the correction in
@@ -97,11 +102,10 @@ void checkconvnet(ITG *icutb, ITG *iin,
 
   if(*ichannel==1){*ramt=0.;*ramf=0.;*ramp=0.;}
 
-  if((*camt<=c2t**vamt)&&(*ramt<c1t**qamt)&&(*camt<=a2t)&&(*ramt<a1t)&&
-     (*camf<=c2f**vamf)&&(*ramf<c1f**qamf)&&(*camf<=a2f)&&(*ramf<a1f)&&
-     (*camp<=c2p**vamp)&&(*ramp<c1p*qamp)&&(*camp<a2p)&&(*ramp<a1p)&&
-     (*cama<=c2a**vama)&&(*cama<=a2a)&&(*iplausi==1)&&
-//     (*cama<=c2a**vama)&&(*iplausi==1)&&
+  if((fabs(*camt)<=c2t**vamt)&&(*ramt<c1t**qamt)&&(fabs(*camt)<=a2t)&&(*ramt<a1t)&&
+     (fabs(*camf)<=c2f**vamf)&&(*ramf<c1f**qamf)&&(fabs(*camf)<=a2f)&&(*ramf<a1f)&&
+     (fabs(*camp)<=c2p**vamp)&&(*ramp<c1p*qamp)&&(fabs(*camp)<a2p)&&(*ramp<a1p)&&
+     (fabs(*cama)<=c2a**vama)&&(fabs(*cama)<=a2a)&&(*iplausi==1)&&
      (*iin>3)){
       
       /* increment convergence reached */
@@ -118,7 +122,7 @@ void checkconvnet(ITG *icutb, ITG *iin,
       /* divergence based on temperatures */
       
       if((*iin>=20*i0)||(fabs(*camt)>1.e20)){
-	  if((*cam1t>=*cam2t)&&(*camt>=*cam2t)&&(*camt>c2t**vamt)){
+	  if((fabs(*cam1t)>=fabs(*cam2t))&&(fabs(*camt)>=fabs(*cam2t))&&(fabs(*camt)>c2t**vamt)){
 	      idivergence=1;
 	  }
       }
@@ -126,7 +130,7 @@ void checkconvnet(ITG *icutb, ITG *iin,
       /* divergence based on the mass flux */
       
       if((*iin>=20*i0)||(fabs(*camf)>1.e20)){
-	  if((*cam1f>=*cam2f)&&(*camf>=*cam2f)&&(*camf>c2f**vamf)){
+	  if((fabs(*cam1f)>=fabs(*cam2f))&&(fabs(*camf)>=fabs(*cam2f))&&(fabs(*camf)>c2f**vamf)){
 	      idivergence=1;
 	  }
       }
@@ -134,7 +138,7 @@ void checkconvnet(ITG *icutb, ITG *iin,
       /* divergence based on pressures */
       
       if((*iin>=20*i0)||(fabs(*camp)>1.e20)){
-	  if((*cam1p>=*cam2p)&&(*camp>=*cam2p)&&(*camp>c2p**vamp)){
+	  if((fabs(*cam1p)>=fabs(*cam2p))&&(fabs(*camp)>=fabs(*cam2p))&&(fabs(*camp)>c2p**vamp)){
 	      idivergence=1;
 	  }
       }
@@ -142,7 +146,7 @@ void checkconvnet(ITG *icutb, ITG *iin,
       /* divergence based on geometry */
       
       if((*iin>=20*i0)||(fabs(*cama)>1.e20)){
-	  if((*cam1a>=*cam2a)&&(*cama>=*cam2a)&&(*cama>c2a**vama)){
+	  if((fabs(*cam1a)>=fabs(*cam2a))&&(fabs(*cama)>=fabs(*cam2a))&&(fabs(*cama)>c2a**vama)){
 	      idivergence=1;
 	  }
       }
@@ -168,7 +172,25 @@ void checkconvnet(ITG *icutb, ITG *iin,
 //	    FORTRAN(stop,());
 	  }
       }else{
-	 	  printf("      no convergence\n\n"); 
+	  if(*iin%iin_dyn==0){
+	     if(dyna_flag_1==0 && dyna_flag_2==0 && *iplausi==1){
+		printf("      good convergence --> *dtheta is increased %" ITGFORMAT "\n",*iin);
+		*dtheta=*dtheta*(1.2);
+		if(*dtheta>=1){
+	           *dtheta=1.;
+		}	        
+	     }
+	     else if(dyna_flag_1!=0 && dyna_flag_2!=0 && *iplausi!=1){
+		printf("      bad convergence progression --> *dtheta is decreased %" ITGFORMAT "\n",*iin);
+		*dtheta=*dtheta*(0.8);	        
+	     }
+	     else{
+	        printf("      no convergence\n\n"); 
+	     }
+	  }
+	  else{
+	     printf("      no convergence\n\n"); 
+	  }
       }
   }
   return;

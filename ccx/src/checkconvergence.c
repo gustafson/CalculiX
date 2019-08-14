@@ -60,8 +60,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
     ITG i0,ir,ip,ic,il,ig,ia,iest,iest1=0,iest2=0,iconvergence,idivergence,
 	ngraph=1,k,*ipneigh=NULL,*neigh=NULL,*inum=NULL,id,istart,iend,inew,
-        i,j,mt=mi[1]+1,iexceed,
-        iforceincsize=0;
+        i,j,mt=mi[1]+1,iexceed,iforceincsize=0,kscalemax,itf2f;
 
     double df,dc,db,dd,ran,can,rap,ea,cae,ral,da,*vr=NULL,*vi=NULL,*stnr=NULL,
 	*stni=NULL,*vmax=NULL,*stnmax=NULL,*cs=NULL,c1[2],c2[2],reftime,
@@ -71,8 +70,6 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     /* reset ialeatoric to zero */
 
     *ialeatoric=0;
-
-    cetol=ctrl[39];
 
     /* next lines are active if the number of contact elements was
        changed in the present increment */
@@ -85,8 +82,8 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	
     i0=ctrl[0];ir=ctrl[1];ip=ctrl[2];ic=ctrl[3];il=ctrl[4];ig=ctrl[5];
     ia=ctrl[7];df=ctrl[10];dc=ctrl[11];db=ctrl[12];da=ctrl[13];dd=ctrl[16];
-    ran=ctrl[18];can=ctrl[19];rap=ctrl[22];
-    ea=ctrl[23];cae=ctrl[24];ral=ctrl[25];
+    ran=ctrl[18];can=ctrl[19];rap=ctrl[22];ea=ctrl[23];cae=ctrl[24];
+    ral=ctrl[25];cetol=ctrl[39];kscalemax=ctrl[54];itf2f=ctrl[55];
 
     /* for face-to-face penalty contact: increase the number of iterations
        in two subsequent increments in order to increase the increment size */
@@ -135,8 +132,15 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     /* mechanical */
 
     if(*ithermal<2){
-	if((*iit>1)&&(ram[0]<=c1[0]*qam[0])&&(*iflagact==0)&&
+//         number of iterations exceeding 1
+	if((*iit>1)&&
+//         force residual criterion satisfied (0.5 %)
+           (ram[0]<=c1[0]*qam[0])&&
+//         no significant change in contact elements
+           (*iflagact==0)&&
+//         cetol criterion satisfied if *visco
            ((*nmethod!=-1)||(qa[3]<=cetol))&&
+//         solution change criterion satisfied (1 %)
 	   ((cam[0]<=c2[0]*uam[0])||
 	    (((ram[0]*cam[0]<c2[0]*uam[0]*ram2[0])||(ram[0]<=ral*qam[0])||
 	      (qa[0]<=ea*qam[0]))&&(*ntg==0))||
@@ -538,7 +542,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    
                 /* rate of number of contact elements is increasing */
 
-		if(((ITG)ram[6]*(ITG)ram1[6]<0)&&((ITG)ram1[6]*(ITG)ram2[6]<0)){
+		if(((ITG)ram[5]*(ITG)ram1[5]<0)&&((ITG)ram1[5]*(ITG)ram2[5]<0)){
 		    
 		    if(((ram[4]>0.98*ram1[4])&&(ram[4]<1.02*ram1[4]))&&
 		       ((ram[4]>0.98*ram2[4])&&(ram[4]<1.02*ram2[4]))){
@@ -667,8 +671,8 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		    *icntrl=1;
 		    (*icutb)++;
 		    if(*mortar==1){
-			*kscale=100;
-			printf("\n reducing the constant stiffnesses by a factor of 100 \n\n");
+			*kscale=kscalemax;
+			printf("\n reducing the constant stiffnesses by a factor of %d \n\n",*kscale);
 		    }
 
                     /* check whether too many cutbacks */
@@ -714,7 +718,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	
 	/* check for too slow convergence */
 	
-	if(*iit>=ir){
+	if((*iit>=ir)||((*mortar==1)&&(*iit==itf2f))){
 	    if(*ithermal!=2){
 		iest1=(ITG)ceil(*iit+log(ran*qam[0]/(ram[0]))/
 				log(ram[0]/(ram1[0])));
@@ -728,13 +732,19 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    printf(" estimated number of iterations till convergence = %" ITGFORMAT "\n",
 		   iest);
 	    }
-	    if((((iest>ic)||(*iit==ic))&&(*mortar!=1))||((*mortar==1)&&(*iit==60))){
+	    if((((iest>ic)||(*iit==ic))&&(*mortar!=1))||((*mortar==1)&&(*iit==itf2f))){
 		
 		if(*idrct!=1){
 		    if((*mortar!=1)||(*icutb!=0)) *dtheta=*dtheta*dc;
 		    *dthetaref=*dtheta;
-		    printf(" too slow convergence; the increment size is decreased to %e\n",*dtheta**tper);
-		    printf(" the increment is reattempted\n\n");
+		    if((*mortar==1)&&(*iit==itf2f)){
+			printf( "maximum number of iterations for face-to-face contact reached\n");
+			printf(" the increment size is decreased to %e\n",*dtheta**tper);
+			printf(" the increment is reattempted\n\n");
+		    }else{
+			printf(" too slow convergence; the increment size is decreased to %e\n",*dtheta**tper);
+			printf(" the increment is reattempted\n\n");
+		    }
 
 		    FORTRAN(writestadiv,(istep,iinc,icutb,iit,ttime,
 					     time,dtime));
@@ -771,8 +781,8 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		    *icntrl=1;
 		    (*icutb)++;
 		    if(*mortar==1){
-			*kscale=100;
-			printf("\n reducing the constant stiffnesses by a factor of 100 \n\n");
+			*kscale=kscalemax;
+			printf("\n reducing the constant stiffnesses by a factor of %d \n\n",*kscale);
 		    }
 //		    if(*mortar==1) *kscale=100;
 

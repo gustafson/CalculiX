@@ -19,7 +19,7 @@
       subroutine elements(inpc,textpart,kon,ipkon,lakon,nkon,ne,ne_,
      &  set,istartset,iendset,ialset,nset,nset_,nalset,nalset_,mi,
      &  ixfree,iponor,xnor,istep,istat,n,iline,ipol,inl,ipoinp,inp,
-     &  iaxial,ipoinpc,solid,cfd,network,filab,nlabel,out3d,iuel,
+     &  iaxial,ipoinpc,solid,network,filab,nlabel,out3d,iuel,
      &  nuel_,ier)
 !
 !     reading the input deck: *ELEMENT
@@ -38,7 +38,7 @@
      &  nset_,nalset,nalset_,istep,istat,n,key,i,ielset,js,k,nn,
      &  nteller,j,ipkon(*),nkon,nope,indexe,mi(*),ipos,indexy,ixfree,
      &  iponor(2,*),nopeexp,iline,ipol,inl,ipoinp(2,*),inp(3,*),
-     &  iaxial,ipoinpc(0:*),cfd,nlabel,network,iuel(4,*),nuel_,
+     &  iaxial,ipoinpc(0:*),nlabel,network,iuel(4,*),nuel_,
      &  id,four,number,ndof,intpoints,ier
 !
       real*8 xnor(*)
@@ -242,7 +242,7 @@ c    Bernhardi end
             elseif((label.eq.'F3D8    ').or.
      &             (label.eq.'F3D4    ').or.
      &             (label.eq.'F3D6    ')) then
-               cfd=1
+c               cfd=1
 !
 !           distributing coupling element
 !

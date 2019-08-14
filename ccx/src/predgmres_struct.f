@@ -48,6 +48,7 @@
       igwk(5)=10
       ligw=20
 !
+      
       call dgmres(n,b,x,nelt,ia,ja,a,isym,matvec_struct,
      &  msolve_struct,itol,tol,itmax,
      &  iter,err,ierr,iunit,sb,sx,rgwk,lrgw,igwk,ligw,rwork,iwork)

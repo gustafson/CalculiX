@@ -20,4 +20,4 @@ void matrixstorage(double *ad,double **aup,double *adb,double *aub,
                    ITG *ntrans,ITG *inotr,double *trab,double *co,ITG *nk,
                    ITG *nactdof,char *jobnamec,ITG *mi,ITG *ipkon,
                    char *lakon,ITG *kon,ITG *ne,ITG *mei,ITG *nboun,
-                   ITG *nmpc,double *cs,ITG *mcs);
+                   ITG *nmpc,double *cs,ITG *mcs,ITG *ithermal,ITG *nmethod);

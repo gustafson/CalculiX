@@ -44,6 +44,9 @@
 !
       real*8 thicke(mi(3),*)
 !
+      integer,dimension(:),allocatable::koncp
+      real*8,dimension(:,:),allocatable::thickecp
+!
 !     calculate the extra space needed in kon
 !
       nkondiff=0
@@ -66,6 +69,9 @@
 !
       nkon=nkon+nkondiff
       ipointer=nkon
+!
+      allocate(koncp(nkon))
+      allocate(thickecp(mi(3),nkon))
 !
       do i=ne,1,-1
          if(ipkon(i).lt.0) cycle
@@ -133,9 +139,9 @@
          ipointer=ipointer-nopeexp-nlayer*nexp
 !
          do j=nopeexp,1,-1
-            kon(ipointer+j)=kon(ipkon(i)+j)
+            koncp(ipointer+j)=kon(ipkon(i)+j)
             do k=1,mi(3)
-               thicke(k,ipointer+j)=thicke(k,ipkon(i)+j)
+               thickecp(k,ipointer+j)=thicke(k,ipkon(i)+j)
             enddo
          enddo
          ipkon(i)=ipointer
@@ -143,6 +149,16 @@ c         write(*,*) 'changekon '
 c         write(*,*) i,ipkon(i)
 c         write(*,*) (kon(ipointer+j),j=1,nopeexp+nlayer*nexp)
       enddo
+!
+      do i=1,nkon
+         kon(i)=koncp(i)
+         do j=1,mi(3)
+            thicke(j,i)=thickecp(j,i)
+         enddo
+      enddo
+!
+      deallocate(koncp)
+      deallocate(thickecp)
 !     
       return
       end
