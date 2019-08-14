@@ -32,7 +32,7 @@
 void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	       ITG *istartset,ITG *iendset,ITG *ialset,ITG *ngraph,ITG *ncomp,
 	       ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,ITG exoid,
-	       ITG time_step, int countvar, ITG nout){
+	       ITG time_step, int countvar, ITG nout, ITG *node_map_inv){
 
   /* storing scalars, components of vectors and tensors without additional
      transformations */
@@ -45,7 +45,8 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
      - ifield[i]: 1=field1,2=field2
      - icomp[i]: component: 0...,(nfield[0]-1 or nfield[1]-1) */
 
-  ITG i,j,k,l,m,o,nksegment;
+  ITG i,j,k,l,m,n,nksegment;
+
   /* When initializing parameter values:
      "g" (or "G")
      For global variables.
@@ -65,7 +66,6 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 
   for(j=0;j<*ncomp;j++){
     if(*iset==0){
-      m=0;
       for(i=0;i<*nkcoords;i++){
 	/* check whether output is requested for solid nodes or
 	   network nodes */
@@ -80,15 +80,13 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 
 	/* storing the entities */
 	if(ifield[j]==1){
-	  nodal_var_vals[m]=field1[i*nfield[0]+icomp[j]];
+	  nodal_var_vals[node_map_inv[i]-1]=field1[i*nfield[0]+icomp[j]];
 	}else{
-	  nodal_var_vals[m]=field2[i*nfield[1]+icomp[j]];
+	  nodal_var_vals[node_map_inv[i]-1]=field2[i*nfield[1]+icomp[j]];
 	}
-	m++;
       }
     }else{
       nksegment=(*nkcoords)/(*ngraph);
-      m=0;
       for(k=istartset[*iset-1]-1;k<iendset[*iset-1];k++){
 	if(ialset[k]>0){
 	
@@ -108,18 +106,16 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	
 	    /* storing the entities */
 	    if(ifield[j]==1){
-	      nodal_var_vals[m]=field1[i*nfield[0]+icomp[j]];
+	      nodal_var_vals[node_map_inv[i]-1]=field1[i*nfield[0]+icomp[j]];
 	    }else{
-	      nodal_var_vals[m]=field2[i*nfield[1]+icomp[j]];
+	      nodal_var_vals[node_map_inv[i]-1]=field2[i*nfield[1]+icomp[j]];
 	    }
-	    m++;
 	  }
 	}else{
 	  l=ialset[k-2];
 	  do{
 	    l-=ialset[k];
 	    if(l>=ialset[k-1]) break;
-	    o=0;
 	    for(m=0;m<*ngraph;m++){
 	      i=l+m*nksegment-1;
 	
@@ -136,13 +132,11 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	
 	      /* storing the entities */
 	      if(ifield[j]==1){
-		nodal_var_vals[o]=field1[i*nfield[0]+icomp[j]];
+		nodal_var_vals[node_map_inv[i]-1]=field1[i*nfield[0]+icomp[j]];
 	      }else{
-		nodal_var_vals[o]=field2[i*nfield[1]+icomp[j]];
+		nodal_var_vals[node_map_inv[i]-1]=field2[i*nfield[1]+icomp[j]];
 	      }
 	    }
-	    o++;
-	    printf ("%f\n",nodal_var_vals[m]);
 	  }while(1);
 	}
       }

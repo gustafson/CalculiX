@@ -158,7 +158,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   if((*kode==1)&&((*nmethod!=5)||(*mode!=0))){
     iaxial=0.;
     num_dim = 3;
-    num_elem_blk = 19;
+    num_elem_blk = 17;
 
     // Find the number of sets
     exosetfind(set, nset, ialset, istartset, iendset,
@@ -279,6 +279,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       // printf ("%s\n", curblk);
       strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
       // printf ("TODO store material identifier and name.\n");
+
+      // Identify element type
       if(strcmp1(&lakon[8*i+3],"2")==0){
 	/* 20-node brick element */
 	if(((strcmp1(&lakon[8*i+6]," ")==0)||
@@ -312,91 +314,88 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  blkassign[l++]=5;
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){
 	  /* 2-node 1d element */
-	  if(strcmp1(&lakon[8*i+4],"R")==0){
-	    blkassign[l++]=6;
-	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
-	    blkassign[l++]=7;
-	  }
+	  blkassign[l++]=6;
+	  // if(strcmp1(&lakon[8*i+4],"R")==0){
+	  //   blkassign[l++]=6;
+	  // }else if(strcmp1(&lakon[8*i+4],"I")==0){
+	  //   blkassign[l++]=6;
+	  // }
 	}else{
 	  /* 4-node 2d element */
-	  /* not sure exactly what this does */
-	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
-
-	  if(strcmp1(&lakon[8*i+4],"R")==0){
-	    blkassign[l++]=8;
-	  }else if(strcmp1(&lakon[8*i+4],"I")==0){
-	    blkassign[l++]=9;
-	  }
+	  blkassign[l++]=7;
+	  /* not sure exactly what this does, probably axisymmetric? */
+	  // if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
+	  // 
+	  // if(strcmp1(&lakon[8*i+4],"R")==0){
+	  //   blkassign[l++]=7;
+	  // }else if(strcmp1(&lakon[8*i+4],"I")==0){
+	  //   blkassign[l++]=7;
+	  // }	    
 	}
       }else if((strcmp1(&lakon[8*i+3],"10")==0)||
 	       (strcmp1(&lakon[8*i+3],"14")==0)){
 	/* 10-node tetrahedral element */
-	blkassign[l++]=10;
+	blkassign[l++]=8;
       }else if(strcmp1(&lakon[8*i+3],"4")==0){
 	/* 4-node tetrahedral element */
-	blkassign[l++]=11;
+	blkassign[l++]=9;
       }else if(strcmp1(&lakon[8*i+3],"15")==0){
 	if(((strcmp1(&lakon[8*i+6]," ")==0)||
 	    (strcmp1(&filab[4],"E")==0))&&
            (strcmp2(&lakon[8*i+6],"LC",2)!=0)){
 	  /* 15-node wedge element */
-	  blkassign[l++]=12;
+	  blkassign[l++]=10;
 	}else{
 	  /* 6-node 2d element */
+	  blkassign[l++]=11;
 	  /* not sure exactly what this does */
 	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
-
-	  blkassign[l++]=13;
 	}
       }else if(strcmp1(&lakon[8*i+3],"6")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
 	  /* 6-node wedge element */
-	  blkassign[l++]=14;
+	  blkassign[l++]=12;
 	}else{
 	  /* 3-node 2d element */ /* Shells and triangles */
 	  /* not sure exactly what this does */
 	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
-
-	  blkassign[l++]=15;
+	  blkassign[l++]=13;
 	}
 	//      }else if((strcmp1(&lakon[8*i],"D")==0)&&
 	//	       (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
       }else if(strcmp1(&lakon[8*i],"D")==0){
 	if(kon[indexe]==0){
 	  /* 2-node 1d element (network entry element) */
-	  blkassign[l++]=16;
+	  blkassign[l++]=14;
 	}else if(kon[indexe+2]==0){
 	  /* 2-node 1d element (network exit element) */
-	  blkassign[l++]=17;
+	  blkassign[l++]=15;
 	}else{
 	  /* 3-node 1d element (genuine network element) */
-	  blkassign[l++]=18;
+	  blkassign[l++]=16;
 	}
       }else if((strcmp1(&lakon[8*i],"E")==0)&&
 	       (strcmp1(&lakon[8*i+6],"A")==0)){
 	/* Not sure exactly what iaxial does yet */
 	if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
 	/* 2-node 1d element (spring element) */
-	blkassign[l++]=19;
+	blkassign[l++]=17;
       }
     }
-
 
 
     int num_nodes_per_elem[num_elem_blk], num_edges_per_elem[num_elem_blk], num_faces_per_elem[num_elem_blk];
     char *blknames[num_elem_blk];
     j=0;
     num_nodes_per_elem[j]=1;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="PNT";
-    num_nodes_per_elem[j]=20; num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="C3D20 C3D20R";
+    num_nodes_per_elem[j]=20; num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="C3D20[R]";
     num_nodes_per_elem[j]=20; num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="COMPOSITE LAYER C3D20";
-    num_nodes_per_elem[j]=3;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="Beam B32 B32R";
-    num_nodes_per_elem[j]=8;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS8 CPE8 CAX8 S8 S8R";
-    num_nodes_per_elem[j]=8;  num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="C3D8 C3D8R";
+    num_nodes_per_elem[j]=3;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="Beam B32[R]";
+    num_nodes_per_elem[j]=8;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS8 CPE8 CAX8 S8[R]";
+    num_nodes_per_elem[j]=8;  num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="C3D8[R]";
     num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="TRUSS2";
-    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="TRUSS2";
-    num_nodes_per_elem[j]=4;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS4R CPE4R S4 S4R";
-    num_nodes_per_elem[j]=4;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS4I CPE4I";
+    num_nodes_per_elem[j]=4;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS4[RI] CPE4[RI] CAX4 S4[R]";
     num_nodes_per_elem[j]=10; num_edges_per_elem[j]=6;  num_faces_per_elem[j]=4;  blknames[j++]="C3D10";
     num_nodes_per_elem[j]=4;  num_edges_per_elem[j]=6;  num_faces_per_elem[j]=4;  blknames[j++]="C3D4";
     num_nodes_per_elem[j]=15; num_edges_per_elem[j]=9;  num_faces_per_elem[j]=5;  blknames[j++]="C3D15";
@@ -442,6 +441,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       connect = (ITG *) calloc (num_elem_in_blk*num_nodes_per_elem[l], sizeof(ITG));
       // printf ("Size of connect %" ITGFORMAT "\n", num_elem_in_blk*num_nodes_per_elem[l]*sizeof(ITG));
       k=0; o=0;
+
       // Now connectivity
       for(i=0;i<*ne0;i++){
 	if(ipkon[i]<0) continue;
@@ -452,7 +452,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    for(m=0;m<12;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	    for(m=16;m<20;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	    for(m=12;m<16;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
-	  }else if(blkassign[o]==12){ // C3D15
+	  }else if(blkassign[o]==10){ // C3D15
 	    for(m=0;m<9;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	    for(m=12;m<15;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	    for(m=9;m<12;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
@@ -472,17 +472,17 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	      connect[k++] = node_map_inv[kon[indexe+20+j]-1];
 	    }
 	  }else if(blkassign[o]== 5 || // C3D8 or C3D8R
-		   blkassign[o]==10 || // C3D10
-		   blkassign[o]==11 || // C3D4
-		   blkassign[o]==14){  // C3D6
+		   blkassign[o]== 8 || // C3D10
+		   blkassign[o]== 9 || // C3D4
+		   blkassign[o]==12){  // C3D6
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      connect[k++] = node_map_inv[kon[indexe+j]-1];
 	    }
-	  }else if(blkassign[o]==13){ // 6-node 2D element (S6)
+	  }else if(blkassign[o]==11){ // 6-node 2D element (S6)
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      connect[k++] = node_map_inv[kon[indexe+15+j]-1];
 	    }
-	  }else if(blkassign[o]==15){ // 2D triangle or 3-node shell
+	  }else if(blkassign[o]==13){ // 2D triangle or 3-node shell
 	    for (j = 0; j <num_nodes_per_elem[l]; j++){
 	      connect[k++] = node_map_inv[kon[indexe+6+j]-1];
 	    }
@@ -522,39 +522,33 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 7:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 8:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 9:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "SHELL", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 10:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 11:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TETRA", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
+	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 12:
 	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	case 13:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 14:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 15:
 	  // KEEP FOR AWHILE CHECKING BREAKAGE
 	  // errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRIANGLE", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	default:
+	  // case 14:
+	  // case 15:
 	  // case 16:
 	  // case 17:
-	  // case 18:
-	  // case 19:
 	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", num_elem_in_blk, num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
 	  break;
 	};
@@ -657,7 +651,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	  exovector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
-		    exoid, num_time_steps,countvars,nout);
+		    exoid, num_time_steps,countvars,nout,node_map_inv);
 	  countvars+=3;
 	}
       }
@@ -676,7 +670,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else{
 	  exovector(&v[*nk*mt],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
-		    exoid,num_time_steps,countvars,nout);
+		    exoid,num_time_steps,countvars,nout,node_map_inv);
 
 	  countvars+=3;
 	}
@@ -697,7 +691,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  iselect=1;
 	  exovector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
-		    exoid,num_time_steps,countvars,nout);
+		    exoid,num_time_steps,countvars,nout,node_map_inv);
 	  countvars+=3;
 	}
       }
@@ -720,7 +714,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exovector(veold,&iset,ntrans,&filab[1740],&nkcoords,inum,m1,inotr,
 		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
-		  exoid,num_time_steps,countvars,nout);
+		  exoid,num_time_steps,countvars,nout,node_map_inv);
 
 	countvars+=3;
       }
@@ -742,11 +736,13 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	if(*ithermal<=1){
 	  exoselect(t1,t1,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	}else{
 	  exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		    nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	}
 	countvars+=1;
       }
@@ -767,7 +763,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export POT to exo not tested.\n");
 	countvars+=1;
       }
@@ -793,10 +790,10 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  frdset(&filab[174],set,&iset,istartset,iendset,ialset,
 		 inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 		 ngraph);
-	  printf ("S values countvars %i\n", countvars);
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  countvars+=6;
 	}
       }
@@ -820,7 +817,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else{
 	  exoselect(&stn[6**nk],stn,&iset,&nkcoords,inum,istartset,iendset,
 	  	    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-	  	    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+	  	    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  countvars+=6;
 	}
       }
@@ -850,7 +848,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 
 	  countvars+=6;
 	}      
@@ -874,7 +873,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompvector,ifieldvector,icompvector,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export EMF-E to exo not tested.\n");
 	countvars+=3;
       }
@@ -897,7 +897,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     
 	exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompvector,ifieldvector,icompvectorlast,
-		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export EMF-B to exo not tested.\n");
 	countvars+=3;
       }
@@ -927,7 +928,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	  exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 
 	  countvars+=6;
 	}
@@ -952,7 +954,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else{
 	  exoselect(&een[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 
 	  countvars+=6;
 	}
@@ -983,7 +986,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  
 	  exoselect(een,een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  printf ("Warning: export E-imag to exo not tested.\n");
 	  countvars+=6;
 	}
@@ -1011,7 +1015,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 		 ngraph);
 	  exoselect(emn,emn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  countvars+=6;
 	}
       }
@@ -1035,7 +1040,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else{
 	  exoselect(&emn[6**nk],een,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  countvars+=6;
 	}
       }
@@ -1058,7 +1064,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]*=180.;fn[2+i*mt]*=180.;fn[3+i*mt]*=180.;}}
 	  exovector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
-		    exoid,num_time_steps,countvars,nout);
+		    exoid,num_time_steps,countvars,nout,node_map_inv);
 	  if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]/=180.;fn[2+i*mt]/=180.;fn[3+i*mt]/=180.;}}
 	  countvars+=3;
 	}
@@ -1078,7 +1084,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else{
 	  exovector(&fn[*nk*mt],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
 		    trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
-		    exoid,num_time_steps,countvars,nout);
+		    exoid,num_time_steps,countvars,nout,node_map_inv);
 	  countvars+=3;
 	}
       }
@@ -1097,7 +1103,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	       ngraph);
 	exoselect(epn,epn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		  nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export PEEQ to exo not tested.\n");
 	countvars+=1;
       }
@@ -1118,7 +1125,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 		 ngraph);
 	  exoselect(enern,enern,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldscalar,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  printf ("Warning: export ENER to exo not tested.\n");
 	  countvars+=1;
 	}
@@ -1187,7 +1195,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     
 	  exoselect(cdn,cdn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  printf ("Warning: export CONT to exo not tested.\n");
 	  countvars+=6;
 	}
@@ -1212,7 +1221,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  iselect=1;
 	  exoselect(&cdn[6**nk],cdn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  countvars+=6;
 	}
       }
@@ -1270,7 +1280,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(xstaten,xstaten,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,nstate_,ifieldstate,icompstate,
-		  nfield,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfield,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	countvars+=*nstate_;
       }
     }
@@ -1297,7 +1308,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompvector,ifieldvector,icompvector,
-		  nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	countvars+=3;
       }
     }
@@ -1321,7 +1333,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     
 	exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompvector,ifieldvector,icompvector,
-		  nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export ECD to exo not tested.\n");
 	countvars+=3;
       }
@@ -1341,7 +1354,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	       ngraph);
 	exoselect(fn,fn,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	countvars+=1;
       }
     }
@@ -1372,7 +1386,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  countvars+=6;
 	}
       }
@@ -1402,7 +1417,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomptensor,ifieldtensor,icomptensor,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  printf ("Warning: export of ZZSTR imaginary to exo not tested.\n");
 	  countvars+=6;
 	}
@@ -1436,7 +1452,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 
 	  countvars+=2;
 	}
@@ -1464,7 +1481,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	  exoselect(stn,stn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
-		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldtensor,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 
 	  countvars+=2;
 	}
@@ -1495,7 +1513,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	  exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
-		    nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 	  countvars+=1;
 	}
       }
@@ -1522,7 +1541,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  
 	  exoselect(qfn,qfn,&iset,&nkcoords,inum,istartset,iendset,
 		    ialset,ngraph,&ncomp,ifield,icomp,
-		    nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout);
+		    nfieldvector1,&iselect,exoid,num_time_steps,countvars,nout,
+		    node_map_inv);
 
 	  countvars+=1;
 	}
@@ -1544,7 +1564,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of TT to exo not tested.\n");
 	countvars+=1;
       }
@@ -1567,7 +1588,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	if((iaxial==1)&&(strcmp1(&filab[1222],"I")==0)){for(i=0;i<*nk;i++)v[1+i*mt]*=180.;}
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	if((iaxial==1)&&(strcmp1(&filab[1222],"I")==0)){for(i=0;i<*nk;i++)v[1+i*mt]/=180.;}
 	countvars+=1;
       }
@@ -1589,7 +1611,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	icomp[0]=2;
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	countvars+=1;
       }
     }
@@ -1610,7 +1633,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	icomp[0]=2;
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of PS to exo not tested.\n");
 	countvars+=1;
       }
@@ -1632,7 +1656,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	icomp[0]=2;
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of DEPTH to exo not tested.\n");
 	countvars+=1;
       }
@@ -1654,7 +1679,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	icomp[0]=3;
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of HCRIT to exo not tested.\n");
 	countvars+=1;
       }
@@ -1676,7 +1702,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	icomp[0]=3;
 	exoselect(v,v,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalar,ifieldscalar,icomp,
-		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvector0,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of STTEMP to exo not tested.\n");
 	countvars+=1;
       }
@@ -1710,7 +1737,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(vr,vi,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompvectph,ifieldvectph,icompvectph,
-		  nfieldvectph,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvectph,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	countvars+=6;
       }
     }
@@ -1731,7 +1759,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(vr,vi,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompscalph,ifieldscalph,icompscalph,
-		  nfieldscalph,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldscalph,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of PNDTEMP to exo not tested.\n");
 	countvars+=2;
       }
@@ -1766,7 +1795,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(stnr,stni,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensph,ifieldtensph,icomptensph,
-		  nfieldtensph,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldtensph,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	countvars+=12;
       }
     }
@@ -1801,7 +1831,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     
 	exoselect(cdnr,cdni,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomptensph,ifieldtensph,icomptensph,
-		  nfieldtensph,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldtensph,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	countvars+=12;
 	printf ("Warning: export PCON to exo not tested and likely has incorrect ordering.\n");
       }
@@ -1829,7 +1860,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(fnr,fni,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncompvectph,ifieldvectph,icompvectph,
-		  nfieldvectph,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfieldvectph,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of PFORC to exo not tested.\n");
 	countvars+=6;
       }
@@ -1865,7 +1897,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(vmax,vmax,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomp,ifield,icomp,
-		  nfield,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfield,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of MDISP to exo not tested.\n");
 	countvars+=4;
       }
@@ -1909,7 +1942,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(stnmax,stnmax,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomp,ifield,icomp,
-		  nfield,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfield,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of MSTRESS to exo not tested.\n");
 	countvars+=7;
       }
@@ -1953,7 +1987,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 	exoselect(eenmax,eenmax,&iset,&nkcoords,inum,istartset,iendset,
 		  ialset,ngraph,&ncomp,ifield,icomp,
-		  nfield,&iselect,exoid,num_time_steps,countvars,nout);
+		  nfield,&iselect,exoid,num_time_steps,countvars,nout,
+		  node_map_inv);
 	printf ("Warning: export of MAXE to exo not tested.\n");
 	countvars+=7;
       }

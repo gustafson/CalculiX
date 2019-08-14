@@ -48,7 +48,8 @@ void frdselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 
   if(*iset==0){
     for(i=0;i<*nkcoords;i++){
-
+      /* i+1 is the node ID */
+      
       /* check whether output is requested for solid nodes or
          network nodes */
 
@@ -65,11 +66,11 @@ void frdselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	for(n=1;n<=(ITG)((*ncomp+5)/6);n++){
 	  if(n==1){
 	    if(strcmp1(output,"asc")==0){
-	      fprintf(f1,"%3s%10" ITGFORMAT "",m1,i+1);
+	      fprintf(f1,"%3s%10" ITGFORMAT "",m1,i+1); /* i+1 is the node number??? */
 	    }else{
 	      iw=(int)(i+1);fwrite(&iw,sizeof(int),1,f1);
 	    }
-	    for(j=0;j<min(6,*ncomp);j++){
+	    for(j=0;j<min(6,*ncomp);j++){ /* j is the number of components */
 	      if(ifield[j]==1){
 		if(strcmp1(output,"asc")==0){
 		    fprintf(f1,"%12.5E",(float)field1[i*nfield[0]+icomp[j]]);
