@@ -30,7 +30,7 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
                ITG *inum,char *m1,ITG *inotr,double *trab,double *co,
                ITG *istartset,ITG *iendset,ITG *ialset,ITG *mi,ITG *ngraph,
                FILE *f1,char *output,char *m3, int exoid, ITG time_step,
-	       int countvar, ITG nout, ITG *node_map_inv){
+	       int countvar){
 
   ITG nksegment;
   ITG i,j,k,l,m,n,ii,jj,kk;
@@ -50,31 +50,46 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
      For sideset variables.
   */
 
-  int errr;
+  // Get required info out of the exodus file.  Most important number of nodes stored.
+  int num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets, errr;
+  char title [ MAX_LINE_LENGTH +1];
+  errr = ex_get_init (exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
+  
+  float *nodal_var_vals = (float *) calloc(num_nodes, sizeof(float));
+  ITG   *node_map       = (ITG *)   calloc(num_nodes, sizeof(ITG));
+
+  // Seed with NaN for non-stored output
+  for (j=0; j<num_nodes; j++){
+    nodal_var_vals[j]=nanf("");
+  }
+  
+  // Pull node map
+  errr = ex_get_id_map (exoid, EX_NODE_MAP, node_map);
+  if(errr)printf("*ERROR in exo: failed to get prior node map");
 
   int num_nod_vars=3;
 
-  float *nodal_var_vals;
-  nodal_var_vals = (float *) calloc (nout, sizeof(float));
-
   for (j=1; j<=num_nod_vars; j++){ // For each direction
+    int q=0; // Create an inverse node map.  It doesn't need to be stored and you can count upwards.
     if(*iset==0){
       if((*ntrans==0)||(strcmp1(&filabl[5],"G")==0)){
 	for(i=0;i<*nkcoords;i++){
 	  if(inum[i]<=0) continue;
-	  nodal_var_vals[node_map_inv[i]-1]=v[(mi[1]+1)*i+j];
+	  while(node_map[q]!=i+1){q++;}
+	  nodal_var_vals[q]=v[(mi[1]+1)*(i)+j];
 	}
       }else{
 	for(i=0;i<*nkcoords;i++){
 	  if(inum[i]<=0) continue;
-	  if(inotr[2*i]==0){
-	    nodal_var_vals[node_map_inv[i]-1]=v[(mi[1]+1)*i+j];
+	  while(node_map[q]!=i+1){q++;}
+	  if(inotr[2*i]==0){	    
+	    nodal_var_vals[q]=v[(mi[1]+1)*i+j];
 	  }else{
 	    ii=(mi[1]+1)*i+1;
 	    jj=(mi[1]+1)*i+2;
 	    kk=(mi[1]+1)*i+3;
 	    FORTRAN(transformatrix,(&trab[7*(inotr[2*i]-1)],&co[3*i],a));
-	    nodal_var_vals[node_map_inv[i]-1]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
+	    nodal_var_vals[q]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
 	  }
 	}
       }
@@ -85,14 +100,15 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
 	  for(l=0;l<*ngraph;l++){
 	    i=ialset[k]+l*nksegment-1;
 	    if(inum[i]<=0) continue;
+	    while(node_map[q]!=i+1){q++;}
 	    if((*ntrans==0)||(strcmp1(&filabl[5],"G")==0)||(inotr[2*i]==0)){
-	      nodal_var_vals[node_map_inv[i]-1]=v[(mi[1]+1)*i+j];
+	      nodal_var_vals[q]=v[(mi[1]+1)*i+j];
 	    }else{
 	      FORTRAN(transformatrix,(&trab[7*(inotr[2*i]-1)],&co[3*i],a));
 	      ii=(mi[1]+1)*i+1;
 	      jj=(mi[1]+1)*i+2;
 	      kk=(mi[1]+1)*i+3;
-	      nodal_var_vals[node_map_inv[i]-1]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
+	      nodal_var_vals[q]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
 	    }
 	  }
 	}else{
@@ -103,14 +119,15 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
 	    for(m=0;m<*ngraph;m++){
 	      i=l+m*nksegment-1;
 	      if(inum[i]<=0) continue;
+	      while(node_map[q]!=i+1){q++;}
 	      if((*ntrans==0)||(strcmp1(&filabl[5],"G")==0)||(inotr[2*i]==0)){
-		nodal_var_vals[node_map_inv[i]-1]=v[(mi[1]+1)*i+j];
+		nodal_var_vals[q]=v[(mi[1]+1)*i+j];
 	      }else{
 		FORTRAN(transformatrix,(&trab[7*(inotr[2*i]-1)],&co[3*i],a));
 		ii=(mi[1]+1)*i+1;
 		jj=(mi[1]+1)*i+2;
 		kk=(mi[1]+1)*i+3;
-		nodal_var_vals[node_map_inv[i]-1]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
+		nodal_var_vals[q]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
 	      }
 	    }
 	  }while(1);
@@ -118,10 +135,11 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
       }
     }
 
-    errr = ex_put_var (exoid, time_step, EX_NODAL, j+countvar, 1, nout, nodal_var_vals);
+    errr = ex_put_var (exoid, time_step, EX_NODAL, j+countvar, 1, num_nodes, nodal_var_vals);
     if (errr) printf ("ERROR storing vector data into exo file.\n");
   }
-
+    
+  free(node_map);
   free(nodal_var_vals);
   return;
 
