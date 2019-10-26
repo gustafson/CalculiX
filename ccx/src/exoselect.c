@@ -32,7 +32,7 @@
 void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	       ITG *istartset,ITG *iendset,ITG *ialset,ITG *ngraph,ITG *ncomp,
 	       ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,ITG exoid,
-	       ITG time_step, int countvar, ITG nout, ITG *node_map_inv){
+	       ITG time_step, int countvar){
 
   /* storing scalars, components of vectors and tensors without additional
      transformations */
@@ -59,12 +59,26 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
      "s" (or "S")
      For sideset variables.
   */
-  // ITG num_nod_vars = *ncomp;
-  float *nodal_var_vals;
-  nodal_var_vals = (float *) calloc (nout, sizeof(float));
+  
+  // Get required info out of the exodus file.  Most important number of nodes stored.
+  int num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets, errr;
+  char title [ MAX_LINE_LENGTH +1];
+  errr = ex_get_init (exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
+  
+  float *nodal_var_vals = (float *) calloc(num_nodes, sizeof(float));
+  ITG   *node_map       = (ITG *)   calloc(num_nodes, sizeof(ITG));
 
+  // Seed with NaN for non-stored output
+  for (j=0; j<num_nodes; j++){
+    nodal_var_vals[j]=nanf("");
+  }
+
+  // Pull node map
+  errr = ex_get_id_map (exoid, EX_NODE_MAP, node_map);
+  if(errr)printf("*ERROR in exo: failed to get prior node map");
 
   for(j=0;j<*ncomp;j++){
+    int q=0; // Create an inverse node map.  It doesn't need to be stored and you can count upwards.
     if(*iset==0){
       for(i=0;i<*nkcoords;i++){
 	/* check whether output is requested for solid nodes or
@@ -78,11 +92,13 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	  if(inum[i]==0) continue;
 	}
 
+	// while(node_map[q]!=i+1){q++;printf("DEBUG q %i i+1 %i node_map[q] %i\n", q, i+1, node_map[q]);}
+	while(node_map[q]!=i+1){q++;}
 	/* storing the entities */
 	if(ifield[j]==1){
-	  nodal_var_vals[node_map_inv[i]-1]=field1[i*nfield[0]+icomp[j]];
+	  nodal_var_vals[q]=field1[i*nfield[0]+icomp[j]];
 	}else{
-	  nodal_var_vals[node_map_inv[i]-1]=field2[i*nfield[1]+icomp[j]];
+	  nodal_var_vals[q]=field2[i*nfield[1]+icomp[j]];
 	}
       }
     }else{
@@ -104,11 +120,12 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	      if(inum[i]==0) continue;
 	    }
 	
+	    while(node_map[q]!=i+1){q++;}
 	    /* storing the entities */
 	    if(ifield[j]==1){
-	      nodal_var_vals[node_map_inv[i]-1]=field1[i*nfield[0]+icomp[j]];
+	      nodal_var_vals[q]=field1[i*nfield[0]+icomp[j]];
 	    }else{
-	      nodal_var_vals[node_map_inv[i]-1]=field2[i*nfield[1]+icomp[j]];
+	      nodal_var_vals[q]=field2[i*nfield[1]+icomp[j]];
 	    }
 	  }
 	}else{
@@ -130,11 +147,12 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 		if(inum[i]==0) continue;
 	      }
 	
+	      while(node_map[q]!=i+1){q++;}
 	      /* storing the entities */
 	      if(ifield[j]==1){
-		nodal_var_vals[node_map_inv[i]-1]=field1[i*nfield[0]+icomp[j]];
+		nodal_var_vals[q]=field1[i*nfield[0]+icomp[j]];
 	      }else{
-		nodal_var_vals[node_map_inv[i]-1]=field2[i*nfield[1]+icomp[j]];
+		nodal_var_vals[q]=field2[i*nfield[1]+icomp[j]];
 	      }
 	    }
 	  }while(1);
@@ -147,10 +165,11 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
       k=j;
     }else{k=j;}
 
-    int errr = ex_put_var (exoid, time_step, EX_NODAL, k+1+countvar, 1, nout, nodal_var_vals);
+    int errr = ex_put_var (exoid, time_step, EX_NODAL, k+1+countvar, 1, num_nodes, nodal_var_vals);
     if (errr) printf ("ERROR exoselect data for dim %i record %i.\n", j, k+1+countvar);
   }
 
+  free(node_map);
   free(nodal_var_vals);
   return;
 
