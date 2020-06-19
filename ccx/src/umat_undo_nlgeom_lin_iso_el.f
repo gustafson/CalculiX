@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -134,7 +134,6 @@
 !     eloc(6)            linear total strain tensor for large
 !                        rotations (component order:
 !                        11,22,33,12,13,23) at the end of the increment
-!                        (thermal strains are subtracted)
 !     nlgeom_undo        0: Lagrange strain goes out
 !                        1: linear strain for large rotations goes out
 !
@@ -168,6 +167,10 @@
             enddo
          enddo
       enddo
+c      write(*,*) 'umat_undo..xkl',xkl(1,1),xkl(1,2),xkl(1,3)
+c      write(*,*) 'umat_undo..xkl',xkl(2,1),xkl(2,2),xkl(2,3)
+c      write(*,*) 'umat_undo..xkl',xkl(3,1),xkl(3,2),xkl(3,3)
+c      write(*,*) 'umat_undo..ca',ca(1,1)
 !
 !     b) calculating the principal stretches
 !
@@ -182,12 +185,16 @@
          write(*,*) '       umat_undo_nlgeom_lin_iso_el'
          call exit(201)
       endif
+      w(1)=dsqrt(w(1))
+      w(2)=dsqrt(w(2))
+      w(3)=dsqrt(w(3))
 !
-!     c) calculating the invariants of C
+!     c) calculating the invariants of U
 !
       v1=w(1)+w(2)+w(3)
       v2=w(1)*w(2)+w(2)*w(3)+w(3)*w(1)
       v3=w(1)*w(2)*w(3)
+c      write(*,*) 'umat_undo..v1,v2,v3',v1,v2,v3
 !
 !     d) storing C as vector
 !
@@ -226,6 +233,9 @@
       ur(2,1)=u(4)
       ur(3,1)=u(5)
       ur(3,2)=u(6)
+c      write(*,*) 'umat_undo..ur',ur(1,1),ur(1,2),ur(1,3)
+c      write(*,*) 'umat_undo..ur',ur(2,1),ur(2,2),ur(2,3)
+c      write(*,*) 'umat_undo..ur',ur(3,1),ur(3,2),ur(3,3)
 !
 !     i) calculating the rotationless displacement gradient u_k,l
 !        = (U-I)
@@ -245,6 +255,7 @@
             elin(i,j)=(ukl(i,j)+ukl(j,i))/2.d0
          enddo
       enddo
+c      write(*,*) 'umat_undo..elin',elin(1,1)
 !
 !     k) calculating the mechanical rotationless linearized strain =
 !        total rotationless linearized strain -
@@ -264,6 +275,11 @@
       eloc(5)=elin(1,3)
       eloc(6)=elin(2,3)
 !
+      do i=1,6
+         write(*,*) 'umat...lin_el',time,iel,iint,eloc(i),stre(i)
+      enddo
+c      write(*,*) 'umat_undo..eloc',eloc(1)
+!
 !     calculating the stresses
 !
       e=elconloc(1)
@@ -279,6 +295,11 @@
       stre(4)=am2*emec(4)-beta(4)
       stre(5)=am2*emec(5)-beta(5)
       stre(6)=am2*emec(6)-beta(6)
+c      write(*,*) 'umat_undo..stre',stre(1)
+!
+c      do i=1,6
+c         write(*,*) 'umat...lin_el',time,iel,iint,eloc(i),stre(i)
+c      enddo
 !
       if(icmd.ne.3) then
 !

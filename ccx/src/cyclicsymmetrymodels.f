@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -172,31 +172,6 @@
          endif
       enddo
 !
-c      if(xsectors.le.0) then
-c         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
-c         write(*,*) '       the required parameter N'
-c         write(*,*) '       is lacking on the *CYCLIC SYMMETRY MODEL'
-c         write(*,*) '       keyword card or has a value <=0'
-c         ier=1
-c         return
-c      endif
-c      if(gsectors.lt.1) then
-c         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
-c         write(*,*) '         cannot plot less than'
-c         write(*,*) '         one sector: one sector will be plotted'
-c         gsectors=1
-c      endif
-c      if(gsectors.gt.xsectors) then
-c         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
-c         write(*,*) '         cannot plot more than'
-c         write(*,*) '         ',xsectors,'sectors;',
-c     &           xsectors,' sectors will'
-c         write(*,*) '       be plotted'
-c         gsectors=xsectors
-c      endif
-c!
-c      maxsectors=max(maxsectors,int(xsectors+0.5d0))
-!
       mcs=mcs+1
       cs(2,mcs)=-0.5d0
       cs(3,mcs)=-0.5d0
@@ -287,11 +262,17 @@ c      maxsectors=max(maxsectors,int(xsectors+0.5d0))
             return
          elseif((tieset(1,i)(1:80).eq.tie).and.
      &      (tieset(1,i)(81:81).ne.'C').and.
-     &      (tieset(1,i)(81:81).ne.'T')) then
+     &      (tieset(1,i)(81:81).ne.'T').and.
+     &      (tieset(1,i)(81:81).ne.'M').and.
+     &      (tieset(1,i)(81:81).ne.'S').and.
+     &      (tieset(1,i)(81:81).ne.'D')) then
             itie=i
             exit
          elseif((tieset(1,i)(81:81).ne.'C').and.
-     &      (tieset(1,i)(81:81).ne.'T')) then
+     &          (tieset(1,i)(81:81).ne.'T').and.
+     &          (tieset(1,i)(81:81).ne.'M').and.
+     &          (tieset(1,i)(81:81).ne.'S').and.
+     &          (tieset(1,i)(81:81).ne.'D')) then
             ntiecyc=ntiecyc+1
             itiecyc=i
          endif

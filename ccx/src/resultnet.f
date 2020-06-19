@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2018 Guido Dhondt
+!     Copyright (C) 1998-2019 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -181,6 +181,10 @@
 !
          enddo
       enddo
+c      write(*,*) 'resultnet'
+c      write(*,*) 'mass flow in node 3: ',v(1,3)
+c      write(*,*) 'pressure in node 4: ',v(2,4)
+c      write(*,*) 'mass flow in node 5: ',v(1,5)
 !
 !     update geometry changes
 !
@@ -326,7 +330,7 @@ c      enddo
       do i=1,ntg
          node=itg(i)
          if(v(2,node).lt.0) then
-            write(*,*) 'wrong pressure; node ',node
+            write(*,*) 'wrong pressure; node ',node,v(2,node)
             iin=0
             return
          endif
@@ -337,6 +341,7 @@ c      enddo
       do i=1,ntg
          node=itg(i)
          if(v(0,node).lt.0) then
+            write(*,*) 'wrong temperature; node ',node,v(0,node)
             iin=0
             return
          endif
@@ -448,6 +453,18 @@ c      enddo
                elseif(lakon(nelem)(2:6).eq.'GAPFI') then
                   icase=1
                endif  
+!
+            elseif(lakon(nelem)(2:5).eq.'GAPR') then
+!
+!              rotating adiabatic gas pipe with variable cross section:
+!              check whether section 1 or 2                  
+!
+               if(kon(ipkon(nelem)+1).eq.node) then
+                  A=prop(index+1)
+               else
+                  A=prop(index+2)
+               endif
+               icase=0
 !     
             elseif(lakon(nelem)(2:3).eq.'RE') then
                node1=kon(indexe+1)
@@ -584,6 +601,7 @@ c               A=prop(index+1)
      &         (lakon(nelem)(2:3).ne.'RO').and.
      &         (lakon(nelem)(2:5).ne.'RIMS').and.
      &         (lakon(nelem)(2:6).ne.'SPUMP').and.
+     &         (lakon(nelem)(2:5).ne.'GAPR').and.
      &         (lakon(nelem)(2:3).ne.'VO')) then
                if(nactdog(1,nodem).ne.0) then
                   if(((v(1,nodem).gt.1.d-12).and.
@@ -1045,7 +1063,7 @@ c               A=prop(index+1)
          endif
       enddo
 !     
-!     prescribed heat generation: contribution the energy equations        
+!     prescribed heat generation: contribution to the energy equations        
 !     
       do i=1,ntg
          node=itg(i)
@@ -1081,6 +1099,12 @@ c               A=prop(index+1)
             elseif(lakon(nelem)(4:5).eq.'FO') then
                if(nint(prop(ielprop(nelem)+6)).eq.0) cycle
             endif
+!     
+            call calcheatnet(nelem,lakon,ipkon,kon,v,ielprop,prop,
+     &           ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,ipobody,ibody,
+     &           xbodyact,mi,nacteq,bc,qat,nalt)
+!     
+         elseif(lakon(nelem)(2:5).eq.'GAPR') then
 !     
             call calcheatnet(nelem,lakon,ipkon,kon,v,ielprop,prop,
      &           ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,ipobody,ibody,
@@ -1246,9 +1270,9 @@ c               A=prop(index+1)
          endif
       enddo
 !
-c      write(30,*) 'bc in resultnet'
-c      do i=1,9
-c         write(30,'(1x,e11.4)') bc(i)
+c      write(*,*) 'bc in resultnet'
+c      do i=1,3
+c         write(*,'(1x,e11.4)') bc(i)
 c      enddo
 !
       return

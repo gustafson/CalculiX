@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
 !     calculates stiffness and stresses for a user defined material
 !     law
 !
-!     icmd=3: calcutates stress at mechanical strain
+!     icmd=3: calculates stress at mechanical strain
 !     else: calculates stress at mechanical strain and the stiffness
 !           matrix
 !
@@ -211,10 +211,10 @@ c     &       write(*,*) 'eigenvalues',i,we(i),z(1,i),z(2,i),z(3,i)
      &   (dabs(we(2)-we(1)).lt.1.d-10)) then
          fla(1)=young*we(1)*(0.5d0+datan(we(1)/eps)/pi)
          do i=1,3
-            stre(i)=fla(1)
+            stre(i)=fla(1)-beta(i)
          enddo
-         do i=1,3
-            stre(i)=0.d0
+         do i=4,6
+            stre(i)=0.d0-beta(i)
          enddo
 c         if(iint.eq.1) write(*,*) '1 diff stre'
 c         if(iint.eq.1) write(*,100) (stre(i),i=1,6)
@@ -260,6 +260,7 @@ c            if(iint.eq.1) write(*,100) (stiff(i),i=1,21)
             j1=kal(1,j)
             j2=kal(2,j)
             stre(j)=fla(1)*xm1(j1,j2)+fla(2)*(d(j1,j2)-xm1(j1,j2))
+     &             -beta(j)
          enddo
 c         if(iint.eq.1) write(*,*) '2 diff stre (w2=w3)'
 c         if(iint.eq.1) write(*,100) (stre(i),i=1,6)
@@ -331,6 +332,7 @@ c            if(iint.eq.1) write(*,100) (stiff(i),i=1,21)
             j1=kal(1,j)
             j2=kal(2,j)
             stre(j)=fla(3)*xm3(j1,j2)+fla(2)*(d(j1,j2)-xm3(j1,j2))
+     &             -beta(j)
          enddo
 c         if(iint.eq.1) write(*,*) '2 diff stre (w1=w2)'
 c         if(iint.eq.1) write(*,100) (stre(i),i=1,6)
@@ -376,6 +378,78 @@ c            if(iint.eq.1) write(*,*) '2 diff stiff (w1=w2)'
 c            if(iint.eq.1) write(*,100) (stiff(i),i=1,21)
          endif
 !
+!     2 equal eigenvalues: w1=w3
+!
+      elseif(dabs(we(3)-we(1)).lt.1.d-10) then
+!
+!        calculating the structural tensor for the unequal
+!        eigenvalue of the Cauchy and the Lagrange tensor
+!         
+         do i=1,3
+            do j=1,3
+               xm3(i,j)=z(i,3)*z(j,3)
+            enddo
+         enddo
+!
+!        calculating the modified Young's modulus (due to the
+!        tension-only modification)
+!
+         do i=2,3
+            fla(i)=young*we(i)*(0.5d0+datan(we(i)/eps)/pi)
+         enddo
+!
+!        calculating the stresses
+!
+         do j=1,6
+            j1=kal(1,j)
+            j2=kal(2,j)
+            stre(j)=fla(2)*xm3(j1,j2)+fla(3)*(d(j1,j2)-xm3(j1,j2))
+     &             -beta(j)
+         enddo
+c         if(iint.eq.1) write(*,*) '2 diff stre (w1=w2)'
+c         if(iint.eq.1) write(*,100) (stre(i),i=1,6)
+!
+         if(icmd.ne.3) then
+!
+!           calculating the stiffness matrix
+!
+!           derivative of the modified young's modulus w.r.t.
+!           the Cauchy eigenvalues
+!            
+            do i=2,3
+               dfla(i)=young*((0.5d0+datan(we(i)/eps)/pi)/2.d0
+     &                +we(i)/(2.d0*pi*eps*(1.d0+(we(i)/eps)**2)))
+            enddo
+!
+!           stiffness matrix
+!
+            do j=1,21
+               j1=kel(1,j)
+               j2=kel(2,j)
+               j3=kel(3,j)
+               j4=kel(4,j)
+!
+!              calculating the auxiliary field xmm3
+!
+               xmm3(j)=xm3(j1,j2)*xm3(j3,j4)
+!
+!              calculating the auxiliary fields a and b
+!
+               a(j)=(d(j3,j1)*d(j4,j2)+d(j3,j2)*d(j4,j1))/2.d0
+               b(j)=(d(j3,j1)*xm3(j4,j2)+d(j4,j1)*xm3(j3,j2)+
+     &               d(j4,j2)*xm3(j1,j3)+d(j3,j2)*xm3(j1,j4))/2.d0
+!
+!              calculating the stiffness matrix
+!
+               stiff(j)=2.d0*(dfla(2)*xmm3(j)
+     &                 +dfla(3)*(a(j)+xmm3(j)-b(j))
+     &                 +(fla(3)-fla(2))*(b(j)-2.d0*xmm3(j))
+     &                 /(2.d0*(we(3)-we(2))))
+            enddo
+c            if(iint.eq.1) write(*,*) '2 diff stiff (w1=w2)'
+c            if(iint.eq.1) write(*,100) (stiff(i),i=1,21)
+         endif
+!
 !     3 different eigenvalues
 !
       else
@@ -404,7 +478,7 @@ c            if(iint.eq.1) write(*,100) (stiff(i),i=1,21)
             j1=kal(1,j)
             j2=kal(2,j)
             stre(j)=fla(1)*xm1(j1,j2)+fla(2)*xm2(j1,j2)
-     &                               +fla(3)*xm3(j1,j2)
+     &                               +fla(3)*xm3(j1,j2)-beta(j)
          enddo
 c         if(iint.eq.1) write(*,*) '3 diff stre'
 c         if(iint.eq.1) write(*,100) (stre(i),i=1,6)

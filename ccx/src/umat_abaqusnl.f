@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
 !     calculates stiffness and stresses for a nonlinear material
 !     defined by an ABAQUS umat routine
 !
-!     icmd=3: calcutates stress at mechanical strain
+!     icmd=3: calculates stress at mechanical strain
 !     else: calculates stress at mechanical strain and the stiffness
 !           matrix
 !
@@ -154,6 +154,8 @@
       d=(/1.d0,1.d0,1.d0,0.d0,0.d0,0.d0/)
 !
 !     filling field jstep
+!
+      write(*,*) 'umat_abaqusnl ',iel,iint
 !
       jstep(1)=istep
       jstep(2)=nmethod

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
 !     calculates stiffness and stresses for a user defined material
 !     law
 !
-!     icmd=3: calcutates stress at mechanical strain
+!     icmd=3: calculates stress at mechanical strain
 !     else: calculates stress at mechanical strain and the stiffness
 !           matrix
 !
@@ -124,19 +124,48 @@
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
      &  time,ttime
       real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
-!
 !     
 !     Ela-Pla-modifications:
+!
       real*8 C1(3,3), C1i(3,3), detC1, dS2dE(3,3,3,3), S2PK1(3,3)
-      real*8 lamda, mu
+      real*8 lamda, mu,un,e
+!
+!     change on 190315: input are Young's modulus and Poisson's
+!     coefficient instead of the Lame constants
+!
+      e=elconloc(1)
+      un=elconloc(2)
+      mu=e/(1.d0+un)
+      lamda=mu*un/(1.d0-2.d0*un)
+      mu=mu/2.d0
 
-      lamda=elconloc(1)
-      mu=elconloc(2)
+c      lamda=elconloc(1)
+c      mu=elconloc(2)
 
 C     ciarlet_doc
 C
 C     Compute pullback C1(3,3) of metric tensor g.
-      C1  = matmul(transpose(xkl),xkl)
+c     C1  = matmul(transpose(xkl),xkl)
+
+
+!
+!     change on 190315: the Cauchy tensor should be
+!     computed based on the mechanical Lagrange strain in 
+!     order to discard the thermal strains; the deformation
+!     gradient still contains the thermal strain effect
+!      
+!     right Cauchy-Green tensor (eloc contains the Lagrange strain,
+!     including thermal strain)
+!
+      C1(1,1)=2.d0*emec(1)+1.d0
+      C1(2,2)=2.d0*emec(2)+1.d0
+      C1(3,3)=2.d0*emec(3)+1.d0
+      C1(1,2)=2.d0*emec(4)
+      C1(2,1)=C1(1,2)
+      C1(1,3)=2.d0*emec(5)
+      C1(3,1)=C1(1,3)
+      C1(2,3)=2.d0*emec(6)
+      C1(3,2)=C1(2,3)
 C
 C     2PK-Stress at C:
       call S2_Ciarlet(C1,lamda,mu, S2PK1,C1i,detC1)

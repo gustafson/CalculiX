@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -623,33 +623,34 @@ c               vold(1,iexpnode)=alpha
                if(lakon(ielem)(7:7).eq.'L') then
                   dot=a(1,idirref)*xn(1)+a(2,idirref)*xn(2)+
      &                a(3,idirref)*xn(3)
-                  if(dot.gt.0.05d0) then
+                  if(dot.gt.999d0) then
                      write(*,*) '*WARNING in gen3dforc: applied'
                      write(*,*) '         moment in node ',node
                      write(*,*) '         and direction ',idir-1
-                     write(*,*) '         has a significant'
+                     write(*,*) '         is nearly'
                      write(*,*) 
-     &                    '         component along the drilling'
-                     write(*,*) '         direction; projection is'
-                     write(*,*) '         applied'
+     &                    '         along the drilling'
+                     write(*,*) '         direction; this load is'
+                     write(*,*) '         taken into account'
                      write(*,*)
+                     cycle
 c                     call exit(201)
                   endif
-!
-!                 projecting the rotation vector on the tangent plane
-!
-                  do k=1,3
-                     a(k,idirref)=a(k,idirref)-dot*xn(k)
-                  enddo
-!
-                  dd=0.d0
-                  do k=1,3
-                     dd=dd+a(k,idirref)**2
-                  enddo
-                  dd=dsqrt(dd)
-                  do k=1,3
-                     a(k,idirref)=a(k,idirref)/dd
-                  enddo
+c!
+c!                 projecting the rotation vector on the tangent plane
+c!
+c                  do k=1,3
+c                     a(k,idirref)=a(k,idirref)-dot*xn(k)
+c                  enddo
+c!
+c                  dd=0.d0
+c                  do k=1,3
+c                     dd=dd+a(k,idirref)**2
+c                  enddo
+c                  dd=dsqrt(dd)
+c                  do k=1,3
+c                     a(k,idirref)=a(k,idirref)/dd
+c                  enddo
                endif
 !
 c               dd=0.d0

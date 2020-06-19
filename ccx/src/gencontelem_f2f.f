@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -296,21 +296,6 @@
                if(mint2d.eq.0) cycle
                indexf=islavsurf(2,jj)
 !
-c$omp parallel default(none)
-c$omp& shared(mint2d,indexf,pslavsurf,nopes,xl2,iflag,iit,pmastsurf,
-c$omp&        xo,yo,zo,x,y,z,nx,ny,nz,n,kneigh,itietri,i,straight,
-c$omp&        imastop,springarea,koncont,ipkon,lakon,kon,ifacet,
-c$omp&        ifacew1,ifacew2,ifaceq,co,vold,nmethod,elcon,
-c$omp&        imat,istep,theta,reltime,iloop,iinc,ncmat_,xstateini,
-c$omp&        ne0,iprev,ialeatoric,icutb,iact,ne,ifree,nasym,indexel,
-c$omp&        xstate,nstate_,ielmat,nodefs,jj,filab,lenset,setname,
-c$omp&        alea)
-c$omp& private(igauss,xi,et,weight,m,xsj2,xs2,shp2,area,k,p,j,isol,
-c$omp&         neigh,itriold,itri,ntriangle,ntriangle_,l,ll,dist,
-c$omp&         itrinew,itriangle,id,ifacem,nelemm,jfacem,indexe,
-c$omp&         nopem,nface,nodefm,nope,pl,nn,pproj,ratio,xm,al,dm,
-c$omp&         xn,clear,harvest,nel)
-c$omp do
                do m=1,mint2d
                   igauss=indexf+m
                   xi=pslavsurf(1,indexf+m)
@@ -612,7 +597,6 @@ c                        call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
      &                                xstateini(5,1,ne0+igauss)**2+
      &                                xstateini(6,1,ne0+igauss)**2)
      &                                .ge.1.d-30) then
-c$omp atomic
                                     iprev=iprev+1
                                  endif
                               endif
@@ -638,9 +622,7 @@ c                                 if(harvest.gt.0.9d0) isol=0
                                     if(clear.gt.0.d0) then
                                        isol=0
                                     else
-c$omp critical(c2)
                                        iact=iact+1
-c$omp end critical(c2)
                                     endif
                                  else
 !
@@ -656,9 +638,7 @@ c$omp end critical(c2)
      &                                   (clear.gt.0.d0)) then
                                        isol=0
                                     else
-c$omp critical(c2)
                                        iact=iact+1
-c$omp end critical(c2)
                                     endif
                                  endif
                               endif
@@ -689,13 +669,11 @@ c$omp end critical(c2)
 !     
 !                 generation of a contact spring element
 !     
-c$omp critical(c3)
                      ne=ne+1
                      nel=ne
 !
                      id=ifree+1
                      ifree=ifree+nopem+nopes+4
-c$omp end critical(c3)
 !
                      ipkon(nel)=id
                      lakon(nel)(1:7)='ESPRNGC'
@@ -710,16 +688,12 @@ c$omp end critical(c3)
                      if(ncmat_.ge.7) then
                         if((elcon(6,1,imat).gt.0).and.
      &                     (int(elcon(3,1,imat)).ne.4)) then
-c$omp critical(c5)
                            nasym=1
-c$omp end critical(c5)
                         endif
                      endif
                      if(ncmat_.ge.8) then
                         if(elcon(8,1,imat).gt.0) then
-c$omp critical(c5)
                            nasym=1
-c$omp end critical(c5)
                         endif
                      endif
 !     
@@ -743,7 +717,6 @@ c                     lakon(ne)(8:8)=char(nopem+48)
 c                     indexel=indexel+1
 !
                      if(filab(1)(3:3).eq.'C') then
-c$omp critical(c4)
                         indexel=indexel+1
                         if((nopem.eq.4).or.(nopem.eq.8)) then
                            if((nopes.eq.4).or.(nopes.eq.8)) then
@@ -788,9 +761,7 @@ c     if(filab(1)(3:3).eq.'C') then
 c     endif
                            endif
                         endif
-c$omp end critical(c4)
                      endif
-ccc$omp end critical(c3)
                   else
 !     
 !              no contact: set internal variables at end of increment
@@ -808,8 +779,6 @@ ccc$omp end critical(c3)
                   endif
 !     
                enddo ! m
-c$omp end do
-c$omp end parallel
             enddo ! jj
             if((iact.ne.0).or.(iprev.eq.0).or.(nmethod.eq.4)) exit
             write(*,*)'*INFO in gencontelem_f2f: contact lost at the'

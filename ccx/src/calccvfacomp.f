@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,10 +29,6 @@
 !
       real*8 t1l,vfa(0:7,*),cp,shcon(0:3,ntmat_,*),cvfa(*),physcon(*)
 !     
-c$omp parallel default(none)
-c$omp& shared(nface,vfa,ielmatf,ielfa,ntmat_,shcon,nshcon,physcon,cvfa)
-c$omp& private(i,t1l,imat,cp)
-c$omp do
       do i=1,nface
          t1l=vfa(0,i)
 !
@@ -46,8 +42,6 @@ c$omp do
 !
          cvfa(i)=cp-shcon(3,1,imat)
       enddo
-c$omp end do
-c$omp end parallel
 !            
       return
       end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -769,7 +769,8 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
                enddo
             elseif(lakonl(4:6).eq.'20 ')then
                nopered=20
-               call lintemp(t0,t1,konl,nopered,kk,t0l,t1l)
+               call lintemp(t0,konl,nopered,kk,t0l)
+               call lintemp(t1,konl,nopered,kk,t1l)
             elseif(lakonl(4:6).eq.'10T') then
                call linscal10(t0,konl,t0l,null,shp)
                call linscal10(t1,konl,t1l,null,shp)
@@ -787,7 +788,8 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
                enddo
             elseif(lakonl(4:6).eq.'20 ')then
                nopered=20
-               call lintemp_th(t0,vold,konl,nopered,kk,t0l,t1l,mi)
+               call lintemp_th0(t0,konl,nopered,kk,t0l,mi)
+               call lintemp_th1(vold,konl,nopered,kk,t1l,mi)
             elseif(lakonl(4:6).eq.'10T') then
                call linscal10(t0,konl,t0l,null,shp)
                call linscal10(vold,konl,t1l,mi(2),shp)
@@ -1731,40 +1733,11 @@ c     Bernhardi end
 !     for axially symmetric and plane stress/strain elements: 
 !     complete s and sm
 !
-      if(((lakonl(4:5).eq.'8 ').or.
-     &    ((lakonl(4:6).eq.'20R').and.(lakonl(7:8).ne.'BR'))).and.
-     &   ((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
-     &    (lakonl(7:7).eq.'E'))) then
-         do i=1,60
-            do j=i,60
-               k=abs(iperm(i))
-               l=abs(iperm(j))
-               if(k.gt.l) then
-                  m=k
-                  k=l
-                  l=m
-               endif
-               sax(i,j)=s(k,l)*iperm(i)*iperm(j)/(k*l)
-            enddo
-         enddo
-         do i=1,60
-            do j=i,60
-               s(i,j)=s(i,j)+sax(i,j)
-            enddo
-         enddo
-!
-         if((nload.ne.0).or.(nbody.ne.0)) then
-            do i=1,60
-               k=abs(iperm(i))
-               ffax(i)=ff(k)*iperm(i)/k
-            enddo
-            do i=1,60
-               ff(i)=ff(i)+ffax(i)
-            enddo
-         endif
-!
-         if(mass.eq.1) then
-            summass=2.d0*summass
+      if(intscheme.eq.0) then
+         if(((lakonl(4:5).eq.'8 ').or.
+     &        ((lakonl(4:6).eq.'20R').and.(lakonl(7:8).ne.'BR'))).and.
+     &        ((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'S').or.
+     &        (lakonl(7:7).eq.'E'))) then
             do i=1,60
                do j=i,60
                   k=abs(iperm(i))
@@ -1774,17 +1747,48 @@ c     Bernhardi end
                      k=l
                      l=m
                   endif
-                  sax(i,j)=sm(k,l)*iperm(i)*iperm(j)/(k*l)
+                  sax(i,j)=s(k,l)*iperm(i)*iperm(j)/(k*l)
                enddo
             enddo
             do i=1,60
                do j=i,60
-                  sm(i,j)=sm(i,j)+sax(i,j)
+                  s(i,j)=s(i,j)+sax(i,j)
                enddo
             enddo
+!     
+            if((nload.ne.0).or.(nbody.ne.0)) then
+               do i=1,60
+                  k=abs(iperm(i))
+                  ffax(i)=ff(k)*iperm(i)/k
+               enddo
+               do i=1,60
+                  ff(i)=ff(i)+ffax(i)
+               enddo
+            endif
+!     
+            if(mass.eq.1) then
+               summass=2.d0*summass
+               do i=1,60
+                  do j=i,60
+                     k=abs(iperm(i))
+                     l=abs(iperm(j))
+                     if(k.gt.l) then
+                        m=k
+                        k=l
+                        l=m
+                     endif
+                     sax(i,j)=sm(k,l)*iperm(i)*iperm(j)/(k*l)
+                  enddo
+               enddo
+               do i=1,60
+                  do j=i,60
+                     sm(i,j)=sm(i,j)+sax(i,j)
+                  enddo
+               enddo
+            endif
          endif
       endif
-!
+!     
       if((mass.eq.1).and.(iexpl.gt.1)) then
 !
 !        scaling the diagonal terms of the mass matrix such that the total mass

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2018 Guido Dhondt
+!              Copyright (C) 1998-2019 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -360,7 +360,11 @@ C         ndprop=20
          elseif(typename(8:22).eq.'GEOMETRICALAREA') then
              elname='ORGA   '
          elseif(typename(8:20).eq.'BRUSHFLEXIBLE') then
-             elname='ORBF   '     
+             elname='ORBF   ' 
+         elseif(typename(8:15).eq.'BRUSHGAP') then
+             elname='ORB1   ' 
+         elseif(typename(8:21).eq.'BRISTLEPACKAGE') then
+             elname='ORB2   '
          else 
             elname='ORC1   '
          endif
@@ -496,6 +500,10 @@ C         ndprop=20
          endif
          ndprop=6
 !
+      elseif(typename(1:15).eq.'ROTATINGGASPIPE') then
+         elname='GAPR   '
+         ndprop=10
+!
       else if (typename(1:6).eq.'S-PUMP') then
          elname='SPUMP  '
          ndprop=6
@@ -576,37 +584,6 @@ C         ndprop=20
          endif
          ndprop=0
          npu=0
-c         do
-c            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-c     &        ipoinp,inp,ipoinpc)
-c            if((istat.lt.0).or.(key.eq.1)) exit
-c            if(ndprop.eq.0) then
-c               do j=1,nfix
-c                  ndprop=ndprop+1
-c                  read(textpart(j),'(f40.0)',iostat=istat) 
-c     &                 prop(nprop+ndprop)
-c                  if(istat.gt.0) then
-c                     call inputerror(inpc,ipoinpc,iline,
-c     &                     "*FLUID SECTION%",ier)
-c                      return
-c                   endif
-c               enddo
-c               nstart=nfix+1
-c!
-c!              adding the point (0.,0.) for characteristics
-c!
-c               if(elname(1:4).eq.'CHAR') then
-c                  prop(nprop+3)=0.d0
-c                  prop(nprop+4)=0.d0
-c                  npu=2
-c                  nfix=2
-c               endif
-c            else
-c               nstart=1
-c            endif
-c            do j=nstart,n
-c               npu=npu+1
-c               ndprop=ndprop+1
 !
 !        npu is the number of data points, i.e. the number of
 !        abscissa-values + the number of ordinate values
@@ -693,8 +670,6 @@ c               ndprop=ndprop+1
             write(*,*) '         points x data points for fluid'
             write(*,*) '         section type',elname(1:4)
             npu=npu-1
-c            ier=1
-c            return
          endif
 !
          prop(nprop+nfix)=npu/2
@@ -725,69 +700,8 @@ c            return
 ! 
       elseif(elname.eq.'ACCTUBE') then
 !
-!        reading the element properties
-!
 !        acc-tube (proprietary)
 !         
-!        Read the first 20 elements
-! 
-c         lprop=0
-c         ndpropread=ndprop
-c!         
-c         do j=1,(ndpropread-1)/8+1
-c            call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-c     &              ipoinp,inp,ipoinpc)
-c            if((istat.lt.0).or.(key.eq.1)) exit
-c            do k=1,8
-c               lprop=lprop+1
-c               if(lprop.gt.ndpropread) exit
-c               read(textpart(k),'(f40.0)',iostat=istat)
-c     &                 prop(nprop+lprop)
-c               
-c               if(istat.gt.0) then
-c                  call inputerror(inpc,ipoinpc,iline,
-c     &                 "*FLUID SECTION%",ier)
-c                  return
-c               endif
-c               
-c!              If 20 elements have been read, check how many more
-c!              are to be read
-c               if (lprop.eq.20) then
-c                  ndpropread = lprop +
-c     &                        (prop(nprop+19)+prop(nprop+20))*2
-c                  ndprop = ndpropread
-c               endif
-c            enddo
-c         enddo
-c!         
-c!        Until now 3 lines have been read
-c!        If necessary read the rest
-c!
-c         if(ndpropread.gt.lprop) then
-c            do j=3,(ndpropread-1)/8+1
-c               call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-c     &              ipoinp,inp,ipoinpc)
-c               if((istat.lt.0).or.(key.eq.1)) exit
-c               do k=1,8
-c                  lprop=lprop+1
-c                  if(lprop.gt.ndpropread) exit
-c                  read(textpart(k),'(f40.0)',iostat=istat)
-c     &                 prop(nprop+lprop)
-c               
-c                  if(istat.gt.0) then
-c                     call inputerror(inpc,ipoinpc,iline,
-c     &                    "*FLUID SECTION%",ier)
-c                     return
-c                  endif
-c               enddo
-c            enddo
-c         endif
-c!
-c         nprop=nprop+ndprop
-c!
-c         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
-c     &              ipoinp,inp,ipoinpc)
-c!         
       elseif(ndprop.gt.0) then
 !
 !        reading the element properties
@@ -887,7 +801,7 @@ c!
 !
 !     k_oil for pipe elements
 !
-      elseif(elname(1:3).eq.'GAP') then
+      elseif(elname(1:4).eq.'GAPF') then
          prop(npropstart+7)=noil_mat
       elseif(elname(1:4).eq.'LICH') then
 !
