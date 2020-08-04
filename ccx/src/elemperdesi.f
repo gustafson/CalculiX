@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,10 +34,7 @@
 !     They are stored in ialdesi(istartdesi(i))..
 !     ...up to..... ialdesi(istartdesi(i+1)-1)
 !
-      intent(in) ndesi,nodedesi,iponoel,inoel,lakon,ipkon,kon,
-     &           nodedesiinv,icoordinate,iregion
 !
-      intent(inout) istartdesi,ialdesi
 !
       ifree=1
 !

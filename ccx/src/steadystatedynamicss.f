@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,8 +34,8 @@
       character*132 textpart(16)
 !
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,nset,
-     &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,ndata,nfour,mcs,
-     &  ipoinpc(0:*),nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,
+     &  ipoinp(2,*),inp(3,*),iperturb(*),isolver,i,ndata,nfour,mcs,
+     &  ipoinpc(0:*),nforc,nload,nbody,iprestr,ithermal(*),j,nk,ipos,
      &  cyclicsymmetry,ier,ibody(3,*)
 !
       real*8 fmin,fmax,bias,tmin,tmax,xmodal(*),cs(17,*),t0(*),t1(*)
@@ -71,6 +71,8 @@
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       do i=2,n
@@ -108,6 +110,8 @@
          isolver=5
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:6).eq.'PASTIX') then
+         isolver=8
       else
          write(*,*) '*WARNING reading *STEADY STATE DYNAMICS:'
          write(*,*) '         unknown solver;'
@@ -216,7 +220,7 @@ c      endif
       enddo
 c      nbody=0
       iprestr=0
-      if((ithermal.eq.1).or.(ithermal.eq.3)) then
+      if((ithermal(1).eq.1).or.(ithermal(1).eq.3)) then
          do j=1,nk
             t1(j)=t0(j)
          enddo

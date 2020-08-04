@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,9 +30,7 @@
      &     rey_turb_min,rey_lam_max,lzd,dd,ds,friction,dfriction,
      &     lambda_kr,lambda_turb,ksd
 !     
-      intent(in) l,d,ks,reynolds,form_fact
 !
-      intent(inout) lambda
 !
       rey_turb_min=4000
       rey_lam_max=2000
@@ -96,7 +94,7 @@
 !     S.E. Haaland 1983 (Source en.Wikipwedia.org)
 !     
          friction=(-1.8d0*dlog10(6.9d0/reynolds+(ksd/3.7d0)
-     &        **1.11d0))**-2d0
+     &        **1.11d0))**(-2d0)
 !     
          do
             ds=dsqrt(friction)

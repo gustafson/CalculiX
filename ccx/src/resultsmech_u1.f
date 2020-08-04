@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -212,7 +212,7 @@
       integer kon(*),konl(26),mi(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,
-     &  istep,iinc,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
+     &  istep,iinc,ne,mattyp,ithermal(*),iprestr,i,j,k,m1,m2,jj,
      &  i1,kk,nener,indexe,nope,norien,iperturb(*),iout,
      &  nal,icmd,ihyper,nmethod,kode,imat,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ielprop(*),
@@ -234,17 +234,7 @@
      &  thicke(mi(3),*),emeini(6,mi(1),*),aly,alz,bey,bez,xi(2),
      &  vlp(6,2),xi11,xi12,xi22,xk,offset1,offset2,e1(3),e2(3),e3(3)
 !
-      intent(in) co,kon,ipkon,lakon,ne,v,
-     &  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,prestr,
-     &  iprestr,iperturb,iout,vold,nmethod,
-     &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
-     &  xstateini,xstate,npmat_,matname,mi,ielas,icmd,
-     &  ncmat_,nstate_,stiini,vini,enerini,istep,iinc,
-     &  reltime,calcul_fn,calcul_qa,calcul_cauchy,nener,
-     &  ikin,ne0,thicke,emeini,i,ielprop,prop
 !
-      intent(inout) nal,qa,fn,xstiff,ener,eme,eei,stx
 !
       nope=2
 !
@@ -255,7 +245,7 @@
       imat=ielmat(1,i)
       amat=matname(imat)
       if(norien.gt.0) then
-         iorien=ielorien(1,i)
+         iorien=max(0,ielorien(1,i))
       else
          iorien=0
       endif

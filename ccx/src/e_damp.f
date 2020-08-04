@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
       character*80 matname(*)
 !
       integer konl(20),nelemload(2,*),nk,nbody,nelem,
-     &  ithermal,iperturb,nload,idist,i,j,i1,i2,mi(*),
+     &  ithermal(*),iperturb(*),nload,idist,i,j,i1,i2,mi(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),ntmat_,nope,norien,iexpl,kode,imat,ncmat_,
      &  istep,iinc,nmethod,nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),
@@ -68,7 +68,7 @@
 !
 !     displacements for 2nd order static and modal theory
 !
-      if(iperturb.ne.0) then
+      if(iperturb(1).ne.0) then
          do i1=1,nope
             do i2=1,3
                voldl(i2,i1)=vold(i2,konl(i1))
@@ -90,10 +90,10 @@
             kode=nelcon(1,imat)
             t0l=0.d0
             t1l=0.d0
-            if(ithermal.eq.1) then
+            if(ithermal(1).eq.1) then
                t0l=(t0(konl(1))+t0(konl(2)))/2.d0
                t1l=(t1(konl(1))+t1(konl(2)))/2.d0
-            elseif(ithermal.ge.2) then
+            elseif(ithermal(1).ge.2) then
                t0l=(t0(konl(1))+t0(konl(2)))/2.d0
                t1l=(vold(0,konl(1))+vold(0,konl(2)))/2.d0
             endif

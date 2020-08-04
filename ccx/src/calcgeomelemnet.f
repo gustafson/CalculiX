@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -82,10 +82,7 @@
       real*8 vold(0:mi(2),*),co(3,*),prop(*),ttime,time,pi,radius,
      &  A,A2,d,l,s
 !
-      intent(in) vold,co,prop,lakon,nelem,ttime,
-     &  time,ielprop,mi,A2,d,l,s
 !
-      intent(inout) A
 !
       index=ielprop(nelem)
       pi=4.d0*datan(1.d0)

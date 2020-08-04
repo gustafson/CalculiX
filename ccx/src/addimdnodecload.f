@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
       integer nodeforc(2,*),iforc,node,imdnode(*),nmdnode,ikmpc(*),
      &  ilmpc(*),ipompc(*),nodempc(3,*),nmpc,imddof(*),nmddof,
      &  mi(*),nactdof(0:mi(2),*),imdmpc(*),nmdmpc,imdboun(*),nmdboun,
-     &  ikboun(*),nboun,ilboun(*),ithermal,k
+     &  ikboun(*),nboun,ilboun(*),ithermal(*),k
 !
       real*8 xforc(*)
 !
@@ -45,7 +45,7 @@
 !
 !        add the degrees of freedom corresponding to the node
 !
-         if(ithermal.ne.2) then
+         if(ithermal(1).ne.2) then
             do k=1,3
                call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &              nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,

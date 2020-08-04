@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
       integer ipkon(*),mi(*),nstate_,nelem,l,ii,mint3d,j,k,nope,
      &  ielorien(mi(3),*),norien,konf(*),konl,indexe,m,iorien,iflag,
      &  ielmat(mi(3),*),nopes,mint2d,kk,ki,kl,nlayer,ilayer,
-     &  null,ielprop(*),nelel,ithermal(2)
+     &  null,ielprop(*),nelel,ithermal(*)
 !
       real*8 stx(6,mi(1),*),eei(6,mi(1),*),xstate(nstate_,mi(1),*),
      &  ener(mi(1),*),qfx(3,mi(1),*),xi,et,ze,xl(3,20),xsj,shp(4,20),
@@ -62,7 +62,7 @@
          if((norien.eq.0).or.(prlab(ii)(6:6).eq.'G')) then
             iorien=0
          else
-            iorien=ielorien(1,nelel)
+            iorien=max(0,ielorien(1,nelel))
          endif
       elseif(lakon(nelel)(4:5).eq.'20') then
 !     
@@ -77,7 +77,7 @@
             iorien=0
             do k=1,mi(3)
                if(ielorien(k,nelel).ne.0) then
-                  iorien=ielorien(k,nelel)
+                  iorien=max(0,ielorien(k,nelel))
                   exit
                endif
             enddo
@@ -134,7 +134,7 @@
             iorien=0
             do k=1,mi(3)
                if(ielorien(k,nelel).ne.0) then
-                  iorien=ielorien(k,nelel)
+                  iorien=max(0,ielorien(k,nelel))
                   exit
                endif
             enddo
@@ -222,7 +222,7 @@
 !     calculation of the integration point coordinates for
 !     output in the local system (if needed)
 !
-      if(iorien.ne.0) then
+      if((iorien.ne.0).or.(prlab(ii)(1:4).eq.'COOR')) then
          if(lakon(nelel)(4:4).eq.'2') then
             nope=20
          elseif(lakon(nelel)(4:4).eq.'8') then
@@ -386,12 +386,12 @@
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                elseif(lakon(nelel)(4:5).eq.'15') then
                   kl=mod(j,6)
                   if(kl.eq.0) kl=6
                   ilayer=(j-kl)/6+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                endif
             endif
 !
@@ -442,12 +442,12 @@
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                elseif(lakon(nelel)(4:5).eq.'15') then
                   kl=mod(j,6)
                   if(kl.eq.0) kl=6
                   ilayer=(j-kl)/6+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                endif
             endif
 !
@@ -498,12 +498,12 @@
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                elseif(lakon(nelel)(4:5).eq.'15') then
                   kl=mod(j,6)
                   if(kl.eq.0) kl=6
                   ilayer=(j-kl)/6+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                endif
             endif
 !
@@ -564,12 +564,12 @@
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                elseif(lakon(nelel)(4:5).eq.'15') then
                   kl=mod(j,6)
                   if(kl.eq.0) kl=6
                   ilayer=(j-kl)/6+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                endif
             endif
 !
@@ -594,12 +594,12 @@
                   kl=mod(j,8)
                   if(kl.eq.0) kl=8
                   ilayer=(j-kl)/8+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                elseif(lakon(nelel)(4:5).eq.'15') then
                   kl=mod(j,6)
                   if(kl.eq.0) kl=6
                   ilayer=(j-kl)/6+1
-                  iorien=ielorien(ilayer,nelel)
+                  iorien=max(0,ielorien(ilayer,nelel))
                endif
             endif
 !
@@ -617,6 +617,11 @@
      &              qfxl(1)*a(1,3)+qfxl(2)*a(2,3)+qfxl(3)*a(3,3),
      &              orname(iorien)(1:20)
             endif
+         enddo
+      elseif(prlab(ii)(1:4).eq.'COOR') then
+         do j=1,mint3d
+            write(5,'(i10,1x,i3,1p,3(1x,e13.6))') nelem,j,
+     &           (coords(k,j),k=1,3)
          enddo
       endif
 !

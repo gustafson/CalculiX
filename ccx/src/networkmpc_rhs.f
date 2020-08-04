@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -115,11 +115,7 @@
       real*8 coefmpc(*),v(0:mi(2),*),bc(*),prop(*),shcon(0:3,ntmat_,*),
      &  rhcon(0:1,ntmat_,*),cocon(0:6,ntmat_,*)
 !
-      intent(in) i,ipompc,nodempc,coefmpc,labmpc,v,j,mi,ipkon,kon,
-     &  lakon,iponoel,inoel,ielprop,prop,ielmat,shcon,nshcon,rhcon,
-     &  nrhcon,ntmat_,cocon,ncocon
 !
-      intent(inout) bc
 !     
       if(labmpc(i)(8:16).eq.'QUADRATIC') then
 !

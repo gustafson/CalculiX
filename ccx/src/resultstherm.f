@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,7 +44,7 @@
      &  i,j,k,m1,kk,i1,m3,indexe,nope,norien,iperturb(*),iout,
      &  nal,nmpc,kode,imat,mint3d,iorien,istiff,ncmat_,nstate_,
      &  nplkcon(0:ntmat_,*),npmat_,calcul_fn,calcul_qa,nea,neb,
-     &  nelemload(2,*),nload,ithermal(2),nmethod,nopered,
+     &  nelemload(2,*),nload,ithermal(*),nmethod,nopered,
      &  jfaces,node,nplicon(0:ntmat_,*),null,ielprop(*),
      &  iponoel(*),inoel(2,*),network,ipobody(2,*),ibody(3,*)
 !
@@ -93,7 +93,7 @@
          imat=ielmat(1,i)
          amat=matname(imat)
          if(norien.gt.0) then
-            iorien=ielorien(1,i)
+            iorien=max(0,ielorien(1,i))
          else
             iorien=0
          endif

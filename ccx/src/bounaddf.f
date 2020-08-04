@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
      &  iamboun(*),iamplitude,nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,
      &  mpcfree,ntrans,ikboun(*),ilboun(*),ikmpc(*),ipkon(*),indexe,
      &  ilmpc(*),itr,idof,newnode,number,id,idofnew,idnew,nk,nk_,
-     &  mpcfreenew,nmethod,iperturb,ii,mi(*),three,kflag,
+     &  mpcfreenew,nmethod,iperturb(*),ii,mi(*),three,kflag,
      &  iy(3),inumber,iface,nload,nelemload(2,*),nopes,kon(*),nope,
      &  nelem,loadid,ifacel,ifaceq(8,6),ifacet(6,4),ifacew(8,5)
 !
@@ -123,7 +123,7 @@ c            write(*,*) 'bounaddf boun',iface,i,val,idof
                write(*,*) '*ERROR in bounadd: increase nboun_'
                call exit(201)
             endif
-            if((nmethod.eq.4).and.(iperturb.le.1)) then
+            if((nmethod.eq.4).and.(iperturb(1).le.1)) then
                write(*,*) '*ERROR in bounadd: in a modal dynamic step'
                write(*,*) '       new SPCs are not allowed'
                call exit(201)
@@ -238,7 +238,7 @@ c            write(*,*) 'bounaddf boun',iface,i,val,idof
 !
 !              new node is generated for the inhomogeneous MPC term
 !
-               if((nmethod.eq.4).and.(iperturb.le.1)) then
+               if((nmethod.eq.4).and.(iperturb(1).le.1)) then
                   write(*,*)'*ERROR in bounadd: in a modal dynamic step'
                   write(*,*) '       new SPCs are not allowed'
                   call exit(201)

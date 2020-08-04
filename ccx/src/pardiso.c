@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -27,7 +27,7 @@ ITG *icolpardiso=NULL,*pointers=NULL,iparm[64];
 long long pt[64];
 double *aupardiso=NULL;
 /* double dparm[64];  not used */
-ITG nthread_mkl=0;
+ITG mthread_mkl=0;
 /* char envMKL[32];   moved to pardiso.h */
 
 void pardiso_factor(double *ad, double *au, double *adb, double *aub, 
@@ -53,7 +53,7 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
   iparm[1]=3;
 /* set MKL_NUM_THREADS to min(CCX_NPROC_EQUATION_SOLVER,OMP_NUM_THREADS)
    must be done once  */
-  if (nthread_mkl == 0) {
+  if (mthread_mkl == 0) {
     nthread=1;
     env=getenv("MKL_NUM_THREADS");
     if(env) {
@@ -70,10 +70,10 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
     if (nthread < 1) {nthread=1;}
     sprintf(envMKL,"MKL_NUM_THREADS=%" ITGFORMAT "",nthread);  
     putenv(envMKL);
-    nthread_mkl=nthread;
+    mthread_mkl=nthread;
   }
     
-  printf(" number of threads =% d\n\n",nthread_mkl);
+  printf(" number of threads =% d\n\n",mthread_mkl);
 
   for(i=0;i<64;i++){pt[i]=0;}
 
@@ -119,8 +119,6 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 	  }
       }
   }else{
-//      mtype=11;
-      mtype=1;
 
       if(*inputformat==3){
 
@@ -128,6 +126,10 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
              column from top to bottom in au;
              diagonal terms are stored in ad  */
 
+	  /* structurally and numerically asymmetric */
+	
+	  mtype=11;
+	
 	  ndim=*neq+*nzs;
 	  NNEW(pointers,ITG,*neq+1);
 	  NNEW(irowpardiso,ITG,ndim);	  
@@ -198,6 +200,10 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
              au, followed by the upper triangular matrix row by row;
              the diagonal terms are stored in ad */
 
+          /* structurally symmetric, numerically asymmetric */
+	
+	  mtype=1;
+	
           /* reordering lower triangular matrix */
 
 	  ndim=*nzs;
@@ -294,7 +300,8 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
   return;
 }
 
-void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag,ITG *nrhs){
+void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag,ITG *inputformat,
+		   ITG *nrhs){
 
   ITG maxfct=1,mnum=1,phase=33,*perm=NULL,mtype,
       msglvl=0,i,error=0;
@@ -309,14 +316,17 @@ void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag,ITG *nrhs){
   if(*symmetryflag==0){
       mtype=-2;
   }else{
-//      mtype=11;
+    if(*inputformat==3){
+      mtype=11;
+    }else{
       mtype=1;
+    }
   }
-//  iparm[0]=0;
   iparm[1]=3;
-/* pardiso_factor has been called befor, MKL_NUM_THREADS=nthread_mkl is set*/
+  
+/* pardiso_factor has been called befor, MKL_NUM_THREADS=mthread_mkl is set*/
 
-  printf(" number of threads =% d\n\n",nthread_mkl);
+  printf(" number of threads =% d\n\n",mthread_mkl);
 
   NNEW(x,double,*nrhs**neq);
 
@@ -330,7 +340,7 @@ void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag,ITG *nrhs){
   return;
 }
 
-void pardiso_cleanup(ITG *neq,ITG *symmetryflag){
+void pardiso_cleanup(ITG *neq,ITG *symmetryflag,ITG *inputformat){
 
   ITG maxfct=1,mnum=1,phase=-1,*perm=NULL,nrhs=1,mtype,
       msglvl=0,error=0;
@@ -339,8 +349,11 @@ void pardiso_cleanup(ITG *neq,ITG *symmetryflag){
   if(*symmetryflag==0){
       mtype=-2;
   }else{
-//      mtype=11;
+    if(*inputformat==3){
+      mtype=11;
+    }else{
       mtype=1;
+    }
   }
 
   FORTRAN(pardiso,(pt,&maxfct,&mnum,&mtype,&phase,neq,aupardiso,
@@ -364,9 +377,9 @@ void pardiso_main(double *ad, double *au, double *adb, double *aub,
   pardiso_factor(ad,au,adb,aub,sigma,icol,irow, 
 		 neq,nzs,symmetryflag,inputformat,jq,nzs3);
 
-  pardiso_solve(b,neq,symmetryflag,nrhs);
+  pardiso_solve(b,neq,symmetryflag,inputformat,nrhs);
 
-  pardiso_cleanup(neq,symmetryflag);
+  pardiso_cleanup(neq,symmetryflag,inputformat);
 
   return;
 }

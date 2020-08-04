@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,9 +26,7 @@
 !
       real*8 d(*),dmin,cotet(3,*)
 !
-      intent(in) nktet,ipoed,iedg,cotet
 !
-      intent(inout) d,dmin
 !
 !     determine the size of all edges
 !

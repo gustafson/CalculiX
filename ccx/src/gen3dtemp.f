@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@
 !
       integer iponoel(*),inoel(3,*),iponoelmax,kon(*),ipkon(*),ne,
      &  iponor(2,*),knor(*),rig(*),i,i1,nk,nk_,i2,index,ielem,j,
-     &  indexe,indexk,k,node,istep,ithermal,mi(*),nam,iamt1(*)
+     &  indexe,indexk,k,node,istep,ithermal(*),mi(*),nam,iamt1(*)
 !
       real*8 xnor(*),t0(*),t1(*),thicke(mi(3),*),offset(2,*),co(3,*),
      &  vold(0:mi(2),*),t0g(2,*),t1g(2,*)
@@ -53,57 +53,57 @@
                   do k=1,3
                      node=knor(indexk+k)
                      t0(node)=t0(i)
-                     if(ithermal.gt.1) vold(0,node)=t0(node)
+                     if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   enddo
                elseif(lakon(ielem)(7:7).eq.'L') then
                   node=knor(indexk+1)
                   t0(node)=t0(i)
      &              -t0g(1,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+2)
                   t0(node)=t0(i)
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+3)
                   t0(node)=t0(i)
      &              +t0g(1,i)*thicke(1,indexe+j)*(0.5d0-offset(1,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                elseif(lakon(ielem)(7:7).eq.'B') then
                   node=knor(indexk+1)
                   t0(node)=t0(i)
      &              -t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
      &              +t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+2)
                   t0(node)=t0(i)
      &              -t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
      &              -t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+3)
                   t0(node)=t0(i)
      &              +t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
      &              -t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+4)
                   t0(node)=t0(i)
      &              +t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
      &              +t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+5)
                   t0(node)=t0(i)
      &              -t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+6)
                   t0(node)=t0(i)
      &              -t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+7)
                   t0(node)=t0(i)
      &              +t0g(2,i)*thicke(1,indexe+j)*(0.5d0+offset(1,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                   node=knor(indexk+8)
                   t0(node)=t0(i)
      &              +t0g(1,i)*thicke(2,indexe+j)*(0.5d0+offset(2,ielem))
-                  if(ithermal.gt.1) vold(0,node)=t0(node)
+                  if(ithermal(1).gt.1) vold(0,node)=t0(node)
                endif
                if(rig(i).eq.0) exit
                index=inoel(3,index)
@@ -113,7 +113,7 @@
 !
 !     temperature loading for mechanical calculations
 !
-      if(ithermal.eq.1) then
+      if(ithermal(1).eq.1) then
          do i=1,iponoelmax
             i1=i+nk_
             i2=i+2*nk_

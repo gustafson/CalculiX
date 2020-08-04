@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,18 +16,20 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-c>
-c> \brief function to evaluate dual shape funciton \f$ shape(\xi,\eta) \f$
-c> @param [in] xi		xi-coordinate
-c> @param [in] et		eta-coordinate
-c> @param [in] xl		local node coordinates
-c> @param [out] xsj		jacobian vector
-c> @param [out] xs		local derivative of the global coordinates
-c> @param [out] shp		evaluated shape functions and derivatives
-c> @param [in] ns		current slave face
-c> @param [in] pslavdual 	(:,i)coefficients \f$ \alpha_{ij}\f$, \f$ 1,j=1,..8\f$ for dual shape functions for face i
-c> @param [in] iflag		flag indicating what to compute
-c>
+!
+!     function to evaluate dual shape funciton \f$ shape(\xi,\eta) \f$
+!      
+!  [in] xi		xi-coordinate
+!  [in] et		eta-coordinate
+!  [in] xl		local node coordinates
+!  [out] xsj		jacobian vector
+!  [out] xs		local derivative of the global coordinates
+!  [out] shp		evaluated shape functions and derivatives
+!  [in] ns		current slave face
+!  [in] pslavdual 	(:,i)coefficients \f$ \alpha_{ij}\f$,
+!                       \f$ 1,j=1,..8\f$ for dual shape functions for face i
+!  [in] iflag		flag indicating what to compute
+!
       subroutine dualshape4q(xi,et,xl,xsj,xs,shp,ns,pslavdual,iflag)
 !
 !     iflag=2: calculate the value of the shape functions,
@@ -46,12 +48,14 @@ c>
       real*8 shp(7,8),xs(3,7),xsi(2,3),xl(3,8),sh(3),xsj(3)
 !     
       real*8 xi,et,pslavdual(64,*)
+!
+!
 !     
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
 !
-!
-!     Caution: derivatives and exspecially jacobian for standart basis functions are given
+!     Caution: derivatives and exspecially jacobian for standard
+!     basis functions are given
 !     needed for consistent integration
 !     
 !     local derivatives of the shape functions: xi-derivative

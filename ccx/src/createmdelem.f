@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,7 +40,7 @@
       integer iforc,node,imdnode(*),nmdnode,ikmpc(*),
      &  ilmpc(*),ipompc(*),nodempc(3,*),nmpc,imddof(*),nmddof,
      &  mi(*),nactdof(0:mi(2),*),imdmpc(*),nmdmpc,imdboun(*),nmdboun,
-     &  ikboun(*),nboun,ilboun(*),ithermal,imdelem(*),nmdelem,
+     &  ikboun(*),nboun,ilboun(*),ithermal(*),imdelem(*),nmdelem,
      &  iponoel(*),inoel(2,*),index,id,nprint,i,j,k,l,indexe,
      &  nope,nset,nrset,ialset(*),ipkon(*),kon(*),istartset(*),
      &  iendset(*),idof,m,ikforc(*),ilforc(*),nforc
@@ -119,7 +119,7 @@ c     Bernhardi end
                   do l=1,nope
                      node=kon(indexe+l)
                      call addimd(imdnode,nmdnode,node)
-                     if(ithermal.ne.2) then
+                     if(ithermal(1).ne.2) then
                         do k=1,3
                            call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                       nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
@@ -171,7 +171,7 @@ c     Bernhardi end
                      do l=1,nope
                         node=kon(indexe+l)
                         call addimd(imdnode,nmdnode,node)
-                        if(ithermal.ne.2) then
+                        if(ithermal(1).ne.2) then
                            do k=1,3
                               call addimdnodedof(node,k,ikmpc,ilmpc,
      &                             ipompc,nodempc,nmpc,imdnode,nmdnode,

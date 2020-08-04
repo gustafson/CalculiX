@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -75,7 +75,7 @@
          root=(1.d0+0.5d0*(km1)*M2**2.d0)
          f=Qred-M2*root**(expon1)
 !
-         df=root**expon1*(-1d0+0.5d0*(kp1)*M2**2.d0*root**-1.d0)
+         df=root**expon1*(-1d0+0.5d0*(kp1)*M2**2.d0*root**(-1.d0))
 !
          if(dabs(-f/df).le.1d-6) then
             M2=M2-f/df

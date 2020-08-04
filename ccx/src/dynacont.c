@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -97,7 +97,7 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
     
   char lakonl[9]="        \0",jobnamef[396]="";
 
-  ITG i,j,k,l,init,*itg=NULL,ntg=0,maxlenmpc,icascade=0,loop,
+  ITG i,j,k,l,init,*itg=NULL,ntg=0,maxlenmpc,icascade=0,loop,kchdep=0,
       konl[20],imat,nope,kodem,indexe,j1,jdof,kmin,kmax,
       id,newstep=0,idiscon,*ipiv=NULL,info,nrhs=1,kode,
       *ikactcont=NULL,*ilactcont=NULL,*ikactcont1=NULL,nactcont1=0,
@@ -690,7 +690,8 @@ void dynacont(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 			 nmpc,ikboun,ilboun,nboun,xbounact,aux,iaux,
 			 &maxlenmpc,ikmpc,ilmpc,&icascade,
 			 kon,ipkon,lakon,ne,reltime,&newstep,xboun,fmpc,
-			 iit,&idiscon,ncont,trab,ntrans,ithermal,mi));
+			 iit,&idiscon,ncont,trab,ntrans,ithermal,mi,
+			 &kchdep));
       }
       
       /* calculating displacements/temperatures */

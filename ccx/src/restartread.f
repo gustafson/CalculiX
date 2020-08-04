@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -53,7 +53,7 @@
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
      &  ntmat_,npmat_,norien,nam,nprint,mi(*),ntrans,ncs_,
      &  namtot,ncmat_,mpcfree,ne1d,ne2d,nflow,nlabel,iplas,nkon,
-     &  ithermal,nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
+     &  ithermal(*),nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
      &  ikboun(*),ilboun(*),ipompc(*),nodempc(*),ikmpc(*),ilmpc(*),
      &  nodeforc(*),ndirforc(*),iamforc(*),ikforc(*),ilforc(*),
@@ -65,7 +65,7 @@
      &  nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,
      &  nener,irestartstep,istat,iprestr,irstrt(*),
      &  maxlenmpc,mcs,mpcend,ntie,ibody(*),nbody,nslavs,nef,
-     &  ne2boun(*)
+     &  ne2boun(*),memmpc_
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
@@ -134,6 +134,7 @@
 !
          read(15)nmpc
          read(15)mpcend
+         read(15)memmpc_
          read(15)maxlenmpc
 !
 !        material size
@@ -183,7 +184,7 @@
          read(15)(iperturb(i),i=1,2)
          read(15)nener
          read(15)iplas
-         read(15)ithermal
+         read(15)ithermal(1)
          read(15)nstate_
          read(15)nslavs
          read(15)iprestr
@@ -349,7 +350,7 @@
 !
 !     temperatures
 !
-      if(ithermal.gt.0)then
+      if(ithermal(1).gt.0)then
          read(15)(t0(i),i=1,nk)
          read(15)(t1(i),i=1,nk)
          if((ne1d.gt.0).or.(ne2d.gt.0))then

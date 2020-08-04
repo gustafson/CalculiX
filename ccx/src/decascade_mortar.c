@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                     */
+/*              Copyright (C) 1998-2020 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -22,17 +22,17 @@
 #include <time.h>
 #include "CalculiX.h"
 #include "mortar.h"
-/** \brief function to decascade generated transformed MPCs
+/**  function to decascade generated transformed MPCs
  * Author: Saskia Sitzmann
  *
- * @param [in,out] nmpc		number of mpcs
- * @param [in,out] ipompc       (i) pointer to nodempc and coeffmpc for MPC i
- * @param [in,out] nodempcp      nodes and directions of MPCs
- * @param [in,out] coefmpcp      coefficients of MPCs
- * @param [in,out] ikmpc 	sorted dofs idof=8*(node-1)+dir for MPCs
- * @param [in,out] ilmpc	SPC numbers for sorted dofs
- * @param [in,out] memmpc_	size of nodempc/coefmpc
- * @param [in,out] mpcfree	marking the next free space in nodempc
+ *  [in,out] nmpc		number of mpcs
+ *  [in,out] ipompc       (i) pointer to nodempc and coeffmpc for MPC i
+ *  [in,out] nodempcp      nodes and directions of MPCs
+ *  [in,out] coefmpcp      coefficients of MPCs
+ *  [in,out] ikmpc 	sorted dofs idof=8*(node-1)+dir for MPCs
+ *  [in,out] ilmpc	SPC numbers for sorted dofs
+ *  [in,out] memmpc_	size of nodempc/coefmpc
+ *  [in,out] mpcfree	marking the next free space in nodempc
  **/
 void decascade_mortar(ITG *nmpc,ITG *ipompc,ITG **nodempcp,double **coefmpcp,
 		      ITG *ikmpc,ITG *ilmpc, ITG *memmpc_, ITG *mpcfree){

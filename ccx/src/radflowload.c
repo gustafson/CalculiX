@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                     */
+/*              Copyright (C) 1998-2020 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -32,6 +32,9 @@
 #endif
 #ifdef PARDISO
 #include "pardiso.h"
+#endif
+#ifdef PASTIX
+#include "pastix.h"
 #endif
 
 static char *sideload1,*covered1=NULL;
@@ -525,13 +528,6 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	      }
 	      RENEW(auview,double,2**nzsrad);
 
-/*	      for(i=0;i<*ntr;i++){
-		  printf("radflowload adview = %" ITGFORMAT " %e\n",i,adview[i]);
-	      }
-	      for(i=0;i<2**nzsrad;i++){
-		  printf("radflowload auview = %" ITGFORMAT " %e\n",i,auview[i]);
-		  }*/
-
 	      SFREE(dist);SFREE(idist);SFREE(e1);SFREE(e2);SFREE(e3);
               SFREE(pmid);SFREE(ithread);SFREE(covered1);
 
@@ -586,7 +582,13 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
          (*iemchange==1)||
          ((*iit==0)&&(abs(*nmethod)==1))){
 
-#if defined(PARDISO)
+#if defined(PASTIX)
+	ITG symmetry = 1;
+	ITG inputformat = 1;
+	pastix_factor_main_as(adrad,aurad,adbrad,aubrad,&sigma,icolrad,
+			  irowrad,ntr,nzsrad, &symmetry, &inputformat, jqrad, nzsrad);
+	ifactorization=1;
+#elif defined(PARDISO)
 	if(ifactorization==1) pardiso_cleanup_as(ntr,&symmetryflag);
 	pardiso_factor_as(adrad,aurad,adbrad,aubrad,&sigma,icolrad,
 			  irowrad,ntr,nzsrad,jqrad);
@@ -606,7 +608,11 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 
       /* solving the system of equations */
 
-#if defined(PARDISO)
+#if defined(PASTIX)
+	ITG symmetry = 1;
+	ITG nrhs = 1;
+          pastix_solve_as(bcr,ntr,&symmetry,&nrhs);
+#elif defined(PARDISO)
           pardiso_solve_as(bcr,ntr);
 
 #elif defined(SPOOLES)

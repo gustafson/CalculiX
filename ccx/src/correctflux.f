@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,10 +30,7 @@
       real*8 flux(*),vfa(0:7,*),advfa(*),area(*),vel(nef,0:7),alet(*),
      &  ale(*),xxnj(3,*),gradpcfa(3,*)
 !
-      intent(in) nef,ipnei,neifa,neiel,vfa,advfa,area,
-     &  vel,alet,ielfa,ale,ifabou,nefa,nefb,xxnj,gradpcfa
 !
-      intent(inout) flux
 !
       do i=nefa,nefb
 c         totflux=0.d0

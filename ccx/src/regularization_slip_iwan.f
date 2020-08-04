@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,75 +16,74 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-c> regularization function for tangential mortar contact, iwan model
-c> see phd-thesis Sitzmann Chapter 3.2.2., semi-smooth Newton for tangential contact  
-c>
-c> @param [in] lambdan   		normal contact pressure
-c> @param [in] utilt			\f$ \tilde{u}_\tau=\tau \cdot (\hat{u}-\bar{u}) \f$ 
-c> @param [in] bp			friction bound
-c> @param [in] atau2			tangential stiffness	
-c> @param [out] resreg			evaluated regularization function
-c> @param [in] divmode 			indicates whether funtion (==0) or derivate (==1) should be called   
-c> @param [in] regmode        		selects used semi-Newton (==2 is active)
-c> @param [in,out] lambdaiwan   	Lagrange multiplier splitted to Iwan elements
-c> @param [in,out] lambdaiwanini    	Lagrange multiplier splitted to Iwan elements at start of increment
-c> @param [in] inode			slave node number
-c> @param [in] n			slave normal
-c> @param [in] t			slave tangent
-c> @param [in] mu			friction coefficient
-c> @param [out] rslip			matrix used in semi-smooth Newton
-c> @param [out] ltslip			matrix used in semi-smooth Newton
-c> @param [out] ltu			vector used in semi-smooth Newton
-c> @param [out] yielded			debugging parameter
-c> @param [in] iit			Newton-Raphson iteration
-c> @param [in] debug			debug output flag
-c> @param [in] niwan			number of iwan elements
-c> @param [in] dut			\f$ \Delta \tilde{u}_\tau \f$
-c>
+! regularization function for tangential mortar contact, iwan model
+! see phd-thesis Sitzmann Chapter 3.2.2., semi-smooth Newton for tangential contact  
+!
+!  [in] lambdan   		normal contact pressure
+!  [in] utilt			\f$ \tilde{u}_\tau=\tau \cdot (\hat{u}-\bar{u}) \f$ 
+!  [in] bp			friction bound
+!  [in] atau2			tangential stiffness	
+!  [out] resreg			evaluated regularization function
+!  [in] divmode 			indicates whether funtion (==0) or derivate (==1) should be called   
+!  [in] regmode        		selects used semi-Newton (==2 is active)
+!  [in,out] lambdaiwan   	Lagrange multiplier splitted to Iwan elements
+!  [in,out] lambdaiwanini    	Lagrange multiplier splitted to Iwan elements at start of increment
+!  [in] inode			slave node number
+!  [in] n			slave normal
+!  [in] t			slave tangent
+!  [in] mu			friction coefficient
+!  [out] rslip			matrix used in semi-smooth Newton
+!  [out] ltslip			matrix used in semi-smooth Newton
+!  [out] ltu			vector used in semi-smooth Newton
+!  [out] yielded			debugging parameter
+!  [in] debug			debug output flag
+!  [in] iwan			number of iwan elements
+!  [in] dut			\f$ \Delta \tilde{u}_\tau \f$
+!
       subroutine regularization_slip_iwan(lambdan,
      &     utilt,bp,atau2,resreg,divmode,regmode,lambdaiwan,
      &     lambdaiwanini,inode,n,t,mu,rslip,ltslip,ltu,yielded,iit,
-     &     debug,niwan,dut)
+     &     debug,iwan,dut)
 !     
 !     regularization function of tangential contact
 !     implementation of iwan-model
 !     Author: Saskia Sitzmann
+!      
       implicit none
 !     
-      integer i,j,k,niwan,divmode,regmode,inode,yielded,iit,
+      integer i,j,k,iwan,divmode,regmode,inode,yielded,iit,
      &     debug,imodification
 !     
-      real*8 bp,atau2,sb,rb,kiwan,fstar(10),dut(*),
-     &     taulim,rbmax,nut,alpha(10),resreg(2),
-     &     rev,help(2),nhelp,scal,n(*),t(*),lambdan,
-     &     lpt(2),lptini(2),d(2),nd,lambdaiwan(3,niwan,*),
-     &     lambdaiwanini(3,niwan,*),lp(4),mp(4),fp(4),ep,mu,
+      real*8 bp,atau2,kiwan,fstar(10),dut(*),
+     &     alpha(10),resreg(2),
+     &     nhelp,n(*),t(*),lambdan,
+     &     lpt(2),lptini(2),d(2),nd,lambdaiwan(3,iwan,*),
+     &     lambdaiwanini(3,iwan,*),lp(4),mp(4),fp(4),ep,mu,
      &     ltslip(*),rslip(*),ltu(*),utilt(*),det,nlpt
-!     
-c     number of iwan elements
-c     niwan=1
 !     
       kiwan=atau2
       imodification=regmode
-      do i=1,niwan
-         alpha(i)=2.0*real(i)/(real(niwan)*real(niwan+1))
-         fstar(i)=alpha(i)*bp*real(niwan)
+      do i=1,iwan
+         alpha(i)=2.0*real(i)/(real(iwan)*real(iwan+1))
+         fstar(i)=alpha(i)*bp*real(iwan)
       enddo
       yielded=0
       resreg(1)=0.0
       resreg(2)=0.0
-      if(imodification==1)then
+      if(imodification.eq.1)then
          if(divmode.eq.0)then
-c     update lambdaiwan
-            do i=1,niwan
+!            
+!     update lambdaiwan
+!            
+            do i=1,iwan
                lptini(1)=lambdaiwanini(1,i,inode)*t(1)
      &              +lambdaiwanini(2,i,inode)*t(2)
      &              +lambdaiwanini(3,i,inode)*t(3)
                lptini(2)=lambdaiwanini(1,i,inode)*t(4)
      &              +lambdaiwanini(2,i,inode)*t(5)
      &              +lambdaiwanini(3,i,inode)*t(6)
-               d(1)=niwan*lptini(1)+kiwan*utilt(1)
-               d(2)=niwan*lptini(2)+kiwan*utilt(2)
+               d(1)=iwan*lptini(1)+kiwan*utilt(1)
+               d(2)=iwan*lptini(2)+kiwan*utilt(2)
                nd=sqrt(d(1)*d(1)+d(2)*d(2))
                nhelp=sqrt(utilt(1)*utilt(1)+utilt(2)*utilt(2))
                if(debug.eq.1)then
@@ -92,26 +91,30 @@ c     update lambdaiwan
                   write(*,*)'lini',lptini(1),lptini(2)
                   write(*,*)'d',d(1),d(2)
                endif
-c     write(*,*)'l ',i,lptini(2),d(2)/real(niwan)
                if(nd.le.fstar(i))then
-c     update ok
-                  resreg(1)=resreg(1)+d(1)/real(niwan)
-                  resreg(2)=resreg(2)+d(2)/real(niwan)
-               else 
-c     radial return mapping
+!                  
+!     update ok
+!
+                  resreg(1)=resreg(1)+d(1)/real(iwan)
+                  resreg(2)=resreg(2)+d(2)/real(iwan)
+               else
+!                  
+!     radial return mapping
+!                  
                   yielded=yielded+1
                   d(1)=fstar(i)*d(1)/(nd)
                   d(2)=fstar(i)*d(2)/(nd)           
-                  resreg(1)=resreg(1)+d(1)/real(niwan)
-                  resreg(2)=resreg(2)+d(2)/real(niwan)
+                  resreg(1)=resreg(1)+d(1)/real(iwan)
+                  resreg(2)=resreg(2)+d(2)/real(iwan)
                endif
                if(debug.eq.1)then
-                  write(*,*)'liwan',d(1)/real(niwan),d(2)/real(niwan)
+                  write(*,*)'liwan',d(1)/real(iwan),d(2)/real(iwan)
                endif
-c           write(*,*)'lu',i,lptini(2),d(2)/real(niwan)
             enddo
          elseif(divmode.eq.1)then
-c     Newton iteration
+!            
+!     Newton iteration
+!            
             do i=1,6         
                rslip(i)=t(i) 
                ltslip(i)=0.0      
@@ -119,33 +122,37 @@ c     Newton iteration
             do i=1,2
                ltu(i)=0.0
             enddo
-            do i=1,niwan
+            do i=1,iwan
                lptini(1)=lambdaiwanini(1,i,inode)*t(1)
      &              +lambdaiwanini(2,i,inode)*t(2)
      &              +lambdaiwanini(3,i,inode)*t(3)
                lptini(2)=lambdaiwanini(1,i,inode)*t(4)
      &              +lambdaiwanini(2,i,inode)*t(5)
      &              +lambdaiwanini(3,i,inode)*t(6)
-               d(1)=niwan*lptini(1)+kiwan*utilt(1)
-               d(2)=niwan*lptini(2)+kiwan*utilt(2)
+               d(1)=iwan*lptini(1)+kiwan*utilt(1)
+               d(2)=iwan*lptini(2)+kiwan*utilt(2)
                nd=sqrt(d(1)*d(1)+d(2)*d(2))
                nhelp=sqrt(utilt(1)*utilt(1)+utilt(2)*utilt(2))
                resreg(1)=d(1)
                resreg(2)=d(2)
                if(nd.lt.fstar(i).or.(iit.eq.1))then
-c     update ok
+!                  
+!     update ok
+!                  
                   do j=1,3
                      do k=1,2
                         ltslip((k-1)*3+j)=ltslip((k-1)*3+j)
-     &                       +(kiwan/real(niwan))*t((k-1)*3+j)
+     &                       +(kiwan/real(iwan))*t((k-1)*3+j)
                      enddo
                   enddo
-                  ltu(1)=ltu(1)+d(1)/real(niwan)
-                  ltu(2)=ltu(2)+d(2)/real(niwan)
-               else 
-c     radial return mapping
+                  ltu(1)=ltu(1)+d(1)/real(iwan)
+                  ltu(2)=ltu(2)+d(2)/real(iwan)
+               else
+!                  
+!     radial return mapping
+!                  
                   yielded=yielded+1
-                  ep=fstar(i)/(nd*real(niwan))
+                  ep=fstar(i)/(nd*real(iwan))
                   fp(1)=d(1)*d(1)/(nd*nd)
                   fp(2)=d(1)*d(2)/(nd*nd)
                   fp(3)=d(2)*d(1)/(nd*nd)
@@ -187,15 +194,18 @@ c     radial return mapping
                endif
             enddo      
          endif
-c     
       else
-c     alternative Newton iteration
+!         
+!     alternative Newton iteration
+!         
          if(debug.eq.1)then
             write(*,*)'imodification',imodification
          endif
          if(divmode.eq.0) then
-c     update lambdaiwan
-            do i=1,niwan
+!            
+!     update lambdaiwan
+!            
+            do i=1,iwan
                lptini(1)=lambdaiwanini(1,i,inode)*t(1)
      &              +lambdaiwanini(2,i,inode)*t(2)
      &              +lambdaiwanini(3,i,inode)*t(3)
@@ -209,19 +219,20 @@ c     update lambdaiwan
      &              +lambdaiwan(2,i,inode)*t(5)
      &              +lambdaiwan(3,i,inode)*t(6)
                nlpt=sqrt(lpt(1)*lpt(1)+lpt(2)*lpt(2))
-               d(1)=niwan*lptini(1)+kiwan*utilt(1)
-               d(2)=niwan*lptini(2)+kiwan*utilt(2)
+               d(1)=iwan*lptini(1)+kiwan*utilt(1)
+               d(2)=iwan*lptini(2)+kiwan*utilt(2)
                nd=sqrt(d(1)*d(1)+d(2)*d(2))
                nhelp=sqrt(utilt(1)*utilt(1)+utilt(2)*utilt(2))
                if(debug.eq.1)then
                   write(*,*)'lini',lptini(1),lptini(2)
                   write(*,*)'d',d(1),d(2),nd
                endif
-c     write(*,*)'l ',i,lptini(2),d(2)/real(niwan)
                if(nd.le.fstar(i))then
-c     update ok
-                  d(1)=(d(1)+kiwan*dut(1))/real(niwan)
-                  d(2)=(d(2)+kiwan*dut(2))/real(niwan)
+!                  
+!     update ok
+!                  
+                  d(1)=(d(1)+kiwan*dut(1))/real(iwan)
+                  d(2)=(d(2)+kiwan*dut(2))/real(iwan)
                   lambdaiwan(1,i,inode)=d(1)*t(1)
                   lambdaiwan(2,i,inode)=d(1)*t(2)
                   lambdaiwan(3,i,inode)=d(1)*t(3)
@@ -233,14 +244,16 @@ c     update ok
      &                 +d(2)*t(6)
                   resreg(1)=resreg(1)+d(1)
                   resreg(2)=resreg(2)+d(2)
-               else 
-c     radial return mapping
+               else
+!                  
+!     radial return mapping
+!                  
                   yielded=yielded+1
-                  ep=fstar(i)/(nd*real(niwan))
-                  fp(1)=lpt(1)*d(1)/(nd*max(fstar(i)/real(niwan),nlpt))
-                  fp(2)=lpt(1)*d(2)/(nd*max(fstar(i)/real(niwan),nlpt))
-                  fp(3)=lpt(2)*d(1)/(nd*max(fstar(i)/real(niwan),nlpt))
-                  fp(4)=lpt(2)*d(2)/(nd*max(fstar(i)/real(niwan),nlpt))
+                  ep=fstar(i)/(nd*real(iwan))
+                  fp(1)=lpt(1)*d(1)/(nd*max(fstar(i)/real(iwan),nlpt))
+                  fp(2)=lpt(1)*d(2)/(nd*max(fstar(i)/real(iwan),nlpt))
+                  fp(3)=lpt(2)*d(1)/(nd*max(fstar(i)/real(iwan),nlpt))
+                  fp(4)=lpt(2)*d(2)/(nd*max(fstar(i)/real(iwan),nlpt))
                   mp(1)=-(ep*fp(1)-ep)
                   mp(2)=-ep*fp(2)
                   mp(3)=-ep*fp(3)   
@@ -271,7 +284,9 @@ c     radial return mapping
                endif
             enddo
          elseif(divmode.eq.1)then
-c     Newton iteration
+!            
+!     Newton iteration
+!            
             do i=1,6         
                rslip(i)=t(i) 
                ltslip(i)=0.0      
@@ -279,7 +294,7 @@ c     Newton iteration
             do i=1,2
                ltu(i)=0.0
             enddo
-            do i=1,niwan
+            do i=1,iwan
                lptini(1)=lambdaiwanini(1,i,inode)*t(1)
      &              +lambdaiwanini(2,i,inode)*t(2)
      &              +lambdaiwanini(3,i,inode)*t(3)
@@ -292,34 +307,40 @@ c     Newton iteration
                lpt(2)=lambdaiwan(1,i,inode)*t(4)
      &              +lambdaiwan(2,i,inode)*t(5)
      &              +lambdaiwan(3,i,inode)*t(6)
-               d(1)=niwan*lptini(1)+kiwan*utilt(1)
-               d(2)=niwan*lptini(2)+kiwan*utilt(2)
+               d(1)=iwan*lptini(1)+kiwan*utilt(1)
+               d(2)=iwan*lptini(2)+kiwan*utilt(2)
                nd=sqrt(d(1)*d(1)+d(2)*d(2))
                nlpt=sqrt(lpt(1)*lpt(1)+lpt(2)*lpt(2))
                nhelp=sqrt(utilt(1)*utilt(1)+utilt(2)*utilt(2))
                resreg(1)=d(1)
                resreg(2)=d(2)
                if(nd.lt.fstar(i).or.(iit.eq.1))then
-c     update ok
+!                  
+!     update ok
+!                  
                   do j=1,3
                      do k=1,2
                         ltslip((k-1)*3+j)=ltslip((k-1)*3+j)
-     &                       +(kiwan/real(niwan))*t((k-1)*3+j)
-c     check for niwan>1
+     &                       +(kiwan/real(iwan))*t((k-1)*3+j)
+!                        
+!     check for iwan>1
+!                        
                         rslip((k-1)*3+j)=rslip((k-1)*3+j)
-     &                       +(mu*(lpt(k)-(d(k)/real(niwan)))/bp)*n(j)
+     &                       +(mu*(lpt(k)-(d(k)/real(iwan)))/bp)*n(j)
                      enddo
                   enddo
                   ltu(1)=ltu(1)+lpt(1)
                   ltu(2)=ltu(2)+lpt(2)
-               else 
-c     radial return mapping
+               else
+!                  
+!     radial return mapping
+!                  
                   yielded=yielded+1
-                  ep=fstar(i)/(nd*real(niwan))
-                  fp(1)=lpt(1)*d(1)/(nd*max(fstar(i)/real(niwan),nlpt))
-                  fp(2)=lpt(1)*d(2)/(nd*max(fstar(i)/real(niwan),nlpt))
-                  fp(3)=lpt(2)*d(1)/(nd*max(fstar(i)/real(niwan),nlpt))
-                  fp(4)=lpt(2)*d(2)/(nd*max(fstar(i)/real(niwan),nlpt))
+                  ep=fstar(i)/(nd*real(iwan))
+                  fp(1)=lpt(1)*d(1)/(nd*max(fstar(i)/real(iwan),nlpt))
+                  fp(2)=lpt(1)*d(2)/(nd*max(fstar(i)/real(iwan),nlpt))
+                  fp(3)=lpt(2)*d(1)/(nd*max(fstar(i)/real(iwan),nlpt))
+                  fp(4)=lpt(2)*d(2)/(nd*max(fstar(i)/real(iwan),nlpt))
                   mp(1)=-(ep*fp(1)-ep)
                   mp(2)=-ep*fp(2)
                   mp(3)=-ep*fp(3)   

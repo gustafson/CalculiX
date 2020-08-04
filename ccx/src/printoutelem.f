@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,8 @@
      &     ener,mi,ii,nelem,energytot,volumetot,enerkintot,ne,
      &     stx,nodes,thicke,ielmat,ielem,iface,mortar,ielprop,prop,
      &     sideload,nload,nelemload,xload,bhetot,xmasstot,xinertot,
-     &     cg,ithermal,rhcon,nrhcon,ntmat_,t1,vold)
+     &     cg,ithermal,rhcon,nrhcon,ntmat_,t1,vold,ipobody,ibody,
+     &     xbody,nbody)
 !
 !     stores whole element results for element "nelem" in the .dat file
 !
@@ -34,7 +35,8 @@
      &  konl(20),iface,mortar,ielem,ielprop(*),nvol,nmas,nbhe,
      &  mint3d,jj,nener,iflag,nkin,ne,nodes,ki,kl,ilayer,nlayer,kk,
      &  nopes,ielmat(mi(3),*),mint2d,null,id,nload,nelemload(2,*),
-     &  ithermal(2),nrhcon(*),ntmat_,imat,i1
+     &  ithermal(*),nrhcon(*),ntmat_,imat,i1,ipobody(2,*),ibody(3,*),
+     &  index,nbody
 !
       real*8 ener(mi(1),*),energytot,volumetot,energy,volume,co(3,*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,enerkintot,enerkin,
@@ -42,7 +44,9 @@
      &  thicke(mi(3),*),xlayer(mi(3),4),shp2(7,8),xs2(3,7),xsj2(3),
      &  xl2(3,8),prop(*),dflux,xload(2,*),bhe,bhetot,xmass,xmasstot,
      &  xiner(6),xinertot(6),cg(3),t1l,rho,rhcon(0:1,ntmat_,*),
-     &  t1(*),vold(0:mi(2),*),dxmass,xlint(3)
+     &  t1(*),vold(0:mi(2),*),dxmass,xlint(3),xbody(7,*),om
+!
+!
 !
       include "gauss.f"
 !
@@ -101,7 +105,7 @@
      &           stx(4,1,nelem),stx(5,1,nelem),stx(6,1,nelem)
          endif
          return
-      elseif(prlab(ii)(1:4).eq.'EBHE ') then
+      elseif(prlab(ii)(1:4).eq.'EBHE') then
 !
 !        body heating: check whether there is any body heating in
 !        this element
@@ -129,6 +133,25 @@
             endif
             return
          endif
+      elseif(prlab(ii)(1:4).eq.'CENT') then
+!
+!        centrifugal loading
+!
+         om=0.d0
+         if(nbody.gt.0) then
+            index=nelem
+            do
+               j=ipobody(1,index)
+               if(j.eq.0) exit
+               if(ibody(1,j).eq.1) then
+                  om=xbody(1,j)
+                  exit
+               endif
+               index=ipobody(2,index)
+               if(index.eq.0) exit
+            enddo
+         endif
+         write(5,'(i10,1p,1x,e13.6)') nelem,om
       endif
 !
       if(lakon(nelem)(1:5).eq.'C3D8I') then

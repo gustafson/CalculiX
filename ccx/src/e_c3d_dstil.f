@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,11 +28,13 @@
      &  nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
      &  nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,kscale,
-     &  islavelinv,islavsurf,
-     &  autloc,irowtloc,jqtloc)
+     &  islavelinv,autloc,irowtloc,jqtloc)
 !
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
+!
+!     difference with e_c3d.f: use of modified quadratic
+!     shape functions (because of Mortar contact)
 !
 !     ff: rhs without temperature and eigenstress contribution
 !
@@ -54,7 +56,7 @@
 !
       integer konl(26),ifaceq(8,6),nelemload(2,*),nbody,nelem,
      &  mi(*),jfaces,igauss,mortar,kon(*),ielprop(*),null,
-     &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
+     &  mattyp,ithermal(*),iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),six,
      &  ielorien(mi(3),*),ilayer,nlayer,ki,kl,ipkon(*),indexe,
@@ -65,8 +67,8 @@
      &  nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0,iselect(6),kscale,
      &  istartset(*),iendset(*),ialset(*),ntie,integerglob(*),nasym,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,nopered,
-     &  islavelinv(*),islavsurf(2,*),lface,ifaces,ifac,ifac1,
-     &  ifac2,getiface,modf,jqtloc(*),irowtloc(*),node1,node2,
+     &  islavelinv(*),
+     &  jqtloc(*),irowtloc(*),node1,node2,
      &  irowtloc1(16),jqtloc1(9),j2
 !
       real*8 co(3,*),xl(3,26),shp(4,26),xs2(3,7),veold(0:mi(2),*),
@@ -90,20 +92,7 @@
      &  pslavsurf(3,*),pmastsurf(6,*),xmass,
      &  shptil(4,26),autloc(*),shptil2(7,9),autloc1(16)
 !
-      intent(in) co,kon,lakonl,p1,p2,omx,bodyfx,nbody,
-     &  nelem,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielmat,ielorien,norien,orab,ntmat_,
-     &  t0,t1,ithermal,vold,iperturb,nelemload,
-     &  sideload,nload,idist,sti,stx,iexpl,plicon,
-     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
-     &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &  nstate_,xstateini,ne0,ipkon,thicke,
-     &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
-     &  nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop
 !
-      intent(inout) s,sm,ff,xload,nmethod,springarea,xstate
 !
       include "gauss.f"
 !
@@ -176,7 +165,7 @@ c     Bernhardi end
             nope=ichar(lakonl(8:8))-47
          endif
       elseif(lakonl(1:4).eq.'MASS') then
-         nope=1	 
+         nope=1 
       endif
 !
 !     material and orientation
@@ -186,7 +175,7 @@ c     Bernhardi end
          imat=ielmat(1,nelem)
          amat=matname(imat)
          if(norien.gt.0) then
-            iorien=ielorien(1,nelem)
+            iorien=max(0,ielorien(1,nelem))
          else
             iorien=0
          endif
@@ -271,7 +260,7 @@ c     Bernhardi end
          ilayer=0
          do i=1,3
             dlayer(i)=0.d0
-         enddo	 
+         enddo
 !     
       endif
 !
@@ -422,10 +411,10 @@ c     Bernhardi end
             if(lakonl(7:7).ne.'C') then
                t0l=0.d0
                t1l=0.d0
-               if(ithermal.eq.1) then
+               if(ithermal(1).eq.1) then
                   t0l=(t0(konl(1))+t0(konl(2)))/2.d0
                   t1l=(t1(konl(1))+t1(konl(2)))/2.d0
-               elseif(ithermal.ge.2) then
+               elseif(ithermal(1).ge.2) then
                   t0l=(t0(konl(1))+t0(konl(2)))/2.d0
                   t1l=(vold(0,konl(1))+vold(0,konl(2)))/2.d0
                endif
@@ -559,7 +548,7 @@ c     Bernhardi end
                   imat=ielmat(ilayer,nelem)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,nelem)
+                     iorien=max(0,ielorien(ilayer,nelem))
                   else
                      iorien=0
                   endif
@@ -620,7 +609,7 @@ c     Bernhardi end
                   imat=ielmat(ilayer,nelem)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,nelem)
+                     iorien=max(0,ielorien(ilayer,nelem))
                   else
                      iorien=0
                   endif
@@ -655,12 +644,6 @@ c     Bernhardi end
                weight=weight3d8(kk)
             endif
          endif
-c         if(nelem.eq.1) then
-c                  write(*,*) 'kk', kk
-c                  write(*,*) 'coords',xi,et,ze
-c                  write(*,*) 'weight',weight
-c                  write(*,*) 'dlayer',dlayer(ki)
-c         endif
 !
 !           calculation of the shape functions and their derivatives
 !           in the gauss point
@@ -749,7 +732,7 @@ c     mortar end
 !
          t0l=0.d0
          t1l=0.d0
-         if(ithermal.eq.1) then
+         if(ithermal(1).eq.1) then
             if(lakonl(4:5).eq.'8 ') then
                do i1=1,nope
                   t0l=t0l+t0(konl(i1))/8.d0
@@ -757,7 +740,8 @@ c     mortar end
                enddo
             elseif(lakonl(4:6).eq.'20 ')then
                nopered=20
-               call lintemp(t0,t1,konl,nopered,kk,t0l,t1l)
+               call lintemp(t0,konl,nopered,kk,t0l)
+               call lintemp(t1,konl,nopered,kk,t1l)
             elseif(lakonl(4:6).eq.'10T') then
                call linscal10(t0,konl,t0l,null,shp)
                call linscal10(t1,konl,t1l,null,shp)
@@ -767,7 +751,7 @@ c     mortar end
                   t1l=t1l+shp(4,i1)*t1(konl(i1))
                enddo
             endif
-         elseif(ithermal.ge.2) then
+         elseif(ithermal(1).ge.2) then
             if(lakonl(4:5).eq.'8 ') then
                do i1=1,nope
                   t0l=t0l+t0(konl(i1))/8.d0
@@ -1851,7 +1835,7 @@ c            alp=.2215d0
          elseif(nope.eq.15) then
             alp=0.2141d0
          elseif(nope.eq.11) then
-            alp=0.1852d0	    
+            alp=0.1852d0    
          endif
 !
          if((nope.eq.20).or.(nope.eq.10).or.

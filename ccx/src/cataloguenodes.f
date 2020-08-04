@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine cataloguenodes(iponofa,inofa,ifreefa,ielfa,ifabou,
+      subroutine cataloguenodes(ipofano,ifano,ifreefa,ielfa,ifabou,
      &  ipkon,konf,lakon,nface,nk)
 !
 !     catalogues the nodes for interpolation
@@ -25,7 +25,7 @@
 !
       character*8 lakon(*)
 !
-      integer iponofa(*),inofa(2,*),ifreefa,ielfa(4,*),indexb,nk,
+      integer ipofano(*),ifano(2,*),ifreefa,ielfa(4,*),indexb,nk,
      &  ifabou(*),iel,indexe,ipkon(*),k,node,ifaceq(8,6),nface,i,j,
      &  konf(*),ifacet(7,4),ifacew(8,5),nf(5)
 !
@@ -64,43 +64,43 @@ c         if(ifabou(-indexb+5).eq.1) then
             if(lakon(iel)(4:4).eq.'8') then
                do k=1,4
                   node=konf(indexe+ifaceq(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             elseif(lakon(iel)(4:4).eq.'6') then
                do k=1,nf(j)
                   node=konf(indexe+ifacew(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             else
                do k=1,3
                   node=konf(indexe+ifacet(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             endif
@@ -110,7 +110,7 @@ c         if(ifabou(-indexb+5).eq.1) then
 !     marking the nodes used so far by putting a minus sign in front
 !
       do i=1,nk
-         if(iponofa(i).gt.0) iponofa(i)=-iponofa(i)
+         if(ipofano(i).gt.0) ipofano(i)=-ipofano(i)
       enddo
 !
 !     taking into account the nodes at which all velocity
@@ -129,43 +129,43 @@ c         if(ifabou(-indexb+5).eq.1) then
             if(lakon(iel)(4:4).eq.'8') then
                do k=1,4
                   node=konf(indexe+ifaceq(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             elseif(lakon(iel)(4:4).eq.'6') then
                do k=1,nf(j)
                   node=konf(indexe+ifacew(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             else
                do k=1,3
                   node=konf(indexe+ifacet(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             endif
@@ -175,7 +175,7 @@ c         if(ifabou(-indexb+5).eq.1) then
 !     marking the nodes used so far by putting a minus sign in front
 !
       do i=1,nk
-         if(iponofa(i).gt.0) iponofa(i)=-iponofa(i)
+         if(ipofano(i).gt.0) ipofano(i)=-ipofano(i)
       enddo
 !
 !     taking into account the nodes in which the pressure is
@@ -192,43 +192,43 @@ c         if(ifabou(-indexb+5).eq.1) then
             if(lakon(iel)(4:4).eq.'8') then
                do k=1,4
                   node=konf(indexe+ifaceq(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             elseif(lakon(iel)(4:4).eq.'6') then
                do k=1,nf(j)
                   node=konf(indexe+ifacew(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             else
                do k=1,3
                   node=konf(indexe+ifacet(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             endif
@@ -238,7 +238,7 @@ c         if(ifabou(-indexb+5).eq.1) then
 !     marking the nodes used so far by putting a minus sign in front
 !
       do i=1,nk
-         if(iponofa(i).gt.0) iponofa(i)=-iponofa(i)
+         if(ipofano(i).gt.0) ipofano(i)=-ipofano(i)
       enddo
 !
 !     taking into account faces with given mass flow (fourth priority)
@@ -255,43 +255,43 @@ c         if(ifabou(-indexb+5).eq.2) then
             if(lakon(iel)(4:4).eq.'8') then
                do k=1,4
                   node=konf(indexe+ifaceq(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             elseif(lakon(iel)(4:4).eq.'6') then
                do k=1,nf(j)
                   node=konf(indexe+ifacew(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             else
                do k=1,3
                   node=konf(indexe+ifacet(k,j))
-                  if(iponofa(node).eq.0) then
+                  if(ipofano(node).eq.0) then
                      ifreefa=ifreefa+1
-                     iponofa(node)=ifreefa
-                     inofa(1,ifreefa)=i
-                  elseif(iponofa(node).gt.0) then
+                     ipofano(node)=ifreefa
+                     ifano(1,ifreefa)=i
+                  elseif(ipofano(node).gt.0) then
                      ifreefa=ifreefa+1
-                     inofa(2,ifreefa)=iponofa(node)
-                     inofa(1,ifreefa)=i
-                     iponofa(node)=ifreefa
+                     ifano(2,ifreefa)=ipofano(node)
+                     ifano(1,ifreefa)=i
+                     ipofano(node)=ifreefa
                   endif
                enddo
             endif
@@ -301,7 +301,7 @@ c         if(ifabou(-indexb+5).eq.2) then
 !     marking the nodes used so far by putting a minus sign in front
 !
       do i=1,nk
-         if(iponofa(i).gt.0) iponofa(i)=-iponofa(i)
+         if(ipofano(i).gt.0) ipofano(i)=-ipofano(i)
       enddo
 !
 !     taking into account the rest (last priority)
@@ -315,43 +315,43 @@ c         if(ifabou(-indexb+5).eq.2) then
          if(lakon(iel)(4:4).eq.'8') then
             do k=1,4
                node=konf(indexe+ifaceq(k,j))
-               if(iponofa(node).eq.0) then
+               if(ipofano(node).eq.0) then
                   ifreefa=ifreefa+1
-                  iponofa(node)=ifreefa
-                  inofa(1,ifreefa)=i
-               elseif(iponofa(node).gt.0) then
+                  ipofano(node)=ifreefa
+                  ifano(1,ifreefa)=i
+               elseif(ipofano(node).gt.0) then
                   ifreefa=ifreefa+1
-                  inofa(2,ifreefa)=iponofa(node)
-                  inofa(1,ifreefa)=i
-                  iponofa(node)=ifreefa
+                  ifano(2,ifreefa)=ipofano(node)
+                  ifano(1,ifreefa)=i
+                  ipofano(node)=ifreefa
                endif
             enddo
          elseif(lakon(iel)(4:4).eq.'6') then
             do k=1,nf(j)
                node=konf(indexe+ifacew(k,j))
-               if(iponofa(node).eq.0) then
+               if(ipofano(node).eq.0) then
                   ifreefa=ifreefa+1
-                  iponofa(node)=ifreefa
-                  inofa(1,ifreefa)=i
-               elseif(iponofa(node).gt.0) then
+                  ipofano(node)=ifreefa
+                  ifano(1,ifreefa)=i
+               elseif(ipofano(node).gt.0) then
                   ifreefa=ifreefa+1
-                  inofa(2,ifreefa)=iponofa(node)
-                  inofa(1,ifreefa)=i
-                  iponofa(node)=ifreefa
+                  ifano(2,ifreefa)=ipofano(node)
+                  ifano(1,ifreefa)=i
+                  ipofano(node)=ifreefa
                endif
             enddo
          else
             do k=1,3
                node=konf(indexe+ifacet(k,j))
-               if(iponofa(node).eq.0) then
+               if(ipofano(node).eq.0) then
                   ifreefa=ifreefa+1
-                  iponofa(node)=ifreefa
-                  inofa(1,ifreefa)=i
-               elseif(iponofa(node).gt.0) then
+                  ipofano(node)=ifreefa
+                  ifano(1,ifreefa)=i
+               elseif(ipofano(node).gt.0) then
                   ifreefa=ifreefa+1
-                  inofa(2,ifreefa)=iponofa(node)
-                  inofa(1,ifreefa)=i
-                  iponofa(node)=ifreefa
+                  ifano(2,ifreefa)=ipofano(node)
+                  ifano(1,ifreefa)=i
+                  ipofano(node)=ifreefa
                endif
             enddo
          endif
@@ -360,7 +360,7 @@ c         if(ifabou(-indexb+5).eq.2) then
 !     removing all markings
 !
       do i=1,nk
-         if(iponofa(i).lt.0) iponofa(i)=-iponofa(i)
+         if(ipofano(i).lt.0) ipofano(i)=-ipofano(i)
       enddo
 !     
       return

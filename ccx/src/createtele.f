@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,20 +17,20 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
 !
-c>    \brief Generate local transformation matrix \f$ T_e^{quad} \f$  needed for quad-quad mortar method
-c>    see phd-thesis Sitzmann equation (4.3)
-c>    Author: Saskia Sitzmann
-c>
-c> @param   [in]     ipkon       pointer into field kon
-c> @param   [in]     kon         Field containing the connectivity of the elements in succesive order
-c> @param   [in]     lakon       element label 
-c> @param   [in]     islavsurf   islavsurf(1,i) slaveface i islavsurf(2,i) pointer into imastsurf and pmastsurf
-c> @param   [out]    contr       field containing T_e contributions for current face
-c> @param   [out]    icontr1     (i)  row  of contribution(i)
-c> @param   [out]    icontr2     (i)  column of contribution(i)
-c> @param   [out]    icounter    counter variable for contr
-c> @param   [in]     lface	 current slave face
-c>
+!     Generate local transformation matrix \f$ T_e^{quad} \f$  needed for quad-quad mortar method
+!    see phd-thesis Sitzmann equation (4.3)
+!    Author: Saskia Sitzmann
+!
+!    [in]     ipkon       pointer into field kon
+!    [in]     kon         Field containing the connectivity of the elements in succesive order
+!    [in]     lakon       element label 
+!    [in]     islavsurf   islavsurf(1,i) slaveface i islavsurf(2,i) pointer into imastsurf and pmastsurf
+!    [out]    contr       field containing T_e contributions for current face
+!    [out]    icontr1     (i)  row  of contribution(i)
+!    [out]    icontr2     (i)  column of contribution(i)
+!    [out]    icounter    counter variable for contr
+!    [in]     lface	 current slave face
+!
       subroutine createtele(ipkon,kon,lakon,islavsurf,
      &     contr,icontr1,icontr2,icounter,lface)
 !     
@@ -47,26 +47,31 @@ c>
       integer ipkon(*),kon(*),konl(20),islavsurf(2,*),
      &     lface,icounter,icontr1(*),icontr2(*),j,nope,
      &     ifaces,nelems,jfaces,m,nopes,
-     &     ifac,getiface,lnode(2,8),modf,idummy
+     &     ifac,getlocno,lnode(2,8),modf,idummy
 !     
       real*8 contr(*),alpha
+!
+!
 !     
       debug=.false.
       alpha=1.0/5.0
-c      alpha=5.0/16.0
       icounter=0
-      ifaces = islavsurf(1,lface)
-      nelems = int(ifaces/10)
-      jfaces = ifaces - nelems*10
+      ifaces=islavsurf(1,lface)
+      nelems=int(ifaces/10)
+      jfaces=ifaces-nelems*10
+!      
       call getnumberofnodes(nelems,jfaces,lakon,nope,
      &     nopes,idummy)
+!      
       do j=1,nope
          konl(j)=kon(ipkon(nelems)+j)
-      enddo
+       enddo
+!       
       do m=1,nopes
-         ifac=getiface(m,jfaces,nope)
+         ifac=getlocno(m,jfaces,nope)
          lnode(1,m)=konl(ifac)
-      enddo
+       enddo
+!       
       if(nopes.eq.8) then
          do j=1,4
             icounter=icounter+1

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,18 +16,20 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-c>
-c> \brief function to evaluate transformed shape funciton \f$ shape(\xi,\eta) \f$
-c> for quad-quad mortar method, see phd-thesis Sitzmann Chapter 4.1.
-c> Author: Saskia Sitzmann
-c> @param [in] xi		xi-coordinate
-c> @param [in] et		eta-coordinate
-c> @param [in] xl		local node coordinates
-c> @param [out] xsj		jacobian vector
-c> @param [out] xs		local derivative of the global coordinates
-c> @param [out] shp		evaluated shape functions and derivatives
-c> @param [in] iflag		flag indicating what to compute
-c>
+!
+!     function to evaluate transformed shape funciton \f$ shape(\xi,\eta) \f$
+!     for quad-quad mortar method, see phd-thesis Sitzmann Chapter 4.1.
+!     
+!     Author: Saskia Sitzmann
+!      
+!  [in] xi		xi-coordinate
+!  [in] et		eta-coordinate
+!  [in] xl		local node coordinates
+!  [out] xsj		jacobian vector
+!  [out] xs		local derivative of the global coordinates
+!  [out] shp		evaluated shape functions and derivatives
+!  [in] iflag		flag indicating what to compute
+!
       subroutine shape8qtilde(xi,et,xl,xsj,xs,shp,iflag)
 !
 !     shape functions and derivatives for a 8-node quadratic
@@ -53,13 +55,14 @@ c>
 !     
       real*8 shp(7,8),xs(3,7),xsi(2,3),xl(3,8),sh(3),xsj(3),xi,
      &     et,shpold(7,8),alpha
+!
+!
 !     
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
 !     
       alpha=1.0/5.0
-c      alpha=5.0/16.0
-c     alpha=0.0
+!
 !     shape functions
 !     
       shpold(4,1)=(1.d0-xi)*(1.d0-et)*(-xi-et-1.d0)/4.d0
@@ -80,7 +83,8 @@ c     alpha=0.0
       shp(4,7)=(1.0-2.0*alpha)*shpold(4,7)
       shp(4,8)=(1.0-2.0*alpha)*shpold(4,8)
 !
-!     Caution: derivatives and exspecially jacobian for untransformed basis functions are given
+!     Caution: derivatives and exspecially jacobian for untransformed
+!     basis functions are given
 !     needed for consistent integration
 !  
       if(iflag.eq.1) return

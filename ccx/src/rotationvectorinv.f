@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,9 +24,7 @@
 !
       real*8 c(3,3),v(3),theta,ds,dc
 !
-      intent(in) v
 !
-      intent(out) c
 !
       theta=dsqrt(v(1)*v(1)+v(2)*v(2)+v(3)*v(3))
 !

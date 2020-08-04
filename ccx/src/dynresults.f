@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@
       character*20 labmpc(*)
 !
       integer nodeboun(*),ndirboun(*),ipompc(*),imdnode(*),nmdnode,
-     &  nodempc(3,*),nk,ithermal,i,j,index,mi(*),nactdof(0:mi(2),*),
+     &  nodempc(3,*),nk,ithermal(*),i,j,index,mi(*),nactdof(0:mi(2),*),
      &  nboun,nmpc,ist,ndir,node,incrementalmpc,jmin,jmax,
      &  imdboun(*),nmdboun,imdmpc(*),nmdmpc,nmethod
 !
@@ -41,10 +41,10 @@
 !
       omega=8.d0*datan(1.d0)*time
 !
-      if(ithermal.le.1) then
+      if(ithermal(1).le.1) then
          jmin=1
          jmax=3
-      elseif(ithermal.eq.2) then
+      elseif(ithermal(1).eq.2) then
          jmin=0
          jmax=min(2,mi(2))
       else
@@ -96,9 +96,9 @@ c            vold(ndirboun(i),nodeboun(i))=fixed_disp
             node=nodempc(1,ist)
             ndir=nodempc(2,ist)
             if(ndir.eq.0) then
-               if(ithermal.lt.2) cycle
+               if(ithermal(1).lt.2) cycle
             else
-               if(ithermal.eq.2) cycle
+               if(ithermal(1).eq.2) cycle
             endif
             index=nodempc(3,ist)
             fixed_disp=0.d0
@@ -163,9 +163,9 @@ c            vold(ndir,node)=fixed_disp
                node=nodempc(1,ist)
                ndir=nodempc(2,ist)
                if(ndir.eq.0) then
-                  if(ithermal.lt.2) cycle
+                  if(ithermal(1).lt.2) cycle
                else
-                  if(ithermal.eq.2) cycle
+                  if(ithermal(1).eq.2) cycle
                endif
                index=nodempc(3,ist)
                fixed_disp=0.d0
@@ -217,9 +217,9 @@ c            vold(ndir,node)=fixed_disp
                node=nodempc(1,ist)
                ndir=nodempc(2,ist)
                if(ndir.eq.0) then
-                  if(ithermal.lt.2) cycle
+                  if(ithermal(1).lt.2) cycle
                else
-                  if(ithermal.eq.2) cycle
+                  if(ithermal(1).eq.2) cycle
                endif
                index=nodempc(3,ist)
                fixed_disp=0.d0
@@ -288,9 +288,9 @@ c            vold(ndirboun(i),nodeboun(i))=fixed_disp
             node=nodempc(1,ist)
             ndir=nodempc(2,ist)
             if(ndir.eq.0) then
-               if(ithermal.lt.2) cycle
+               if(ithermal(1).lt.2) cycle
             else
-               if(ithermal.eq.2) cycle
+               if(ithermal(1).eq.2) cycle
             endif
             index=nodempc(3,ist)
             fixed_disp=0.d0
@@ -357,9 +357,9 @@ c            vold(ndir,node)=fixed_disp
                node=nodempc(1,ist)
                ndir=nodempc(2,ist)
                if(ndir.eq.0) then
-                  if(ithermal.lt.2) cycle
+                  if(ithermal(1).lt.2) cycle
                else
-                  if(ithermal.eq.2) cycle
+                  if(ithermal(1).eq.2) cycle
                endif
                index=nodempc(3,ist)
                fixed_disp=0.d0
@@ -410,9 +410,9 @@ c            vold(ndir,node)=fixed_disp
                node=nodempc(1,ist)
                ndir=nodempc(2,ist)
                if(ndir.eq.0) then
-                  if(ithermal.lt.2) cycle
+                  if(ithermal(1).lt.2) cycle
                else
-                  if(ithermal.eq.2) cycle
+                  if(ithermal(1).eq.2) cycle
                endif
                index=nodempc(3,ist)
                fixed_disp=0.d0

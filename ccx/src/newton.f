@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,17 +28,13 @@
 !
       integer i,j,k,ne,icalccg,ipkon(*),nope,konl(20),kon(*),two,id,
      &  nrhcon(*),ntmat_,nelem,indexe,imat,mi(*),ielmat(mi(3),*),
-     &  ithermal,iflag
+     &  ithermal(*),iflag
 !
       real*8 xi,et,ze,weight,xl(3,20),shp(4,20),xsj,rho,cgr(4,*),
      &  t0l,t0(*),rhcon(0:1,ntmat_,*),physcon(*),co(3,*),dd,bodyf(3),
      &  vold(0:mi(2),*)
 !
-      intent(in) ne,ipkon,lakon,kon,t0,co,rhcon,
-     &       nrhcon,ntmat_,physcon,nelem,ielmat,ithermal,
-     &       vold,mi
 !
-      intent(inout) bodyf,cgr,icalccg
 !
 c      data two /2/
       two=2
@@ -130,7 +126,7 @@ c      data two /2/
 !           determining the density
 !
             imat=ielmat(1,nelem)
-            if(ithermal.eq.0) then
+            if(ithermal(1).eq.0) then
                rho=rhcon(1,1,imat)
             else
 !

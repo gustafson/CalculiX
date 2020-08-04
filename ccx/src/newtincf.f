@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
 !
       character*8 lakonf(*)
 !
-      integer i,j,k,ithermal,compressible,iturbulent,ipkonf(*),
+      integer i,j,k,ithermal(*),compressible,iturbulent,ipkonf(*),
      &  nmethod,nef,indexf,ipnei(*)
 !
       real*8 dtimef,vel(nef,0:7),hcel(*),h(*),umel(*),cvel(*),sc(*),
@@ -118,7 +118,7 @@ c         write(*,*) 'newtincf convection',dtimef
 !
 !           thermal diffusion
 !
-            if(ithermal.gt.0) then
+            if(ithermal(1).gt.0) then
                if(vel(i,5)*cvel(i)*hcel(i).gt.0.d0) then
                   sc(i)=max(sc(i),dtimef*2.d0*hcel(i)/
      &                 (vel(i,5)*cvel(i)*hdiff))
@@ -197,7 +197,7 @@ c         dtimef=0.9d0*dtimef
 !
 !           thermal diffision
 !
-            if(ithermal.gt.0) then
+            if(ithermal(1).gt.0) then
                if(vel(i,5)*cvel(i)*hcel(i).gt.0.d0) then
                   dtimef=min(dtimef,
      &                 vel(i,5)*cvel(i)*hdiff/(2.d0*hcel(i)))

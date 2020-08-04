@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,9 +34,9 @@
       character*132 textpart(16)
 !
       integer nmethod,istep,istat,n,key,iexpl,iline,ipol,inl,
-     &  ipoinp(2,*),inp(3,*),iperturb(2),isolver,i,mcs,ipoinpc(0:*),
-     &  idrct,nforc,nload,nbody,iprestr,ithermal,j,nk,ipos,nset,mi(*),
-     &  cyclicsymmetry,ier
+     &  ipoinp(2,*),inp(3,*),iperturb(*),isolver,i,mcs,ipoinpc(0:*),
+     &  idrct,nforc,nload,nbody,iprestr,ithermal(*),j,nk,ipos,nset,
+     &  mi(*),cyclicsymmetry,ier
 !
       real*8 tinc,tper,cs(17,*),ctrl(*),tmin,tmax,t0(*),t1(*),
      &  vold(0:mi(2),*),veold(0:mi(2),*),xmodal(*)
@@ -76,6 +76,8 @@ c      iperturb(1)=0
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       do i=2,n
@@ -117,6 +119,8 @@ c      iperturb(1)=0
          isolver=5
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:6).eq.'PARDISO') then
+         isolver=8
       else
          write(*,*) '*WARNING reading *MODAL DYNAMIC: unknown solver;'
          write(*,*) '         the default solver is used'
@@ -261,7 +265,7 @@ c      endif
 !     mastructcs is called instead of mastruct a fictitious
 !     minimum nodal diameter is stored
 !
-      if((cyclicsymmetry.eq.1).and.(mcs.ne.0).and.(cs(2,1)<0.d0)) 
+      if((cyclicsymmetry.eq.1).and.(mcs.ne.0).and.(cs(2,1).lt.0.d0)) 
      &       cs(2,1)=0.d0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

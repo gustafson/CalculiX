@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,9 +17,9 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine writematrix(au,ad,irow,jq,neq,number)
-c>
-c>     \brief writes an matrix to file (for debugging purposes)
-c>
+!
+!      writes an matrix to file (for debugging purposes)
+!
       implicit none
 !      
       character*12 name
@@ -56,43 +56,9 @@ c>
             row=i
             column=irow(j)
             aij=au(j)
-c            do ii=jq(column),jq(column+1)-1
-c               if(irow(ii)==row)then
-c                  aji=au(ii)
-c                  exit
-c               endif
-c            enddo
-c            diff=abs(aij-aji)
-c            if(diff.lt.1.0d-17) then 
-c               write(10,100) i,irow(j),au(j)
-c            else
-c               if(diff.gt.maxdiff) maxdiff=diff
-c               idiff=idiff+1
                write(10,100) i,irow(j),au(j)
-c            endif
-c            help=help+au(j)
          enddo
       enddo
-c      write(10,*)'maxdiffsymm',maxdiff,'idiff',idiff
-c      maxhelp=0.0
-c      do i=1,neq
-c         help=0.0
-c         if(ad(i).gt.0.0)then
-c            help=ad(i)+help
-c            write(10,*) help
-c            do ii=1,neq
-c               do j=jq(ii),jq(ii+1)-1
-c                  if(irow(j).eq.i) then
-c                     help=help+au(j)
-c                     write(10,*) ii,au(j),help
-c                  endif
-c               enddo
-c            enddo
-
-c            if(abs(help).gt.maxhelp) maxhelp=abs(help)
-c            write(10,*)'column',i,'diff',help
-c         endif 
-c      enddo 
       write(10,*)'maxdiff_impuls',maxhelp
 !     
       close(10)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,7 +42,7 @@
       character*80 matname(*),amat
 !
       integer konl(26),ifaceq(8,6),nelem,nmethod,iactive(3),
-     &  ithermal,idist,i,j,k,i1,m,one,ii,jj,id,ipointer,ig,kk,mi(*),
+     &  ithermal(*),idist,i,j,k,i1,m,one,ii,jj,id,ipointer,ig,kk,mi(*),
      &  ielmat(mi(3),*),ntmat_,nope,nopes,imat,mint2d,mint3d,
      &  ifacet(6,4),nopev,ifacew(8,5),ipointeri,ipointerj,iflag,
      &  nelcon(2,*),ncmat_,nalcon(2,*),iel,ii1,ilength,istart,iset,
@@ -254,7 +254,7 @@
          elseif(lakonl(4:6).eq.'20 ') then
             call linvec(h0,konl,nope,kk,h0l,one,three)
          elseif(lakonl(4:6).eq.'10T') then
-            call linvec(h0,konl,h0l,one,three,shp)
+            call linvec10(h0,konl,h0l,one,three,shp)
          else
             do i1=1,nope
                do j=1,3
@@ -265,7 +265,7 @@
 !
 !        calculating the temperature
 !
-         if(ithermal.eq.1) then
+         if(ithermal(1).eq.1) then
             if(lakonl(4:5).eq.'8 ') then
                do i1=1,nope
                   t1l=t1l+t1(konl(i1))/8.d0
@@ -279,7 +279,7 @@
                   t1l=t1l+shp(4,i1)*t1(konl(i1))
                enddo
             endif
-         elseif(ithermal.ge.2) then
+         elseif(ithermal(1).ge.2) then
             if(lakonl(4:5).eq.'8 ') then
                do i1=1,nope
                   t1l=t1l+vold(0,konl(i1))/8.d0

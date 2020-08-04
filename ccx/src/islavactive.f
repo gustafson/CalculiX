@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,14 +21,13 @@
 !
       subroutine islavactive(tieset,ntie,itietri,
      &  cg,straight,co,vold,xo,yo,zo,x,y,z,nx,ny,nz,
-     &  mi,imastop,nslavnode,islavnode,
-     &  islavact)
+     &  mi,imastop,nslavnode,islavnode,islavact)
 !
       implicit none
 !
       character*81 tieset(3,*)
 !
-      integer ntie,itietri(2,ntie),node,neigh(1),iflag,kneigh,i,j,k,l,
+      integer ntie,itietri(2,*),node,neigh(1),iflag,kneigh,i,j,k,l,
      &  isol,itri,ll,kflag,n,nx(*),ny(*),mi(*),nz(*),nstart,
      &  ifacew1(4,5),ifacew2(8,5),imastop(3,*),
      &  itriangle(100),ntriangle,ntriangle_,itriold,itrinew,id,
@@ -72,6 +71,8 @@
 !
       data iflag /2/
 !
+!
+!
 !     ***ISLAVACT***
 !
       do i=1,ntie
@@ -98,7 +99,8 @@
          call dsort(x,nx,n,kflag)
          call dsort(y,ny,n,kflag)
          call dsort(z,nz,n,kflag)
-!     
+!
+c         write(*,*) 'islavactive ntie= ',i
          do j=nslavnode(i)+1,nslavnode(i+1)
             node=islavnode(j)
 !     
@@ -108,7 +110,8 @@
 !     
 !     determining the kneigh neighboring master contact
 !     triangle centers of gravity
-!     
+!
+c            write(*,*) 'islavactive j= ',j
             call near3d(xo,yo,zo,x,y,z,nx,ny,nz,p(1),p(2),p(3),
      &           n,neigh,kneigh)
 !     

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,8 @@
      &  nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,
      &  islavact,cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,
      &  ielprop,prop,veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,
-     &  energy,orname,xload,itiefac,pmastsurf,springarea,tieset)
+     &  energy,orname,xload,itiefac,pmastsurf,springarea,tieset,ipobody,
+     &  ibody,xbody,nbody)
 !
 !     - stores the results in the .dat file, if requested
 !       - nodal quantities at the nodes
@@ -48,15 +49,15 @@
       character*87 filab(*)
 !
       integer kon(*),inum(*),iperm(20),mi(*),ielorien(mi(3),*),
-     &  ipkon(*),nactdof(0:mi(2),*),nodeboun(*),icompressible,
+     &  ipkon(*),nactdof(0:mi(2),*),nodeboun(*),compressible,
      &  nelemload(2,*),ndirboun(*),ielmat(mi(3),*),nrhcon(*),
-     &  inotr(2,*),iorienloc,iflag,nload,mt,nk,ne,ithermal(2),i,
+     &  inotr(2,*),iorienloc,iflag,nload,mt,nk,ne,ithermal(*),i,
      &  norien,iperturb(*),iout,nboun,nmethod,node,nshcon(*),
      &  nfield,ndim,nstate_,nset,istartset(*),iendset(*),ialset(*),
      &  nprint,ntrans,ikin,ncocon(2,*),ntmat_,icfd,inomat(*),mortar,
      &  islavact(*),islavnode(*),nslavnode(*),ntie,islavsurf(2,*),
      &  ielprop(*),ne0,index,nmpc,ipompc(*),nodempc(3,*),nactdoh,
-     &  iextrapolate,itiefac(2,*)
+     &  iextrapolate,itiefac(2,*),ipobody(2,*),ibody(3,*),nbody 
 !
       real*8 co(3,*),v(0:mi(2),*),stx(6,mi(1),*),stn(6,*),cdn(6,*),
      &  qfx(3,mi(1),*),qfn(3,*),orab(7,*),fn(0:mi(2),*),pslavsurf(3,*),
@@ -65,20 +66,9 @@
      &  ttime,xstate(nstate_,mi(1),*),trab(7,*),xstaten(nstate_,*),
      &  eme(6,mi(1),*),emn(6,*),shcon(0:3,ntmat_,*),cocon(0:6,ntmat_,*),
      &  prop(*),veold(0:mi(2),*),energy(*),energyini(*),xload(2,*),
-     &  pmastsurf,springarea(2,*)
+     &  pmastsurf,springarea(2,*),xbody(7,*)
 !
-      intent(in) co,nk,kon,ipkon,lakon,ne,v,stn,
-     &  stx,ielorien,norien,orab,t1,ithermal,filab,een,iperturb,fn,
-     &  nactdof,iout,vold,nodeboun,ndirboun,nboun,nmethod,ttime,xstate,
-     &  epn,mi,nstate_,ener,enern,xstaten,eei,set,nset,istartset,
-     &  iendset,ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,
-     &  nelemload,nload,ikin,ielmat,thicke,eme,emn,rhcon,nrhcon,shcon,
-     &  nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,
-     &  islavact,cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,
-     &  ielprop,prop,veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,
-     &  energy,orname,xload,itiefac,pmastsurf,springarea,tieset
 !
-      intent(inout) inum
 !
       data iflag /3/
       data iperm /5,6,7,8,1,2,3,4,13,14,15,16,9,10,11,12,17,18,19,20/
@@ -122,7 +112,8 @@ c         endif
      &  mi(1),nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
      &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname,
-     &  nelemload,nload,sideload,xload,rhcon,nrhcon,ntmat_)
+     &  nelemload,nload,sideload,xload,rhcon,nrhcon,ntmat_,ipobody,
+     &  ibody,xbody,nbody)
 !
 !     for facial information (*section print): if forces and/or
 !     moments in sections are requested, the stresses have to be
@@ -148,9 +139,9 @@ c         endif
          endif
       enddo
 !
-      icompressible=0
+      compressible=0
       call printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
-     &  cocon,ncocon,icompressible,istartset,iendset,ipkon,lakon,kon,
+     &  cocon,ncocon,compressible,istartset,iendset,ipkon,lakon,kon,
      &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,
      &     ithermal,nactdoh,icfd,time,stn)
 !

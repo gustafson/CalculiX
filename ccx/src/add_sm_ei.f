@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,10 +30,7 @@
 !
       real*8 ad(*),au(*),adb(*),aub(*),value,valuem
 !
-      intent(in) jq,irow,i,j,value,valuem,
-     &  i0,i1
 !
-      intent(inout) ad,au,adb,aub
 !
       if(i.eq.j) then
          if(i0.eq.i1) then

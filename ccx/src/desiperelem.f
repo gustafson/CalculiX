@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,9 +24,7 @@
       integer ndesi,istartdesi(*),ialdesi(*),ipoeldi(*),ieldi(2,*),
      &  ieldifree,i,j,nelem,ne,ifree,index,istartelem(*),ialelem(*)
 !
-      intent(in) ndesi,istartdesi,ialdesi,ne
 !
-      intent(inout) ipoeldi,ieldi,istartelem,ialelem
 !
 !     storing the design variables per element
 !

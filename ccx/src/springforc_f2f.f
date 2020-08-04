@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,7 +38,7 @@
       real*8 xl(3,10),elas(21),t1l,al(3),vl(0:mi(2),19),stickslope,
      &  pl(3,19),xn(3),alpha,beta,fnl(3,19),tp(3),te(3),ftrial(3),
      &  t(3),dftrial,elcon(0:ncmat_,ntmat_,*),pproj(3),clear,
-     &  xi,et,elconloc(21),plconloc(82),xk,val,xiso(20),yiso(20),
+     &  xi,et,elconloc(*),plconloc(82),xk,val,xiso(20),yiso(20),
      &  plicon(0:2*npmat_,ntmat_,*),um,senergy,cstr(6),dg,venergy,
      &  dfshear,dfnl,springarea(2),overlap,pres,clearini(3,9,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),t1(3),t2(3),

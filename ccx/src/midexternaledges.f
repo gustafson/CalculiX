@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,9 +27,7 @@
       integer nexternedg,iexternedg(*),iedgext(3,*),i,j,ifreeed,
      &  iel,ieled(2,*),ipoeled(*),iedg(3,*),iedtet(6,*),kontetor(6,*)
 !
-      intent(in) ifreeed,ieled,ipoeled,iedg,iedtet,kontetor
 !
-      intent(inout) nexternedg,iexternedg,iedgext
 !
       nexternedg=0
 !

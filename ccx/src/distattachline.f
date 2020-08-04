@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine distattachline(xig,etg,pneigh,pnode,dist,
-     &     nterms,xn)
+     &     nterms,xn,p)
 !
 !     calculates the distance between a straight line through the node 
 !     with coordinates in "pnode" and direction vector "xn" and 
@@ -32,9 +32,7 @@
       real*8 ratio(8),pneigh(3,*),pnode(3),dist,xi,et,xig,etg,p(3),
      &  xn(3),coeff,etm2,xim2,etm,xim,etp,xip,a2,et2,xi2,a
 !
-      intent(in)xig,etg,pneigh,pnode,nterms,xn 
 !
-      intent(inout) dist
 !
       if(nterms.eq.3) then
          if(xig+etg.le.0.d0) then

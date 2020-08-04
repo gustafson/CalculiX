@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,17 +26,17 @@
 !
       character*8 lakonl
 !
-      integer konl(20),i,j,imat,ncmat_,ntmat_,nope,iperturb,niso,
+      integer konl(20),i,j,imat,ncmat_,ntmat_,nope,iperturb(*),niso,
      &  kode,npmat_,nelcon(2,*),nplicon(0:ntmat_,*),nmethod,id
 !
       real*8 xl(3,9),elas(21),s(60,60),voldl(3,9),xn(3),dd,
-     &  elcon(0:ncmat_,ntmat_,*),t0l,t1l,elconloc(21),damp,
+     &  elcon(0:ncmat_,ntmat_,*),t0l,t1l,elconloc(*),damp,
      &  plicon(0:2*npmat_,ntmat_,*),plconloc(802),pl(3,9),time,
      &  xiso(200),yiso(200)
 !
 !     original positions of the nodes belonging to the dashpot
 !
-      if(iperturb.eq.0) then
+      if(iperturb(1).eq.0) then
          do i=1,nope
             do j=1,3
                pl(j,i)=xl(j,i)

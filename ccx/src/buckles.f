@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
       character*132 textpart(16)
 !
       integer nmethod,mei(4),istep,istat,n,key,ncv,mxiter,
-     &  nforc,nload,ithermal,iprestr,i,nk,iperturb(2),iline,ipol,inl,
+     &  nforc,nload,ithermal(*),iprestr,i,nk,iperturb(*),iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),nev,isolver,nbody,ipoinpc(0:*),ier
 !
       real*8 fei(3),t0(*),t1(*),tol
@@ -44,8 +44,8 @@
 !
 !     no heat transfer analysis
 !
-      if(ithermal.gt.1) then
-         ithermal=1
+      if(ithermal(1).gt.1) then
+         ithermal(1)=1
       endif
 !
 !     default solver
@@ -63,6 +63,8 @@
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       do i=2,n
@@ -94,6 +96,8 @@
          isolver=5
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:6).eq.'PASTIX') then
+         isolver=8
       else
          write(*,*) '*WARNING reading *BUCKLE: unknown solver;'
          write(*,*) '         the default solver is used'
@@ -167,7 +171,7 @@
       nload=0
       nbody=0
       iprestr=0
-      if(ithermal.eq.1) then
+      if(ithermal(1).eq.1) then
          do i=1,nk
             t1(i)=t0(i)
          enddo

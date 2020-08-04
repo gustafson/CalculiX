@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -222,7 +222,7 @@
       character*81 tieset(3,*)
 !
       integer konl(26),nelemload(2,*),nbody,nelem,mi(*),kon(*),
-     &  ielprop(*),index,mattyp,ithermal,iperturb(*),nload,idist,
+     &  ielprop(*),index,mattyp,ithermal(*),iperturb(*),nload,idist,
      &  i,j,k,i1,nmethod,kk,nelcon(2,*),nrhcon(*),nalcon(2,*),
      &  ielmat(mi(3),*),ielorien(mi(3),*),ipkon(*),indexe,
      &  ntmat_,nope,norien,ihyper,iexpl,kode,imat,iorien,istiff,
@@ -243,20 +243,7 @@
      &  a,xi11,xi12,xi22,xk,e1(3),offset1,offset2,y1,y2,y3,z1,z2,z3,
      &  sg(12,12)
 !
-      intent(in) co,kon,lakonl,p1,p2,omx,bodyfx,nbody,
-     &  nelem,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielmat,ielorien,norien,orab,ntmat_,
-     &  t0,t1,ithermal,vold,iperturb,nelemload,
-     &  sideload,nload,idist,sti,stx,iexpl,plicon,
-     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
-     &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &  ne0,ipkon,thicke,
-     &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
-     &  nasym,ielprop,prop
 !
-      intent(inout) s,sm,ff,xload,nmethod
 !
       indexe=ipkon(nelem)
 !
@@ -265,7 +252,7 @@
       imat=ielmat(1,nelem)
       amat=matname(imat)
       if(norien.gt.0) then
-         iorien=ielorien(1,nelem)
+         iorien=max(0,ielorien(1,nelem))
       else
          iorien=0
       endif
@@ -389,12 +376,12 @@
 !     
       t0l=0.d0
       t1l=0.d0
-      if(ithermal.eq.1) then
+      if(ithermal(1).eq.1) then
          do i1=1,nope
             t0l=t0l+t0(konl(i1))/2.d0
             t1l=t1l+t1(konl(i1))/2.d0
          enddo
-      elseif(ithermal.ge.2) then
+      elseif(ithermal(1).ge.2) then
          write(*,*) '*ERROR in e_c3d_u1: no thermal'
          write(*,*) '       calculation for this type of element'
          call exit(201)

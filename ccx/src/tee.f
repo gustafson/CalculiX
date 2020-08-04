@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -108,11 +108,7 @@
 !     Mass flow in the current element(same as xflow)
      &xflow2,Ts0,pspt0,pspt2,M1,M2,Ts2,ttime,time,zeta
 !
-      intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &     nactdog,ielprop,prop,iflag,v,cp,r,physcon,set,mi,ttime,time,
-     &     iaxial
 !
-      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi,ider
 !
       index=ielprop(nelem)
 !

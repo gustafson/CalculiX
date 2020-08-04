@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -52,6 +52,8 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
   ITG null,one,i,noutloc,iset,iselect,two,three,nout,noutplus,noutmin,
       mt=mi[1]+1,ioutall=0;
 
+  ITG ncompscalar=1,ifieldscalar[1]={1},icompscalar[1]={0},
+      nfieldscalar[2]={1,0};
   ITG ncomptensoro=6,ifieldtensoro[6]={1,1,1,1,1,1},
       icomptensoro[6]={0,1,2,3,5,4},nfieldtensoro[2]={6,0},
       ncomptensord=2,ifieldtensord[4]={1,1},icomptensord[2]={0,1},
@@ -153,10 +155,28 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
 
   }else if(*irand==1){
 
-      /* storing the random vectors in the structure */
-
       /* storing the normals to the structure */
       
+      iselect=0;
+    
+      frdset(&filab[87],set,&iset,istartset,iendset,ialset,
+	     inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	     ngraph);
+    
+      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+	        &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+
+      fprintf(f1," -4  RANDSCA     1    1\n");
+      fprintf(f1," -5  RAND        1    1    0    0\n");
+      
+      frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
+                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+                nfieldscalar,&iselect,m2,f1,output,m3);
+
+  }else if(*irand==2){
+
+      /* storing the random vectors in the structure */
+
       frdset(&filab[4002],set,&iset,istartset,iendset,ialset,
 	     inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
 	     ngraph);
@@ -164,7 +184,7 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
       frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
 		&noutloc,description,kode,nmethod,f1,output,istep,iinc); 
       
-      fprintf(f1," -4  RAND        4    1\n");
+      fprintf(f1," -4  RANDVEC     4    1\n");
       fprintf(f1," -5  RANDX       1    2	 1    0\n");
       fprintf(f1," -5  RANDY       1    2	 2    0\n");
       fprintf(f1," -5  RANDZ       1    2	 3    0\n");
@@ -174,6 +194,67 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
                 ialset,ngraph,&ncompvector,ifieldvector,icompvector,
                 nfieldvector1,&iselect,m2,f1,output,m3);
       
+  }else if(*irand==3){
+
+      /* storing the normals to the structure */
+      
+      iselect=0;
+    
+      frdset(&filab[87],set,&iset,istartset,iendset,ialset,
+	     inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	     ngraph);
+    
+      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+	        &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+
+      fprintf(f1," -4  MEANSCA     1    1\n");
+      fprintf(f1," -5  MEAN        1    1    0    0\n");
+      
+      frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
+                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+                nfieldscalar,&iselect,m2,f1,output,m3);
+
+  }else if(*irand==4){
+
+      /* storing the random vectors in the structure */
+
+      frdset(&filab[4002],set,&iset,istartset,iendset,ialset,
+	     inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	     ngraph);
+      
+      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+		&noutloc,description,kode,nmethod,f1,output,istep,iinc); 
+      
+      fprintf(f1," -4  MEANVEC     4    1\n");
+      fprintf(f1," -5  MEANX       1    2	 1    0\n");
+      fprintf(f1," -5  MEANY       1    2	 2    0\n");
+      fprintf(f1," -5  MEANZ       1    2	 3    0\n");
+      fprintf(f1," -5  ALL         1    2	 0    0    1ALL\n");
+      
+      frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
+                ialset,ngraph,&ncompvector,ifieldvector,icompvector,
+                nfieldvector1,&iselect,m2,f1,output,m3);
+      
+  }else if(*irand==5){
+
+      /* storing the normals to the structure */
+      
+      iselect=0;
+    
+      frdset(&filab[87],set,&iset,istartset,iendset,ialset,
+	     inum,&noutloc,&nout,nset,&noutmin,&noutplus,&iselect,
+	     ngraph);
+    
+      frdheader(&icounter,&oner,time,&pi,noddiam,cs,&null,mode,
+	        &noutloc,description,kode,nmethod,f1,output,istep,iinc);
+
+      fprintf(f1," -4  LOCREL      1    1\n");
+      fprintf(f1," -5  LOCREL      1    1    0    0\n");
+      
+      frdselect(v,v,&iset,&nkcoords,inum,m1,istartset,iendset,
+                ialset,ngraph,&ncompscalar,ifieldscalar,icompscalar,
+                nfieldscalar,&iselect,m2,f1,output,m3);
+
   }else if(*icoordinate!=1){
 
       /* storing the orientation sensitivities in the nodes */

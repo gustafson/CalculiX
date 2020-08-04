@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,9 +25,7 @@
 !
       real*8 anisol(21),anisox(3,3,3,3)
 !
-      intent(in) anisol
 !
-      intent(out) anisox
 !
       anisox(1,1,1,1)=anisol(1)
       anisox(1,1,1,2)=anisol(7)

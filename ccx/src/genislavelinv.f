@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,11 +17,11 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
 !
-c>  \brief function calculation islavelinv
-c>
-c> @param [out] islavelinv       (i)==0 if there is no slave node in the element, >0 otherwise
-c> @param [in] jqtloc	        pointer into field irowtloc
-c>
+!   function calculation islavelinv
+!
+!  [out] islavelinv       (i)==0 if there is no slave node in the element, >0 otherwise
+!  [in] jqtloc	        pointer into field irowtloc
+!
       subroutine genislavelinv(islavelinv,jqtloc,
      &     lakon,ipkon,kon,ne,nasym)
 !     
@@ -43,14 +43,10 @@ c     if(islavelinv(i).lt.1)cycle
          elseif(lakon(i)(4:5).eq.'20') then
 c     Bernhardi end
             nope=20
-         elseif(lakon(i)(4:4).eq.'2') then
-            nope=26
          elseif(lakon(i)(4:4).eq.'8') then
             nope=8
          elseif(lakon(i)(4:5).eq.'10') then
             nope=10
-         elseif(lakon(i)(4:5).eq.'14') then
-            nope=14
          elseif(lakon(i)(4:4).eq.'4') then
             nope=4
          elseif(lakon(i)(4:5).eq.'15') then

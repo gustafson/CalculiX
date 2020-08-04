@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
       character*80 amname(*)
       character*132 textpart(16)
 !
-      integer iperturb(*),nforc,nload,ithermal,nk,istep,istat,n,key,
+      integer iperturb(*),nforc,nload,ithermal(*),nk,istep,istat,n,key,
      &  i,j,iprestr,jmax(2),irstrt(*),iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),namtot_,
      &  newstep,nbody,ipoinpc(0:*),network,iamplitudedefault,nam,
@@ -52,6 +52,7 @@
       istep=istep+1
       jmax(1)=100
       jmax(2)=10000
+      physcon(14)=0.d0
 !
 !     adding a ramp and a step amplitude if AMPLITUDE is active in
 !     any step
@@ -140,7 +141,7 @@
 !
             nforc=0
             iprestr=0
-            if((ithermal.eq.1).or.(ithermal.eq.3)) then
+            if((ithermal(1).eq.1).or.(ithermal(1).eq.3)) then
                do j=1,nk
                   t1(j)=t0(j)
                enddo
@@ -235,7 +236,8 @@
 !           cfd-calculations
 !
             read(textpart(i)(16:35),'(f20.0)',iostat=istat) physcon(14)
-            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline)
+            if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
+     &              "*STEP%",ier)
          else
             write(*,*) 
      &          '*WARNING reading *STEP: parameter not recognized:'

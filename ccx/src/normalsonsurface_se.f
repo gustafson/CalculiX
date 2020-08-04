@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,10 +51,7 @@
       real*8 extnor(3,*),xsj2(3),shp2(7,9),xs2(3,2),xi,et,dd,
      &  xquad(2,9),xtri(2,7),xl2m(3,9),co(3,*)
 !
-      intent(in) ipkon,kon,lakon,co,nk,
-     &      ipoface,nodface,nactdof,mi,nodedesiinv,iregion
 !
-      intent(inout) extnor
 !
 !     local node numbers for relationship between 2D and 3D elements
 !

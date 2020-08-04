@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,7 +56,7 @@
       character*8 lakon(*),lakonl
 !
       integer i,j,i1,nelem,ne0,nelcon(2,*),nrhcon(*),nalcon(2,*),imat,
-     &     ntmat_,ithermal,mattyp,ihyper,istiff,kode,mi(*),kk,
+     &     ntmat_,ithermal(*),mattyp,ihyper,istiff,kode,mi(*),kk,
      &     nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),ncmat_,iorth,
      &     ielmat(mi(3),*),nope,iorien,ipkon(*),null,
      &     konl(26),nopered,npmat_,nmat,kon(*),indexe,iflag,nopes,
@@ -236,7 +236,7 @@
             kk=1                ! Only 1 integration point is considered, CENTER
             t0l=0.d0
             t1l=0.d0
-            if(ithermal.eq.1) then
+            if(ithermal(1).eq.1) then
                if(lakonl(4:5).eq.'8 ') then
                   do i1=1,nope
                      t0l=t0l+t0(konl(i1))/8.d0
@@ -244,7 +244,8 @@
                   enddo
                elseif(lakonl(4:6).eq.'20 ')then
                   nopered=20
-                  call lintemp(t0,t1,konl,nopered,kk,t0l,t1l)
+                  call lintemp(t0,konl,nopered,kk,t0l)
+                  call lintemp(t1,konl,nopered,kk,t1l)
                elseif(lakonl(4:6).eq.'10T') then
                   call linscal10(t0,konl,t0l,null,shp)
                   call linscal10(t1,konl,t1l,null,shp)
@@ -254,7 +255,7 @@
                      t1l=t1l+shp(4,i1)*t1(konl(i1))
                   enddo
                endif
-             elseif(ithermal.ge.2) then
+             elseif(ithermal(1).ge.2) then
                if(lakonl(4:5).eq.'8 ') then
                   do i1=1,nope
                      t0l=t0l+t0(konl(i1))/8.d0

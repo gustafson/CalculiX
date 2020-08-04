@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -126,12 +126,7 @@
      &  prop(*),shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  cocon(0:6,ntmat_,*)
 !
-      intent(in) kstep,kinc,time,node,idof,coords,vold,mi,
-     &                 iponoel,inoel,ipobody,xbody,ibody,ipkon,kon,
-     &                 lakon,ielprop,prop,ielmat,
-     &                 shcon,nshcon,rhcon,nrhcon,ntmat_,cocon,ncocon
 !
-      intent(out) boun
 !
       boun=300.d0/8.d0*(4.d0-coords(2)*coords(2))
 !

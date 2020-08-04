@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -60,7 +60,7 @@ void stress_sen_2ndorder(double *co,ITG *nk,ITG *kon,ITG *ipkon,
        double *xdesi,ITG *ndesi,ITG *iobject,ITG *nobject,char *objectset,
        double *g0,double *dgdx,ITG *idesvar1,ITG *idesvar2,ITG *nasym,
        ITG *isolver,double *distmin,ITG *nodeset,double *b1,double *b2,
-       double *dgdxdy){
+       double *dgdxdy,ITG *ipobody,ITG *ibody,double *xbody,ITG *nbody){
 
   char *tieset=NULL;
   
@@ -157,7 +157,8 @@ void stress_sen_2ndorder(double *co,ITG *nk,ITG *kon,ITG *ipkon,
               nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
               cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
 	      veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,orname,
-              xload,itiefac,pmastsurf,springarea,tieset));
+	      xload,itiefac,pmastsurf,springarea,tieset,ipobody,ibody,xbody,
+	      nbody));
       
       SFREE(v);SFREE(fn);SFREE(stx);SFREE(eei);
 

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,7 +40,7 @@
       character*132 textpart(16),jobnamec(*)
 !
       integer istartset(*),iendset(*),ialset(*),iamt1(*),nmethod,
-     &  nset,nk,ithermal,istep,istat,n,key,i,j,k,l,nam,ipoinpc(0:*),
+     &  nset,nk,ithermal(*),istep,istat,n,key,i,j,k,l,nam,ipoinpc(0:*),
      &  iamplitude,ipos,inoelfree,nk_,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),nam_,namtot,namtot_,namta(3,*),idelay,iglobstep,
      &  iamplitudedefault,ier,itempuser(*)
@@ -77,7 +77,7 @@
          return
       endif
 !
-      if(ithermal.ne.1) then
+      if(ithermal(1).ne.1) then
          write(*,*) '*ERROR reading *TEMPERATURE: a *TEMPERATURE'
          write(*,*) '  card is detected but no thermal'
          write(*,*) '  *INITIAL CONDITIONS are given'
@@ -175,7 +175,7 @@
          elseif(textpart(i)(1:6).eq.'BSTEP=') then
             read(textpart(i)(7:16),'(i10)',iostat=istat) itempuser(3)
             if(istat.gt.0) call inputerror(inpc,ipoinpc,iline,
-     &"*TEMPERATURE%")
+     &"*TEMPERATURE%",ier)
             utempusesteps=.true.
          elseif(textpart(i)(1:8).eq.'SUBMODEL') then
             submodel=.true.

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine extrapolatefluid(nk,iponofa,inofa,inum,vfa,v,ielfa,
+      subroutine extrapolatefluid(nk,ipofano,ifano,inum,vfa,v,ielfa,
      &  ithermal,imach,ikappa,xmach,xkappa,shcon,nshcon,ntmat_,ielmat,
      &  physcon,mi,iturb,xturb,gradtfa,gradvfa,gradpfa,gradkfa,gradofa,
      &  co,cofa,ifabou)
@@ -28,8 +28,8 @@
 !
       logical gradient
 !
-      integer nk,iponofa(*),inofa(2,*),inum(*),ielfa(4,*),i,l,indexf,
-     &  iface,ithermal,imach,ikappa,imat,nshcon(*),ntmat_,mi(*),
+      integer nk,ipofano(*),ifano(2,*),inum(*),ielfa(4,*),i,l,indexf,
+     &  iface,ithermal(*),imach,ikappa,imat,nshcon(*),ntmat_,mi(*),
      &  ielmat(mi(3),*),iturb,ifabou(*)
 !
       real*8 vfa(0:7,*),v(0:4,*),cp,r,xk,xmach(*),xkappa(*),t1l,
@@ -43,15 +43,15 @@ c      sum=0.d0
 !
 !        athermal calculations
 !
-         if(ithermal.eq.0) then
+         if(ithermal(1).eq.0) then
             do l=1,4
                v(l,i)=0.d0
             enddo
             inum(i)=0
-            indexf=iponofa(i)
+            indexf=ipofano(i)
             do
                if(indexf.eq.0) exit
-               iface=inofa(1,indexf)
+               iface=ifano(1,indexf)
                if(ielfa(2,iface).gt.0) then
                   do l=1,3
                      vfal(l)=vfa(l,iface)+
@@ -73,7 +73,7 @@ c      sum=0.d0
                   v(l,i)=v(l,i)+vfal(l)
                enddo
                inum(i)=inum(i)+1
-               indexf=inofa(2,indexf)
+               indexf=ifano(2,indexf)
             enddo
             if(inum(i).gt.0) then
                do l=1,4
@@ -89,10 +89,10 @@ c      sum=0.d0
                v(l,i)=0.d0
             enddo
             inum(i)=0
-            indexf=iponofa(i)
+            indexf=ipofano(i)
             do
                if(indexf.eq.0) exit
-               iface=inofa(1,indexf)
+               iface=ifano(1,indexf)
                if(ielfa(2,iface).gt.0) then
 !
 !                 internal node
@@ -159,7 +159,7 @@ c      sum=0.d0
                endif
 !
                inum(i)=inum(i)+1
-               indexf=inofa(2,indexf)
+               indexf=ifano(2,indexf)
             enddo
             if(inum(i).gt.0) then
                do l=0,4
@@ -176,10 +176,10 @@ c      sum=0.d0
             do l=1,2
                xturb(l,i)=0.d0
             enddo
-            indexf=iponofa(i)
+            indexf=ipofano(i)
             do
                if(indexf.eq.0) exit
-               iface=inofa(1,indexf)
+               iface=ifano(1,indexf)
                if(ielfa(2,iface).gt.0) then
                   vfal(6)=vfa(6,iface)+
      &                 gradkfa(1,iface)*(co(1,i)-cofa(1,iface))+
@@ -201,7 +201,7 @@ c                  if(sum.lt.vfal(6)) sum=vfal(6)
                   xturb(l,i)=xturb(l,i)+vfal(l+5)
                enddo
 c               inum(i)=inum(i)+1
-               indexf=inofa(2,indexf)
+               indexf=ifano(2,indexf)
             enddo
             if(inum(i).gt.0) then
                do l=1,2

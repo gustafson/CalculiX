@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,10 +26,7 @@
 !
       real*8 vel(nef,0:7),xlet(*),gradpcfa(3,*),xxj(3,*),dd
 !
-      intent(in) ielfa,ipnei,vel,xlet,xxj,
-     &  nef,nfacea,nfaceb,ncfd
 !
-      intent(inout) gradpcfa
 !
 !     correct the facial pressure gradients:
 !     Moukalled et al. p 289

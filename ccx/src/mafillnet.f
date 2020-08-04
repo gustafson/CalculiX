@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -58,15 +58,7 @@
      &     M1,M2,bb,cc,km1,kp1,A,kappa,ff1,ff2,Tt1,Tt2,T1,T2,M1_c,
      &     heatnod,heatfac
 !
-      intent(in) itg,ieg,ntg,nload,sideload,nelemload,
-     &     xloadact,lakon,ntmat_,v,shcon,nshcon,ipkon,kon,co,nflow,iinc,
-     &     istep,dtime,ttime,time,
-     &     ielmat,nteq,prop,ielprop,nactdog,nacteq,physcon,
-     &     rhcon,nrhcon,ipobody,ibody,xbodyact,nbody,vold,xloadold,
-     &     reltime,nmethod,set,mi,nmpc,nodempc,ipompc,coefmpc,labmpc,
-     &     iaxial,cocon,ncocon,iponoel,inoel
 !
-      intent(inout) ac
 !     
       include "gauss.f"
 !     

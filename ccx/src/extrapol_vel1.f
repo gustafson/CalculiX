@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,11 +30,7 @@
       real*8 xrlfa(3,*),vfap(0:7,*),vel(nef,0:7),c(3,3),xbounact(*),
      &  xxn(3,*),xl1,xl2,dd
 !
-      intent(in) ielfa,xrlfa,icyclic,ifatie,vel,
-     &  c,ifabou,xbounact,ipnei,xxn,nef,nfacea,nfaceb,
-     &  ncfd
 !
-      intent(inout) vfap
 !
 !     initialization of the facial velocities
 !

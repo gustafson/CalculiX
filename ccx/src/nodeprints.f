@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,9 +34,9 @@
       character*132 textpart(16)
 !
       integer istartset(*),iendset(*),ialset(*),ii,i,nam,itpamp,
-     &  jout(2),joutl,ithermal,nset,nset_,nalset,nprint,nprint_,istep,
+     &  jout(2),joutl,ithermal(*),nset,nset_,nalset,nprint,nprint_,
      &  istat,n,key,ipos,iline,ipol,inl,ipoinp(2,*),inp(3,*),idrct,
-     &  ipoinpc(0:*),nef,ier
+     &  ipoinpc(0:*),nef,ier,istep
 !
       if(istep.lt.1) then
          write(*,*) 
@@ -217,7 +217,7 @@ c      jout=max(jout,1)
                cycle
             endif
             if(textpart(ii)(1:4).eq.'RFL ') then
-               if(ithermal.lt.2) then
+               if(ithermal(1).lt.2) then
                   write(*,*) 
      &              '*WARNING reading *NODE PRINT: RFL only makes '
                   write(*,*) '         sense for heat transfer '

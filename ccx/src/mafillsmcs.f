@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -53,7 +53,7 @@
      &  ielorien(mi(3),*),integerglob(*),ialset(*),ntie,
      &  ipkon(*),ics(*),ij,ilength,lprev,ipobody(2,*),nbody,
      &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq,nzl,nmethod,
-     &  ithermal,iprestr,iperturb(*),nzs,i,j,k,l,m,idist,jj,
+     &  ithermal(*),iprestr,iperturb(*),nzs,i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,kflag,nasym,mortar,
      &  ntmat_,indexe,nope,norien,iexpl,i0,nm,inode,icomplex,
@@ -147,14 +147,24 @@ c    Bernhardi end
         elseif(lakon(i)(4:4).eq.'6') then
            nope=6
         elseif(lakon(i)(1:2).eq.'ES') then
-           read(lakon(i)(8:8),'(i1)') nope
-           nope=nope+1
+cbegin 16.07.2020             
+           nope=ichar(lakon(i)(8:8))-47
+c           read(lakon(i)(8:8),'(i1)') nope
+c           nope=nope+1
+cend 16.07.2020             
 !     
 !          local contact spring number
-!     
+!
+c           write(*,*) 'nope before= ',nope
            if(lakon(i)(7:7).eq.'C') then
-              if(nasym.eq.1) cycle
+             if(nasym.eq.1) cycle
+cbegin 16.07.2020             
+              if(mortar.eq.1) nope=kon(indexe)
+cend 16.07.2020             
            endif
+c           write(*,*) 'nope after= ',nope
+        elseif(lakon(i)(1:4).eq.'MASS') then
+           nope=1
         else
            cycle
         endif

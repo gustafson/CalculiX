@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,9 @@
       implicit none
 !
 !     stores the order in which the input is to be read in fields
-!     ipoinp and inp; 
+!     ipoinp and inp; before adding keywords to the list below
+!     look at the CalculiX documentation, section "Program structure"
+!     subsection "Allocation of the fields" subsubsection "readinput".
 !
 !     order:
 !     1)  *RESTART,READ
@@ -33,17 +35,18 @@
 !     7)  *SURFACE
 !     8)  *TRANSFORM
 !     9)  *MATERIAL
-!     10) *ORIENTATION
-!     11) *TIE
-!     12) *SURFACE INTERACTION
-!     13) *INITIAL CONDITIONS
-!     14) *AMPLITUDE
-!     15) *CONTACT PAIR
-!     16) *COUPLING
-!     17) everything else
+!     10) *DISTRIBUTION
+!     11) *ORIENTATION
+!     12) *TIE
+!     13) *SURFACE INTERACTION
+!     14) *INITIAL CONDITIONS
+!     15) *AMPLITUDE
+!     16) *CONTACT PAIR
+!     17) *COUPLING
+!     18) everything else
 !
       integer nentries
-      parameter(nentries=17)
+      parameter(nentries=18)
 !
       character*20 name,nameref(nentries)
 !
@@ -55,13 +58,14 @@
       data nameref /'RESTART,READ','NODE','USERELEMENT','ELEMENT',
      &              'NSET',
      &              'ELSET','SURFACE','TRANSFORM','MATERIAL',
+     &              'DISTRIBUTION',
      &              'ORIENTATION','TIE','INTERACTION',
      &              'INITIALCONDITIONS','AMPLITUDE',
      &              'CONTACTPAIR','COUPLING','REST'/
 !
 !     length of the names in field nameref
 !
-      data namelen /12,4,11,7,4,5,7,9,8,11,3,11,17,9,11,8,4/
+      data namelen /12,4,11,7,4,5,7,9,8,12,11,3,11,17,9,11,8,4/
 !
       do i=1,nentries
          if(name(1:namelen(i)).eq.nameref(i)(1:namelen(i))) then

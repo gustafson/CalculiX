@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
       character*87 filab(*)
 !
       integer imddof(*),nmddof,nrset,istartset(*),iendset(*),mi(*),
-     &  ialset(*),nactdof(0:mi(2),*),node,ithermal,j,k,l,
+     &  ialset(*),nactdof(0:mi(2),*),node,ithermal(*),j,k,l,
      &  ikmpc(*),ilmpc(*),ipompc(*),nodempc(3,*),nmpc,
      &  imdnode(*),nmdnode,imdmpc(*),nmdmpc,nprint,ipos,
      &  imdboun(*),nmdboun,ikboun(*),nboun,indexe1,indexe,islav,
@@ -153,7 +153,7 @@
                if(ialset(j).gt.0) then
                   node=ialset(j)
                   call addimd(imdnode,nmdnode,node)
-                  if(ithermal.ne.2) then
+                  if(ithermal(1).ne.2) then
                      do k=1,3
                         call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                   nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
@@ -173,7 +173,7 @@
                      node=node-ialset(j)
                      if(node.ge.ialset(j-1)) exit
                      call addimd(imdnode,nmdnode,node)
-                     if(ithermal.ne.2) then
+                     if(ithermal(1).ne.2) then
                         do k=1,3
                            call addimdnodedof(node,k,ikmpc,ilmpc,
      &                      ipompc,nodempc,nmpc,imdnode,nmdnode,imddof,
@@ -221,7 +221,7 @@
                if(ialset(j).gt.0) then
                   node=ialset(j)
                   call addimd(imdnode,nmdnode,node)
-                  if(ithermal.ne.2) then
+                  if(ithermal(1).ne.2) then
                      do k=1,3
                         call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                   nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
@@ -241,7 +241,7 @@
                      node=node-ialset(j)
                      if(node.ge.ialset(j-1)) exit
                      call addimd(imdnode,nmdnode,node)
-                     if(ithermal.ne.2) then
+                     if(ithermal(1).ne.2) then
                         do k=1,3
                            call addimdnodedof(node,k,ikmpc,ilmpc,
      &                      ipompc,nodempc,nmpc,imdnode,nmdnode,imddof,
@@ -351,7 +351,7 @@
                do l=1,nnodelem
                   node=nodef(l)
                   call addimd(imdnode,nmdnode,node)
-                  if(ithermal.ne.2) then
+                  if(ithermal(1).ne.2) then
                      do k=1,3
                         call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                       nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
@@ -410,7 +410,7 @@
                   if(ialset(j).gt.0) then
                      node=ialset(j)
                      call addimd(imdnode,nmdnode,node)
-                     if(ithermal.ne.2) then
+                     if(ithermal(1).ne.2) then
                         do k=1,3
                            call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                       nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
@@ -425,7 +425,7 @@
                         if(k.ge.ialset(j-1)) exit
                         node=k
                         call addimd(imdnode,nmdnode,node)
-                        if(ithermal.ne.2) then
+                        if(ithermal(1).ne.2) then
                            do k=1,3
                               call addimdnodedof(node,k,ikmpc,ilmpc,
      &                          ipompc,nodempc,nmpc,imdnode,nmdnode,
@@ -504,7 +504,7 @@
                   do l=1,nnodelem
                      node=nodef(l)
                      call addimd(imdnode,nmdnode,node)
-                     if(ithermal.ne.2) then
+                     if(ithermal(1).ne.2) then
                         do k=1,3
                            call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                       nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,
@@ -530,7 +530,7 @@
             if(indexe1.eq.0) cycle
             node=nodempc(1,indexe1)
             call addimd(imdnode,nmdnode,node)
-            if(ithermal.ne.2) then
+            if(ithermal(1).ne.2) then
                do k=1,3
                   call addimdnodedof(node,k,ikmpc,ilmpc,ipompc,
      &                 nodempc,nmpc,imdnode,nmdnode,imddof,nmddof,

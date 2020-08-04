@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -21,18 +21,18 @@
 #include <string.h>
 #include "CalculiX.h"
 
-void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
-		char *lakon, double *co, int *ipkon, int *kon,
-                int *nelemface, char *sideface, int *nface,
-                int *nvarf_, int *ipvarf, double **varfp){
+void calcshapef(ITG *nvar_, ITG *ipvar, double **varp, ITG *ne,
+		char *lakon, double *co, ITG *ipkon, ITG *kon,
+                ITG *nelemface, char *sideface, ITG *nface,
+                ITG *nvarf_, ITG *ipvarf, double **varfp){
     
     /*   determines the shape functions and their derivatives for
 	 a fluid mesh and stores the results in ipvar and var */
     
-    int i,j,k,kk,nope,mint3d,iflag=3,nmethod=1,nvar,indexe,nelem,
+    ITG i,j,k,kk,nope,mint3d,iflag=3,nmethod=1,nvar,indexe,nelem,
         mint2d,nopes,ig,nvarf,id;
     
-    int ifaceq[48]=
+    ITG ifaceq[48]=
 	{4,3,2,1,11,10,9,12,
 	 5,6,7,8,13,14,15,16,
 	 1,2,6,5,9,18,13,17,
@@ -40,13 +40,13 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 	 3,4,8,7,11,20,15,19,
 	 4,1,5,8,12,17,16,20};
 
-    int ifacet[24]=
+    ITG ifacet[24]=
 	{1,3,2,7,6,5,
 	 1,2,4,5,9,8,
 	 2,3,4,6,10,9,
 	 1,4,3,8,10,7};
 
-    int ifacew[40]=
+    ITG ifacew[40]=
 	{1,3,2,9,8,7,0,0,
 	 4,5,6,10,11,12,0,0,
 	 1,2,5,4,7,14,10,13,
@@ -315,17 +315,7 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 	/* determining the number of nodes belonging to the element
 	   (nope) and the number of integration points (mint3d) */
 	
-	if(strcmp1(&lakon[8*i+3],"20 ")==0){
-	    nope=20;
-	    nopes=8;
-	    mint2d=9;
-	    mint3d=27;
-	}else if(strcmp1(&lakon[8*i+3],"20R")==0){
-	    nope=20;
-	    nopes=8;
-	    mint2d=4;
-	    mint3d=8;
-	}else if(strcmp1(&lakon[8*i+3],"8 ")==0){
+	if(strcmp1(&lakon[8*i+3],"8 ")==0){
 	    nope=8;
 	    nopes=4;
 	    mint2d=4;
@@ -335,25 +325,14 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 	    nopes=4;
 	    mint2d=1;
 	    mint3d=1;
-	}else if(strcmp1(&lakon[8*i+3],"10")==0){
-	    nope=10;
-	    nopes=6;
-	    mint2d=3;
-	    mint3d=4;
 	}else if(strcmp1(&lakon[8*i+3],"4")==0){
 	    nope=4;
 	    nopes=3;
 	    mint2d=1;
 	    mint3d=1;
-	}else if(strcmp1(&lakon[8*i+3],"15")==0){
-	    nope=15;
-	    mint3d=9;
 	}else if(strcmp1(&lakon[8*i+3],"6 ")==0){
 	    nope=6;
 	    mint3d=2;
-	}else if(strcmp1(&lakon[8*i+3],"6R")==0){
-	    nope=6;
-	    mint3d=1;
 	}else{
 	    continue;
 	}
@@ -374,7 +353,7 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 	/* check size of var */
 	
 	    if(nvar+5*nope+15>*nvar_){
-		*nvar_=(int)(1.1**nvar_+5*nope+15);
+		*nvar_=(ITG)(1.1**nvar_+5*nope+15);
 		RENEW(var,double,*nvar_);
 	    }
 
@@ -382,31 +361,14 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 		xi=gauss3d1[3*kk];		
 		et=gauss3d1[3*kk+1];		
 		ze=gauss3d1[3*kk+2];
-	    }else if((strcmp1(&lakon[8*i+3],"8")==0)||
-                     (strcmp1(&lakon[8*i+3],"20R")==0)){
+	    }else if(strcmp1(&lakon[8*i+3],"8")==0){
 		xi=gauss3d2[3*kk];		
 		et=gauss3d2[3*kk+1];		
 		ze=gauss3d2[3*kk+2];
-	    }else if(strcmp1(&lakon[8*i+3],"2")==0){
-		xi=gauss3d3[3*kk];		
-		et=gauss3d3[3*kk+1];		
-		ze=gauss3d3[3*kk+2];
-	    }else if(strcmp1(&lakon[8*i+3],"10")==0){
-		xi=gauss3d5[3*kk];		
-		et=gauss3d5[3*kk+1];		
-		ze=gauss3d5[3*kk+2];
 	    }else if(strcmp1(&lakon[8*i+3],"4")==0){
 		xi=gauss3d4[3*kk];		
 		et=gauss3d4[3*kk+1];		
 		ze=gauss3d4[3*kk+2];
-	    }else if(strcmp1(&lakon[8*i+3],"15")==0){
-		xi=gauss3d8[3*kk];		
-		et=gauss3d8[3*kk+1];		
-		ze=gauss3d8[3*kk+2];
-	    }else if(strcmp1(&lakon[8*i+3],"6R")==0){
-		xi=gauss3d11[3*kk];		
-		et=gauss3d11[3*kk+1];		
-		ze=gauss3d11[3*kk+2];
 	    }else if(strcmp1(&lakon[8*i+3],"6")==0){
 		xi=gauss3d7[3*kk];		
 		et=gauss3d7[3*kk+1];		
@@ -416,16 +378,10 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 	    /* calculating the shape functions and their
                derivatives */
 
-	    if(nope==20){
-		FORTRAN(shape20h,(&xi,&et,&ze,xl,&xsj,&var[nvar],&iflag));
-	    }else if(nope==8){
+	    if(nope==8){
 		FORTRAN(shape8h,(&xi,&et,&ze,xl,&xsj,&var[nvar],&iflag));
-	    }else if(nope==10){
-		FORTRAN(shape10tet,(&xi,&et,&ze,xl,&xsj,&var[nvar],&iflag));
 	    }else if(nope==4){
 		FORTRAN(shape4tet,(&xi,&et,&ze,xl,&xsj,&var[nvar],&iflag));
-	    }else if(nope==15){
-		FORTRAN(shape15w,(&xi,&et,&ze,xl,&xsj,&var[nvar],&iflag));
 	    }else if(nope==6){
 		FORTRAN(shape6w,(&xi,&et,&ze,xl,&xsj,&var[nvar],&iflag));
 	    }
@@ -471,26 +427,16 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 			nopes=4;
 		    }
 		}
-		if(strcmp1(&lakon[8*i+3],"15")==0){
-		    mint2d=1;
-		    if(ig<=2){
-			mint2d=3;
-			nopes=6;
-		    }else{
-			mint2d=4;
-			nopes=8;
-		    }
-		}
 		
 		/* storing the coordinates of the face nodes */
 		
-		if((nope==20)||(nope==8)){
+		if(nope==8){
 		    for(j=0;j<nopes;j++){
 			for(k=0;k<3;k++){
 			    xl2[3*j+k]=co[3*(kon[indexe+ifaceq[8*(ig-1)+j]-1]-1)+k];
 			}
 		    }
-		}else if((nope==10)||(nope==4)){
+		}else if(nope==4){
 		    for(j=0;j<nopes;j++){
 			for(k=0;k<3;k++){
 			    xl2[3*j+k]=co[3*(kon[indexe+ifacet[6*(ig-1)+j]-1]-1)+k];
@@ -509,7 +455,7 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 		    /* check size of varf */
 		    
 		    if(nvarf+4*nope+nopes+7>*nvarf_){
-			*nvarf_=(int)(1.1**nvarf_+4*nope+nopes+7);
+			*nvarf_=(ITG)(1.1**nvarf_+4*nope+nopes+7);
 			RENEW(varf,double,*nvarf_);
 		    }
 		    
@@ -517,18 +463,9 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 		       ((strcmp1(&lakon[8*i+3],"6")==0)&&(nopes==4))){
 			xi=gauss2d1[2*kk];
 			et=gauss2d1[2*kk+1];
-		    }else if((strcmp1(&lakon[8*i+3],"8")==0)||
-			     (strcmp1(&lakon[8*i+3],"20R")==0)||
-			     ((strcmp1(&lakon[8*i+3],"15")==0)&&(nopes==8))){
+		    }else if(strcmp1(&lakon[8*i+3],"8")==0){
 			xi=gauss2d2[2*kk];
 			et=gauss2d2[2*kk+1];
-		    }else if(strcmp1(&lakon[8*i+3],"2")==0){
-			xi=gauss2d3[2*kk];
-			et=gauss2d3[2*kk+1];
-		    }else if((strcmp1(&lakon[8*i+3],"10")==0)||
-			     ((strcmp1(&lakon[8*i+3],"15")==0)&&(nopes==6))){
-			xi=gauss2d5[2*kk];
-			et=gauss2d5[2*kk+1];
 		    }else if((strcmp1(&lakon[8*i+3],"4")==0)||
 			     ((strcmp1(&lakon[8*i+3],"6")==0)&&(nopes==3))){
 			xi=gauss2d4[2*kk];
@@ -538,12 +475,8 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 		    /* local surface normal */
 		    
 		    iflag=2;
-		    if(nopes==8){
-			FORTRAN(shape8q,(&xi,&et,xl2,xsj2,xs2,shp2,&iflag));
-		    }else if(nopes==4){
+		    if(nopes==4){
 			FORTRAN(shape4q,(&xi,&et,xl2,xsj2,xs2,shp2,&iflag));
-		    }else if(nopes==6){
-			FORTRAN(shape6tri,(&xi,&et,xl2,xsj2,xs2,shp2,&iflag));
 		    }else{
 			FORTRAN(shape3tri,(&xi,&et,xl2,xsj2,xs2,shp2,&iflag));
 		    }
@@ -574,31 +507,11 @@ void calcshapef(int *nvar_, int *ipvar, double **varp, int *ne,
 			et3d=xlocal8[12*(ig-1)+3*kk+1];
 			ze3d=xlocal8[12*(ig-1)+3*kk+2];
 			FORTRAN(shape8h,(&xi3d,&et3d,&ze3d,xl,&xsj,&varf[nvarf],&iflag));
-		    }else if(strcmp1(&lakon[8*i+3],"20R")==0){
-			xi3d=xlocal8[12*(ig-1)+3*kk];
-			et3d=xlocal8[12*(ig-1)+3*kk+1];
-			ze3d=xlocal8[12*(ig-1)+3*kk+2];
-			FORTRAN(shape20h,(&xi3d,&et3d,&ze3d,xl,&xsj,&varf[nvarf],&iflag));
-		    }else if(strcmp1(&lakon[8*i+3],"2")==0){
-			xi3d=xlocal20[27*(ig-1)+3*kk];
-			et3d=xlocal20[27*(ig-1)+3*kk+1];
-			ze3d=xlocal20[27*(ig-1)+3*kk+2];
-			FORTRAN(shape20h,(&xi3d,&et3d,&ze3d,xl,&xsj,&varf[nvarf],&iflag));
-		    }else if(strcmp1(&lakon[8*i+3],"10")==0){
-			xi3d=xlocal10[9*(ig-1)+3*kk];
-			et3d=xlocal10[9*(ig-1)+3*kk+1];
-			ze3d=xlocal10[9*(ig-1)+3*kk+2];
-			FORTRAN(shape10tet,(&xi3d,&et3d,&ze3d,xl,&xsj,&varf[nvarf],&iflag));
 		    }else if(strcmp1(&lakon[8*i+3],"4")==0){
 			xi3d=xlocal4[3*(ig-1)+3*kk];
 			et3d=xlocal4[3*(ig-1)+3*kk+1];
 			ze3d=xlocal4[3*(ig-1)+3*kk+2];
 			FORTRAN(shape4tet,(&xi3d,&et3d,&ze3d,xl,&xsj,&varf[nvarf],&iflag));
-		    }else if(strcmp1(&lakon[8*i+3],"15")==0){
-			xi3d=xlocal15[12*(ig-1)+3*kk];
-			et3d=xlocal15[12*(ig-1)+3*kk+1];
-			ze3d=xlocal15[12*(ig-1)+3*kk+2];
-			FORTRAN(shape15w,(&xi3d,&et3d,&ze3d,xl,&xsj,&varf[nvarf],&iflag));
 		    }else if(strcmp1(&lakon[8*i+3],"6")==0){
 			xi3d=xlocal6[3*(ig-1)+3*kk];
 			et3d=xlocal6[3*(ig-1)+3*kk+1];

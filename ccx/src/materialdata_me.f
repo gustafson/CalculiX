@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@
       character*80 amat
 !
       integer nelcon(2,*),nrhcon(*),nalcon(2,*),
-     &  imat,iorien,ithermal,j,k,mattyp,kal(2,6),j1,j2,j3,j4,
+     &  imat,iorien,ithermal(*),j,k,mattyp,kal(2,6),j1,j2,j3,j4,
      &  jj,ntmat_,istiff,nelconst,ihyper,kode,itemp,kin,nelas,
      &  iel,iint,mi(*),ncmat_,id,two,seven,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
@@ -40,17 +40,11 @@
       real*8 elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  alcon(0:6,ntmat_,*),eth(6),xstiff(27,mi(1),*),
      &  orab(7,*),elas(21),alph(6),alzero(*),rho,t0l,t1l,
-     &  skl(3,3),xa(3,3),elconloc(21),emax,pgauss(3),
+     &  skl(3,3),xa(3,3),elconloc(*),emax,pgauss(3),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  plconloc(802),dtime
 !
-      intent(in) elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
-     &  imat,amat,iorien,pgauss,orab,ntmat_,iel,ithermal,
-     &  alzero,t0l,t1l,ihyper,istiff,kode,plicon,
-     &  nplicon,plkcon,nplkcon,npmat_,mi,dtime,iint,
-     &  xstiff,ncmat_
 !
-      intent(inout) plconloc,eth,elconloc,elas,mattyp,rho
 !
       kal=reshape((/1,1,2,2,3,3,1,2,1,3,2,3/),(/2,6/))
 !
@@ -68,7 +62,7 @@
 !        calculating the density (needed for the mass matrix and
 !        gravity or centrifugal loading)
 !
-         if(ithermal.eq.0) then
+         if(ithermal(1).eq.0) then
             rho=rhcon(1,1,imat)
          else
             call ident2(rhcon(0,1,imat),t1l,nrhcon(imat),two,id)
@@ -181,7 +175,7 @@
 !        is assumed athermal, and the first available set material
 !        constants are used
 !
-         if(ithermal.eq.0) then
+         if(ithermal(1).eq.0) then
             if(ihyper.ne.1) then
                do k=1,nelconst
                   elconloc(k)=elcon(k,1,imat)

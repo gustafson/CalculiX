@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -124,11 +124,7 @@
      &  v(0:mi(2),*),prop(*),xflow,Uout,Tg1,Tg2,Rin,Rout,R1,R2,r,cp,rho,
      &  dvi,Uin,gastemp,cp_cor,bc(*),qat,om
 !
-      intent(in) nelem,lakon,ipkon,kon,v,ielprop,prop,
-     &  ielmat,ntmat_,shcon,nshcon,rhcon,nrhcon,ipobody,ibody,xbody,
-     &  mi
 !
-      intent(out) bc,qat,nalt
 !
       heat=0.d0
 !     

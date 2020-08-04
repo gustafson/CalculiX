@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,8 @@
      &  mi,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
      &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname,
-     &  nelemload,nload,sideload,xload,rhcon,nrhcon,ntmat_)
+     &  nelemload,nload,sideload,xload,rhcon,nrhcon,ntmat_,ipobody,
+     &  ibody,xbody,nbody)
 !
 !     stores results in the .dat file
 !
@@ -38,25 +39,19 @@
       character*87 filab(*)
 !
       integer nset,istartset(*),iendset(*),ialset(*),nprint,ipkon(*),
-     &  mi(*),nstate_,ii,jj,iset,l,limit,node,ipos,ithermal,ielem,
+     &  mi(*),nstate_,ii,jj,iset,l,limit,node,ipos,ithermal(*),ielem,
      &  nelem,kon(*),inotr(2,*),ntrans,ielorien(mi(3),*),norien,nk,ne,
      &  inum(*),nfield,ikin,nodes,ne0,nope,mt,ielmat(mi(3),*),iface,
      &  jfaces,mortar,islavsurf(2,*),ielprop(*),nload,i,ntmat_,
-     &  nelemload(2,*),nrhcon(*)
+     &  nelemload(2,*),nrhcon(*),ipobody(2,*),ibody(3,*),nbody
 !
       real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),stx(6,mi(1),*),bhetot,
      &  eei(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),energytot,
      &  volumetot,co(3,*),qfx(3,mi(1),*),rftot(0:3),ttime,time,
      &  trab(7,*),orab(7,*),vold(0:mi(2),*),enerkintot,thicke(mi(3),*),
      &  eme(6,mi(1),*),prop(*),veold(0:mi(2),*),xload(2,*),xmasstot,
-     &  xinertot(6),cg(3),rhcon(0:1,ntmat_,*)
+     &  xinertot(6),cg(3),rhcon(0:1,ntmat_,*),xbody(7,*)
 !
-      intent(in) set,nset,istartset,iendset,ialset,nprint,
-     &  prlab,prset,v,t1,fn,ipkon,lakon,stx,eei,xstate,ener,
-     &  mi,nstate_,ithermal,co,kon,qfx,ttime,trab,inotr,ntrans,
-     &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
-     &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname,
-     &  nelemload,nload,sideload,xload,rhcon,nrhcon,ntmat_
 !
       mt=mi(2)+1
 !
@@ -64,7 +59,7 @@
 !
       do ii=1,nprint
          if((prlab(ii)(1:4).eq.'U   ').or.
-     &      ((prlab(ii)(1:4).eq.'NT  ').and.(ithermal.gt.1))) then
+     &      ((prlab(ii)(1:4).eq.'NT  ').and.(ithermal(1).gt.1))) then
             if(filab(1)(5:5).ne.' ') then
                nfield=mt
                cflag=' '
@@ -76,7 +71,7 @@
           endif
       enddo
       do ii=1,nprint
-         if((prlab(ii)(1:4).eq.'NT  ').and.(ithermal.le.1)) then
+         if((prlab(ii)(1:4).eq.'NT  ').and.(ithermal(1).le.1)) then
             if(filab(2)(5:5).ne.' ') then
                nfield=1
                cflag=' '
@@ -228,6 +223,7 @@
      &          (prlab(ii)(1:4).eq.'PEEQ').or.
      &          (prlab(ii)(1:4).eq.'ENER').or.
      &          (prlab(ii)(1:4).eq.'SDV ').or.
+     &          (prlab(ii)(1:4).eq.'COOR').or.
      &          (prlab(ii)(1:4).eq.'HFL ')) then
 !
             ipos=index(prset(ii),' ')
@@ -261,8 +257,8 @@
                elseif(prlab(ii)(1:4).eq.'ENER') then
                   write(5,*)
                   write(5,109) elset(1:ipos-2),ttime+time
- 109              format(' internal energy density (elem, integ.pnt.,energy) for 
-     &set ',A,' and time ',e14.7)
+ 109              format(' internal energy density (elem, integ.pnt.,ene
+     &rgy) for set ',A,' and time ',e14.7)
                   write(5,*)
                elseif(prlab(ii)(1:4).eq.'SDV ') then
                   write(5,*)
@@ -282,6 +278,12 @@
                   write(5,130) elset(1:ipos-2),ttime+time
  130              format(' mechanical strains (elem, integ.pnt.,exx,eyy,
      &ezz,exy,exz,eyz) for set ',A,' and time ',e14.7)
+                  write(5,*)
+               elseif(prlab(ii)(1:4).eq.'COOR') then
+                  write(5,*)
+                  write(5,139) elset(1:ipos-2),ttime+time
+ 139              format(' global coordinates (elem, integ.pnt.,x,y,z) f
+     &or set ',A,' and time ',e14.7)
                   write(5,*)
                endif
 !
@@ -325,6 +327,7 @@
      &           (prlab(ii)(1:4).eq.'EVOL').or.
      &           (prlab(ii)(1:4).eq.'EMAS').or.
      &           (prlab(ii)(1:4).eq.'EBHE').or.
+     &           (prlab(ii)(1:4).eq.'CENT').or.
      &           (prlab(ii)(1:4).eq.'CSTR').or.
      &           (prlab(ii)(1:4).eq.'CDIS').or.
      &           (prlab(ii)(1:4).eq.'CNUM').or.
@@ -416,6 +419,13 @@
      &              ' contact print energy (slave element+face,energy)'  
      &              'for all contact elements and time',e14.7)
                endif
+               write(5,*)
+            elseif(prlab(ii)(1:4).eq.'CENT') then
+               write(5,*)
+               write(5,140)  elset(1:ipos-2),ttime+time
+ 140           format(' centrifugal force(element,omega square) for '  
+     &              'set ',A,' and time ',e14.7)
+               write(5,*)
             endif
 !     
 !     printing the data
@@ -459,7 +469,7 @@
      &                       ielem,iface,mortar,ielprop,prop,
      &                       sideload,nload,nelemload,xload,bhetot,
      &                       xmasstot,xinertot,cg,ithermal,rhcon,nrhcon,
-     &                       ntmat_,t1,vold)
+     &                       ntmat_,t1,vold,ipobody,ibody,xbody,nbody)
                      enddo
                   elseif(mortar.eq.1) then
                      do nelem=ne0,ne
@@ -473,7 +483,7 @@
      &                       ielem,iface,mortar,ielprop,prop,
      &                       sideload,nload,nelemload,xload,bhetot,
      &                       xmasstot,xinertot,cg,ithermal,rhcon,nrhcon,
-     &                       ntmat_,t1,vold)
+     &                       ntmat_,t1,vold,ipobody,ibody,xbody,nbody)
                      enddo
                   endif
                endif
@@ -491,7 +501,7 @@
      &                    ielem,iface,mortar,ielprop,prop,
      &                    sideload,nload,nelemload,xload,bhetot,
      &                    xmasstot,xinertot,cg,ithermal,rhcon,nrhcon,
-     &                    ntmat_,t1,vold)
+     &                    ntmat_,t1,vold,ipobody,ibody,xbody,nbody)
                   elseif(ialset(jj+1).gt.0) then
                      nelem=ialset(jj)
                      call printoutelem(prlab,ipkon,lakon,kon,co,
@@ -500,7 +510,7 @@
      &                    ielem,iface,mortar,ielprop,prop,
      &                    sideload,nload,nelemload,xload,bhetot,
      &                    xmasstot,xinertot,cg,ithermal,rhcon,nrhcon,
-     &                    ntmat_,t1,vold)
+     &                    ntmat_,t1,vold,ipobody,ibody,xbody,nbody)
                   else
                      do nelem=ialset(jj-1)-ialset(jj+1),ialset(jj),
      &                    -ialset(jj+1)
@@ -510,7 +520,7 @@
      &                       ielem,iface,mortar,ielprop,prop,
      &                       sideload,nload,nelemload,xload,bhetot,
      &                       xmasstot,xinertot,cg,ithermal,rhcon,nrhcon,
-     &                       ntmat_,t1,vold)
+     &                       ntmat_,t1,vold,ipobody,ibody,xbody,nbody)
                      enddo
                   endif
                enddo

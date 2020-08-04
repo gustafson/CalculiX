@@ -1,6 +1,6 @@
 
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,9 +34,7 @@
 !
       real*8 dgdxglob(2,nk,nobject),xinterpol(nk,nobject)
 !
-      intent(in) ipkon,lakon,kon,nobject,ne,nk,objectset
 !
-      intent(inout) nodedesiinv,dgdxglob,xinterpol,nnodes
 !
 !     cornernodes next to the midnode for quadratic hex element
 !

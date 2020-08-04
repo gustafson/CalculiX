@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,9 +26,7 @@
       integer iponoelfa(*),inoelfa(3,*),ipkonfa(*),konfa(*),i,j,nsurfs,
      &  inoelfree,nope,indexe,node,inoelsize
 !
-      intent(in) lakonfa,ipkonfa,konfa,nsurfs
 !
-      intent(inout) iponoelfa,inoelfa,inoelsize
 !
 !     lists which external faces correspond to a given node i
 !     iponoelfa(i) points to an entry j in field inoelfa where:

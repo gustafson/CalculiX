@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,7 +37,7 @@
       integer ntr,nelemload(2,*),nope,nopes,mint2d,i,j,k,l,
      &     node,ifaceq(8,6),ifacet(6,4),iviewfile,mi(*),
      &     ifacew(8,5),nelem,ig,index,konl(20),iflag,
-     &     ipkon(*),kon(*),nloadtr(*),i1,ithermal,iinc,iit,
+     &     ipkon(*),kon(*),nloadtr(*),i1,ithermal(*),iinc,iit,
      &     istep,jltyp,nfield,nmethod,iemchange,nam,
      &     iamload(2,*),irowrad(*),jqrad(*),nzsrad
 !     
@@ -288,7 +288,7 @@ c         write(*,*) 'radmatrix ',bcr(i1,1)
 !     adrad and aurad is recalculated only if the viewfactors
 !     or the emissivity changed
 !
-      if(((ithermal.eq.3).and.(iviewfile.ge.0)).or.
+      if(((ithermal(1).eq.3).and.(iviewfile.ge.0)).or.
      &      ((iit.eq.-1).and.(iviewfile.ne.-2)).or.(iemchange.eq.1).or.
      &      ((iit.eq.0).and.(abs(nmethod).eq.1))) then
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,9 +31,9 @@
       character*20 solver,labmpc(*)
       character*132 textpart(16)
 !
-      integer nmethod,mei(4),ncv,mxiter,istep,istat,iperturb(2),i,
-     &  nboun,ier,
-     &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal,isolver,
+      integer nmethod,mei(4),ncv,mxiter,istep,istat,iperturb(*),i,
+     &  nboun,ier,isolver,
+     &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal(*),
      &  ipoinpc(0:*),nmpcred,kflag,ipompc(*),ikmpc(*),ilmpc(*),nmpc
 !
       real*8 fei(3),pi,fmin,fmax,tol,xboun(*),fmpc(*)
@@ -59,8 +59,8 @@
 !
 !     no heat transfer analysis
 !
-      if(ithermal.gt.1) then
-         ithermal=1
+      if(ithermal(1).gt.1) then
+         ithermal(1)=1
       endif
 !
 !     default solver
@@ -78,6 +78,8 @@
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       do i=2,n
@@ -117,6 +119,8 @@
          isolver=6
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:6).eq.'PASTIX') then
+         isolver=8
       else
          write(*,*) '*WARNING reading *FREQUENCY: unknown solver;'
          write(*,*) '         the default solver is used'

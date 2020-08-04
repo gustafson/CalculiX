@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -53,7 +53,7 @@
 !
       integer konl(26),ifaceq(8,6),nelemload(2,*),nbody,nelem,
      &  mi(*),jfaces,igauss,mortar,kon(*),ielprop(*),null,
-     &  mattyp,ithermal,iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
+     &  mattyp,ithermal(*),iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &  nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),six,
      &  ielorien(mi(3),*),ilayer,nlayer,ki,kl,ipkon(*),indexe,
@@ -90,22 +90,7 @@
      &  ds1(60,60),ff0(60),dfl(20,120),dxstiff(27,mi(1),ne,*),
      &  vl(0:mi(2),52),v(0:mi(2),*)
 !
-      intent(in) co,kon,lakonl,p1,p2,omx,bodyfx,nbody,
-     &  nelem,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielmat,ielorien,norien,orab,ntmat_,
-     &  t0,t1,ithermal,vold,iperturb,nelemload,
-     &  sideload,nload,idist,sti,stx,iexpl,plicon,
-     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
-     &  ttime,time,istep,iinc,coriolis,xloadold,reltime,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
-     &  nstate_,xstateini,ne0,ipkon,thicke,
-     &  integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
-     &  nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,
-     &  distmin,ndesi,nodedesi,icoordinate,xdesi,istartelem,ialelem,
-     &  v
 !
-      intent(inout) sm,xload,nmethod,springarea,xstate,dfl
 !
       include "gauss.f"
 !
@@ -188,7 +173,7 @@ c     Bernhardi end
          imat=ielmat(1,nelem)
          amat=matname(imat)
          if(norien.gt.0) then
-            iorien=ielorien(1,nelem)
+            iorien=max(0,ielorien(1,nelem))
          else
             iorien=0
          endif
@@ -474,10 +459,10 @@ c     Bernhardi end
             if(lakonl(7:7).ne.'C') then
                t0l=0.d0
                t1l=0.d0
-               if(ithermal.eq.1) then
+               if(ithermal(1).eq.1) then
                   t0l=(t0(konl(1))+t0(konl(2)))/2.d0
                   t1l=(t1(konl(1))+t1(konl(2)))/2.d0
-               elseif(ithermal.ge.2) then
+               elseif(ithermal(1).ge.2) then
                   t0l=(t0(konl(1))+t0(konl(2)))/2.d0
                   t1l=(vold(0,konl(1))+vold(0,konl(2)))/2.d0
                endif
@@ -600,7 +585,7 @@ c     Bernhardi end
                   imat=ielmat(ilayer,nelem)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,nelem)
+                     iorien=max(0,ielorien(ilayer,nelem))
                   else
                      iorien=0
                   endif
@@ -661,7 +646,7 @@ c     Bernhardi end
                   imat=ielmat(ilayer,nelem)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,nelem)
+                     iorien=max(0,ielorien(ilayer,nelem))
                   else
                      iorien=0
                   endif
@@ -761,7 +746,7 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
 !
          t0l=0.d0
          t1l=0.d0
-         if(ithermal.eq.1) then
+         if(ithermal(1).eq.1) then
             if(lakonl(4:5).eq.'8 ') then
                do i1=1,nope
                   t0l=t0l+t0(konl(i1))/8.d0
@@ -780,7 +765,7 @@ c         if((iperturb(1).ne.0).and.stiffness.and.(.not.buckling))
                   t1l=t1l+shp(4,i1)*t1(konl(i1))
                enddo
             endif
-         elseif(ithermal.ge.2) then
+         elseif(ithermal(1).ge.2) then
             if(lakonl(4:5).eq.'8 ') then
                do i1=1,nope
                   t0l=t0l+t0(konl(i1))/8.d0

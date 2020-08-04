@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,10 +29,6 @@
      &  iamplitude,nam,isector,id,idefload(*)
 !
       real*8 xload(2,*),value
-!
-      intent(in)  nelement,label,value,nload_,iamplitude,nam,isector
-!
-      intent(inout) iamload,xload,sideload,idefload,nelemload,nload
 !
       call nident2(nelemload,nelement,nload,id)
       if(id.gt.0) then

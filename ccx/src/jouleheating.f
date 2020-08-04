@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@
       integer ipkon(*),nelem,kon(*),mi(*),nope,indexe,j,k,null,
      &  mint3d,jj,iflag,ne,nelemload(2,*),iamload(2,*),nload,nload_,
      &  ielmat(mi(3),*),konl(20),idefload(*),iamplitude,isector,nam,
-     &  one,nelcon(2,*),nalcon(2,*),ithermal,i1,ncmat_,ntmat_,imat
+     &  one,nelcon(2,*),nalcon(2,*),ithermal(*),i1,ncmat_,ntmat_,imat
 !
       real*8 co(3,*),xl(3,20),xi,et,ze,xsj,shp(4,20),weight,xload(2,*),
      &  sti(6,mi(1),*),alpha(6),heat,elcon(0:ncmat_,ntmat_,*),volume,
@@ -157,7 +157,7 @@
 !     calculating the temperature
 !     
             t1l=0.d0
-            if(ithermal.eq.1) then
+            if(ithermal(1).eq.1) then
                if(lakon(nelem)(4:5).eq.'8 ') then
                   do i1=1,nope
                      t1l=t1l+t1(konl(i1))/8.d0
@@ -171,7 +171,7 @@
                      t1l=t1l+shp(4,i1)*t1(konl(i1))
                   enddo
                endif
-            elseif(ithermal.ge.2) then
+            elseif(ithermal(1).ge.2) then
                if(lakon(nelem)(4:5).eq.'8 ') then
                   do i1=1,nope
                      t1l=t1l+vold(0,konl(i1))/8.d0

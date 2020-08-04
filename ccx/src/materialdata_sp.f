@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,13 +25,10 @@
       integer nelcon(2,*),imat,i,k,kin,ntmat_,nelconst,kode,
      &  itemp,ncmat_,id,nplicon(0:ntmat_,*),npmat_
 !
-      real*8 elcon(0:ncmat_,ntmat_,*),t1l,elconloc(21),
+      real*8 elcon(0:ncmat_,ntmat_,*),t1l,elconloc(*),
      &   plicon(0:2*npmat_,ntmat_,*),plconloc(802)
 !
-      intent(in) elcon,nelcon,imat,ntmat_,i,t1l,
-     &  kode,plicon,nplicon,npmat_,ncmat_
 !
-      intent(inout) elconloc,plconloc
 !
 !     nelconst: # constants read from file
 !     

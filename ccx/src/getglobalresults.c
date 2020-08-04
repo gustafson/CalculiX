@@ -26,11 +26,11 @@
 #include "CalculiX.h"
 #include "readfrd.h"
 
-void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
+void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
                        ITG *nboun,ITG *iamboun,double *xboun, ITG *nload,
                        char *sideload,ITG *iamload, ITG *iglob,ITG *nforc,
                        ITG *iamforc,double *xforc,ITG *ithermal,ITG *nk,
-                       double *t1,ITG *iamt1,double *sigma)
+                       double *t1,ITG *iamt1,double *sigma,ITG *irefine)
 {
  
     char  datin[MAX_LINE_LENGTH],text[13]="            ";
@@ -77,8 +77,8 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     /* reading the global coordinates and the topology from file
        (if any, else return) */
     
-    if(strcmp1(&jobnamec[396]," ")==0)return;
-    strcpy1(datin,&jobnamec[396],132); 
+    if(strcmp1(&masterfile[0]," ")==0)return;
+    strcpy1(datin,&masterfile[0],132); 
     for(i=0;i<MAX_LINE_LENGTH;i++){
 	if(strcmp1(&datin[i]," ")==0){
 	    datin[i]='\0';
@@ -88,14 +88,18 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
     /* determining the appropriate step number: scanning the SPC
        boundary conditions and distribed facial loads 
-       if no global data is needed return*/
-    
-    istep=0;
-    for(i=0;i<*nboun;i++){
+       if no global data is needed return 
+       (only for submodel applications, i.e. if *refine==0 )*/
+
+    istep=*irefine;
+
+    if(istep==0){
+      for(i=0;i<*nboun;i++){
 	if((xboun[i]<1.9232931375)&&(xboun[i]>1.9232931373)){
-	    istep=iamboun[i];
-	    break;
+	  istep=iamboun[i];
+	  break;
 	}
+      }
     }
     if(istep==0){
 	for(i=0;i<*nforc;i++){
@@ -241,7 +245,7 @@ void getglobalresults (char *jobnamec,ITG **integerglobp,double **doubleglobp,
     
     /* initialization of fields */
     
-    FORTRAN(init,(&nktet,inodfa,ipofa,&netet_));
+    FORTRAN(init_submodel,(&nktet,inodfa,ipofa,&netet_));
     
     for(i=0;i<ne;i++){
 	type=kontyp[i];

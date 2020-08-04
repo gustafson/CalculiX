@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,15 +32,12 @@
 !
       integer ipkon(*),inum(*),kon(*),ne,indexe,nope,nfield,mi(*),
      &  nk,i,j,nelemload(2,*),nload,node,nboun,nlayer,nopeexp,
-     &  nodeboun(*),ndirboun(*),ithermal(2),ielmat(mi(3),*),
+     &  nodeboun(*),ndirboun(*),ithermal(*),ielmat(mi(3),*),
      &  ielprop(*)
 !
       real*8 yn,co(3,*),vold(0:mi(2),*),prop(*)
 !
-      intent(in) ipkon,kon,lakon,nk,ne,cflag,nelemload,
-     &  nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat
 !
-      intent(inout) inum
 !
       force=.false.
 !

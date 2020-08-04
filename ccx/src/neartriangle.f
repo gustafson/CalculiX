@@ -1,7 +1,7 @@
 
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,7 +29,9 @@
      &  isol,itri,imastop(3,*),ntie,itie,itel
 !
       real*8 p(3),xn(3),xo(*),yo(*),zo(*),x(*),y(*),z(*),straight(16,*),
-     &  al,al1,al2
+     &     al,al1,al2
+!
+!
 !     
 !     determining the kneigh neighboring triangles
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -53,7 +53,7 @@
      &  ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
      &  ipkon(*),intscheme,ncocon(2,*),nshcon(*),ipobody(2,*),nbody,
      &  ibody(3,*),nk,ne,nboun,nmpc,nforc,nload,neq(2),nzl,nmethod,
-     &  ithermal(2),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
+     &  ithermal(*),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,jdof,node1,node2,kflag,icalccg,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
@@ -74,25 +74,7 @@
      &  time,thicke(mi(3),*),doubleglob(*),clearini(3,9,*),
      &  pslavsurf(3,*),pmastsurf(6,*),smscale(*)
 !
-      intent(in) co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,
-     &  xboun,nboun,
-     &  ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
-     &  nforc,nelemload,sideload,nload,xbody,ipobody,nbody,
-     &  nactdof,icol,jq,irow,neq,nzl,
-     &  ikmpc,ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,
-     &  nrhcon,alcon,nalcon,alzero,ielmat,ielorien,norien,orab,ntmat_,
-     &  t0,t1,ithermal,prestr,
-     &  iprestr,vold,iperturb,sti,nzs,stx,iexpl,plicon,
-     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mi,ncmat_,mass,stiffness,buckling,rhsi,intscheme,
-     &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  coriolis,ibody,xloadold,reltime,veold,nstate_,
-     &  xstateini,thicke,integerglob,doubleglob,
-     &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop,ne0,nea,neb
 !
-      intent(inout) fext,ad,au,adb,aub,xload,nmethod,cgr,springarea,
-     &  xstate
 !
       kflag=2
       i0=0
@@ -179,13 +161,6 @@ c     Bernhardi end
            nope=1
            ndof=3
         elseif(lakon(i)(1:1).eq.'U') then
-c           if(lakon(i)(7:7).eq.' ') then
-c              nope=ichar(lakon(i)(8:8))-48
-c           else
-c              nope=10*(ichar(lakon(i)(7:7))-48)
-c     &             +ichar(lakon(i)(8:8))-48
-c           endif
-c           ndof=ichar(lakon(i)(6:6))-48
            ndof=ichar(lakon(i)(7:7))
            nope=ichar(lakon(i)(8:8))
         else
@@ -455,9 +430,8 @@ c           ndof=ichar(lakon(i)(6:6))-48
 !
                 if(jdof1.le.0) then
                    if(nmpc.ne.0) then
-                      idof1=jdof1
-                      if(idof1.ne.2*(idof1/2)) then
-                         id=(-idof1+1)/2
+                      if(jdof1.ne.2*(jdof1/2)) then
+                         id=(-jdof1+1)/2
                          ist=ipompc(id)
                          index=nodempc(3,ist)
                          if(index.eq.0) cycle
@@ -720,9 +694,8 @@ c           ndof=ichar(lakon(i)(6:6))-48
              if(idist.ne.0) then
                 if(jdof1.le.0) then
                    if(nmpc.ne.0) then
-                      idof1=jdof1
-                      if(idof1.ne.2*(idof1/2)) then
-                         id=(-idof1+1)/2
+                      if(jdof1.ne.2*(jdof1/2)) then
+                         id=(-jdof1+1)/2
                          ist=ipompc(id)
                          index=nodempc(3,ist)
                          if(index.eq.0) cycle

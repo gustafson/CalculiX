@@ -22,17 +22,17 @@
 #include <unistd.h>
 #include "CalculiX.h"
 
-void interpolcycsymcfd(int *nkold, double *cotet, int *neold, int *ipkon,
-     int *kon, int **nodempcp, int *ipompc, int *nmpc,
-     int *ikmpc, int *ilmpc, double **coefmpcp, char *labmpc,
-     int *mpcfree, int *memmpc_, char *lakon,int *nmast,
-     int *nslav,int *ithermal,
-     double *cs,int *inoslav,int *inomast,int *imast, int *islav){
+void interpolcycsymcfd(ITG *nkold, double *cotet, ITG *neold, ITG *ipkon,
+     ITG *kon, ITG **nodempcp, ITG *ipompc, ITG *nmpc,
+     ITG *ikmpc, ITG *ilmpc, double **coefmpcp, char *labmpc,
+     ITG *mpcfree, ITG *memmpc_, char *lakon,ITG *nmast,
+     ITG *nslav,ITG *ithermal,
+     double *cs,ITG *inoslav,ITG *inomast,ITG *imast, ITG *islav){
 
     /* generate MPC's between new nodes and original nodes:
         (in rectangular coordinates) */
 
-    int j,*nodempc=NULL,idof,id,k,index,number,
+    ITG j,*nodempc=NULL,idof,id,k,index,number,
         idir,idirmin,idirmax,nodes,nodem;
     
     double *coefmpc=NULL,trabl[7],a[9];
@@ -94,9 +94,9 @@ void interpolcycsymcfd(int *nkold, double *cotet, int *neold, int *ipkon,
 		*mpcfree=*memmpc_+1;
 		nodempc[3*index-1]=*mpcfree;
 		if(*memmpc_<11)*memmpc_=11;
-		*memmpc_=(int)(1.1**memmpc_);
+		*memmpc_=(ITG)(1.1**memmpc_);
 		printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-		RENEW(nodempc,int,3**memmpc_);
+		RENEW(nodempc,ITG,3**memmpc_);
 		RENEW(coefmpc,double,*memmpc_);
 		for(k=*mpcfree;k<*memmpc_;k++){
 		    nodempc[3*k-1]=k+1;
@@ -115,9 +115,9 @@ void interpolcycsymcfd(int *nkold, double *cotet, int *neold, int *ipkon,
 		    *mpcfree=*memmpc_+1;
 		    nodempc[3*index-1]=*mpcfree;
 		    if(*memmpc_<11)*memmpc_=11;
-		    *memmpc_=(int)(1.1**memmpc_);
+		    *memmpc_=(ITG)(1.1**memmpc_);
 		    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-		    RENEW(nodempc,int,3**memmpc_);
+		    RENEW(nodempc,ITG,3**memmpc_);
 		    RENEW(coefmpc,double,*memmpc_);
 		    for(k=*mpcfree;k<*memmpc_;k++){
 			nodempc[3*k-1]=k+1;
@@ -170,9 +170,9 @@ void interpolcycsymcfd(int *nkold, double *cotet, int *neold, int *ipkon,
 		    *mpcfree=*memmpc_+1;
 		    nodempc[3*index-1]=*mpcfree;
 		    if(*memmpc_<11)*memmpc_=11;
-		    *memmpc_=(int)(1.1**memmpc_);
+		    *memmpc_=(ITG)(1.1**memmpc_);
 		    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-		    RENEW(nodempc,int,3**memmpc_);
+		    RENEW(nodempc,ITG,3**memmpc_);
 		    RENEW(coefmpc,double,*memmpc_);
 		    for(k=*mpcfree;k<*memmpc_;k++){
 			nodempc[3*k-1]=k+1;
@@ -198,9 +198,9 @@ void interpolcycsymcfd(int *nkold, double *cotet, int *neold, int *ipkon,
 		    *mpcfree=*memmpc_+1;
 		    nodempc[3*index-1]=*mpcfree;
 		    if(*memmpc_<11)*memmpc_=11;
-		    *memmpc_=(int)(1.1**memmpc_);
+		    *memmpc_=(ITG)(1.1**memmpc_);
 		    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-		    RENEW(nodempc,int,3**memmpc_);
+		    RENEW(nodempc,ITG,3**memmpc_);
 		    RENEW(coefmpc,double,*memmpc_);
 		    for(k=*mpcfree;k<*memmpc_;k++){
 			nodempc[3*k-1]=k+1;
@@ -257,9 +257,9 @@ void interpolcycsymcfd(int *nkold, double *cotet, int *neold, int *ipkon,
 		*mpcfree=*memmpc_+1;
 		nodempc[3*index-1]=*mpcfree;
 		if(*memmpc_<11)*memmpc_=11;
-		*memmpc_=(int)(1.1**memmpc_);
+		*memmpc_=(ITG)(1.1**memmpc_);
 		printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-		RENEW(nodempc,int,3**memmpc_);
+		RENEW(nodempc,ITG,3**memmpc_);
 		RENEW(coefmpc,double,*memmpc_);
 		for(k=*mpcfree;k<*memmpc_;k++){
 		    nodempc[3*k-1]=k+1;
@@ -278,9 +278,9 @@ void interpolcycsymcfd(int *nkold, double *cotet, int *neold, int *ipkon,
 		*mpcfree=*memmpc_+1;
 		nodempc[3*index-1]=*mpcfree;
 		if(*memmpc_<11)*memmpc_=11;
-		*memmpc_=(int)(1.1**memmpc_);
+		*memmpc_=(ITG)(1.1**memmpc_);
 		printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-		RENEW(nodempc,int,3**memmpc_);
+		RENEW(nodempc,ITG,3**memmpc_);
 		RENEW(coefmpc,double,*memmpc_);
 		for(k=*mpcfree;k<*memmpc_;k++){
 		    nodempc[3*k-1]=k+1;
@@ -333,9 +333,9 @@ void interpolcycsymcfd(int *nkold, double *cotet, int *neold, int *ipkon,
 		    *mpcfree=*memmpc_+1;
 		    nodempc[3*index-1]=*mpcfree;
 		    if(*memmpc_<11)*memmpc_=11;
-		    *memmpc_=(int)(1.1**memmpc_);
+		    *memmpc_=(ITG)(1.1**memmpc_);
 		    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-		    RENEW(nodempc,int,3**memmpc_);
+		    RENEW(nodempc,ITG,3**memmpc_);
 		    RENEW(coefmpc,double,*memmpc_);
 		    for(k=*mpcfree;k<*memmpc_;k++){
 			nodempc[3*k-1]=k+1;
@@ -363,9 +363,9 @@ void interpolcycsymcfd(int *nkold, double *cotet, int *neold, int *ipkon,
 		    *mpcfree=*memmpc_+1;
 		    nodempc[3*index-1]=*mpcfree;
 		    if(*memmpc_<11)*memmpc_=11;
-		    *memmpc_=(int)(1.1**memmpc_);
+		    *memmpc_=(ITG)(1.1**memmpc_);
 		    printf("*INFO in gencontmpc: reallocating nodempc; new size = %d\n\n",*memmpc_);
-		    RENEW(nodempc,int,3**memmpc_);
+		    RENEW(nodempc,ITG,3**memmpc_);
 		    RENEW(coefmpc,double,*memmpc_);
 		    for(k=*mpcfree;k<*memmpc_;k++){
 			nodempc[3*k-1]=k+1;

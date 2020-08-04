@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,11 +35,11 @@
       character*80 versionvwf,version
       character*132 jobnamef(*),fnvw
 !     
-      integer ntr,nzsrad,ithermal,i,k,length,lengthvwf
+      integer ntr,nzsrad,ithermal(*),i,k,length,lengthvwf
 !
       real*8 adview(*),auview(*),fenv(*)
 !     
-      if(ithermal.eq.3) then
+      if(ithermal(1).eq.3) then
          write(*,*) '*WARNING in readview: viewfactors are being'
          write(*,*) '         read from file for a thermomechani-'
          write(*,*) '         cal calculation: they will not be '

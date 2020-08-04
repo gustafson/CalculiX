@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,18 +16,20 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-c>
-c> \brief function to evaluate transformed shape funciton \f$ shape(\xi,\eta) \f$
-c> for quad-lin mortar method, see phd-thesis Sitzmann Chapter 4.1.
-c> Author: Saskia Sitzmann
-c> @param [in] xi		xi-coordinate
-c> @param [in] et		eta-coordinate
-c> @param [in] xl		local node coordinates
-c> @param [out] xsj		jacobian vector
-c> @param [out] xs		local derivative of the global coordinates
-c> @param [out] shp		evaluated shape functions and derivatives
-c> @param [in] iflag		flag indicating what to compute
-c>
+!
+!     function to evaluate transformed shape funciton \f$ shape(\xi,\eta) \f$
+!     for quad-lin mortar method, see phd-thesis Sitzmann Chapter 4.1.
+!      
+!     Author: Saskia Sitzmann
+!      
+!  [in] xi		xi-coordinate
+!  [in] et		eta-coordinate
+!  [in] xl		local node coordinates
+!  [out] xsj		jacobian vector
+!  [out] xs		local derivative of the global coordinates
+!  [out] shp		evaluated shape functions and derivatives
+!  [in] iflag		flag indicating what to compute
+!
       subroutine shape6tritilde_lin(xi,et,xl,xsj,xs,shp,iflag)
 !
 !     iflag=1: calculate only the value of the shape functions
@@ -55,6 +57,8 @@ c>
 !
       real*8 xi,et
 !
+!
+!
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.
 !
@@ -67,7 +71,8 @@ c>
       shp(4,5)=4.d0*xi*et
       shp(4,6)=4.d0*et*(1.d0-xi-et)            
 !
-!     Caution: derivatives and exspecially jacobian for untransformed basis functions are given
+!     Caution: derivatives and exspecially jacobian for untransformed
+!     basis functions are given
 !     needed for consistent integration
 !
       if(iflag.eq.1) return
@@ -97,7 +102,6 @@ c>
          do j=1,2
             xs(i,j)=0.d0
             do k=1,6
-c     do k=1,3
                xs(i,j)=xs(i,j)+xl(i,k)*shp(j,k)
             enddo
          enddo

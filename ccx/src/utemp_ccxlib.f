@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -75,10 +75,7 @@
 ! 
       real*8 temp(msecpt),time(2),coords(3),vold(0:mi(2),*),xbody(7,*)
 !
-      intent(in) msecpt,kstep,kinc,time,node,coords,
-     &  vold,mi,iponoel,inoel,ipobody,xbody,ibody
 !
-      intent(out) temp
 !
       temp(1)=293.d0
 !

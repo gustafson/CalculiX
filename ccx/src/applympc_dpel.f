@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,12 +39,7 @@
      &   volume(*),xle(*),xxi(3,*),c(3,3),gradnor,xxn(3,*),coefmpc(*),
      &   coefnorm,sum,xxj(3,*),xlet(*),dd
 !
-      intent(in) nface,ielfa,xrlfa,vel,
-     &  ifabou,xbounact,nef,neifa,rf,area,volume,
-     &  xle,xxi,icyclic,xxn,ipnei,ifatie,
-     &  coefmpc,nmpc,labmpc,ipompc,nodempc,ifaext,nfaext,nactdoh
 !
-      intent(inout) vfa,gradpcel,gradpcfa
 !
 !     Multiple point constraints
 !

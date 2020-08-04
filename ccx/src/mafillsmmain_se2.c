@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -227,19 +227,11 @@ void mafillsmmain_se2(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     /* passing of df2 */
 
     if(!*cyclicsymmetry){
-	if(*ieigenfrequency!=1){
 
-            /* nonlinear geometric: add df2 to df2 from results_se */
-
-	    for(i=0;i<*nzss2;i++){
-		df2[i]+=df21[i];
-	    }
-	}else{
-
-	    for(i=0;i<*nzss2;i++){
-		df2[i]=df21[i];
-	    }
+	for(i=0;i<*nzss2;i++){
+	    df2[i]=df21[i];
 	}
+	
 	for(i=0;i<*nzss2;i++){
 	    for(j=1;j<num_cpus;j++){
 		df2[i]+=df21[i+j**nzss2];

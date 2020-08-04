@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -24,149 +24,149 @@
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
-/** \brief  function initializing mortar contact at the start of nonlingeo.c
+/**   function initializing mortar contact at the start of nonlingeo.c
  *   getting contact parameters, allocating needed fields, get results from last step,
  *   determine used mortar method, (transform and cataloque SPCs/MPCs)
  *   and generate islavelinv and  islavnodeinv
  *
  *   Author: Saskia Sitzmann
  *
- * @param [in,out] enerp		?
- * @param [in] mi		(1) max # of integration points per element (2) max degree of freedom per element 
- * @param [in] ne 		number of elements
- * @param [in] nslavs		number of slave nodes
- * @param [in] nk 		number of nodes
- * @param [in] nener 		flag indicating wheter ener is allocated
- * @param [in] ipkonp		pointer into field kon...
- * @param [in] lakonp		(i) label for element i
- * @param [in] konp 		.. for element i storing the connectivity list of elem. in succ. order
- * @param [in] nkon 		size kon
- * @param [in] maxprevcontel	maximum number of previous contact elements
- * @param [in,out] xstatep	state variables
- * @param [in] nstate_		maximum number of state variables 
- * @param [out] islavactdoftiep   (i)=tie number for active dof i
- * @param [out] bpp		friction bounds 
- * @param [out] islavactp	(i) indicates, if slave node i is active (=-3 no-slave-node, =-2 no-LM-node, =-1 no-gap-node, =0 inactive node, =1 sticky node, =2 slipping/active node)  
- * @param [out] gapp		(i) gap for node i on slave surface
- * @param [out] slavnorp		slave normal
- * @param [out] slavtanp		slave tangent 
- * @param [out] cdispp		vector saving contact variables for frd-output 
- * @param [out] cstressp	current Lagrange multiplier 
- * @param [out] cfsp 		contact force 
- * @param [out] cfmp 		not used any more 
- * @param [out] bpinip		friction bounds at start of the increment
- * @param [out] islavactinip	islavact at the start of the increment
- * @param [out] cstressinip	Lagrange multiplier at start of the increment
- * @param [out] niwan		number of iwan elements
- * @param [in]  ntie		number of ties
- * @param [in] tieset           (1,i) name of tie constraint (2,i) dependent surface (3,i) independent surface  
- * @param [in] nslavnode	(i)pointer into field isalvnode for contact tie i 
- * @param [in] islavnode	field storing the nodes of the slave surface 
- * @param [out] islavnodeinvp     (i) slave node index for node i
- * @param [out] islavelinvp       (i)==0 if there is no slave node in the element, >0 otherwise
- * @param [out] pslavdualp	(:,i)coefficients \f$ \alpha_{ij}\f$, \f$ 1,j=1,..8\f$ for dual shape functions for face i
- * @param [out] pslavdualpgp	(:,i)coefficients \f$ \alpha_{ij}\f$, \f$ 1,j=1,..8\f$ for Petrov-Galerkin shape functions for face i 
- * @param [out] autlocp		transformation matrix \f$ T[p,q]\f$ for slave nodes \f$ p,q \f$
- * @param [out] irowtlocp		field containing row numbers of autloc
- * @param [out] jqtlocp	        pointer into field irowtloc
- * @param [out] autlocinvp	transformation matrix \f$ T^{-1}[p,q]\f$ for slave nodes \f$ p,q \f$ 
- * @param [out] irowtlocinvp	field containing row numbers of autlocinv
- * @param [out] jqtlocinvp	pointer into field irowtlocinv
- * @param [out] Bdp		coupling matrix \f$ B_d[p,q]=\int \psi_p \phi_q dS \f$, \f$ p \in S, q \in M \f$ 
- * @param [out] irowbp		field containing row numbers of Bd
- * @param [out] jqbp		pointer into field irowb
- * @param [out] Bdhelpp		coupling matrix \f$ Bhelp_d[p,q]=\tilde{D}^{-1}\tilde{B}\f$, \f$ p \in S, q \in M \f$ 
- * @param [out] irowbhelpp	field containing row numbers of Bdhelp
- * @param [out] jqbhelpp		pointer into field irowbhelp
- * @param [out] Ddp		coupling matrix \f$ D_d[p,q]=\int \psi_p \phi_q dS \f$, \f$ p,q \in S \f$ 
- * @param [out] irowdp		field containing row numbers of Dd
- * @param [out] jqdp		pointer into field irowd
- * @param [out] Ddtilp		coupling matrix \f$ \tilde{D}_d[p,q]=\int \psi_p \tilde{\phi}_q dS \f$, \f$ p,q \in S \f$ 
- * @param [out] irowdtilp	field containing row numbers of Ddtil
- * @param [out] jqdtilp		pointer into field irowdtil 
- * @param [out] Bdtilp		coupling matrix \f$ \tilde{B}_d[p,q]=\int \psi_p \tilde{\phi}_q dS \f$, \f$ p \in S, q \in M \f$ 
- * @param [out] irowbtilp	field containing row numbers of Bdtil
- * @param [out] jqbtilp		pointer into field irowbtil
- * @param [out] Bpgdp		Petrov-Galerkin coupling matrix \f$ B_d^{PG}[p,q]=\int \tilde{\phi}_p \phi_q dS \f$, \f$ p \in S, q \in M \f$ 
- * @param [out] irowbpgp		field containing row numbers of Bpgd
- * @param [out] jqbpgp		pointer into field irowbpg
- * @param [out] Dpgdp		Petrov-Galerkin coupling matrix \f$ D_d[p,q]=\int \tilde{\phi}_p \phi_q dS \f$, \f$ p,q \in S \f$ 
- * @param [out] irowdpgp		field containing row numbers of Dpgd
- * @param [out] jqdpgp		pointer into field irowdpg
- * @param [out] Dpgdtilp		transformed Petrov-Galerkin coupling matrix \f$ D_d[p,q]=\int \tilde{\phi}_p \tilde{\phi}_q dS \f$, \f$ p,q \in S \f$ 
- * @param [out] irowdpgtilp	field containing row numbers of Dpgdtil
- * @param [out] jqdpgtilp	pointer into field irowdpgtil
- * @param [out] Bpgdtilp		transformed Petrov-Galerkin coupling matrix \f$ B_d^{PG}[p,q]=\int \tilde{\phi}_p \tilde{\phi}_q dS \f$, \f$ p \in S, q \in M \f$ 
- * @param [out] irowbpgtilp	field containing row numbers of Bpgdtil
- * @param [out] jqbpgtilp	pointer into field irowbpgtil
- * @param [in]  iflagdualquad   flag indicating what mortar contact is used (=1 quad-lin, =2 quad-quad, =3 PG quad-lin, =4 PG quad-quad)
- * @param [in] itiefac 		pointer into field islavsurf: (1,i) beginning slave_i (2,i) end of slave_i
- * @param [in] islavsurf	islavsurf(1,i) slaveface i islavsurf(2,i) # integration points generated before looking at face i 
- * @param [in] nboun            number of SPCs
- * @param [in] ndirboun		(i) direction of SPC i 
- * @param [in] nodeboun         (i) node of SPC i
- * @param [in] xboun            (i) value of SPC i
- * @param [in] nmpc		number of mpcs
- * @param [in] ipompc           (i) pointer to nodempc and coeffmpc for MPC i
- * @param [in] nodempc          nodes and directions of MPCs
- * @param [in] coefmpc          coefficients of MPCs
- * @param [in] labmpc		MPC labels 
- * @param [in] ikboun           sorted dofs idof=8*(node-1)+dir for SPCs
- * @param [in] ilboun           SPC numbers for sorted dofs
- * @param [in] ikmpc 		sorted dofs idof=8*(node-1)+dir for MPCs
- * @param [in] ilmpc		SPC numbers for sorted dofs
- * @param [out] nboun2            number of transformed SPCs
- * @param [out] ndirboun2p	(i) direction of transformed SPC i 
- * @param [out] nodeboun2p       (i) node of transformed SPC i
- * @param [out] xboun2p          (i) value of transformed SPC i
- * @param [out] nmpc2		number of transformed mpcs
- * @param [out] ipompc2p         (i) pointer to nodempc and coeffmpc for transformed MPC i
- * @param [out] nodempc2p        nodes and directions of transformed MPCs
- * @param [out] coefmpc2p        coefficients of transformed MPCs
- * @param [out] labmpc2p	transformed MPC labels 
- * @param [out] ikboun2p         sorted dofs idof=8*(node-1)+dir for transformed SPCs
- * @param [out] ilboun2p         transformed SPC numbers for sorted dofs
- * @param [out] ikmpc2p 		sorted dofs idof=8*(node-1)+dir for transformed MPCs
- * @param [out] ilmpc2p		transformed SPC numbers for sorted dofs
- * @param [out] nslavspcp	(2*i) pointer to islavspc...
- * @param [out] islavspcp         ... which stores SPCs for slave node i
- * @param [out] nslavmpcp	(2*i) pointer to islavmpc...
- * @param [out] islavmpcp	... which stores MPCs for slave node i
- * @param [out] nslavspc2p	(2*i) pointer to islavspc2...
- * @param [out] islavspc2p       ... which stores transformed SPCs for slave node i
- * @param [out] nslavmpc2p	(2*i) pointer to islavmpc2...
- * @param [out] islavmpc2p	... which stores transformed MPCs for slave node i
- * @param [out] nmastspcp	(2*i) pointer to imastspc...
- * @param [out] imastspcp         ... which stores SPCs for master node i
- * @param [out] nmastmpcp	(2*i) pointer to imastmpc...
- * @param [out] imastmpcp	... which stores MPCs for master node i 
- * @param [out] nsspc            number of SPC for slave nodes 
- * @param [out] nsspc2          number of transformed SPC for slave nodes
- * @param [out] nsmpc		number of MPC for slave nodes
- * @param [out] nsmpc2		number of transformed MPC for slave nodes 
- * @param [in] imastnode	field storing the nodes of the master surfaces
- * @param [in] nmastnode	(i)pointer into field imastnode for contact tie i 
- * @param [out] nmspc            number of SPC for master nodes
- * @param [out] nmmpc		number of MPC for master nodes 
- * @param [in] iponoels         (i) pointer to inoels
- * @param [in] inoels           (3,i) element number, local node number and pointer to another entry
- * @param [in] tietol		(1,i) tie tolerance (2,i) contant interaction material definition
- * @param [in] elcon		material parameters
- * @param [in] ncmat_		maximum number of elastic material constants 
- * @param [in] ntmat_           maximum number of temperature data points for any material 
- * @param [in] nasym		flag indicating whether matrix is symmetric or not
- * @param [in] iflag_fric	flag indicating whether iwan model is used
- * @param [out] lambdaiwanp       Lagrange multiplier splitted to Iwan elements
- * @param [out] lambdaiwaninip    Lagrange multiplier splitted to Iwan elements at start of increment 
- * @param [out] nk2		number or generated points needed for transformed SPCs
- * @param [in] vold 		displacements
- * @param [in] nset		number of sets 
- * @param [in] set		(i) name of set i
- * @param [in] mortar		param indicating what contact formulation is used (=0 NTS penalty, =1 GPTS penalty , >1 STS mortar)
- * @param [in] memmpc_		size of nodempc/coefmpc
- * @param [in] ielmatp           (j,i) material number of layer j
- * @param [in] ielorienp		(j,i) orientation number of layer j 
- * @param [in] norien		number of orientations
+ *  [in,out] enerp		?
+ *  [in] mi		(1) max # of integration points per element (2) max degree of freedom per element 
+ *  [in] ne 		number of elements
+ *  [in] nslavs		number of slave nodes
+ *  [in] nk 		number of nodes
+ *  [in] nener 		flag indicating wheter ener is allocated
+ *  [in] ipkonp		pointer into field kon...
+ *  [in] lakonp		(i) label for element i
+ *  [in] konp 		.. for element i storing the connectivity list of elem. in succ. order
+ *  [in] nkon 		size kon
+ *  [in] maxprevcontel	maximum number of previous contact elements
+ *  [in,out] xstatep	state variables
+ *  [in] nstate_		maximum number of state variables 
+ *  [out] islavactdoftiep   (i)=tie number for active dof i
+ *  [out] bpp		friction bounds 
+ *  [out] islavactp	(i) indicates, if slave node i is active (=-3 no-slave-node, =-2 no-LM-node, =-1 no-gap-node, =0 inactive node, =1 sticky node, =2 slipping/active node)  
+ *  [out] gapp		(i) gap for node i on slave surface
+ *  [out] slavnorp		slave normal
+ *  [out] slavtanp		slave tangent 
+ *  [out] cdispp		vector saving contact variables for frd-output 
+ *  [out] cstressp	current Lagrange multiplier 
+ *  [out] cfsp 		contact force 
+ *  [out] cfmp 		not used any more 
+ *  [out] bpinip		friction bounds at start of the increment
+ *  [out] islavactinip	islavact at the start of the increment
+ *  [out] cstressinip	Lagrange multiplier at start of the increment
+ *  [out] iwan		number of iwan elements
+ *  [in]  ntie		number of ties
+ *  [in] tieset           (1,i) name of tie constraint (2,i) dependent surface (3,i) independent surface  
+ *  [in] nslavnode	(i)pointer into field islavnode for contact tie i 
+ *  [in] islavnode	field storing the nodes of the slave surface 
+ *  [out] islavnodeinvp     (i) slave node index for node i
+ *  [out] islavelinvp       (i)==0 if there is no slave node in the element, >0 otherwise
+ *  [out] pslavdualp	(:,i)coefficients \f$ \alpha_{ij}\f$, \f$ 1,j=1,..8\f$ for dual shape functions for face i
+ *  [out] pslavdualpgp	(:,i)coefficients \f$ \alpha_{ij}\f$, \f$ 1,j=1,..8\f$ for Petrov-Galerkin shape functions for face i 
+ *  [out] autlocp		transformation matrix \f$ T[p,q]\f$ for slave nodes \f$ p,q \f$
+ *  [out] irowtlocp		field containing row numbers of autloc
+ *  [out] jqtlocp	        pointer into field irowtloc
+ *  [out] autlocinvp	transformation matrix \f$ T^{-1}[p,q]\f$ for slave nodes \f$ p,q \f$ 
+ *  [out] irowtlocinvp	field containing row numbers of autlocinv
+ *  [out] jqtlocinvp	pointer into field irowtlocinv
+ *  [out] Bdp		coupling matrix \f$ B_d[p,q]=\int \psi_p \phi_q dS \f$, \f$ p \in S, q \in M \f$ 
+ *  [out] irowbp		field containing row numbers of Bd
+ *  [out] jqbp		pointer into field irowb
+ *  [out] Bdhelpp		coupling matrix \f$ Bhelp_d[p,q]=\tilde{D}^{-1}\tilde{B}\f$, \f$ p \in S, q \in M \f$ 
+ *  [out] irowbhelpp	field containing row numbers of Bdhelp
+ *  [out] jqbhelpp		pointer into field irowbhelp
+ *  [out] Ddp		coupling matrix \f$ D_d[p,q]=\int \psi_p \phi_q dS \f$, \f$ p,q \in S \f$ 
+ *  [out] irowdp		field containing row numbers of Dd
+ *  [out] jqdp		pointer into field irowd
+ *  [out] Ddtilp		coupling matrix \f$ \tilde{D}_d[p,q]=\int \psi_p \tilde{\phi}_q dS \f$, \f$ p,q \in S \f$ 
+ *  [out] irowdtilp	field containing row numbers of Ddtil
+ *  [out] jqdtilp		pointer into field irowdtil 
+ *  [out] Bdtilp		coupling matrix \f$ \tilde{B}_d[p,q]=\int \psi_p \tilde{\phi}_q dS \f$, \f$ p \in S, q \in M \f$ 
+ *  [out] irowbtilp	field containing row numbers of Bdtil
+ *  [out] jqbtilp		pointer into field irowbtil
+ *  [out] Bpgdp		Petrov-Galerkin coupling matrix \f$ B_d^{PG}[p,q]=\int \tilde{\phi}_p \phi_q dS \f$, \f$ p \in S, q \in M \f$ 
+ *  [out] irowbpgp		field containing row numbers of Bpgd
+ *  [out] jqbpgp		pointer into field irowbpg
+ *  [out] Dpgdp		Petrov-Galerkin coupling matrix \f$ D_d[p,q]=\int \tilde{\phi}_p \phi_q dS \f$, \f$ p,q \in S \f$ 
+ *  [out] irowdpgp		field containing row numbers of Dpgd
+ *  [out] jqdpgp		pointer into field irowdpg
+ *  [out] Dpgdtilp		transformed Petrov-Galerkin coupling matrix \f$ D_d[p,q]=\int \tilde{\phi}_p \tilde{\phi}_q dS \f$, \f$ p,q \in S \f$ 
+ *  [out] irowdpgtilp	field containing row numbers of Dpgdtil
+ *  [out] jqdpgtilp	pointer into field irowdpgtil
+ *  [out] Bpgdtilp		transformed Petrov-Galerkin coupling matrix \f$ B_d^{PG}[p,q]=\int \tilde{\phi}_p \tilde{\phi}_q dS \f$, \f$ p \in S, q \in M \f$ 
+ *  [out] irowbpgtilp	field containing row numbers of Bpgdtil
+ *  [out] jqbpgtilp	pointer into field irowbpgtil
+ *  [in]  iflagdualquad   flag indicating what mortar contact is used (=1 quad-lin, =2 quad-quad, =3 PG quad-lin, =4 PG quad-quad)
+ *  [in] itiefac 		pointer into field islavsurf: (1,i) beginning slave_i (2,i) end of slave_i
+ *  [in] islavsurf	islavsurf(1,i) slaveface i islavsurf(2,i) # integration points generated before looking at face i 
+ *  [in] nboun            number of SPCs
+ *  [in] ndirboun		(i) direction of SPC i 
+ *  [in] nodeboun         (i) node of SPC i
+ *  [in] xboun            (i) value of SPC i
+ *  [in] nmpc		number of mpcs
+ *  [in] ipompc           (i) pointer to nodempc and coeffmpc for MPC i
+ *  [in] nodempc          nodes and directions of MPCs
+ *  [in] coefmpc          coefficients of MPCs
+ *  [in] labmpc		MPC labels 
+ *  [in] ikboun           sorted dofs idof=8*(node-1)+dir for SPCs
+ *  [in] ilboun           SPC numbers for sorted dofs
+ *  [in] ikmpc 		sorted dofs idof=8*(node-1)+dir for MPCs
+ *  [in] ilmpc		SPC numbers for sorted dofs
+ *  [out] nboun2            number of transformed SPCs
+ *  [out] ndirboun2p	(i) direction of transformed SPC i 
+ *  [out] nodeboun2p       (i) node of transformed SPC i
+ *  [out] xboun2p          (i) value of transformed SPC i
+ *  [out] nmpc2		number of transformed mpcs
+ *  [out] ipompc2p         (i) pointer to nodempc and coeffmpc for transformed MPC i
+ *  [out] nodempc2p        nodes and directions of transformed MPCs
+ *  [out] coefmpc2p        coefficients of transformed MPCs
+ *  [out] labmpc2p	transformed MPC labels 
+ *  [out] ikboun2p         sorted dofs idof=8*(node-1)+dir for transformed SPCs
+ *  [out] ilboun2p         transformed SPC numbers for sorted dofs
+ *  [out] ikmpc2p 		sorted dofs idof=8*(node-1)+dir for transformed MPCs
+ *  [out] ilmpc2p		transformed SPC numbers for sorted dofs
+ *  [out] nslavspcp	(2*i) pointer to islavspc...
+ *  [out] islavspcp         ... which stores SPCs for slave node i
+ *  [out] nslavmpcp	(2*i) pointer to islavmpc...
+ *  [out] islavmpcp	... which stores MPCs for slave node i
+ *  [out] nslavspc2p	(2*i) pointer to islavspc2...
+ *  [out] islavspc2p       ... which stores transformed SPCs for slave node i
+ *  [out] nslavmpc2p	(2*i) pointer to islavmpc2...
+ *  [out] islavmpc2p	... which stores transformed MPCs for slave node i
+ *  [out] nmastspcp	(2*i) pointer to imastspc...
+ *  [out] imastspcp         ... which stores SPCs for master node i
+ *  [out] nmastmpcp	(2*i) pointer to imastmpc...
+ *  [out] imastmpcp	... which stores MPCs for master node i 
+ *  [out] nsspc            number of SPC for slave nodes 
+ *  [out] nsspc2          number of transformed SPC for slave nodes
+ *  [out] nsmpc		number of MPC for slave nodes
+ *  [out] nsmpc2		number of transformed MPC for slave nodes 
+ *  [in] imastnode	field storing the nodes of the master surfaces
+ *  [in] nmastnode	(i)pointer into field imastnode for contact tie i 
+ *  [out] nmspc            number of SPC for master nodes
+ *  [out] nmmpc		number of MPC for master nodes 
+ *  [in] iponoels         (i) pointer to inoels
+ *  [in] inoels           (3,i) element number, local node number and pointer to another entry
+ *  [in] tietol		(1,i) tie tolerance (2,i) contant interaction material definition
+ *  [in] elcon		material parameters
+ *  [in] ncmat_		maximum number of elastic material constants 
+ *  [in] ntmat_           maximum number of temperature data points for any material 
+ *  [in] nasym		flag indicating whether matrix is symmetric or not
+ *  [in] iflag_fric	flag indicating whether iwan model is used
+ *  [out] lambdaiwanp       Lagrange multiplier splitted to Iwan elements
+ *  [out] lambdaiwaninip    Lagrange multiplier splitted to Iwan elements at start of increment 
+ *  [out] nk2		number or generated points needed for transformed SPCs
+ *  [in] vold 		displacements
+ *  [in] nset		number of sets 
+ *  [in] set		(i) name of set i
+ *  [in] mortar		param indicating what contact formulation is used (=0 NTS penalty, =1 GPTS penalty , >1 STS mortar)
+ *  [in] memmpc_		size of nodempc/coefmpc
+ *  [in] ielmatp           (j,i) material number of layer j
+ *  [in] ielorienp		(j,i) orientation number of layer j 
+ *  [in] norien		number of orientations
 **/
 void inimortar(double **enerp, ITG *mi, ITG *ne ,ITG *nslavs,ITG *nk,ITG *nener,
 	       ITG **ipkonp, char **lakonp, ITG **konp, ITG *nkon,
@@ -177,7 +177,7 @@ void inimortar(double **enerp, ITG *mi, ITG *ne ,ITG *nslavs,ITG *nk,ITG *nener,
 	       double **cstressp, double **cfsp, double **cfmp,
 	       double **cfsinip,double **cfsinitilp,double **cfstilp,
 	       double **bpinip, ITG **islavactinip, double **cstressinip,
-	       ITG *niwan,ITG *ntie, char *tieset,
+	       ITG *iwan,ITG *ntie, char *tieset,
 	       ITG *nslavnode, ITG *islavnode,
 	       ITG **islavnodeinvp, ITG **islavelinvp,double **pslavdualp,
 	       double **pslavdualpgp,
@@ -219,32 +219,34 @@ void inimortar(double **enerp, ITG *mi, ITG *ne ,ITG *nslavs,ITG *nk,ITG *nener,
     char *lakon=NULL,*labmpc2=NULL; 
     
   ITG k,i,j,node,mt=mi[1]+1,regmode,regmodet,*ipkon=NULL,*kon=NULL,
-      *islavactdoftie=NULL,*islavact=NULL,
-      *islavactini=NULL,*islavnodeinv=NULL,*islavelinv=NULL,*irowtloc=NULL,
-      *jqtloc=NULL,
-      *irowtlocinv=NULL,*jqtlocinv=NULL,*irowbhelp=NULL,*jqbhelp=NULL,
-      *irowb=NULL,*jqb=NULL,
-      *irowd=NULL,*jqd=NULL,*irowdtil=NULL,*jqdtil=NULL,
-      *irowbtil=NULL,*jqbtil=NULL,*irowbpg=NULL,*jqbpg=NULL,
-      *irowdpg=NULL,*jqdpg=NULL,*irowdpgtil=NULL,*jqdpgtil=NULL,
-      *irowbpgtil=NULL,*jqbpgtil=NULL,*ndirboun2=NULL,*nodeboun2=NULL,
-      *ipompc2=NULL,*nodempc2=NULL,
-      *ikboun2=NULL,*ilboun2=NULL,*ikmpc2=NULL,*ilmpc2=NULL,
-      *nslavspc=NULL,*islavspc=NULL,*nslavmpc=NULL,*islavmpc=NULL,
-      *nslavspc2=NULL,*islavspc2=NULL,*nslavmpc2=NULL,*islavmpc2=NULL,
-      *nmastspc=NULL,*imastspc=NULL,*nmastmpc=NULL,*imastmpc=NULL,
-      *nmastmpc2=NULL,*imastmpc2=NULL,*ielmat=NULL,*ielorien=NULL,
-      *nodeforc2=NULL,*ndirforc2=NULL;
+    *islavactdoftie=NULL,*islavact=NULL,debug,
+    *islavactini=NULL,*islavnodeinv=NULL,*islavelinv=NULL,*irowtloc=NULL,
+    *jqtloc=NULL,
+    *irowtlocinv=NULL,*jqtlocinv=NULL,*irowbhelp=NULL,*jqbhelp=NULL,
+    *irowb=NULL,*jqb=NULL,
+    *irowd=NULL,*jqd=NULL,*irowdtil=NULL,*jqdtil=NULL,
+    *irowbtil=NULL,*jqbtil=NULL,*irowbpg=NULL,*jqbpg=NULL,
+    *irowdpg=NULL,*jqdpg=NULL,*irowdpgtil=NULL,*jqdpgtil=NULL,
+    *irowbpgtil=NULL,*jqbpgtil=NULL,*ndirboun2=NULL,*nodeboun2=NULL,
+    *ipompc2=NULL,*nodempc2=NULL,
+    *ikboun2=NULL,*ilboun2=NULL,*ikmpc2=NULL,*ilmpc2=NULL,
+    *nslavspc=NULL,*islavspc=NULL,*nslavmpc=NULL,*islavmpc=NULL,
+    *nslavspc2=NULL,*islavspc2=NULL,*nslavmpc2=NULL,*islavmpc2=NULL,
+    *nmastspc=NULL,*imastspc=NULL,*nmastmpc=NULL,*imastmpc=NULL,
+    *nmastmpc2=NULL,*imastmpc2=NULL,*ielmat=NULL,*ielorien=NULL,
+    *nodeforc2=NULL,*ndirforc2=NULL;
   
   double mu,fkninv,fktauinv,p0,beta,*ener=NULL,*xstate=NULL,*bp=NULL,
-      *gap=NULL,*slavnor=NULL,*slavtan=NULL,
-      *cdisp=NULL,*cstress=NULL,*cfs=NULL,*cfsini=NULL,*cfsinitil=NULL,
-      *cfstil=NULL,*cfm=NULL,*bpini=NULL,*cstressini=NULL,*pslavdual=NULL,
-      *pslavdualpg=NULL,*autloc=NULL,
-      *autlocinv=NULL,*Bd=NULL,*Bdhelp=NULL,*Dd=NULL,*Ddtil=NULL,*Bdtil=NULL,
-      *xboun2=NULL,*coefmpc2=NULL,*lambdaiwan=NULL,
-      *lambdaiwanini=NULL,*Bpgd=NULL,*Dpgd=NULL,*Dpgdtil=NULL,*Bpgdtil=NULL,
-      *xforc2=NULL; 
+    *gap=NULL,*slavnor=NULL,*slavtan=NULL,
+    *cdisp=NULL,*cstress=NULL,*cfs=NULL,*cfsini=NULL,*cfsinitil=NULL,
+    *cfstil=NULL,*cfm=NULL,*bpini=NULL,*cstressini=NULL,*pslavdual=NULL,
+    *pslavdualpg=NULL,*autloc=NULL,
+    *autlocinv=NULL,*Bd=NULL,*Bdhelp=NULL,*Dd=NULL,*Ddtil=NULL,*Bdtil=NULL,
+    *xboun2=NULL,*coefmpc2=NULL,*lambdaiwan=NULL,
+    *lambdaiwanini=NULL,*Bpgd=NULL,*Dpgd=NULL,*Dpgdtil=NULL,*Bpgdtil=NULL,
+    *xforc2=NULL;
+
+  debug=0;
   
   ener=*enerp;ipkon=*ipkonp;lakon=*lakonp;kon=*konp;xstate=*xstatep;
   islavactdoftie=*islavactdoftiep;bp=*bpp;islavact=*islavactp;gap=*gapp;
@@ -278,7 +280,6 @@ void inimortar(double **enerp, ITG *mi, ITG *ne ,ITG *nslavs,ITG *nk,ITG *nener,
   ielmat=*ielmatp;ielorien=*ielorienp;
   nodeforc2=*nodeforc2p; ndirforc2=*ndirforc2p;
   xforc2=*xforc2p;
-
   
   fflush(stdout); 
   RENEW(ielmat,ITG,mi[2]*(*ne+*nslavs));
@@ -324,11 +325,7 @@ void inimortar(double **enerp, ITG *mi, ITG *ne ,ITG *nslavs,ITG *nk,ITG *nener,
   
   NNEW(cstress,double,mt*nslavnode[*ntie]);
   NNEW(cfs,double,mt**nk);
-  if(*nmethod==4){
-   NNEW(cfsini,double,mt**nk);
-   NNEW(cfstil,double,mt**nk);
-   NNEW(cfsinitil,double,mt**nk);
-  }
+
   /* fields for cutback  */
   
   NNEW(bpini,double,nslavnode[*ntie]);
@@ -338,26 +335,32 @@ void inimortar(double **enerp, ITG *mi, ITG *ne ,ITG *nslavs,ITG *nk,ITG *nener,
   /* check for friction */
   
   *iflag_fric=0;
-  printf("\t***mortar***\n");
-  *niwan=1;
+  
+  if(debug==1)printf("\t***mortar***\n");
+  
+  *iwan=1;
   for (i=0;i<*ntie;i++){
     if(tieset[i*(81*3)+80]=='C'){
       FORTRAN(getcontactparams,(&mu,&regmode,&regmodet,&fkninv,&fktauinv,
 				&p0,&beta,tietol,elcon,&i,ncmat_,ntmat_,&k));
-      printf("\ttie %" ITGFORMAT " mu %e stsl %e  niwan %" ITGFORMAT
+      
+      if(debug==1)printf("\ttie %" ITGFORMAT " mu %e stsl %e  iwan %" ITGFORMAT
 	     " regmode %" ITGFORMAT " %" ITGFORMAT " kinv %e p0 %e beta %e \n",
 	     i+1,mu,1.0/fktauinv,k,regmode,regmodet,fkninv, p0, beta );
+      
       for(j=nslavnode[i];j<nslavnode[i+1];j++){
 	islavactdoftie[j]=i;
       }
-      if(mu>1.e-10 && regmodet==2){*iflag_fric=1;*niwan=max(*niwan,k);}
+      if(mu>1.e-10 && regmodet==2){*iflag_fric=1;*iwan=max(*iwan,k);}
     }
-  }	
-  printf("\tiflag_firc %" ITGFORMAT " niwan %" ITGFORMAT
-	 " \n \t************\n",*iflag_fric,*niwan);
+  }
+  
+  if(debug==1)printf("\tiflag_firc %" ITGFORMAT " iwan %" ITGFORMAT
+	 " \n \t************\n",*iflag_fric,*iwan);
+  
   if(*iflag_fric==1){
-    NNEW(lambdaiwan,double,3**niwan*nslavnode[*ntie]);
-    NNEW(lambdaiwanini,double,3**niwan*nslavnode[*ntie]);
+    NNEW(lambdaiwan,double,3**iwan*nslavnode[*ntie]);
+    NNEW(lambdaiwanini,double,3**iwan*nslavnode[*ntie]);
   }
   
   /* get results from last step */
@@ -371,16 +374,18 @@ void inimortar(double **enerp, ITG *mi, ITG *ne ,ITG *nslavs,ITG *nk,ITG *nener,
 	      cstress[mt*j+k]=xstate[*nstate_*mi[0]*(*ne+j)+k];
 	      xstate[*nstate_*mi[0]*(*ne+j)+k]=0.;		
 	    }
-	    if(xstate[*nstate_*mi[0]*(*ne+j)+3]>1.0 && xstate[*nstate_*mi[0]*(*ne+j)+3]<2.0){
+	    if(xstate[*nstate_*mi[0]*(*ne+j)+3]>1.0 &&
+	       xstate[*nstate_*mi[0]*(*ne+j)+3]<2.0){
 	      islavact[j]=1;
-	    }else if(xstate[*nstate_*mi[0]*(*ne+j)+3]>2.0 && xstate[*nstate_*mi[0]*(*ne+j)+3]<3.0){
+	    }else if(xstate[*nstate_*mi[0]*(*ne+j)+3]>2.0 &&
+		     xstate[*nstate_*mi[0]*(*ne+j)+3]<3.0){
 	      islavact[j]=2;
 	    }
 	    xstate[*nstate_*mi[0]*(*ne+j)+3]=0.;
 	    if(*iflag_fric==1){
-	      for(k=0;k<3**niwan;k++){
-		lambdaiwan[3**niwan*j+k]=xstate[*nstate_*mi[0]*(*ne+j)+4+k];
-		lambdaiwanini[3**niwan*j+k]=xstate[*nstate_*mi[0]*(*ne+j)+4+k];
+	      for(k=0;k<3**iwan;k++){
+		lambdaiwan[3**iwan*j+k]=xstate[*nstate_*mi[0]*(*ne+j)+4+k];
+		lambdaiwanini[3**iwan*j+k]=xstate[*nstate_*mi[0]*(*ne+j)+4+k];
 		xstate[*nstate_*mi[0]*(*ne+j)+4+k]=0.0;
 	      }
 	    }  
@@ -407,10 +412,13 @@ void inimortar(double **enerp, ITG *mi, ITG *ne ,ITG *nslavs,ITG *nk,ITG *nener,
       }			
     }
   }
+  
   /* coeffs for dual basis functions */
+  
   NNEW(pslavdual,double,64*itiefac[2**ntie-1]);
   
   /*  T and T^-1 and coupling matrices in nodes  */
+  
   NNEW(autloc,double, 3*nslavnode[*ntie]);
   NNEW(irowtloc,ITG,3*nslavnode[*ntie]);
   NNEW(jqtloc,ITG, *nk+1);	
@@ -463,9 +471,9 @@ void inimortar(double **enerp, ITG *mi, ITG *ne ,ITG *nslavs,ITG *nk,ITG *nener,
   }
   
   if(*iflagdualquad==3 ||*iflagdualquad==4){
-  NNEW(pslavdualpg,double,64*itiefac[2**ntie-1]);
+    NNEW(pslavdualpg,double,64*itiefac[2**ntie-1]);
   }else{
-  NNEW(pslavdualpg,double,64); 
+    NNEW(pslavdualpg,double,64); 
   }
   
   buildtquad(ntie,ipkon,kon,nk,lakon,nslavnode,itiefac,tieset,

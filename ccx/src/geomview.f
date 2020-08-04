@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -68,7 +68,9 @@
      &        label,imag,mi,emn)
          
          do jj=0,mcs-1
-            is=cs(1,jj+1)
+           is=int(cs(1,jj+1))
+c           write(*,*) 'geomview ',cs(1,jj+1)
+c            is=cs(1,jj+1)
 !     
             do i=1,is-1
                do l=1,nk

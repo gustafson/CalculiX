@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,9 +37,7 @@
      &  i,j,k,nodes(4),indexe,konl(26),nope,nsurfs,
      &  ifacew1(4,5),ifreemax
 !
-      intent(in) ne,ipkon,lakon,kon,nk
 !
-      intent(inout) ipoface,nodface,ipkonfa,konfa,lakonfa,nsurfs
 !
 !     nodes belonging to the element faces
 !

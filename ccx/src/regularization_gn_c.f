@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,33 +16,24 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-c>
-c> \brief regularization function for normal contact mortar
-c> see phd-thesis Sitzmann Chapter 3.2.1., semi-smooth Newton for normal contact 
-c>
-c> @param [in]	lambdap  	contact pressure in normal direction
-c> @param [in]	divmode 	indicates whether funtion or derivate 
-c>                             	should be called
-c>                    		=0 function called
-c>                   		 =1 derivative called    
-c> @param [in]	regmode        	selects regularization funtion
-c>                    		=1 perturbed Lagrange
-c>                    		=2 piece wise linear with given data points
-c>                    		=3 expontential contact law
-c> @param [out]	gnc        	result regularization function
-c> @param [in] 	aninvloc        stiffness constant for perturbed Lagrange
-c> @param [in] 	p0		parameter for exponential regularization
-c> @param [in] 	beta		parameter for exponential regularization
-c> @param [in] 	elcon		material parameters
-c> @param [in] 	nelcon		(1,i) number of elastic constants for material i (2,i) number of temperature points 
-c> @param [in] 	itie		current tie
-c> @param [in] 	ntmat_		 maximum number of temperature data points for any material
-c> @param [in] 	plicon		isotropic hardening curve or points for pressure-overclosure=tabular
-c> @param [in] 	nplicon		isotropic hardening curve. 
-c> @param [in] 	npmat_		maximum number of data points for plicon
-c> @param [in] 	ncmat_		maximum number of elastic material constants 
-c> @param [in] 	tietol		(1,i) tie tolerance (2,i) contant interaction material definition
-c>
+!
+!  regularization function for normal contact mortar
+! see phd-thesis Sitzmann Chapter 3.2.1., semi-smooth Newton for normal contact 
+!
+!  [in]lambdap  contact pressure in normal direction
+!  [in]divmode indicates whether function or derivate 
+!                             should be called
+!                    =0 function called
+!                    =1 derivative called    
+!  [in]regmode        selects regularization funtion
+!                    =1 perturbed Lagrange
+!                    =2 piece wise linear with given data points
+!                    =3 expontential contact law
+!  [out]gnc        result regularization function
+!  [in] aninvloc        stiffness constant for perturbed Lagrange
+!  [in] p0 parameter for exponential regularization
+!  [in] beta parameter for exponential regularization
+!
       subroutine regularization_gn_c(lambdap,divmode,regmode,
      &     gnc,aninvloc,p0,beta,elcon,nelcon,itie,ntmat_,
      &     plicon,nplicon,npmat_,ncmat_,tietol,scal)
@@ -56,12 +47,13 @@ c>
      &     itie,ntmat_,nplicon(0:ntmat_,*),nelcon(2,*),
      &     imat
 !     
-!     
       real*8 lambdap,gnc,pn_d(40),gn_d(40),aninv1(40),t(40),
      &     beta,p0,aninvloc,elconloc(21),plconloc(802),t1l,
      &     elcon(0:ncmat_,ntmat_,*),plicon(0:2*npmat_,ntmat_,*),
      &     tietol(3,*),scal
-      
+!
+!
+!      
       kode=-51
       t1l=0.0
       imat=int(tietol(2,itie+1))
@@ -129,17 +121,17 @@ c         ndata=int(plconloc(81))
 !
       else if (regmode.eq.3)then
          if(divmode.eq.0)then
-	    if(lambdap.gt.0.0)then
+            if(lambdap.gt.0.0)then
                gnc=scal*beta*log(((lambdap/scal)+p0)/p0)
-	    else
+            else
                gnc=beta/(p0)*lambdap
-	    endif
+            endif
          elseif(divmode.eq.1)then
-	    if(lambdap.gt.0.0)then
+            if(lambdap.gt.0.0)then
                gnc=beta/(lambdap+p0)
-	    else
+            else
                gnc=beta/(p0)
-	    endif
+            endif
          else
             write(*,*)'error in regularzation_gn_c.f!'
             call exit(201)

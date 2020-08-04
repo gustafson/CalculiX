@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -117,12 +117,7 @@
      &  area,co(3,*),coefmpc(*),sti(6,mi(1),*),xstate(nstate_,mi(1),*),
      &  xstateini(nstate_,mi(1),*),dtime
 !
-      intent(in) sol,kstep,kinc,time,noel,npt,coords,
-     &     jltyp,temp,press,loadtype,area,vold,co,lakonl,konl,
-     &     ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,mi,sti,
-     &     xstateini,xstate,nstate_,dtime
 !
-      intent(out) flux,iscale
 !
 !     Start of your own code.
 !

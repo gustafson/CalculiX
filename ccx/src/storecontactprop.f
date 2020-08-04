@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -53,10 +53,7 @@
      &     springmm,springms,elcon(0:ncmat_,ntmat_,*),springfac,
      &     xmacont,areaslav,xk,temax
 !     
-      intent(in) ne,ne0,lakon,kon,ipkon,mi,ielmat,elcon,mortar,
-     &     adb,nactdof,springarea,ncmat_,ntmat_,stx
       
-      intent(out) temax
 !     
 !     Initialization
 !

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -32,7 +32,7 @@ void predgmres_struct_mt(double *ad, double **aup, double *adb, double *aub,
       *nestart=NULL,*ja=NULL,nz_num;
 
   double *sb=NULL,*sx=NULL,*rgwk=NULL,tol,err,*rwork=NULL,*x=NULL,
-      *aupardiso=NULL,*au=NULL;
+    *aupardiso=NULL,*au=NULL,dgmrestol=1.e-12;
 
   au=*aup;
 
@@ -386,7 +386,7 @@ void predgmres_struct_mt(double *ad, double **aup, double *adb, double *aub,
 
   dgmresmain(neq,b,x,&nz_num,icolpardiso,ja,aupardiso,&isym,&itol,&tol,&itmax,
 	     &iter,&err,&ierr,&iunit,sb,sx,rgwk,&lrgw,igwk,&ligw,rwork,
-	     iwork,nestart,&num_cpus);
+	     iwork,nestart,&num_cpus,&dgmrestol);
 
   if(ierr>0){
       printf(" *WARNING in predgmres_struct_mt: error message from dgmresmain =%d\n\n",ierr);

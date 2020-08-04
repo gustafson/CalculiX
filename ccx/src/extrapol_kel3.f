@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,10 +30,7 @@
       real*8 xrlfa(3,*),gradkfa(3,*),gradkel(3,*),c(3,3),xxi(3,*),
      &  gradnor,xl1,xl2
 !
-      intent(in) ielfa,xrlfa,icyclic,ifatie,
-     &  gradkel,c,ipnei,xxi,nfacea,nfaceb,ncfd
 !
-      intent(inout) gradkfa
 ! 
       do i=nfacea,nfaceb
          iel1=ielfa(1,i)

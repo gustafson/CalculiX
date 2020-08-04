@@ -1,6 +1,6 @@
 
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -466,7 +466,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 
 	if(symmetryflagi4==0){
 	    printf(" Factoring the system of equations using the symmetric spooles solver\n");
-	}else if(symmetryflagi4==2){
+	}else if((symmetryflagi4==2)&&(*inputformat!=4)){
 	    printf(" Factoring the system of equations using the unsymmetric spooles solver\n");
 	}
 
@@ -593,7 +593,10 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 			InpMtx_inputRealEntry(mtxA, col, col, ad[col]);
 			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
 			    int row = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col, row,
+			    /* next change on 27.06.2020 */
+			    /*InpMtx_inputRealEntry(mtxA, col, row,
+						    au[ipo]);*/
+			    InpMtx_inputRealEntry(mtxA, row, col,
 						  au[ipo]);
 			}
 			ipoint = ipoint + icol[col];
@@ -604,7 +607,10 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 			InpMtx_inputRealEntry(mtxA, col, col, ad[col]-*sigma*adb[col]);
 			for (ipo = ipoint; ipo < ipoint + icol[col]; ipo++) {
 			    int row = irow[ipo] - 1;
-			    InpMtx_inputRealEntry(mtxA, col, row, 
+			    /* next change on 27.06.2020 */
+			    /* InpMtx_inputRealEntry(mtxA, col, row, 
+			       au[ipo]-*sigma*aub[ipo]);*/
+			    InpMtx_inputRealEntry(mtxA, row, col, 
 						  au[ipo]-*sigma*aub[ipo]);
 			}
 			ipoint = ipoint + icol[col];
@@ -614,8 +620,8 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 	        int row;
 	        for(row = 0; row < size; row++){
 		    for(ipo = irow[row]; ipo < irow[row+1]; ipo++){
-		        col = icol[ipo] - 1;
-			printf("spooles %d %d %d %f\n",ipo,row,col,au[ipo]);
+		        col = icol[ipo]-1;
+			//			printf("spooles %d %d %d %f\n",ipo,row,col,au[ipo]);
 		        InpMtx_inputRealEntry(mtxA, col, row, 
 					au[ipo]);
 		     }
@@ -708,7 +714,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 		factor(&pfi, mtxA, size, msgFile,&symmetryflagi4);
 	}
 #else
-	printf(" Using 1 cpu for spooles.\n\n");
+	//	printf(" Using 1 cpu for spooles.\n\n");
 	factor(&pfi, mtxA, size, msgFile,&symmetryflagi4);
 #endif
 }
@@ -1113,6 +1119,7 @@ void spooles_cleanup_rad()
 	fclose(msgFilf);
 }
 
+
 /** 
  * spooles: Main interface between Calculix and spooles:
  *
@@ -1135,6 +1142,9 @@ void spooles(double *ad, double *au, double *adb, double *aub, double *sigma,
 	return;
     }
 
+    /*    FORTRAN(spooles_write,(ad,au,adb,aub,sigma,b,icol,irow,neq,nzs,
+	  symmetryflag,inputformat,nzs3));*/
+    
   spooles_factor(ad,au,adb,aub,sigma,icol,irow,neq,nzs,symmetryflag,
 		 inputformat,nzs3);
   

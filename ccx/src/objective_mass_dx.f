@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,13 +45,7 @@
      &  thicke(mi(3),*),distmin,xmassel,g0(*),xmass(*),xdesi(3,*),
      &  dgdx(ndesi,nobject)
 !
-      intent(in) co,kon,ipkon,lakon,nelcon,rhcon,
-     &  ielmat,ielorien,norien,ntmat_,matname,mi,
-     &  thicke,mortar,nea,neb,ielprop,prop,distmin,
-     &  ndesi,nodedesi,nobject,iobject,
-     &  istartdesi,ialdesi,xdesi,idesvar
 !
-      intent(inout) g0,dgdx,xmass
 !
       include "gauss.f"
 !
@@ -132,7 +126,7 @@
                imat=ielmat(1,i)
                amat=matname(imat)
                if(norien.gt.0) then
-                  iorien=ielorien(1,i)
+                  iorien=max(0,ielorien(1,i))
                else
                   iorien=0
                endif
@@ -439,7 +433,7 @@ c     Bernhardi end
                      imat=ielmat(ilayer,i)
                      amat=matname(imat)
                      if(norien.gt.0) then
-                        iorien=ielorien(ilayer,i)
+                        iorien=max(0,ielorien(ilayer,i))
                      else
                         iorien=0
                      endif
@@ -501,7 +495,7 @@ c     Bernhardi end
                      imat=ielmat(ilayer,i)
                      amat=matname(imat)
                      if(norien.gt.0) then
-                        iorien=ielorien(ilayer,i)
+                        iorien=max(0,ielorien(ilayer,i))
                      else
                         iorien=0
                      endif

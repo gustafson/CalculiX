@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,11 +46,6 @@
      &     rhcon(0:1,ntmat_,*),vold(0:mi(2),*),eta,
      &     bc(*),cp,dvi,df(8),gastemp,f,g(3),r,rho,ts1,ts2
 !
-      intent(in) itg,ieg,ntg,nteq,bc,lakon,ntmat_,
-     &     v,shcon,nshcon,ipkon,kon,co,nflow, dtime,ttime,time,
-     &     ielmat,prop,ielprop,nactdog,nacteq,iin,physcon,
-     &     camt,camf,camp,rhcon,nrhcon,vold,jobnamef,set,istartset,
-     &     iendset,ialset,nset,mi,iaxial,istep,iit
 !     
       do i=1,132
          if(jobnamef(1)(i:i).eq.' ') exit

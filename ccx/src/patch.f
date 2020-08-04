@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -176,7 +176,7 @@
                pntdist=dsqrt(pgauss(1)*pgauss(1)
      &              +pgauss(2)*pgauss(2)
      &              +pgauss(3)*pgauss(3))
-               w=pntdist**-1.5d0
+               w=pntdist**(-1.5d0)
 !     
                do j=1,6
                   pdat(irow,j)=sti(j,ipnt,ielem)*w

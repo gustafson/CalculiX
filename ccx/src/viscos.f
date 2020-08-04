@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,6 +29,7 @@
 !             4: sgi solver
 !             5: TAUCS
 !             7: pardiso
+!             8: pastix
 !
       implicit none
 !
@@ -36,7 +37,7 @@
       character*20 solver
       character*132 textpart(16)
 !
-      integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
+      integer nmethod,iperturb(*),isolver,istep,istat,n,key,i,idrct,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),nelcon(2,*),
      &  nmat,ncmat_,ier
 !
@@ -46,7 +47,7 @@
       tmin=0.d0
       tmax=0.d0
 !
-      if((iperturb.eq.1).and.(istep.gt.1)) then
+      if((iperturb(1).eq.1).and.(istep.gt.1)) then
          write(*,*) '*ERROR reading *VISCO: perturbation analysis is'
          write(*,*) '       not provided in a *VISCO step. Perform'
          write(*,*) '       a genuine nonlinear geometric calculation'
@@ -77,6 +78,8 @@
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       do i=2,n
@@ -128,6 +131,8 @@
          isolver=5
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:6).eq.'PASTIX') then
+         isolver=8
       else
          write(*,*) '*WARNING reading *VISCO: unknown solver;'
          write(*,*) '         the default solver is used'
@@ -138,7 +143,7 @@
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         if(iperturb.ge.2) then
+         if(iperturb(1).ge.2) then
             write(*,*) '*WARNING reading *VISCO: a nonlinear analysis is
      & requested'
             write(*,*) '         but no time increment nor step is speci

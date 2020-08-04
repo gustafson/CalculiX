@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@
       character*8 lakonl,lakon(*) 
       character*20 sideload(*),sideloadl
 !
-      integer nope,i,ithermal(2),j,nelemload(2,*),nelemadvec,nload,id,
+      integer nope,i,ithermal(*),j,nelemload(2,*),nelemadvec,nload,id,
      &  nelem,ig,mint2d,iflag,istep,jltyp,nfield,mi(*),nmethod,k,iinc,
      &  node,nopes,iponoel(*),inoel(2,*),ielprop(*),ielmat(mi(3),*),
      &  ipkon(*),
@@ -45,12 +45,7 @@
      &  shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),cocon(0:6,ntmat_,*),
      &  xbody(7,*),heatnod,heatfac
 !
-      intent(in) nope,voldl,ithermal,xl,nelemload,nelemadvec,
-     &  nload,lakon,istep,time,ttime,dtime,sideload,vold,mi,
-     &  xloadold,reltime,nmethod,iinc,iponoel,inoel,ielprop,prop,
-     &  ielmat,shcon,nshcon,rhcon,nrhcon,ntmat_,ipkon,kon,cocon,ncocon
 !
-      intent(inout) xload,tnl
 !
       include "gauss.f"
 !

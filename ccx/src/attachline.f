@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine attachline(pneigh,pnode,nterms,xil,etl,xn)
+      subroutine attachline(pneigh,pnode,nterms,xil,etl,xn,p,dist)
 !
 !     returns the local coordinates in a face described by
 !     the nodal coordinates in pneigh(1..3,*) of the intersection
@@ -27,19 +27,17 @@
 !
       integer nterms,i,j,k,imin,jmin,im,jm
 !
-      real*8 pneigh(3,9),pnode(3),xi(-1:1,-1:1),
+      real*8 pneigh(3,9),pnode(3),xi(-1:1,-1:1),p(3),
      &  et(-1:1,-1:1),distmin,d1,dist,xil,etl,xn(3)
 !
-      intent(in) pneigh,nterms,xn,pnode
 !
-      intent(inout) xil,etl
 !
       d1=1.d0
 !
       xi(0,0)=0.d0
       et(0,0)=0.d0
       call distattachline(xi(0,0),et(0,0),pneigh,pnode,dist,
-     &     nterms,xn)
+     &     nterms,xn,p)
       distmin=dist
       imin=0
       jmin=0
@@ -64,7 +62,7 @@
      &              (et(i,j).le.1.d0).and.
      &              (et(i,j).ge.-1.d0)) then
                   call distattachline(xi(i,j),et(i,j),pneigh,pnode,
-     &                 dist,nterms,xn)
+     &                 dist,nterms,xn,p)
 !     
 !                 checking for smallest initial distance
 !     
@@ -112,7 +110,7 @@
      &                  (et(i,j).le.1.d0).and.
      &                  (et(i,j).ge.-1.d0)) then
                         call distattachline(xi(i,j),et(i,j),pneigh,
-     &                       pnode,dist,nterms,xn)
+     &                       pnode,dist,nterms,xn,p)
 !
 !                       check for new minimum
 !

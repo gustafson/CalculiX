@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,18 +24,20 @@
 !     
       real*8 pa(*),pb(*),xcp(*),t,xinters(*),diff,pab(3),
      &     eplane,tnull
-!     
+!
       do k=1,3
          pab(k)=pb(k)-pa(k)
-      enddo
+       enddo
+!       
       diff=0.d0
-      if(abs(eplane(pab,xcp,0)).lt.1.d-13)then
+      tnull=0.d0
+!      
+      if(abs(eplane(pab,xcp,tnull)).lt.1.d-13)then
          write(*,*) 'SH: IP no intersection point can be found'
          write(*,*) 'SH: IP pab paralell to plane! '
          call exit(201)
       else 
-         tnull=0.d0
-         diff=-eplane(pa, xcp,t)/eplane(pab,xcp,tnull)
+         diff=-eplane(pa,xcp,t)/eplane(pab,xcp,tnull)
       endif  
       do k=1,3
          xinters(k)=pa(k)+diff*pab(k)

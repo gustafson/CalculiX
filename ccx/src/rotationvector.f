@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,9 +24,7 @@
 !
       real*8 a(3,3),q(4),v(3),theta,length,pi
 !
-      intent(in) a
 !
-      intent(out) v
 !
 !     based on: J.M.P. van Waveren, From Quaternion to Matrix and Back
 !     February 27th 2005, Id Software, Inc.

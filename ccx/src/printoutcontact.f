@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  prset,ttime,nprint,prlab,mi,ipkon,kon,springarea,
      &  time,tieset,itiefac,ntie,pmastsurf)
 !
-!     calculation and printout of the lift and drag forces
+!     calculation and printout of the contact forces
 !
       implicit none
 !
@@ -38,9 +38,6 @@
      &  xsj2s(3),xs2s(3,7),darea,dt1,springarea(2,*),shp2s(7,9),
      &  pmastsurf(6,*),stx(6,mi(1),*)
 !
-      intent(in) co,vold,lakon,ne0,ne,pslavsurf,stx,
-     &  prset,ttime,nprint,prlab,mi,ipkon,kon,springarea,
-     &  time,tieset,itiefac,ntie,pmastsurf
 !
       include "gauss.f"
 !
@@ -51,7 +48,7 @@
 !
 !        check whether there are contact print requests
 !
-!        CFOR: forces and moments on a contact slave surface
+!        CF: forces and moments on a contact slave surface
 !
          if(prlab(ii)(1:2).eq.'CF')      
      &      then
@@ -228,10 +225,20 @@
 !           total force and moment about the origin
 !
             write(5,*)
-            write(5,126)
+            if(prlab(ii)(1:2).eq.'CF') then     
+              write(5,126)
+            elseif(prlab(ii)(1:3).eq.'CFN') then     
+              write(5,131)
+            elseif(prlab(ii)(1:3).eq.'CFS') then
+              write(5,132)
+            endif
 !     
  126        format('   total surface force (fx,fy,fz) ',
-     &           'and moment about the origin(mx,my,mz)')
+     &           'and moment about the origin (mx,my,mz)')
+ 131        format('   total normal surface force (fx,fy,fz) ',
+     &           'and its moment about the origin (mx,my,mz)')
+ 132        format('   total shear surface force (fx,fy,fz) ',
+     &           'and its moment about the origin (mx,my,mz)')
             write(5,*)
             write(5,'(2x,1p,6(1x,e13.6))') (f(j),j=1,3),(xm(j),j=1,3)
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
       integer kon(*),mi(*),
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,
-     &  istep,iinc,ne,ithermal(2),iprestr,
+     &  istep,iinc,ne,ithermal(*),iprestr,
      &  nener,norien,iperturb(*),iout,
      &  nal,icmd,nmethod,ielas,
      &  ncmat_,nstate_,ikin,ielprop(*),
@@ -56,17 +56,7 @@
      &  xstateini(nstate_,mi(1),*),reltime,
      &  thicke(mi(3),*),emeini(6,mi(1),*)
 !
-      intent(in) co,kon,ipkon,lakon,ne,v,
-     &  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,prestr,
-     &  iprestr,iperturb,iout,vold,nmethod,
-     &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
-     &  xstateini,xstate,npmat_,matname,mi,ielas,icmd,
-     &  ncmat_,nstate_,stiini,vini,enerini,istep,iinc,
-     &  reltime,calcul_fn,calcul_qa,calcul_cauchy,nener,
-     &  ikin,ne0,thicke,emeini,nelem,ielprop,prop
 !
-      intent(inout) nal,qa,fn,xstiff,ener,eme,eei,stx
 !
       if(lakon(nelem)(2:2).eq.'1') then
          call resultsmech_u1(co,kon,ipkon,lakon,ne,v,

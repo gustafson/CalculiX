@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
 !
       integer ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,nk,nk_,
      &  ikmpc(*),idir,indexmax,indexold(3),indexnew(3),nodeold,nodemax,
-     &  ilmpc(*),node,id,mpcfreeold,idof,l,nodeboun(*),iperturb(2),
+     &  ilmpc(*),node,id,mpcfreeold,idof,l,nodeboun(*),iperturb(*),
      &  ndirboun(*),ikboun(*),ilboun(*),nboun,nboun_,nnodes,nodevector,
      &  index,index1,node1,i,j,nkn,idirold,idirmax,noderef,idirref,
      &  nendnode

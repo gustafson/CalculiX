@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,19 +37,13 @@
      &  ikmpc(*),ilmpc(*),i,j,idir,nk,newnode,idof,id,mpcfreenew,
      &  ithermal(*),jstart,jend,nodeboun(*),ndirboun(*),ikboun(*),
      &  ilboun(*),nboun,nboun_,jact,knor(*),ntrans,inotr(2,*),
-     &  nnodes,nodeact,nmethod,nk_,k,iperturb(2),nam,indexk,
+     &  nnodes,nodeact,nmethod,nk_,k,iperturb(*),nam,indexk,
      &  iamplitude,idirref,iamboun(*),iflagpl
 !
       real*8 coefmpc(*),xboun(*),xta(3,100),co(3,*),trab(7,*),
      &     vold(0:mi(2)),val
 !
-      intent(in) nmpc_,nk,ithermal,i,nodeboun,ndirboun,
-     &  ikboun,nboun,nboun_,typeboun,xboun,xta,jact,
-     &  knor,ntrans,inotr,trab,vold,mi,nmethod,nk_,nam,iperturb,
-     &  indexk,iamboun,iflagpl
 !
-      intent(inout) ilboun,co,mpcfree,nodempc,coefmpc,ikmpc,ilmpc,
-     &  labmpc,nmpc,ipompc
 !
 !     generating a hinge at a node of a truss element                
 !

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -80,6 +80,9 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	       ITG *network,ITG *ntrans,ITG *inotr,double *trab,
 	       double *smscale,ITG *mscalmethod){
 
+  /* mafillsmmain = main program for MAtrix FILLing of the Stiffnes
+     Matrix */
+  
     ITG i,j,mt=mi[1]+1;
       
     /* variables for multithreading procedure */
@@ -173,10 +176,8 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
     /* allocating fields for mass and stiffness matrix */
 
-//    if(*buckling!=1){
-	NNEW(ad1,double,num_cpus*neq[1]);
-	NNEW(au1,double,(long long)num_cpus*nzs[2]);
-//    }
+    NNEW(ad1,double,num_cpus*neq[1]);
+    NNEW(au1,double,(long long)num_cpus*nzs[2]);
 
     if(*rhsi==1){
 	NNEW(fext1,double,num_cpus*neq[1]);
@@ -243,15 +244,10 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	ithread[i]=i;
 	pthread_create(&tid[i], NULL, (void *)mafillsmmt, (void *)&ithread[i]);
     }
-    for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
+    for(i=0; i<num_cpus; i++)
+      pthread_join(tid[i], NULL);
     
     SFREE(ithread);SFREE(neapar);SFREE(nebpar);
-
-    /*      for(i=0;i<num_cpus;i++){
-      for(k=i*neq[1];k<i*neq[1]+neq[1];++k){printf("fext=%" ITGFORMAT ",%f\n",k-i*neq[1],fext1[k]);}
-      for(k=i*neq[1];k<i*neq[1]+neq[1];++k){printf("ad=%" ITGFORMAT ",%f\n",k-i*neq[1],ad1[k]);}
-      for(k=i*nzs[2];k<i*nzs[2]+nzs[2];++k){printf("au=%" ITGFORMAT ",%f\n",k-i*nzs[2],au1[k]);}
-      }*/
 
     /* copying and accumulating the stiffnes and/or mass matrix 
        for buckling the matrices have to be added*/
@@ -384,10 +380,6 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	}
     }
     SFREE(nmethod1);
-      
-    /*     for(k=0;k<neq[1];++k){printf("fext=%" ITGFORMAT ",%f\n",k,fext[k]);}
-      for(k=0;k<neq[1];++k){printf("ad=%" ITGFORMAT ",%f\n",k,ad[k]);}
-      for(k=0;k<nzs[1];++k){printf("au=%" ITGFORMAT ",%f\n",k,au[k]);}*/
 
     /* taking point forces into account in fext */
 
@@ -413,10 +405,9 @@ void *mafillsmmt(ITG *i){
     indexaub=0;
     indexfnext=0;
 
-//    if(*buckling1!=1){
-	indexad=*i*neq1[1];
-	indexau=(long long)*i*nzs1[2];
-//    }
+    indexad=*i*neq1[1];
+    indexau=(long long)*i*nzs1[2];
+    
     if(*rhsi1==1){
 	indexfext=*i*neq1[1];
     }
@@ -430,29 +421,6 @@ void *mafillsmmt(ITG *i){
     if(nmethod1[0]==4){
 	indexfnext=*i*(mi1[1]+1)**nk1;
     }
-
-//    if((*nasym1==0)||(*ithermal1>1)){
-
-        /* symmetric mechanical calculations or
-           thermal/thermomechanical calculations:
-           include contact elements (symmetric
-           thermal contributions are not covered by
-           mafillsmas.f) */
-
-/*	nedelta=(ITG)floor(*ne1/(double)num_cpus);
-	nea=*i*nedelta+1;
-	neb=(*i+1)*nedelta;
-	if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
-	}else{*/
-
-        /* asymmetric mechanical calculations:
-           do not include contact elements */
-
-/*	nedelta=(ITG)floor(*ne01/(double)num_cpus);
-	nea=*i*nedelta+1;
-	neb=(*i+1)*nedelta;
-	if((*i==num_cpus-1)&&(neb<*ne01)) neb=*ne01;
-	}*/
 
     nea=neapar[*i]+1;
     neb=nebpar[*i]+1;

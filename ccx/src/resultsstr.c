@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -70,7 +70,8 @@ void resultsstr(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        ITG *islavnode,ITG *nslavnode,ITG *ntie,double *clearini,
        ITG *islavsurf,ITG *ielprop,double *prop,double *energyini,
        double *energy,ITG *kscale,ITG *nener,
-       char *orname,ITG *network,ITG *neapar,ITG *nebpar){
+       char *orname,ITG *network,ITG *neapar,ITG *nebpar,ITG *ipobody,
+       ITG *ibody,double *xbody,ITG *nbody){
 
     char *tieset=NULL;
   
@@ -253,7 +254,8 @@ void resultsstr(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
        cdn,mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
        veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,orname,
-       xload,itiefac,pmastsurf,springarea,tieset));
+       xload,itiefac,pmastsurf,springarea,tieset,ipobody,ibody,xbody,
+       nbody));
   
   return;
 

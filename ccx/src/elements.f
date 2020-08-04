@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  set,istartset,iendset,ialset,nset,nset_,nalset,nalset_,mi,
      &  ixfree,iponor,xnor,istep,istat,n,iline,ipol,inl,ipoinp,inp,
      &  iaxial,ipoinpc,solid,network,filab,nlabel,out3d,iuel,
-     &  nuel_,ier)
+     &  nuel_,ier,iparentel)
 !
 !     reading the input deck: *ELEMENT
 !
@@ -39,21 +39,22 @@
      &  nteller,j,ipkon(*),nkon,nope,indexe,mi(*),ipos,indexy,ixfree,
      &  iponor(2,*),nopeexp,iline,ipol,inl,ipoinp(2,*),inp(3,*),
      &  iaxial,ipoinpc(0:*),nlabel,network,iuel(4,*),nuel_,
-     &  id,four,number,ndof,intpoints,ier
+     &  id,four,number,ndof,intpoints,ier,iparentel(*),iparent
 !
       real*8 xnor(*)
 !
-      if(istep.gt.0) then
-         write(*,*) '*ERROR reading *ELEMENT: *ELEMENT should be placed'
-         write(*,*) '  before all step definitions'
-         ier=1
-         return
-      endif
+c      if(istep.gt.0) then
+c         write(*,*) '*ERROR reading *ELEMENT: *ELEMENT should be placed'
+c         write(*,*) '  before all step definitions'
+c         ier=1
+c         return
+c      endif
 !
       indexy=-1
       ielset=0
       beamshell=.false.
       four=4
+      iparent=0
 !
       label='        '
 !
@@ -281,6 +282,13 @@ c               cfd=1
                beamshell=.true.
             endif
 !
+         elseif(textpart(i)(1:7).eq.'PARENT=') then
+            read(textpart(i)(8:17),'(i10)',iostat=istat) iparent
+            if(istat.gt.0) then
+               call inputerror(inpc,ipoinpc,iline,
+     &              "*ELEMENT%",ier)
+               return
+            endif
          else
             write(*,*) 
      &        '*WARNING reading *ELEMENT: parameter not recognized:'
@@ -488,6 +496,8 @@ c         read(label(2:3),'(i2)',iostat=istat) number
             enddo
          endif
          ne=max(ne,i)
+!
+         if(iparent.gt.0) iparentel(i)=iparent
 !
 !        assigning element to set
 !

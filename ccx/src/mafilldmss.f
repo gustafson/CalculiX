@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -51,7 +51,7 @@
      &  ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
      &  ipkon(*),intscheme,ipobody(2,*),nbody,
      &  ibody(3,*),nk,ne,nmpc,nload,neq(2),nmethod,
-     &  ithermal(2),iperturb(*),i,j,k,l,m,idist,jj,
+     &  ithermal(*),iperturb(*),i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
      &  mpc1,mpc2,index1,index2,node1,node2,kflag,icalccg,ndamp,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,imat,
@@ -72,23 +72,7 @@
      &  time,thicke(mi(3),*),doubleglob(*),clearini(3,9,*),damping,
      &  pslavsurf(3,*),pmastsurf(6,*),freq,elas(21),dacon(*)
 !
-      intent(in) co,nk,kon,ipkon,lakon,ne,
-     &  ipompc,nodempc,coefmpc,nmpc,
-     &  nelemload,sideload,nload,xbody,ipobody,nbody,
-     &  nactdof,jq,irow,neq,
-     &  ikmpc,ilmpc,elcon,nelcon,rhcon,
-     &  nrhcon,alcon,nalcon,alzero,ielmat,ielorien,norien,orab,ntmat_,
-     &  t0,t1,ithermal,vold,iperturb,sti,stx,iexpl,plicon,
-     &  nplicon,plkcon,nplkcon,xstiff,npmat_,dtime,
-     &  matname,mi,ncmat_,
-     &  physcon,ttime,time,istep,iinc,
-     &  ibody,xloadold,reltime,veold,nstate_,
-     &  xstateini,thicke,integerglob,doubleglob,
-     &  tieset,istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
-     &  mortar,clearini,ielprop,prop,nea,neb,freq
 !
-      intent(inout) ad,au,xload,nmethod,cgr,springarea,
-     &  xstate,ne0
 !
       one=1
 !

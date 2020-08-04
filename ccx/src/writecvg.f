@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -23,12 +23,12 @@
 !
 !     writes convergence information in the .cvg-file
 !
-      integer istep,iinc,iit,ne,ne0,ithermal,icutb
+      integer istep,iinc,iit,ne,ne0,ithermal(*),icutb
 !
       real*8 ram(*),qam(*),cam(*),uam(*),residforce,corrdisp,
      &  residflux,corrtemp
 !
-      if(ithermal.eq.2) then
+      if(ithermal(1).eq.2) then
          residforce=0.d0
          corrdisp=0.d0
       else
@@ -53,7 +53,7 @@
          endif
       endif
 !     
-      if(ithermal.le.1) then
+      if(ithermal(1).le.1) then
          residflux=0.d0
          corrtemp=0.d0
       else

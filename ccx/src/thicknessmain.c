@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                     */
+/*              Copyright (C) 1998-2020 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -21,18 +21,6 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "CalculiX.h"
-#ifdef SPOOLES
-#include "spooles.h"
-#endif
-#ifdef SGI
-#include "sgi.h"
-#endif
-#ifdef TAUCS
-#include "tau.h"
-#endif
-#ifdef PARDISO
-#include "pardiso.h"
-#endif
 
 static char *objectset1;
 

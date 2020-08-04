@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,10 +30,7 @@
      &  xk,fk,val,xiso(200),yiso(200),plicon(0:2*npmat_,ntmat_,*),
      &  senergy
 !
-      intent(in) imat,elcon,nelcon,ncmat_,ntmat_,t1l,val,
-     &  kode,plicon,nplicon,npmat_,nener
 !
-      intent(inout) senergy,fk
 !     
 !     interpolating the material data
 !     

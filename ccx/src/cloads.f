@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@
      &  iamforc(*),nam,iamplitude,ntrans,inotr(2,*),ipos,ikforc(*),
      &  ilforc(*),nk,iline,ipol,inl,ipoinp(2,*),inp(3,*),nam_,namtot,
      &  namtot_,namta(3,*),idelay,lc,nmethod,ndirforc(*),isector,
-     &  iperturb,iaxial,ipoinpc(0:*),maxsectors,jsector,idefforc(*),
+     &  iperturb(*),iaxial,ipoinpc(0:*),maxsectors,jsector,idefforc(*),
      &  iglobstep,ipompc(*),nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),
      &  iamplitudedefault,ier
 !
@@ -156,7 +156,7 @@ c            call reorderampl(amname,namta,nam)
      &              "*CLOAD%",ier)
                return
             endif
-            if((nmethod.le.3).or.(iperturb.gt.1)) then
+            if((nmethod.le.3).or.(iperturb(1).gt.1)) then
                write(*,*) '*ERROR reading *CLOAD: the parameter SECTOR'
                write(*,*) '       is only allowed in MODAL DYNAMICS or'
                write(*,*) '       STEADY STATE DYNAMICS calculations'

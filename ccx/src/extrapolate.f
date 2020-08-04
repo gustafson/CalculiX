@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -53,11 +53,7 @@
      &  xsj2(3),shp2(7,8),thicke(mi(3),*),coloc(3,8),
      &  xwedge(2,2,9),a14(8,14),a6(6,6)
 !
-      intent(in) yi,ipkon,kon,lakon,nfield,nk,
-     &  ne,mi,ndim,orab,ielorien,co,iorienloc,cflag,
-     &  vold,force,ielmat,thicke,ielprop,prop
 !
-      intent(inout) yn,inum
 !
       include "gauss.f"
 !
@@ -432,7 +428,7 @@
      &        ((lakonl(7:8).eq.'LC').or.(ielorien(1,i).ne.0))) then
 !
             if(lakonl(7:8).ne.'LC') then
-               iorien=ielorien(1,i)
+               iorien=max(0,ielorien(1,i))
 !david -start
             elseif(lakonl(4:5).eq.'20') then
 !     
@@ -595,7 +591,7 @@
 !     
 !                    material and orientation
 !     
-                     iorien=ielorien(ilayer,i)
+                     iorien=max(0,ielorien(ilayer,i))
                   endif
                elseif(lakon(i)(4:4).eq.'2') then
                   xi=gauss3d3(1,j)
@@ -649,7 +645,7 @@
 !     
 !                    material and orientation
 !     
-                     iorien=ielorien(ilayer,i)
+                     iorien=max(0,ielorien(ilayer,i))
                   endif
                elseif(lakon(i)(1:4).eq.'C3D6') then
                   xi=gauss3d7(1,j)

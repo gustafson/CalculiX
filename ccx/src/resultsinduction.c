@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -71,7 +71,7 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        double *xloadold,ITG *icfd,ITG *inomat,double *h0,ITG *islavnode,
        ITG *nslavnode,ITG *ntie,ITG *ielprop,double *prop,ITG *iactive,
        double *energyini,double *energy,ITG *iponoel,ITG *inoel,char *orname,
-       ITG *network,ITG *ipobody,double *xbody,ITG *ibody){
+       ITG *network,ITG *ipobody,double *xbody,ITG *ibody,ITG *nbody){
       
     /* variables for multithreading procedure */
     
@@ -314,7 +314,8 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
        nshcon,cocon,ncocon,ntmat_,sideload,icfd,inomat,pslavsurf,islavact,
        cdn,&mortar,islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
        veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,orname,
-       xload,itiefac,pmastsurf,springarea,tieset));
+       xload,itiefac,pmastsurf,springarea,tieset,ipobody,ibody,xbody,
+       nbody));
   
   return;
 

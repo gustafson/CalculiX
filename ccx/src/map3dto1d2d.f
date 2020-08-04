@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,10 +40,7 @@
      &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,ze,co(3,*),xs(3,7),
      &  vold(0:mi(2),*),ratioe(3),weight,prop(*),xil,etl
 !
-      intent(in) ipkon,kon,lakon,nfield,nk,
-     &  ne,cflag,co,vold,force,mi
 !
-      intent(inout) yn,inum
 !
       include "gauss.f"
 !

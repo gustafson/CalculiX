@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,9 +42,7 @@
       real*8 shp(7,7),xs(3,7),xsi(2,3),xl(3,7),sh(3),xsj(3),a,b,
      &  bxi,bet,bxixi,bxiet,betet,xi,et
 !
-      intent(in) xi,et,xl,iflag
 !
-      intent(out) shp,xs,xsj
 !
 !     shape functions and their glocal derivatives for an element
 !     described with two local parameters and three global ones.

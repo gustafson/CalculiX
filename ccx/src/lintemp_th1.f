@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,9 +31,7 @@
 !
       real*8 vold(0:mi(2),*),t1l,a20l(20,27)
 !
-      intent(in) vold,konl,nope,jj,mi
 !
-      intent(inout) t1l
 !                        
       a20l=reshape((
      &/-0.088729832,-0.240369600,-0.059630393,-0.240369600,-0.240369600,

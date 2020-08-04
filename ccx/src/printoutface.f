@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine printoutface(co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
-     &  cocon,ncocon,icompressible,istartset,iendset,ipkonf,lakonf,konf,
+     &  cocon,ncocon,compressible,istartset,iendset,ipkonf,lakonf,konf,
      &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,
      &  ithermal,nactdoh,icfd,time,stn)
 !
@@ -25,7 +25,7 @@
 !
       implicit none
 !
-      integer icompressible
+      integer compressible
 !
       character*8 lakonl,lakonf(*)
       character*6 prlab(*)
@@ -35,8 +35,8 @@
       integer konl(20),ifaceq(8,6),nelem,ii,nprint,i,j,i1,i2,j1,
      &  ncocon(2,*),k1,jj,ig,nrhcon(*),nshcon(*),ntmat_,nope,nopes,imat,
      &  mint2d,ifacet(6,4),ifacew(8,5),iflag,indexe,jface,istartset(*),
-     &  iendset(*),ipkonf(*),konf(*),iset,ialset(*),nset,ipos,ithermal,
-     &  mi(*),ielmat(mi(3),*),nactdoh(*),icfd,nelemcfd
+     &  iendset(*),ipkonf(*),konf(*),iset,ialset(*),nset,ipos,
+     &  mi(*),ielmat(mi(3),*),nactdoh(*),icfd,nelemcfd,ithermal(*)
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(0:3),time,
      &  vkl(0:3,3),rhcon(0:1,ntmat_,*),t(3,3),div,shcon(0:3,ntmat_,*),
@@ -47,10 +47,6 @@
      &  tf(0:3),tn,tt,dd,coords(3),cond,stn(6,*),xm(3),df(3),cg(3),
      &  area,xn(3),xnormforc,shearforc
 !
-      intent(in) co,rhcon,nrhcon,ntmat_,vold,shcon,nshcon,
-     &  cocon,ncocon,icompressible,istartset,iendset,ipkonf,lakonf,konf,
-     &  ialset,prset,ttime,nset,set,nprint,prlab,ielmat,mi,
-     &  ithermal,nactdoh,icfd,time,stn
 !
       include "gauss.f"
       include "xlocal.f"
@@ -438,7 +434,7 @@ c               write(*,*) 'printoutface elem ig ',nelem,ig
                            enddo
                         enddo
                      enddo
-                     if(icompressible.eq.1)
+                     if(compressible.eq.1)
      &                      div=vkl(1,1)+vkl(2,2)+vkl(3,3)
 !     
 !     material data (density, dynamic viscosity, heat capacity and
@@ -453,7 +449,7 @@ c               write(*,*) 'printoutface elem ig ',nelem,ig
                         do j1=1,3
                            t(i1,j1)=vkl(i1,j1)+vkl(j1,i1)
                         enddo
-                        if(icompressible.eq.1) 
+                        if(compressible.eq.1) 
      &                       t(i1,i1)=t(i1,i1)-2.d0*div/3.d0
                      enddo
 !     

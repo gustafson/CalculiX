@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
       character*1 local
       character*6 prlab(*)
 !
-      integer ithermal,node,ii,j,inotr(2,*),ntrans,mi(*)
+      integer ithermal(*),node,ii,j,inotr(2,*),ntrans,mi(*)
 !
       real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),rftot(0:3),trab(7,*),
      &  co(3,*),a(3,3),veold(0:mi(2),*)
@@ -75,7 +75,7 @@
          endif
       elseif((prlab(ii)(1:4).eq.'NT  ').or.
      &       (prlab(ii)(1:4).eq.'TS  ')) then
-         if(ithermal.le.1) then
+         if(ithermal(1).le.1) then
             write(5,'(i10,1x,1p,e13.6)') node,
      &           t1(node)
          else

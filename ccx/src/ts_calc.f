@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,9 +42,7 @@
      &     deltaTs,TtzTs_crit, Qred_crit,Qred,h1,h2,h3,Ts_min,
      &     Ts_max,f_min,f_max
 !
-      intent(in) xflow,Tt,pt,kappa,r,A,icase
 !
-      intent(inout) Ts
 !
 !     regula falsi flag (rf=0 newton-raphson is active, 
 !     rf=1 regula falsi is active)

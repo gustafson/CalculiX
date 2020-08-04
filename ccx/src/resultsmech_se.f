@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,7 +42,7 @@
       integer kon(*),konl(26),nea,neb,mi(*),mint2d,nopes,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,null,
-     &  istep,iinc,mt,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
+     &  istep,iinc,mt,ne,mattyp,ithermal(*),iprestr,i,j,k,m1,m2,jj,
      &  i1,m3,m4,kk,nener,indexe,nope,norien,iperturb(*),iout,
      &  icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,ielprop(*),
@@ -74,19 +74,7 @@
      &  fn0(0:mi(2),*),dfn(0:mi(2),*),hglf(3,4),ahr,
      &  dxstiff(27,mi(1),ne,*),xdesi(3,*)
 !
-      intent(in) co,kon,ipkon,lakon,ne,v,
-     &  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,prestr,
-     &  iprestr,eme,iperturb,fn,iout,vold,nmethod,
-     &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
-     &  xstateini,xstate,npmat_,matname,mi,ielas,icmd,
-     &  ncmat_,nstate_,stiini,vini,ener,eei,enerini,istep,iinc,
-     &  springarea,reltime,calcul_fn,calcul_cauchy,nener,
-     &  ikin,ne0,thicke,emeini,pslavsurf,
-     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,
-     &  idesvar,nodedesi,sti,icoordinate,ialdesi,xdesi
 !
-      intent(inout) dfn,fn0,dxstiff,xstiff
 !
       include "gauss.f"
 !
@@ -166,7 +154,7 @@
             imat=ielmat(1,i)
             amat=matname(imat)
             if(norien.gt.0) then
-               iorien=ielorien(1,i)
+               iorien=max(0,ielorien(1,i))
             else
                iorien=0
             endif
@@ -566,7 +554,7 @@ c     Bernhardi end
                   imat=ielmat(ilayer,i)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,i)
+                     iorien=max(0,ielorien(ilayer,i))
                   else
                      iorien=0
                   endif
@@ -627,7 +615,7 @@ c     Bernhardi end
                   imat=ielmat(ilayer,i)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,i)
+                     iorien=max(0,ielorien(ilayer,i))
                   else
                      iorien=0
                   endif

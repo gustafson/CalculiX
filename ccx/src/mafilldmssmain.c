@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -244,7 +244,7 @@ void *mafilldmssmt(ITG *i){
     indexau=0;
 
     indexad=*i*neq1[1];
-    indexau=(long long)*i*nzs1[2];
+    indexau=(long long)*i*nzs1[1];
 
     nea=neapar[*i]+1;
     neb=nebpar[*i]+1;

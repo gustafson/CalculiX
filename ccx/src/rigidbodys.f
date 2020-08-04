@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
      &  ilmpc(*),ipkon(*),kon(*),inoset,ielset,i,node,ielement,id,
      &  indexe,nope,istep,istat,n,irefnode,irotnode,ne_,
      &  j,idof,k,nodeboun(*),ndirboun(*),ikboun(*),ilboun(*),
-     &  nboun,nboun_,key,iperturb,ipos,iline,ipol,inl,ipoinp(2,*),
+     &  nboun,nboun_,key,iperturb(*),ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ipoinpc(0:*),jmin,jmax,ier
 !
       real*8 coefmpc(3,*),ctrl(*),co(3,*)
@@ -58,7 +58,7 @@
 !     the *RIGID BODY option implies a nonlinear geometric 
 !     calculation
 !
-      if(iperturb.eq.1) then
+      if(iperturb(1).eq.1) then
          write(*,*) '*ERROR reading *RIGID BODY: the *RIGID BODY option'
          write(*,*) '       cannot be used in a perturbation step'
          ier=1

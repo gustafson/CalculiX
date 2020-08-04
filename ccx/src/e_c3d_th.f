@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -49,7 +49,7 @@
       character*80 matname(*),amat
 !
       integer konl(26),ifaceq(8,6),nelemload(2,*),nk,nelem,nmethod,
-     &  mattyp,ithermal(2),iperturb,nload,idist,i,j,k,i1,j1,l,m,
+     &  mattyp,ithermal(*),iperturb(*),nload,idist,i,j,k,i1,j1,l,m,
      &  ii,jj,id,ipointer,ig,kk,istiff,iperm(20),ipompc(*),mi(*),
      &  nrhcon(*),ielmat(mi(3),*),ielorien(mi(3),*),nodempc(3,*),nmpc,
      &  ntmat_,nope,nopes,norien,iexpl,imat,mint2d,ikmpc(*),
@@ -77,19 +77,7 @@
 !
       real*8 dtime,physcon(*)
 !
-      intent(in) co,nk,kon,lakonl,
-     &  nelem,rhcon,nrhcon,ielmat,ielorien,norien,orab,
-     &  ntmat_,t0,t1,ithermal,vold,iperturb,nelemload,
-     &  sideload,nload,idist,iexpl,dtime,
-     &  matname,mi,mass,stiffness,buckling,rhsi,intscheme,
-     &  physcon,shcon,nshcon,cocon,ncocon,ttime,time,istep,iinc,
-     &  xstiff,xloadold,reltime,
-     &  ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,
-     &  plkcon,nplkcon,npmat_,ncmat_,elcon,nelcon,lakon,
-     &  pslavsurf,pmastsurf,mortar,clearini,plicon,nplicon,ipkon,
-     &  ielprop,prop
 !
-      intent(inout) s,sm,ff,xload,nmethod,springarea
 !
       include "gauss.f"
 !
@@ -123,7 +111,7 @@
       imat=ielmat(1,nelem)
       amat=matname(imat)
       if(norien.gt.0) then
-         iorien=ielorien(1,nelem)
+         iorien=max(0,ielorien(1,nelem))
       else
          iorien=0
       endif

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -73,11 +73,8 @@
       nnodesd=0
       do i=1,ne
          if(ipkon(i).lt.0) cycle
-cccc
-c         if(lakon(i)(1:2).ne.'D ') cycle
          if(lakon(i)(1:1).ne.'D') cycle
          if((lakon(i)(2:2).eq.' ').or.(network.eq.1)) cycle
-cccc
          indexe=ipkon(i)
          do j=1,3,2
             node=kon(indexe+j)

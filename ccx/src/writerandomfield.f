@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,32 +16,25 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine writerandomfield(d,nev,abserr,relerr)
+      subroutine writerandomfield(d,relerr,imodes)
 !
-!     writes the eigenvalues and the error measures of 
-!     the randomfield in the .dat file
+!     writes the error measures of the randomfield in the .dat file
 !
       implicit none
 !
-      integer iobject,i,nev
-      real*8 d(*),abserr,relerr
+      integer imodes
+      real*8 d,relerr
 !
-      write(5,*)
-      write(5,*) 'EIGENVALUES OF MODESHAPES OF RANDOMFIELD'  
-      write(5,*)
-      do i=nev,1,-1
-         write(5,'(7x,e14.7)') d(i)
-      enddo
+      if(imodes.eq.1) then
+         write(5,*)
+         write(5,*) 'SPECTRAL DECOMPOSITION OF RANDOMFIELD'
+         write(5,*) 'MODESHAPE   EIGENVALUE   GLOBAL RELIABILITY'  
+         write(5,*)
+         write(5,'(1x,i3.3,6x,e13.4,e13.4)') imodes,d,relerr
+      else
+         write(5,'(1x,i3.3,6x,e13.4,e13.4)') imodes,d,relerr
+      endif
 !
-      write(5,*)
-      write(5,*) 'ABSOLUTE ERROR W.R.T. THE VARIANCE OF THE RANDOMFIELD'
-      write(5,*)
-      write(5,'(7x,e14.7)') abserr
-      write(5,*)
-      write(5,*) 'RELATIVE ERROR W.R.T. THE VARIANCE OF THE RANDOMFIELD'
-      write(5,*)
-      write(5,'(7x,e14.7)') relerr
-
       return
       end
 

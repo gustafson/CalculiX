@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,7 +38,7 @@
       character*132 textpart(16)
 !
       integer istep,istat,n,key,ii,jout(2),joutl,nmethod,nener,
-     &  ithermal,ier,
+     &  ithermal(*),ier,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),j,nlabel,nam,itpamp,i,
      &  idrct,ipoinpc(0:*),nef,ifile_output,ipos,nset
 !
@@ -406,7 +406,7 @@
                   filab(8)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'HFL ') then
-               if((ithermal.le.1).and.(nmethod.le.7)) then
+               if((ithermal(1).le.1).and.(nmethod.le.7)) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: HFL only makes '
                   write(*,*) '         sense for heat transfer '
@@ -417,7 +417,7 @@
                   filab(9)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'RFL ') then
-               if(ithermal.le.1) then
+               if(ithermal(1).le.1) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: RFL only makes '
                   write(*,*) '         sense for heat transfer '

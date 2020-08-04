@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,13 +44,7 @@
      &  xxj(3,*),a1,a2,a3,flux(*),xxnj(3,*),xxni(3,*),difcoef,
      &  gradkel(3,*),gradoel(3,*),f1(*),of2(*),term,constant
 !
-      intent(in) nef,ipnei,neifa,neiel,vfa,xxn,area,gradkel,
-     &  jq,irow,nzs,vel,umfa,alet,ale,gradofa,xxi,gradoel,
-     &  body,volume,ielfa,lakonf,ifabou,nbody,neq,sc,
-     &  dtimef,velo,veloo,cvfa,hcfa,cvel,gradvel,xload,xrlfa,
-     &  xxj,nactdohinv,a1,a2,a3,flux,nefa,nefb,iturbulent,f1,of2
 !
-      intent(inout) au,ad,b
 !
       do i=nefa,nefb
 !

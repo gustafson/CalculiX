@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,11 +31,7 @@
      &  iedgextfa(2,*),ifacexted(3,*),n1,n2,n3,indexe,iedg(3,*),
      &  iexternedg(*),ipoed(*),iedge
 !
-      intent(in) ifreefa,itetfa,ifac,kontet,kontetor,ipoed,iedg,
-     &  iexternedg
 !
-      intent(inout) nexternfa,iexternfa,ifacext,ialsetexternel,
-     &  nexternel,iedgextfa,ifacexted
 !
 !     local node numbers of the nodes belonging to the 4 faces
 !     of a tetrahedron. From the middle nodes 4 is subtracted,

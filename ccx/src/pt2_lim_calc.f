@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,12 +56,12 @@
             i=i+1
 !     
             f=x**(-1.d0)-cte*x**(expon1)
-     &           *(2.d0/km1*(x**expon3-1.d0))**-0.5d0
+     &           *(2.d0/km1*(x**expon3-1.d0))**(-0.5d0)
 !     
             df=-1.d0/X**2-cte*(x**expon1
-     &           *(2.d0/km1*(x**expon3-1.d0))**-0.5d0)
+     &           *(2.d0/km1*(x**expon3-1.d0))**(-0.5d0))
      &           *(expon1/X-1.d0/km1*expon3*x**(expon3-1.d0)
-     &           *(2.d0/km1*(x**expon3-1.d0))**-1.d0)
+     &           *(2.d0/km1*(x**expon3-1.d0))**(-1.d0))
             
             delta_x=-f/df
 !     
@@ -90,15 +90,15 @@
             expon1=kp1/(zeta*kappa)
             expon2=km1/(zeta*kappa)
             expon3=kp1/km1
-            cte=a2a1**2*(0.5d0*kp1)**-expon3*(2.d0/km1)**-1.d0
-            fact1=x**-expon1
-            fact2=x**-expon2
+            cte=a2a1**2*(0.5d0*kp1)**(-expon3)*(2.d0/km1)**(-1.d0)
+            fact1=x**(-expon1)
+            fact2=x**(-expon2)
             term=fact2-1.d0
 !     
             f=x**(-2.d0)-cte*fact1*term**(-1.d0)
 !     
-            df=-2.d0*x**(-3.d0)-cte*(x**(-expon1-1.d0)*term**-1.d0)
-     &           *(-expon1+expon2*(X**-expon2)*fact2*term**-1.d0)
+            df=-2.d0*x**(-3.d0)-cte*(x**(-expon1-1.d0)*term**(-1.d0))
+     &           *(-expon1+expon2*(X**(-expon2))*fact2*term**(-1.d0))
 !     
             delta_x=-f/df
 !     

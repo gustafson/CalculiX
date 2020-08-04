@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,12 +46,7 @@
      &     shcon(0:3,ntmat_,*),rhcon(0:1,ntmat_,*),zeta_phi,Aeff,
      &     C2,tdkp1
 !
-      intent(in) node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &     nactdog,ielprop,iflag,v,cp,r,physcon,dvi,set,
-     &     shcon,nshcon,rhcon,nrhcon,ntmat_,mi,ttime,time,
-     &     iaxial,co,vold
 !
-      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi,prop
 !     
       phi=0.d0
       index=ielprop(nelem)
@@ -770,7 +765,7 @@
 !                 pressure node1
 !     
                   df(1)=-fact1/pt1*dsqrt(root)
-     &                 *(expon1+0.5d0*dsqrt(2/km1)*expon2*fact2/root)
+     &                 *(expon1+expon3*fact2/root)
 !     
 !                 temperature node1
 !     
@@ -784,7 +779,7 @@
 !     
                   df(4)=-xflow*sqrt/(A2*pt2**2)
      &                 -fact1/pt2*dsqrt(root)*
-     &                 (-expon1-0.5d0*dsqrt(2/km1)*expon2*fact2/root)
+     &                 (-expon1-expon3*fact2/root)
 !     
                else
                   write(*,*) 

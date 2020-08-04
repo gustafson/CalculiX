@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,13 +48,7 @@
      &  shcon(0:3,ntmat_,*),vel(nef,0:7),a1,a2,a3,
      &  xrlfa(3,*),gamma(*),flux(*),xxicn(3,*)
 !
-      intent(in) nef,lakonf,ipnei,neifa,neiel,vfa,area,
-     &  advfa,xlet,cosa,volume,jq,irow,ielfa,ifabou,xle,
-     &  xxn,nzs,hfa,gradpel,xxi,neij,
-     &  xlen,cosb,ielmatf,mi,a1,a2,a3,velo,veloo,dtimef,shcon,
-     &  ntmat_,vel,nactdohinv,xrlfa,flux,gamma
 !
-      intent(inout) ad,au,b,ap,bp
 !
       do i=nefa,nefb
          imat=ielmatf(1,i)

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,7 +41,7 @@
       integer kon(*),konl(26),nea,neb,mi(*),mint2d,nopes,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,null,kscale,
-     &  istep,iinc,mt,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
+     &  istep,iinc,mt,ne,mattyp,ithermal(*),iprestr,i,j,k,m1,m2,jj,
      &  i1,m3,m4,kk,nener,indexe,nope,norien,iperturb(*),iout,
      &  nal,icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,ielprop(*),
@@ -70,20 +70,7 @@
      &  pslavsurf(3,*),pmastsurf(6,*),smscale(*),sum1,sum2,
      &  scal,enerscal,elineng(6)
 !
-      intent(in) co,kon,ipkon,lakon,ne,v,
-     &  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielorien,norien,orab,ntmat_,t0,t1,ithermal,
-     &  iprestr,iperturb,iout,vold,nmethod,
-     &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
-     &  xstateini,xstate,npmat_,matname,mi,ielas,icmd,
-     &  ncmat_,nstate_,stiini,vini,enerini,istep,iinc,
-     &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,nener,
-     &  ikin,ne0,thicke,pslavsurf,
-     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale,
-     &  list,ilist,smscale,mscalmethod
 !
-      intent(inout) nal,qa,fn,xstiff,ener,eme,eei,stx,ielmat,prestr,
-     &  emeini,enerscal
 !
       include "gauss.f"
 !
@@ -141,7 +128,7 @@
             imat=ielmat(1,i)
             amat=matname(imat)
             if(norien.gt.0) then
-               iorien=ielorien(1,i)
+               iorien=max(0,ielorien(1,i))
             else
                iorien=0
             endif
@@ -464,7 +451,7 @@ c         write(*,*) 'resultsmech ',i,lakonl,mint3d
                   imat=ielmat(ilayer,i)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,i)
+                     iorien=max(0,ielorien(ilayer,i))
                   else
                      iorien=0
                   endif
@@ -525,7 +512,7 @@ c         write(*,*) 'resultsmech ',i,lakonl,mint3d
                   imat=ielmat(ilayer,i)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,i)
+                     iorien=max(0,ielorien(ilayer,i))
                   else
                      iorien=0
                   endif
@@ -907,7 +894,7 @@ c               enddo
 !           subtracting the initial strains
 !
             if(iprestr.eq.2) then
-               if(istrainfree==0) then
+               if(istrainfree.eq.0) then
                   do m1=1,6
                      emec(m1)=emec(m1)-prestr(m1,jj,i)
                   enddo

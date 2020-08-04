@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,13 +46,7 @@
      &  plkcon(0:2*npmat_,ntmat_,*),pressure,dtemp,flowm(2),
      &  constant,coords(3),conductance
 !
-      intent(in) xl,voldl,imat,elcon,nelcon,
-     &  ncmat_,ntmat_,nope,lakonl,kode,plicon,
-     &  nplicon,npmat_,springarea,nmethod,mi,
-     &  reltime,jfaces,igauss,pslavsurf,pmastsurf,clearini,matname,
-     &  plkcon,nplkcon,node,noel,istep,iinc
 !
-      intent(inout) s,elconloc
 !
       iflag=1
 !     

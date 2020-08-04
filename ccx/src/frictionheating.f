@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,11 +42,7 @@
      &  areamast,pslavsurf(3,*),value,velm(3),um,xloadact(2,*),weight,
      &  shear,vnorm,f,eta,timeend(2),time,ttime,coords(3),xl(3,20)
 !
-      intent(in) ne0,ne,ipkon,lakon,ielmat,mi,elcon,
-     &  ncmat_,ntmat_,kon,islavsurf,pmastsurf,springarea,co,vold,
-     &  veold,pslavsurf,nload_,stx,nam,time,ttime,matname,istep,iinc 
 !
-      intent(inout) iamload,xloadact,sideload,idefload,nelemload,nload
 !
       include "gauss.f"
 !

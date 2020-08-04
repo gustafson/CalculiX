@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -25,40 +25,36 @@
 
 static char *lakon1,*sideload1,*matname1,*tieset1;
 
-static ITG *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,
-    *ipompc1,*nodempc1,*nmpc1,*nodeforc1,*ndirforc1,*nforc1,*nelemload1,
-    *nload1,*ipobody1,*nbody1,*nactdof1,*icol1,*jq1,*irow1,*neq1,
-    *nzl1,*nmethod1=NULL,*ikmpc1,*ilmpc1,*ikboun1,*ilboun1,*nelcon1,
+static ITG *nk1,*kon1,*ipkon1,*ne1,
+    *ipompc1,*nodempc1,*nmpc1,*nelemload1,
+    *nload1,*ipobody1,*nbody1,*nactdof1,*jq1,*irow1,*neq1,
+    *nmethod1=NULL,*ikmpc1,*ilmpc1,*nelcon1,
     *nrhcon1,*nalcon1,*ielmat1,*ielorien1,*norien1,*ntmat1_,*ithermal1,
-    *iprestr1,*iperturb1,*nzs1,*iexpl1,*nplicon1,*nplkcon1,*npmat1_,
+    *iperturb1,*nzs1,*iexpl1,*nplicon1,*nplkcon1,*npmat1_,
     *mi1,*ncmat1_,*mass1,*stiffness1,*buckling1,*rhsi1,*intscheme1,
-    *nshcon1,*ncocon1,*istep1,*iinc1,*coriolis1,*ibody1,*nstate1_,
+    *istep1,*iinc1,*coriolis1,*ibody1,*nstate1_,
     *integerglob1,*istartset1,*iendset1,*ialset1,*ntie1,*nasym1,
-    *mortar1,*ielprop1,*ne01,num_cpus,*kscale1,*iponoel1,*inoel1,
-    *network1,*neapar=NULL,*nebpar=NULL,
-    *irowtloc1,*jqtloc1,*islavelinv1,*islavsurf1,
-    *nslavnode1, *islavnode1;
+    *mortar1,*ielprop1,*ne01,num_cpus,*kscale1,*iprestr1,
+    *neapar=NULL,*nebpar=NULL,*irowtloc1,*jqtloc1,*islavelinv1;
 
-static double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*cgr1,
+static double *co1,*coefmpc1,*xload1,*xbody1,*cgr1,
     *ad1=NULL,*au1=NULL,*fext1=NULL,*elcon1,*rhcon1,*alcon1,*alzero1,
     *orab1,*t01,*t11,*prestr1,*vold1,*sti1,*stx1,*adb1=NULL,*aub1=NULL,
-    *plicon1,*plkcon1,*xstiff1,*dtime1,*physcon1,*shcon1,*cocon1,
+    *plicon1,*plkcon1,*xstiff1,*dtime1,*physcon1,
     *ttime1,*time1,*xloadold1,*reltime1,*veold1,*springarea1,
     *xstateini1,*xstate1,*thicke1,*doubleglob1,*pslavsurf1,*pmastsurf1,
     *clearini1,*prop1,*fnext1=NULL,
     *autloc1;
 
 void mafillsmmain_dstil(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
-	       ITG *ne,ITG *nodeboun,ITG *ndirboun,double *xboun, 
-	       ITG *nboun,ITG *ipompc,ITG *nodempc,double *coefmpc, 
+	       ITG *ne,ITG *ipompc,ITG *nodempc,double *coefmpc, 
 	       ITG *nmpc,ITG *nodeforc,ITG *ndirforc,
 	       double *xforc,ITG *nforc,ITG *nelemload,char *sideload,
 	       double *xload,ITG *nload,double *xbody,ITG *ipobody,
 	       ITG *nbody,double *cgr,
 	       double *ad,double *au,double *fext,ITG *nactdof, 
 	       ITG *icol,ITG *jq,ITG *irow,ITG *neq,ITG *nzl, 
-	       ITG *nmethod,ITG *ikmpc,ITG *ilmpc,ITG *ikboun, 
-	       ITG *ilboun,
+	       ITG *nmethod,ITG *ikmpc,ITG *ilmpc,
 	       double *elcon,ITG *nelcon,double *rhcon,ITG *nrhcon,
 	       double *alcon,ITG *nalcon,double *alzero,ITG *ielmat,
 	       ITG *ielorien,ITG *norien,double *orab,ITG *ntmat_,
@@ -103,8 +99,6 @@ void mafillsmmain_dstil(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	sys_cpus=atoi(envsys);
 	if(sys_cpus<0) sys_cpus=0;
     }
-
-//    sys_cpus=1;
 
     /* automatic detection of available number of processors */
 
@@ -178,10 +172,8 @@ void mafillsmmain_dstil(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 
     /* allocating fields for mass and stiffness matrix */
 
-//    if(*buckling!=1){
-	NNEW(ad1,double,num_cpus*neq[1]);
-	NNEW(au1,double,(long long)num_cpus*nzs[2]);
-//    }
+    NNEW(ad1,double,num_cpus*neq[1]);
+    NNEW(au1,double,(long long)num_cpus*nzs[2]);
 
     if(*rhsi==1){
 	NNEW(fext1,double,num_cpus*neq[1]);
@@ -208,25 +200,21 @@ void mafillsmmain_dstil(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     /* calculating the stiffness and/or mass matrix 
        (symmetric part) */
 
-    co1=co;nk1=nk;kon1=kon;ipkon1=ipkon;lakon1=lakon;ne1=ne;
-    nodeboun1=nodeboun;ndirboun1=ndirboun;xboun1=xboun;
-    nboun1=nboun;ipompc1=ipompc;nodempc1=nodempc;coefmpc1=coefmpc;
-    nmpc1=nmpc;nodeforc1=nodeforc;ndirforc1=ndirforc;xforc1=xforc;
-    nforc1=nforc;nelemload1=nelemload;sideload1=sideload;xload1=xload;
+    co1=co;kon1=kon;ipkon1=ipkon;lakon1=lakon;ne1=ne;
+    ipompc1=ipompc;nodempc1=nodempc;coefmpc1=coefmpc;
+    nmpc1=nmpc;nelemload1=nelemload;sideload1=sideload;xload1=xload;
     nload1=nload;xbody1=xbody;ipobody1=ipobody;nbody1=nbody;
-    cgr1=cgr;nactdof1=nactdof;icol1=icol;jq1=jq;irow1=irow;neq1=neq;
-    nzl1=nzl;ikmpc1=ikmpc;ilmpc1=ilmpc;ikboun1=ikboun;
-    ilboun1=ilboun;elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;
+    cgr1=cgr;nactdof1=nactdof;jq1=jq;irow1=irow;neq1=neq;
+    ikmpc1=ikmpc;ilmpc1=ilmpc;elcon1=elcon;nelcon1=nelcon;rhcon1=rhcon;
     nrhcon1=nrhcon;alcon1=alcon;nalcon1=nalcon;alzero1=alzero;
     ielmat1=ielmat;ielorien1=ielorien;norien1=norien;orab1=orab;
-    ntmat1_=ntmat_;t01=t0;t11=t1;ithermal1=ithermal;prestr1=prestr;
-    iprestr1=iprestr;vold1=vold;iperturb1=iperturb;sti1=sti;nzs1=nzs;
+    ntmat1_=ntmat_;t01=t0;t11=t1;ithermal1=ithermal;
+    iprestr1=iprestr;vold1=vold;iperturb1=iperturb;sti1=sti;
     stx1=stx;iexpl1=iexpl;plicon1=plicon;nplicon1=nplicon;
     plkcon1=plkcon;nplkcon1=nplkcon;xstiff1=xstiff;npmat1_=npmat_;
     dtime1=dtime;matname1=matname;mi1=mi;ncmat1_=ncmat_;mass1=mass;
     stiffness1=stiffness;buckling1=buckling;rhsi1=rhsi;intscheme1=intscheme;
-    physcon1=physcon;shcon1=shcon;nshcon1=nshcon;cocon1=cocon;
-    ncocon1=ncocon;ttime1=ttime;time1=time;istep1=istep;iinc1=iinc;
+    physcon1=physcon;ttime1=ttime;time1=time;istep1=istep;iinc1=iinc;
     coriolis1=coriolis;ibody1=ibody;xloadold1=xloadold;reltime1=reltime;
     veold1=veold;springarea1=springarea;nstate1_=nstate_;xstateini1=xstateini;
     xstate1=xstate;thicke1=thicke;integerglob1=integerglob;
@@ -234,10 +222,8 @@ void mafillsmmain_dstil(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     iendset1=iendset;ialset1=ialset;ntie1=ntie;nasym1=nasym;
     pslavsurf1=pslavsurf;pmastsurf1=pmastsurf;mortar1=mortar;
     clearini1=clearini;ielprop1=ielprop;prop1=prop;ne01=ne0;kscale1=kscale;
-    iponoel1=iponoel;inoel1=inoel;network1=network; 
-    islavelinv1=islavelinv;islavsurf1=islavsurf;
-    autloc1=autloc;jqtloc1=jqtloc;irowtloc1=irowtloc;
-    nslavnode1=nslavnode;islavnode1=islavnode;
+    islavelinv1=islavelinv;autloc1=autloc;irowtloc1=irowtloc;jqtloc1=jqtloc;
+    nzs1=nzs;
 
     /* calculating the stiffness/mass */
     
@@ -250,15 +236,10 @@ void mafillsmmain_dstil(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	ithread[i]=i;
 	pthread_create(&tid[i], NULL, (void *)mafillsmmt_dstil, (void *)&ithread[i]);
     }
-    for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
+    for(i=0; i<num_cpus; i++)
+      pthread_join(tid[i], NULL);
     
     SFREE(ithread);SFREE(neapar);SFREE(nebpar);
-
-    /*      for(i=0;i<num_cpus;i++){
-      for(k=i*neq[1];k<i*neq[1]+neq[1];++k){printf("fext=%" ITGFORMAT ",%f\n",k-i*neq[1],fext1[k]);}
-      for(k=i*neq[1];k<i*neq[1]+neq[1];++k){printf("ad=%" ITGFORMAT ",%f\n",k-i*neq[1],ad1[k]);}
-      for(k=i*nzs[2];k<i*nzs[2]+nzs[2];++k){printf("au=%" ITGFORMAT ",%f\n",k-i*nzs[2],au1[k]);}
-      }*/
 
     /* copying and accumulating the stiffnes and/or mass matrix 
        for buckling the matrices have to be added*/
@@ -391,10 +372,6 @@ void mafillsmmain_dstil(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	}
     }
     SFREE(nmethod1);
-      
-    /*     for(k=0;k<neq[1];++k){printf("fext=%" ITGFORMAT ",%f\n",k,fext[k]);}
-      for(k=0;k<neq[1];++k){printf("ad=%" ITGFORMAT ",%f\n",k,ad[k]);}
-      for(k=0;k<nzs[1];++k){printf("au=%" ITGFORMAT ",%f\n",k,au[k]);}*/
 
     /* taking point forces into account in fext */
 
@@ -437,55 +414,29 @@ void *mafillsmmt_dstil(ITG *i){
     if(nmethod1[0]==4){
 	indexfnext=*i*(mi1[1]+1)**nk1;
     }
-    
-//    if((*nasym1==0)||(*ithermal1>1)){
-
-        /* symmetric mechanical calculations or
-           thermal/thermomechanical calculations:
-           include contact elements (symmetric
-           thermal contributions are not covered by
-           mafillsmas.f) */
-
-/*	nedelta=(ITG)floor(*ne1/(double)num_cpus);
-	nea=*i*nedelta+1;
-	neb=(*i+1)*nedelta;
-	if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;
-	}else{*/
-
-        /* asymmetric mechanical calculations:
-           do not include contact elements */
-
-/*	nedelta=(ITG)floor(*ne01/(double)num_cpus);
-	nea=*i*nedelta+1;
-	neb=(*i+1)*nedelta;
-	if((*i==num_cpus-1)&&(neb<*ne01)) neb=*ne01;
-	}*/
 
     nea=neapar[*i]+1;
     neb=nebpar[*i]+1;
 
-    FORTRAN(mafillsm_dstil,(co1,nk1,kon1,ipkon1,lakon1,ne1,nodeboun1,ndirboun1,
-	    xboun1,nboun1,
-	    ipompc1,nodempc1,coefmpc1,nmpc1,nodeforc1,ndirforc1,xforc1,
-	    nforc1,nelemload1,sideload1,xload1,nload1,xbody1,ipobody1,
+    FORTRAN(mafillsm_dstil,(co1,kon1,ipkon1,lakon1,ne1,
+	    ipompc1,nodempc1,coefmpc1,nmpc1,
+	    nelemload1,sideload1,xload1,nload1,xbody1,ipobody1,
 	    nbody1,cgr1,&ad1[indexad],&au1[indexau],&fext1[indexfext],
-	    nactdof1,icol1,jq1,irow1,neq1,nzl1,&nmethod1[*i],
-	    ikmpc1,ilmpc1,ikboun1,ilboun1,
+	    nactdof1,jq1,irow1,neq1,&nmethod1[*i],ikmpc1,ilmpc1,
 	    elcon1,nelcon1,rhcon1,nrhcon1,alcon1,nalcon1,alzero1,ielmat1,
 	    ielorien1,norien1,orab1,ntmat1_,
-	    t01,t11,ithermal1,prestr1,iprestr1,vold1,iperturb1,sti1,
-	    nzs1,stx1,&adb1[indexadb],&aub1[indexaub],iexpl1,plicon1,
+	    t01,t11,ithermal1,iprestr1,vold1,iperturb1,sti1,
+	    stx1,&adb1[indexadb],&aub1[indexaub],iexpl1,plicon1,
             nplicon1,plkcon1,nplkcon1,
 	    xstiff1,npmat1_,dtime1,matname1,mi1,
             ncmat1_,mass1,stiffness1,buckling1,rhsi1,intscheme1,physcon1,
-            shcon1,nshcon1,cocon1,ncocon1,ttime1,time1,istep1,iinc1,coriolis1,
+            ttime1,time1,istep1,iinc1,coriolis1,
 	    ibody1,xloadold1,reltime1,veold1,springarea1,nstate1_,
             xstateini1,xstate1,thicke1,integerglob1,doubleglob1,
 	    tieset1,istartset1,iendset1,ialset1,ntie1,nasym1,pslavsurf1,
 	    pmastsurf1,mortar1,clearini1,ielprop1,prop1,ne01,
-	    &fnext1[indexfnext],&nea,&neb,kscale1,iponoel1,inoel1,network1,
-            nslavnode1,islavnode1,islavsurf1,islavelinv1,
-            autloc1, irowtloc1,jqtloc1));
+	    &fnext1[indexfnext],&nea,&neb,kscale1,
+            islavelinv1,autloc1,irowtloc1,jqtloc1));
 
     return NULL;
 }

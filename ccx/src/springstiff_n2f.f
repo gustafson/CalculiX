@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -50,12 +50,7 @@
      &  overlap,pres,dpresdoverlap,overclosure,orab(7,*),
      &  xn1(3),xn2(3),a(3,3)
 !
-      intent(in) xl,konl,voldl,imat,elcon,nelcon,ielorien,orab,
-     &  ncmat_,ntmat_,nope,lakonl,t1l,kode,plicon,norien,nelem,
-     &  nplicon,npmat_,iperturb,nmethod,mi,ne0,
-     &  nstate_,xstateini,reltime,nasym
 !
-      intent(inout) s,xstate,elas,springarea,elconloc
 !
       iflag=4
 !
@@ -171,7 +166,7 @@
          idof=nint(elcon(3,1,imat))
 !
          if(norien.gt.0) then
-            iorien=ielorien(1,nelem)
+            iorien=max(0,ielorien(1,nelem))
          else
             iorien=0
          endif
@@ -230,7 +225,7 @@
          idof2=nint(elcon(4,1,imat))
 !
          if(norien.gt.0) then
-            iorien=ielorien(1,nelem)
+            iorien=max(0,ielorien(1,nelem))
          else
             iorien=0
          endif

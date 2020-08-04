@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,15 +43,15 @@
       character*20 labmpc(*),label
 !
       integer nk,nk_,iponoel(*),inoel(3,*),iponoelmax,kon(*),ipkon(*),
-     &  ne,iponor(2,*),knor(*),rig(*),iperturb,ipompc(*),nodempc(3,*),
+     &  ne,iponor(2,*),knor(*),rig(*),iperturb(*),ipompc(*),
      &  nmpc,nmpc_,mpcfree,ikmpc(*),ilmpc(*),ikboun(*),ilboun(*),nboun,
      &  nboun_,nodeboun(*),ndirboun(*),iamboun(*),nam,ntrans,inotr(2,*),
      &  isol,istep,idummy,mi(*),icomposite,ielmat(mi(3),*),nkold,
      &  i,ndepnodes,index,nexp,nnor,nel,ielem,indexe,j,iel(100),idmpc,
      &  jl(100),ial(100),ifi(100),idepnodes(800),indexx,k,l,ifix,nemin,
      &  jact,ixfree,ikfree,node,nelshell,irefnode,idof,id,mpcfreeold,
-     &  irotnode,imax,iamplitude,nmethod,ithermal(2),iexpnode,idim,
-     &  iflagpl
+     &  irotnode,imax,iamplitude,nmethod,ithermal(*),iexpnode,idim,
+     &  iflagpl,nodempc(3,*)
 !
       real*8 co(3,*),thicke(mi(3),*),offset(2,*),xnor(*),tinc,tper,tmin,
      &  tmax,ctrl(*),coefmpc(*),xboun(*),trab(7,*),vold(0:mi(2),*),

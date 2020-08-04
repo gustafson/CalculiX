@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -118,7 +118,7 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
+      integer ithermal(*),icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
      &  i,j,ipiv(6),info,neq,lda,ldb,j1,j2,j3,j4,j5,j6,j7,j8,
      &  nrhs,iplas,kel(4,21),nmethod,ielastic,iloop
 !
@@ -127,7 +127,7 @@
      &  q1,q2(6),stri(6),htri,sg(6),r(13),au1(21),au2(21),
      &  ee(6),dd,gl(6,6),gr(6,6),c0,c1,c2,c3,c4,c5,c6,pnewdt,
      &  skl(3,3),gcreep,gm1,ya(3,3,3,3),d1,d2,dsg,detc,strinv,
-     &  elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
+     &  elconloc(*),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
      &  time,ttime,xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
@@ -210,7 +210,7 @@
       ca=c0/(elconloc(13)*(ttime+time-dtime)**elconloc(15)*dtime)
       cn=elconloc(14)
 !
-      if((ca.lt.0.d0).or.((nmethod.eq.1).and.(ithermal.ne.3))) then
+      if((ca.lt.0.d0).or.((nmethod.eq.1).and.(ithermal(1).ne.3))) then
          visco=0
       else
          visco=1

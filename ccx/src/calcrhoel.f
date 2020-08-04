@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
 !
       implicit none
 !
-      integer nef,i,nrhcon(*),imat,ithermal,ntmat_,mi(*),
+      integer nef,i,nrhcon(*),imat,ithermal(*),ntmat_,mi(*),
      &  ielmat(mi(3),*)
 !
       real*8 t1l,vel(nef,0:7),rhcon(0:1,ntmat_,*)

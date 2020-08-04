@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
       character*1 inpc(*)
       character*132 textpart(16)
 !
-      integer nmethod,iperturb,istep,istat,n,key,iline,ipol,inl,
+      integer nmethod,iperturb(*),istep,istat,n,key,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ipoinpc(0:*),ier
 !
       real*8 tper
@@ -42,7 +42,7 @@
       write(*,*) '*WARNING: no analysis option was chosen'
 !
       nmethod=0
-      iperturb=0
+      iperturb(1)=0
       tper=1.d0
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

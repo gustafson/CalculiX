@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -119,7 +119,7 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
+      integer ithermal(*),icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
      &  i,j,ipiv(6),info,neq,lda,ldb,j1,j2,j3,j4,j5,j6,j7,j8,
      &  nrhs,iplas,kel(4,21),iloop,leximp,lend,layer,kspt,kstep,
      &  kinc,ii,nmethod
@@ -129,7 +129,7 @@
      &  skl(3,3),gcreep,gm1,ya(3,3,3,3),dsg,detc,strinv,depvisc,
      &  depq,svm,dsvm,dg1,dg2,fu,fu1,fu2,expon,ec(2),pnewdt,
      &  timeabq(2),r1(13),ep1(6),gl1(6,6),sg1(6),ckl(3,3),
-     &  elconloc(21),stiff(21),emec(6),emec0(6),beta(6),stre(6),
+     &  elconloc(*),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xokl(3,3),voj,pgauss(3),orab(7,*),
      &  time,ttime,decra(5),deswa(5),serd,esw(2),p,predef(1),dpred(1),
      &  dtemp,xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
@@ -142,7 +142,7 @@
       leximp=1
       lend=3
 !
-      if(ithermal.eq.0) then
+      if(ithermal(1).eq.0) then
          write(*,*)'*ERROR in umat_aniso_creep: no temperature defined;'
          write(*,*) '       a creep calculation without temperature'
          write(*,*) '       does not make sense'
@@ -263,7 +263,7 @@
       endif
 !
       if((iplas.eq.0).or.(ielas.eq.1).or.(dtime.lt.1.d-30).or.
-     &                   ((nmethod.eq.1).and.(ithermal.ne.3))) then
+     &                   ((nmethod.eq.1).and.(ithermal(1).ne.3))) then
 !
 !        elastic stress
 !

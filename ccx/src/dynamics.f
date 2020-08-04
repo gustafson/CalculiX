@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,6 +29,7 @@
 !             4: sgi solver
 !             5: TAUCS
 !             7: pardiso
+!             8: pastix
 !
 !      iexpl==0:  structure:implicit, fluid:incompressible
 !      iexpl==2:  structure:explicit, fluid:incompressible
@@ -39,8 +40,8 @@
       character*20 solver
       character*132 textpart(16)
 !
-      integer nmethod,istep,istat,n,key,i,iperturb,idrct,iexpl,
-     &  isolver,iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,
+      integer nmethod,istep,istat,n,key,i,iperturb(*),idrct,iexpl,
+     &  isolver,iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal(*),
      &  ipoinpc(0:*),nef,nener,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha(*),ctrl(*),tincf
@@ -58,13 +59,13 @@
 !
 !     no heat transfer analysis
 !
-      if(ithermal.gt.1) then
-         ithermal=1
+      if(ithermal(1).gt.1) then
+         ithermal(1)=1
       endif
 !
 !     only nonlinear analysis allowed for this procedure
 !
-      if(iperturb.lt.2) iperturb=2
+      if(iperturb(1).lt.2) iperturb(1)=2
 !
 !     default values
 !
@@ -90,6 +91,8 @@
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       do i=2,n
@@ -140,6 +143,8 @@
          isolver=5
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:6).eq.'PASTIX') then
+         isolver=8
       else
          write(*,*) '*WARNING reading *DYNAMIC: unknown solver;'
          write(*,*) '         the default solver is used'
@@ -148,7 +153,7 @@
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         if((iperturb.ge.2).or.(nef.gt.0)) then
+         if((iperturb(1).ge.2).or.(nef.gt.0)) then
             write(*,*)'*WARNING reading *DYNAMIC: a nonlinear analysis i
      &s requested'
             write(*,*) '         but no time increment nor step is speci

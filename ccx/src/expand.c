@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-Dimensional finite element program                   */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -464,7 +464,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      &mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 	      islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
 	      inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
-	      itiefac,tieset,smscale,&mscalmethod);
+	      itiefac,tieset,smscale,&mscalmethod,nbody);
 	    
 	}
 	SFREE(eei);

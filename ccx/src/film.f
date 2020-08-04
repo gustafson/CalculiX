@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -150,7 +150,7 @@
       integer kstep,kinc,noel,npt,jltyp,nfield,node,mi(*),ipkon(*),
      &  kon(*),iponoel(*),inoel(2,*),ielprop(*),ielmat(mi(3),*),ntmat_,
      &  nshcon(*),nrhcon(*),ncocon(2,*),nodem,indexprop,indexe,
-     &  iel1,iel2,ielup,iit,imat,icase,ithermal,ipobody(2,*),
+     &  iel1,iel2,ielup,iit,imat,icase,itherm,ipobody(2,*),
      &  ibody(3,*)
 !
       real*8 h(2),sink,time(2),coords(3),temp,field(nfield),area,
@@ -159,14 +159,8 @@
      &  xks,xkappa,xlambda,f,cp,A,D,form_fact,xbody(7,*),heatnod,
      &  heatfac
 !
-      intent(in) temp,kstep,kinc,time,noel,npt,
-     &  coords,jltyp,field,nfield,loadtype,node,area,vold,mi,
-     &  ipkon,kon,lakon,iponoel,inoel,ielprop,prop,ielmat,shcon,
-     &  nshcon,rhcon,nrhcon,ntmat_,ipobody,ibody,xbody
 !
-      intent(out) h,heatnod,heatfac
 !
-      intent(inout) sink
 !
       if((node.eq.0).or.(iponoel(node).eq.0)) then
 !
@@ -324,9 +318,9 @@
             Ts=Tt
             call materialdata_cp(imat,ntmat_,Ts,shcon,nshcon,cp)
 !
-            ithermal=2
+            itherm=2
             call materialdata_dvi(shcon,nshcon,imat,um,Ts,ntmat_,
-     &           ithermal)
+     &           itherm)
 !
          endif
 !

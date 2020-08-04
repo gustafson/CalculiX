@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,10 +30,7 @@
 !     
       real*8 cam(5),vold(0:mi(2),*),v(0:mi(2),*),xloadact(2,*)
 !
-      intent(in) ntg,itg,v,nload,sideload,
-     &     nelemload,nactdog,network,mi,ne,ipkon,lakon,kon
 !
-      intent(inout) cam,vold,xloadact
 !     
 !     calculating the change of gas temperature: is taken
 !     into account in the global convergence for purely

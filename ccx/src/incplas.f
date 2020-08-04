@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,11 +39,11 @@
 !
       character*80 amat
 !
-      integer ithermal,icmd,i,j,kode,ivisco,ielastic,
+      integer ithermal(*),icmd,i,j,kode,ivisco,ielastic,
      &  niso,nkin,ielas,iel,iint,nstate_,mi(*),id,leximp,lend,layer,
      &  kspt,kstep,kinc,iloop,nmethod,user_hardening,user_creep
 !
-      real*8 elconloc(21),elas(21),emec(6),beta(6),stre(6),
+      real*8 elconloc(*),elas(21),emec(6),beta(6),stre(6),
      &  vj,plconloc(802),stbl(6),stril(6),xitril(6),
      &  ee,un,um,al,xk,cop,umb,umbb,dxitril,f0,d0,f1,d1,d2,xg(3,3),
      &  xs(3,3),xx(3,3),xn(3,3),xd(3,3),cpl(6),c(6),ci(6),
@@ -125,7 +125,7 @@ ccc         write(*,*) '*WARNING in incplas: deformation inside-out'
 !     check whether the user activated a viscous calculation
 !     (*VISCO instead of *STATIC)
 !
-      if((nmethod.ne.1).or.(ithermal.eq.3)) then
+      if((nmethod.ne.1).or.(ithermal(1).eq.3)) then
          ivisco=1
       else
          ivisco=0
@@ -583,7 +583,7 @@ c         write(*,*) 'no plastic deformation'
      &           (-c1*dfiso-umbb*(2.d0+c3*dfkin))
          else
             if(user_creep.eq.1) then
-               if(ithermal.eq.0) then
+               if(ithermal(1).eq.0) then
 ccc                  write(*,*) '*ERROR in incplas: no temperature defined'
                   call exit(201)
                endif

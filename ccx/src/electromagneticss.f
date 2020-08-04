@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,6 +28,8 @@
 !             4: sgi solver
 !             5: TAUCS
 !             7: pardiso
+!             8: pastix
+!
 !
       implicit none
 !
@@ -38,8 +40,8 @@
       character*132 textpart(16)
 !
       integer nmethod,iperturb(*),isolver,istep,istat,n,key,i,idrct,nev,
-     &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),mei(4),ncv,mxiter,
-     &  ipoinpc(0:*),idirect,iheat,ier
+     &  ithermal(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),mei(4),ncv,
+     &  mxiter,ipoinpc(0:*),idirect,iheat,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha(*),fei(3),tol,fmin,fmax,ctrl(*),
      &  ttime
@@ -89,6 +91,8 @@
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       idirect=2
@@ -140,14 +144,14 @@
 !
       if(nmethod.eq.9) then
          if(iheat.eq.1) then
-            if(ithermal.eq.0) then
+            if(ithermal(1).eq.0) then
                write(*,*) 
      &        '*ERROR reading *ELECTROMAGNETICS: please define initial '
                write(*,*) '       conditions for the temperature'
                ier=1
                return
             endif
-            ithermal=3
+            ithermal(1)=3
          endif
       endif
 !
@@ -167,6 +171,8 @@
             isolver=5
          elseif(solver(1:7).eq.'PARDISO') then
             isolver=7
+         elseif(solver(1:6).eq.'PASTIX') then
+            isolver=8
          else
             write(*,*) 
      &          '*WARNING reading *ELECTROMAGNETICS: unknown solver;'
@@ -257,6 +263,8 @@ c               tmin=min(tinc,1.d-5*tper)
             isolver=5
          elseif(solver(1:7).eq.'PARDISO') then
             isolver=7
+         elseif(solver(1:6).eq.'PASTIX') then
+            isolver=8
          else
             write(*,*) 
      &          '*WARNING reading *ELECTROMAGNETICS: unknown solver;'

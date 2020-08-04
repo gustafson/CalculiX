@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,7 +40,7 @@
 !        no generalized force: multiplication with the eigenmodes
 !        is necessary
 !
-         if(cyclicsymmetry==0) then
+         if(cyclicsymmetry.eq.0) then
             do i=1,nev
                do j=1,nev
                   do k=1,neq
@@ -78,7 +78,7 @@
 !        generalized force: the a-matrix is (apart from the diagonal)
 !        known
 !
-         if(cyclicsymmetry==0) then
+         if(cyclicsymmetry.eq.0) then
             do i=1,nev
                write(*,*) 
      &              'aerodynamic stiffness/structural stiffness = ',

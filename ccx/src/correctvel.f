@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,9 +29,7 @@
 !
       real*8 adv(*),volume(*),gradpcel(3,*),vel(nef,0:7)
 !
-      intent(in) adv,nef,volume,gradpcel,nefa,nefb
 !
-      intent(inout) vel
 !
       do i=nefa,nefb
          do k=1,3

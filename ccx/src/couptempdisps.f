@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,6 +30,7 @@
 !             4: sgi solver
 !             5: TAUCS
 !             7: pardiso
+!             8: pastix
 !
 !      iexpl==0:  structure:implicit, fluid:incompressible
 !      iexpl==1:  structure:implicit, fluid:compressible
@@ -42,8 +43,8 @@
       character*20 solver
       character*132 textpart(16)
 !
-      integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
-     &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+      integer nmethod,iperturb(*),isolver,istep,istat,n,key,i,idrct,
+     &  ithermal(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
      &  iexpl,nener,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha(*),ctrl(*),tincf,ttime
@@ -57,9 +58,9 @@ c      tincf=1.d-2
       nmethod=4
       timereset=.false.
 !
-      if(iperturb.eq.0) then
-         iperturb=2
-      elseif((iperturb.eq.1).and.(istep.gt.1)) then
+      if(iperturb(1).eq.0) then
+         iperturb(1)=2
+      elseif((iperturb(1).eq.1).and.(istep.gt.1)) then
          write(*,*) '*ERROR reading *COUPLED TEMPERATURE-DISPLACEMENT:'
          write(*,*) '       perturbation analysis is not provided in a'
          write(*,*) '       *COUPLED TEMPERATURE-DISPLACEMENT step.'
@@ -90,6 +91,8 @@ c      tincf=1.d-2
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       do i=2,n
@@ -136,15 +139,15 @@ c      tincf=1.d-2
       enddo
       if(nmethod.eq.1) ctrl(27)=1.d30
 !
-      if((ithermal.eq.0).and.(nmethod.ne.1).and.
-     &   (nmethod.ne.2).and.(iperturb.ne.0)) then
+      if((ithermal(1).eq.0).and.(nmethod.ne.1).and.
+     &   (nmethod.ne.2).and.(iperturb(1).ne.0)) then
          write(*,*) '*ERROR reading *COUPLED TEMPERATURE-DISPLACEMENT:'
          write(*,*) '       please define initial '
          write(*,*) '       conditions for the temperature'
          ier=1
          return
       else
-         ithermal=3
+         ithermal(1)=3
       endif
 !
       if(solver(1:7).eq.'SPOOLES') then
@@ -159,6 +162,8 @@ c      tincf=1.d-2
          isolver=5
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:6).eq.'PASTIX') then
+         isolver=8
       else
         write(*,*) '*WARNING reading *COUPLED TEMPERATURE-DISPLACEMENT:'
          write(*,*) '         unknown solver;'
@@ -168,7 +173,7 @@ c      tincf=1.d-2
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         if(iperturb.ge.2) then
+         if(iperturb(1).ge.2) then
             write(*,*) 
      &          '*WARNING reading *COUPLED TEMPERATURE-DISPLACEMENT:'
             write(*,*) 

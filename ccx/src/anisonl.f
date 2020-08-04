@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -52,9 +52,7 @@
 !
       real*8 w(3,3),vo(3,3),elas(21),s(60,60),weight
 !
-      intent(in) w,vo,elas,ii1,jj1,weight
 !
-      intent(inout) s
 !
       s(ii1,jj1)=s(ii1,jj1)+((elas( 1)+elas( 1)*vo(1,1)
      &+elas( 7)*vo(1,2)+elas(11)*vo(1,3)+(elas( 1)+elas( 1)*vo(1,1)+

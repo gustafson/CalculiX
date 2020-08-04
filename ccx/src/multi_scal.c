@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                     */
+/*              Copyright (C) 1998-2020 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -21,26 +21,29 @@
 #include <string.h> 
 #include "CalculiX.h"
 #include "mortar.h"
+
 /**
- * \brief Performs the scalar product of the mth column of au_1 and the nth column of au_2
+ *  Performs the scalar product of the mth column of au_1 and the nth column of au_2
  *
- * @param [in] au_1 		values of matrix 1
- * @param [in] irow_1		rows of matrix 1
- * @param [in] jq_1		column pointer to iorw_1
- * @param [in] au_2 		values of matrix 2
- * @param [in] irow_2		rows of matrix 2
- * @param [in] jq_2		column pointer to iorw_2
- * @param [in] m			row number
- * @param [in] n			column number
- * @param [out] value		result
- * @param [in] flag		not used
+ *  [in] au_1 		values of matrix 1
+ *  [in] irow_1		rows of matrix 1
+ *  [in] jq_1		column pointer to iorw_1
+ *  [in] au_2 		values of matrix 2
+ *  [in] irow_2		rows of matrix 2
+ *  [in] jq_2		column pointer to iorw_2
+ *  [in] m			row number
+ *  [in] n			column number
+ *  [out] value		result
+ *  [in] flag		not used
 **/
+
 void multi_scal(double *au_1,ITG * irow_1,ITG * jq_1,
 		double *au_2,ITG * irow_2,ITG * jq_2,
 		ITG m,ITG n,double*value,ITG *flag){
   
   /*Performs the scalar product of the mth column of au_1 and 
     the nth column of au_2*/
+    
   ITG pt1,pt2;
   double val=0.0;
   

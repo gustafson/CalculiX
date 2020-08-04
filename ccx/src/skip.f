@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine skip(nset,nalset,nload,nbody,
      &  nforc,nboun,nk,ne,nkon,
-     &  mi,nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
+     &  mi,nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
      &  nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
      &  iperturb,nener,ithermal,nstate_,iprestr,mcs,ntie,
      &  nslavs,nprop,mortar,ifacecount,nintpoint,nef)
@@ -26,9 +26,9 @@
       implicit none
 !
       integer nset,nalset,nload,nforc,nboun,nk,ne,nkon,mi(*),
-     &  nmpc,memmpc_,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
+     &  nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
      &  nprint,nlabel,ncs_,ne1d,ne2d,infree(4),i,mt,nprop,mortar,
-     &  nmethod,iperturb(*),nener,ithermal,nstate_,iprestr,i4,
+     &  nmethod,iperturb(*),nener,ithermal(*),nstate_,iprestr,i4,
      &  maxamta,mcs,ntie,nbody,nslavs,nintpoint,ifacecount,nef
 !
       character*1 c1
@@ -83,8 +83,8 @@
       read(15)(i4,i=1,nmpc)
       read(15)(i4,i=1,nmpc)
       read(15)(r8,i=1,nmpc)
-      read(15)(i4,i=1,3*memmpc_)
-      read(15)(r8,i=1,memmpc_)
+      read(15)(i4,i=1,3*mpcend)
+      read(15)(r8,i=1,mpcend)
 !
 !     point forces
 !
@@ -191,7 +191,7 @@
 !
 !     temperatures
 !
-      if(ithermal.gt.0)then
+      if(ithermal(1).gt.0)then
          read(15)(r8,i=1,nk)
          read(15)(r8,i=1,nk)
          if((ne1d.gt.0).or.(ne2d.gt.0))then

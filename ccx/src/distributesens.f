@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,11 +45,7 @@
      &   co(3,*),xsjj,weightformgrad(ndesi),dgdx(ndesi,nobject),
      &   dgdxglob(2,nk,nobject),physcon(*)
 !
-      intent(in) istartdesi,ialdesi,ipkon,lakon,
-     &   ipoface,ndesi,nodedesi,nodface,kon,co,nobject,
-     &   nodedesiinv,iregion,objectset,nk
 !
-      intent(inout) dgdxglob,dgdx,weightformgrad
 !
 !     flag for shape functions
 !

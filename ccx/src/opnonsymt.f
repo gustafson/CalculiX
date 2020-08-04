@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,8 +30,8 @@ C-----------------------------------------------------------------------
 C>    SPARSE MATRIX-VECTOR MULTIPLY FOR LANCZS  U = A^T*W
 C>    SEE USPEC SUBROUTINE FOR DESCRIPTION OF THE ARRAYS THAT DEFINE
 C>    THE MATRIX
-c>    the vector p is not needed but is kept for compatibility reasons
-c>    with the calling program
+!    the vector p is not needed but is kept for compatibility reasons
+!    with the calling program
 C-----------------------------------------------------------------------
 C
 C     COMPUTE THE DIAGONAL TERMS

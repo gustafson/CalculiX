@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 !
       implicit none
 !
-      integer nface,i,ithermal,compressible
+      integer nface,i,ithermal(*),compressible
 !
       real*8 vfa(0:7,*),umax,hmin,umfa(*),dtimef,cvfa(*),hcfa(*)
 !
@@ -52,7 +52,7 @@ c         write(*,*) 'calcguesstincf diff ',dtimef
 !
 !        thermal diffusion
 !
-         if(ithermal.gt.0) then
+         if(ithermal(1).gt.0) then
             if((hcfa(i).gt.0.d0).and.(cvfa(i).gt.0.d0).and.
      &         (vfa(5,i).gt.0.d0)) then
                dtimef=min(dtimef,vfa(5,i)*cvfa(i)*hmin*hmin/

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -49,7 +49,7 @@
 !
       character*80 amat
 !
-      integer kode,ithermal,icmd,ielas,iel,iint,nstate_,mi(*),iorien,
+      integer kode,ithermal(*),icmd,ielas,iel,iint,nstate_,mi(*),iorien,
      &  mattyp,istep,iinc,ipkon(*),nmethod,iperturb(*),nlgeom_undo
 !
       real*8 elconloc(*),elas(21),emec(*),emec0(*),beta(*),stre(*),

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -57,16 +57,7 @@
      &     A,Tt,pt,Ts,pressmax,constant,vold(0:mi(2),*),
      &     coefmpc(*),ttime,time,xflow360,A2,d,l,s
 !
-      intent(in) itg,ieg,ntg,lakon,
-     &     ipkon,kon,nflow,ikboun,nboun,prop,ielprop,
-     &     nactdog,ndirboun,nodeboun,xbounact,
-     &     ielmat,ntmat_,shcon,nshcon,physcon,ipiv,nteq,
-     &     rhcon,nrhcon,ipobody,ibody,xbodyact,co,nbody,network,
-     &     iin_abs,set,istep,iit,mi,ilboun,
-     &     iaxial,nmpc,labmpc,ipompc,nodempc,coefmpc,ttime,time,
-     &     iponoel,inoel
 !
-      intent(inout) ichannel,v,ac,bc,ineighe,vold
 !
       kflag=1
       ider=0
@@ -966,10 +957,10 @@ c         write(*,*) 'initialnet ',i,v(0,itg(i)),
 c     &      v(1,itg(i)),v(2,itg(i)),ineighe(i)
       enddo
 !
-      write(*,*) 'initialnet '
-      do i=1,ntg
-         write(*,'(i10,3(1x,e11.4))') itg(i),(v(j,itg(i)),j=0,2)
-      enddo
+c      write(*,*) 'initialnet '
+c      do i=1,ntg
+c         write(*,'(i10,3(1x,e11.4))') itg(i),(v(j,itg(i)),j=0,2)
+c      enddo
 !     
       return
       end

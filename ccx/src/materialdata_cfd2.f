@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
 !
       implicit none
 !
-      integer i,imat,ntmat_,mi(*),ielmatf(mi(3),*),ithermal,
+      integer i,imat,ntmat_,mi(*),ielmatf(mi(3),*),ithermal(*),
      &  nshcon(2,*),ncocon(2,*),ielfa(4,*),nrhcon(*),nfacea,
      &  nfaceb
 !
@@ -33,10 +33,7 @@
      &  cocon(0:6,ntmat_,*),physcon(*),cvfa(*),umfa(*),
      &  hcfa(*),rhcon(0:1,ntmat_,*)
 !
-      intent(in) shcon,nshcon,ielmatf,ntmat_,mi,cocon,ncocon,physcon,
-     &  ithermal,ielfa,nfacea,nfaceb
 !
-      intent(inout) vfa,cvfa,umfa,hcfa
 !     
 !     facial values
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -53,11 +53,7 @@
      &     dyg3dm,dyg4dm,dA3dm,dA4dm,dyg3dh1,dyg4dh2,
      &     dA3dh1,dA4dh2,solreal(3),solimag(3),dist
 !
-      intent(in) node1,node2,nodem,nelem,lakon,nactdog,ielprop,iflag,
-     &     rho,g,co,dvi,mi,ipkon,kon
 !
-      intent(inout) identity,xflow,idirf,nodef,numf,f,df,iplausi,v,
-     &  prop
 !
 !     iflag=0: check whether all parameters in the element equation
 !              are known => equation is not needed

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -45,7 +45,7 @@
      &  ielprop(*),nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ntie,ielorien(mi(3),*),integerglob(*),istartset(*),iendset(*),
      &  ipkon(*),intscheme,ipobody(2,*),nbody,ibody(3,*),ne,nmpc,
-     &  nload,neq(2),nmethod,ithermal(2),iprestr,iperturb(*),i,j,k,
+     &  nload,neq(2),nmethod,ithermal(*),iprestr,iperturb(*),i,j,k,
      &  idist,jj,id,ist,index,jdof1,node1,kflag,icalccg,ntmat_,nk,
      &  indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,jqs(*),irows(*),
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,nea,
@@ -67,20 +67,7 @@
      &  pmastsurf(6,*),distmin,dfl(20,120),waluer,waluei,
      &  df(*),dxstiff(27,mi(1),ne,*),v(0:mi(2),*)
 !
-      intent(in) co,kon,ipkon,lakon,ne,ipompc,nodempc,coefmpc,nmpc,
-     &  nelemload,sideload,nload,xbody,ipobody,nbody,nactdof,neq,
-     &  ikmpc,ilmpc,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielmat,ielorien,norien,orab,ntmat_,t0,t1,ithermal,iprestr,
-     &  vold,iperturb,sti,stx,iexpl,plicon,nplicon,plkcon,nplkcon,
-     &  xstiff,npmat_,dtime,matname,mi,ncmat_,mass,stiffness,
-     &  buckling,rhsi,intscheme,physcon,ttime,time,istep,iinc,
-     &  coriolis,ibody,xloadold,reltime,veold,nstate_,xstateini,
-     &  thicke,integerglob,doubleglob,tieset,istartset,iendset,
-     &  ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,clearini,
-     &  ielprop,prop,ne0,nea,neb,ndesi,nodedesi,distmin,
-     &  icoordinate,jqs,irows,dxstiff,xdesi,istartelem,ialelem,v
 !
-      intent(inout) xload,nmethod,cgr,springarea,xstate,df,dfl
 !
       kflag=2
       i0=0

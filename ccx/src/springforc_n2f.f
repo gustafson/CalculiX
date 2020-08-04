@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,20 +38,14 @@
      &  pl(3,10),xn(3),dm,alpha,beta,fnl(3,10),tp(3),te(3),ftrial(3),
      &  dist,t(3),dftrial,overclosure,venergy,orab(7,*),a(3,3),
      &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),clear,
-     &  shp2(7,9),xi,et,elconloc(21),plconloc(802),xk,fk,dd,val,
+     &  shp2(7,9),xi,et,elconloc(*),plconloc(802),xk,fk,dd,val,
      &  xiso(200),yiso(200),dd0,plicon(0:2*npmat_,ntmat_,*),
      &  um,eps,pi,senergy,cstr(6),dg,dfshear,dfnl,
      &  springarea(2),overlap,pres,xn1(3),xn2(3),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),t1(3),t2(3),
      &  dt1,dte,alnew(3),reltime,smscale(*)
 !
-      intent(in) xl,konl,vl,imat,elcon,nelcon,
-     &  ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
-     &  plicon,nplicon,npmat_,nener,mi,
-     &  nmethod,ne0,nstate_,xstateini,
-     &  reltime,ielas,ielorien,orab,norien,nelem
 !
-      intent(inout) venergy,senergy,fnl,cstr,springarea,elas,xstate
 !
       iflag=2
 !
@@ -139,7 +133,7 @@
          idof=nint(elcon(3,1,imat))
 !
          if(norien.gt.0) then
-            iorien=ielorien(1,nelem)
+            iorien=max(0,ielorien(1,nelem))
          else
             iorien=0
          endif
@@ -178,7 +172,7 @@
          idof2=nint(elcon(4,1,imat))
 !
          if(norien.gt.0) then
-            iorien=ielorien(1,nelem)
+            iorien=max(0,ielorien(1,nelem))
          else
             iorien=0
          endif

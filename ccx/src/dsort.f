@@ -77,9 +77,7 @@ c      EXTERNAL XERMSG
 C     .. Intrinsic Functions ..
       intrinsic abs, int
 !
-      intent(in) n,kflag 
 !
-      intent(inout) dx,iy
 C***FIRST EXECUTABLE STATEMENT  DSORT
       nn = n
       if (nn .lt. 1) then

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,12 +34,12 @@
 !
       real*8 co(3,*)
 !
-      if(istep.gt.0) then
-         write(*,*) '*ERROR reading *NODE: *NODE should be placed'
-         write(*,*) '  before all step definitions'
-         ier=1
-         return
-      endif
+c      if(istep.gt.0) then
+c         write(*,*) '*ERROR reading *NODE: *NODE should be placed'
+c         write(*,*) '  before all step definitions'
+c         ier=1
+c         return
+c      endif
 !
       inoset=0
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@
       character*80 matname(*)
       character*132 text
 !
-      integer kon(*),nk,ne,iteller,i,j,ipkon(*),indexe,ithermal,
+      integer kon(*),nk,ne,iteller,i,j,ipkon(*),indexe,ithermal(*),
      &  one,mi(*),ielmat(mi(3),*),null,istep,iinc,istep0,iinc0
 !
       real*8 co(3,*),v(0:mi(2),*),time,pi,oner
@@ -230,7 +230,7 @@
       write(27,'(a3)') m3
       endif
 !
-      if(ithermal.ne.2) then
+      if(ithermal(1).ne.2) then
 !     
 !     storing the displacements in the nodes
 !     
@@ -268,7 +268,7 @@
          write(27,'(a3)') m3
       endif
 !
-      if(ithermal.ge.2) then
+      if(ithermal(1).ge.2) then
 !     
 !     storing the temperatures in the nodes
 !     

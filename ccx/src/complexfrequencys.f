@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,8 +28,8 @@
       character*1 inpc(*)
       character*132 textpart(16)
 !
-      integer nmethod,mei(4),istep,istat,iperturb(2),i,nboun,
-     &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal,
+      integer nmethod,mei(4),istep,istat,iperturb(*),i,nboun,
+     &  n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),nev,ithermal(*),
      &  ipoinpc(0:*),mcs,cyclicsymmetry,ier
 !
       real*8 xboun(*),cs(17,*)
@@ -46,8 +46,8 @@
 !
 !     no heat transfer analysis
 !
-      if(ithermal.gt.1) then
-         ithermal=1
+      if(ithermal(1).gt.1) then
+         ithermal(1)=1
       endif
 !
 !     check for cyclic symmetry

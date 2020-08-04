@@ -73,9 +73,7 @@ C     .. External Subroutines ..
 C     .. Intrinsic Functions ..
       intrinsic abs, int
 !
-      intent(in) n,kflag
 !
-      intent(inout) ix,iy
 C***FIRST EXECUTABLE STATEMENT  ISORT
       nn = n
       if (nn .lt. 1) then

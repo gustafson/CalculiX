@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -32,7 +32,8 @@ void dgmresmain(ITG *nef,double *b,double *x,ITG *nelt,ITG *ia,ITG *ja,
 		double *a,ITG *isym,ITG *itol,double *tol,ITG *itmax,
 		ITG *iter,double *err,ITG *ierr,ITG *iunit,double *sb,
 		double *sx,double *rgwk,ITG *lrgw,ITG *igwk,ITG *ligw,
-		double *rwork,ITG *iwork,ITG *nestart,ITG *num_cpus){
+		double *rwork,ITG *iwork,ITG *nestart,ITG *num_cpus,
+		double *dgmrestol){
 
     ITG i;
       
@@ -52,7 +53,7 @@ void dgmresmain(ITG *nef,double *b,double *x,ITG *nelt,ITG *ia,ITG *ja,
     *lrgw=131+16*nestart[1];
 
     NNEW(tol1,double,*num_cpus);
-    for(i=0;i<*num_cpus;i++){tol1[i]=1.e-12;}
+    for(i=0;i<*num_cpus;i++){tol1[i]=*dgmrestol;}
     NNEW(iter1,ITG,*num_cpus);
     NNEW(err1,double,*num_cpus);
     NNEW(ierr1,ITG,*num_cpus);

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,17 +16,21 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !   
+!     subroutine to find the right # nodes for element and face
+!     and the number of integration points in the face      
+!     based on current element number nelem and face number jface
 !
-c> \brief soubroutine to find the right # nodes for element and surface  
-c> based on current element number nelem and face number jface
-c>
       subroutine getnumberofnodes(nelem,jface,lakon,nope,nopes,mint2d)
-!     autor: Saskia Sitzmann 
+!      
+!     autor: Saskia Sitzmann
+!      
       implicit none
 !     
       character*8 lakon(*)
 !     
       integer  nopes,nope,nelem,jface,mint2d
+!
+!
 !     
       if(lakon(nelem)(4:5).eq.'8R') then
          mint2d=1
@@ -75,6 +79,7 @@ c>
             nopes=8
          endif
       endif
+!
       return
       end
       

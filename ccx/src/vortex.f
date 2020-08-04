@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,12 +39,7 @@
      &     c1u,c2u,cinput,r1,r2,omega,K1,ciu,expon,
      &     Ui,Kr,cte1,cte2,qred_crit,A,xflow_oil
 !
-      intent(in) nodem,nelem,lakon,kon,ipkon,
-     &     nactdog,ielprop,iflag,v,
-     &     cp,R,set,mi,ttime,time,iaxial
 !
-      intent(out) identity,node1,node2,xflow,numf,nodef,idirf,prop,
-     &  f,df,iplausi
 !     
       if(iflag.eq.0) then
          identity=.true.

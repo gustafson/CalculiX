@@ -1,6 +1,6 @@
  
 ========
-LOG-BOOK Version 2.16
+LOG-BOOK Version 2.17
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -4136,3 +4136,310 @@ Dec 2002        - started to work on single crystal plasticity
 	         checked the integrity of the documentation
                - analyzed the inimortar code. Corrected an error in
 	         genislavelinv.f
+
+ 24 Nov 2019   - posted version 2.16
+
+ 25 Nov 2019   - started git
+
+ 29 Nov 2019   - coded distributions to define local coordinate systems
+               - coded the output of the integration point coordinates
+	         in the .dat file
+	       - coded the output of the centrifugal force in the .dat
+	         file
+
+ 30 Nov 2019   - continued to clean up mortar contact
+
+ 1 Dec 2019    - modified arpackbu.c
+               - started tet meshing of CFD element centers
+
+ 3 Dec 2019    - continued to clean up mortar contact
+
+ 6 Dec 2019    - continued to clean up mortar contact
+
+ 8 Dec 2019    - worked on interpolation of element center values to
+                 nodal values for cfd (elem2node.c)
+
+ 13 Dec 2019   - corrected some small errors concerning distributions
+	       - updated some network routines
+	       - updated routines for robust design
+	       - continued debugging Mortar contact
+
+ 17 Dec 2019   - continued debugging Mortar contact
+               - worked on removecutgeomtets.f
+	       
+ 20 Dec 2019   - continued debugging Mortar contact
+
+ 7 Jan 2020    - continued debugging Mortar contact (bdfill.c, multimortar2.c)
+
+ 12 Jan 2020   - worked on elem2node.c
+
+ 17 Jan 2020   - midnodes are not stored any more in field kon in
+                 subroutine getlocalresults.c
+               - started updating mesh refinement (subsets, neighbors for
+	         smoothing)
+               - updated documentation on mesh refinement
+               - continued debugging Mortar contact (multimortar2.c)
+	       
+ 19 Jan 2020   - worked on tetrangulation of the element center points
+                 for CFD
+
+ 23 Jan 2020   - change in refinemesh: check for the existence of an
+                 edge before inserting a new node (checkexiedge.f)
+
+ 24 Jan 2020   - worked on refinemesh:
+                 - introduced mesh quality
+		 - introduced field ifix
+
+ 26 Jan 2020   - conceived a strategy for automatic index printing
+                 of C-fields during execution for Mortar debugging
+               - removed an error in dfluxs.f, dloads.f, films.f and
+	         radiates.f: non-uniform load was not removed
+		 by specifying OP=NEW
+
+ 31 Jan 2020   - tried to compile and link PaStiX, scotch...: no
+                 success
+               - included PaStiX-statements in the CalculiX routines
+
+ 7 Feb 2020    - worked on the compilation of PaStiX and packages needed
+                 by PaStiX
+               - calculating the matrix structure for face-to-face
+	         contact is now done on all POSSIBLE contact elements:
+		 avoids reordering in all but the first iteration of
+		 an increment
+               - stored both memmpc_ and lenmpc into the restart files
+               - parallellized mafillsmas.f
+
+ 14 Feb 2020   - got PaStiX in CalculiX to work
+               - parallellized interpolatestate.f
+               - worked on a random field update
+	       - corrected an error in totalcontact.f
+
+ 15 Feb 2020   - extra correction in totalcontact.f
+
+ 16 Feb 2020   - made a change in removezerovoltets.f (-> 1.d-20)
+
+ 21 Feb 2020   - updated PaStiX
+               - compared PaStiX with SPOOLES
+	       - accelerated the projection on the nearest triangle
+	         in interpolateinface.f
+		 
+ 28 Feb 2020   - ran benchmarks with PaStiX
+               - updated pastix.c
+               - found and removed an error in mafilldmssmain.c
+	       - found and removed an error in rhsmain.c
+	       
+ 03 Mar 2020   - ran benchmarks in different versions:
+                 - fe and OMP_NUM_THREADS=1
+		 - fe and OMP_NUM_THREADS=12
+		 - fe_MT and OMP_NUM_THREADS=12
+		 - fe_i8 and OMP_NUM_THREADS=12
+	       - changed benchmark examples beamptied5, beamptied6,
+	         boxprofile in order to avoid identical principal
+		 values of inertia
+
+ 06 Mar 2020   - updated pastix.c, pastix_as.c,radflowload.c
+               - corrected an error in membranesections.f
+               - worked on solution-based refinement
+
+ 13 Mar 2020   - updated the documentation (e.g. *ROBUST DESIGN)
+               - updated mesh refinement
+               - updated PaStiX interfaces
+	       - created a test directory specific for i8
+	       - changed getglobalresults.c (for use in refinement)
+               - created a file to deallocate all fields at the end
+	         of CalculiX.c
+
+ 18 Mar 2020   - updated refinemesh and its subroutines
+               - found and removed an error in mafillfreq_em.f
+	       - coded inputformat=3 in pastix.c
+	       - analyzed beamprand
+               - worked on an initialization routine for CalculiX
+
+ 20 Mar 2020   - updated pastix.c: beamptied5 and beamptied6 work now
+               - finished initialization routine for CalculiX;
+	       - worked on automatic restart with refined mesh
+               - checked examples with cyclic symmetry for
+	         steady state dynamics and modal dynamics: seems ok.
+
+ 24 Mar 2020   - worked on the application of boundary conditions
+                 (SPC and concentrated forces) on the refined mesh
+
+ 27 Mar 2020   - continued to work on the application of boundary
+                 conditions for mesh refinement: reading the extra
+		 input, allocation_rfn.f
+		 
+ 28 Mar 2020   - continued to work on the application of boundary
+                 conditions; SPC and point forces seem to work.
+
+ 30 Mar 2020   - worked on crack propagation.
+
+ 1 Apr 2020    - create boundary conditions for the nodes in a CFD
+                 calculation (in the input deck the boundary conditions
+		 are given for the faces)
+		 
+ 2 Apr 2020    - sorted the front nodes in adjacency order; added one
+                 immediate neighbor on either side
+		 
+ 4 Apr 2020    - calculated vold in extrapol_velmain.c based on the
+                 element center values (CFD)
+		 
+ 5 Apr 2020    - calculated vfa in extrapol_velmain.c based on the
+                 nodal values
+
+ 6 Apr 2020    - created a local coordinate system along the crack
+                 front
+
+ 7 Apr 2020    - worked on the gradient of the velocity in CFD
+                 (gradvel and gradvfa)
+
+ 8 Apr 2020    - checked the gradient on examples slantini*.inp
+
+ 9 Apr 2020    - coded crackplane.f
+
+ 11 Apr 2020   - worked on extrapol_pelmain.c
+
+ 13 Apr 2020   - worked on extrapol_telmain.c
+
+ 14 Apr 2020   - introduced istartcrack and iendcrack in crackpropagation.c
+
+ 17 Apr 2020   - coded the projection on the crack plane in crackplane.f
+
+ 18 Apr 2020   - gave up the mixed fe-fv CFD-approach for the time being
+ 
+ 21 Apr 2020   - removed elem2node.c and all its subroutines
+               - reinstalled CBS
+	       
+ 22 Apr 2020   - excluded the factory roofing effect in crack propagation
+               - created new coordinate system at the crack front based
+	         on the mean planes
+
+ 25 Apr 2020   - inserted the CBS-Examples into the documentation
+ 
+ 27 Apr 2020   - looked into subsurface cracks
+
+ 28 Apr 2020   - replaced ithermal by ithermal(*) in all type statements
+
+ 29 Apr 2020   - replaced iperturb by iperturb(*) in all type statements
+               - deleted mtwist.*
+	       - replace unsigned ITG by unsigned long in refinemesh.c
+
+ 6 May 2020    - updated pastix.c for inputformat=3; induction3 does not
+                 converge yet
+               - moved the calculation of ipobody to CalculiX.c
+               - updated the documentation for *element and *spring
+	       - implemented the inheritance of the distributed body
+	         loading (centrifugal, gravity..) to the refined mesh
+               - started writing a script for an automatic check of
+	         field sizes in C during program execution
+
+ 9 May 2020    - made some corrections in the subroutines of
+                 crackpropagation.c
+
+ 13 May 2020   - analyzed pardiso.c: get rid of the 1.e-12 check
+                 for inputformat=3?
+               - checked for the same order along the crack front as
+	         for the crack element topology in adjacentbounodes.f
+               - projected external crack nodes onto the structure
+
+ 14 May 2020   - inserted file insertcbs.c specifically for the CBS
+                 method (from version 2.6)
+
+ 15 May 2020   - adapted the sign of phi and psi to the sign of KII and
+                 KIII in stressintensity.f
+
+ 20 May 2020   - made some corrections for the CBS-method
+
+ 24 May 2020   - copied add_sm_fl.f from version 2.6
+ 
+ 24 May 2020   - corrected the element topology of the crack shell
+                 elements
+
+ 27 May 2020   - improved crackprop.f
+               - created frd-output for crack propagation
+	       
+ 2 June 2020   - made a correction in crackprop.f for very small
+                 propagation near the free boundary
+
+ 3 June 2020   - worked on CFD (CBS method for compressible flow)
+
+ 6 June 2020   - updated pastix.c
+
+ 11 June 2020  - calculated the element height based on volume/
+                 area in initialcfdfem.f
+
+ 12 June 2020  - worked on SPC's and MPC's for CFD
+ 
+ 14 June 2020  - arpack.c: largest component in the eigenvectors should
+                 be positive: makes the eigenmode unique.
+
+ 16 June 2020  - choose the sign of the normalized eigenmodes such
+                 that the largest value (in absolute value) has a
+		 positive sign
+
+ 18 June 2020  - introduced a message before stopping the program in
+                 matrixstorage.c
+               - checked whether the calculation of phi is necessary in
+	         cyclicsymmetrymodels.f in case CHECK=NO; it is.
+               - worked on Mortar contact debugging
+
+ 25 June 2020  - looked into Mortar contact
+                 - Tobias R. detected an error with intent(in) nintpoint
+		   in slavintmortar.f
+		 - removed all "intent(in)", "intent(inout)" and
+		   "intent(out)" from *.f files
+		 - Mortar contact works with dgesv, but not with SPOOLES
+               - started updating crack propagation
+
+ 27 June 2020  - corrected a serious error in spooles.c for
+                 inputformat=3 (unsymmetric matrices occurring with
+		 Mortar contact and electromagnetics)
+               - activated Mortar test examples
+
+ 28 June 2020  - made some small changes (corrections)
+
+ 29 June 2020  - made some corrections for inputformat=3 in pardiso.c.
+
+ 2 July 2020   - continued to cleanup Mortar
+               - created some simple examples for MORTAR, LINMORTAR and
+	         PGLINMORTAR
+
+ 4 July 2020   - setting the initial velocity to the output velocity
+                 in CFD examples avoids reflection from the outlet
+		 (examples stepsuperfine and stepsuperwedge)
+               - applying the MPC's in a smoothing sense improves
+	         convergence for Euler flow along curved surfaces
+		 (bumptransfine....)
+
+ 7 July 2020   - started a second order approximation in time for
+                 the CBS method.
+
+ 8 July 2020   - removed an important error in the call of lintemp in
+                 calcstabletimeincvol.f, e_c3d_dstil.f and
+		 resultsmech_dstil.f (wrong number of arguments)
+
+ 9 July 2020   - included mortar contact in the documentation.
+
+ 10 July 2020  - updated the documentation about the PaStiX solver
+               - created CalculiXstep.c for the present CalculiX
+	         version
+
+ 11 July 2020  - reverted to the first order approximation in time
+                 for the CBS method
+
+ 16 July 2020  - removed an error in restrictor.f
+               - removed an error in tempload*.f (for AMPLITUDE=RAMP
+	         on the *STEP card for *FILM conditions)
+               - made a change in mafillsmcs.f: MASS elements were not
+	         taken into account
+               - corrected a mistake in mafillsmcs for face-to-face
+	         penalty contact with cyclic symmetry and without friction
+
+ 17 July 2020  - corrected some errors pointed out by gfortran v 10.
+
+ 18 July 2020  - worked on the documentation for the CBS method
+
+ 19 July 2020  - worked on the documentation for the CBS method
+               - made a change in e_c3d_v2rhs.f
+	       
+ 23 July 2020  - looked into the output of valgrind: solved memory
+                 issued before the next release

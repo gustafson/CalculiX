@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,10 +28,7 @@
       real*8 t1l,shcon(0:3,ntmat_,*),sph,r,dvi,rhcon(0:1,ntmat_,*),
      &  rho
 !
-      intent(in) imat,ntmat_,t1l,shcon,nshcon,
-     &  rhcon,nrhcon
 !
-      intent(inout) r,dvi,sph,rho
 !
       two=2
       four=4

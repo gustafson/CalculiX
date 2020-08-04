@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -163,7 +163,8 @@
 !     sorting each column
 !
       do i=1,neqfreq
-         call isortid(irowfreq(jq(i)),aufreq(jq(i)),jq(i+1)-jq(i),kflag)
+        call isortid(irowfreq(jqfreq(i)),aufreq(jqfreq(i)),
+     &       jqfreq(i+1)-jqfreq(i),kflag)
       enddo
 !
       return

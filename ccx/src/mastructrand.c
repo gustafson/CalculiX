@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -25,19 +25,17 @@
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
 void mastructrand(ITG *icols,ITG *jqs,ITG **mast1p,ITG **irowsp,ITG *ipointer,
-                  ITG *nzss,ITG *ndesi,double *physcon,double *xo,double *yo,
+                  ITG *nzss,ITG *ndesi,double *corrlen,double *xo,double *yo,
                   double *zo,double *x,double *y,double *z,ITG *nx,ITG *ny,
                   ITG *nz){
 
   /* determines the structure of the covariance matrix;
      (i.e. the location of the nonzeros */
 
-  char lakonl[2]=" \0";
-
-  ITG i,j,ii,index,jdof2,jdof1,nmast,ifree,kflag,indexe,isize,*mast1=NULL,
+  ITG i,j,ii,index,jdof2,jdof1,nmast,ifree,kflag,isize,*mast1=NULL,
       *irows=NULL,*next=NULL,jstart,idesvar,*neighbor=NULL,nnodesinside;
 
-  double *r=NULL,corrlength;
+  double *r=NULL,searchlen;
 
   /* the indices in the comments follow FORTRAN convention, i.e. the
      fields start with 1 */
@@ -46,7 +44,7 @@ void mastructrand(ITG *icols,ITG *jqs,ITG **mast1p,ITG **irowsp,ITG *ipointer,
   irows=*irowsp;
   ifree=0;
   kflag=2;
-  corrlength=4*physcon[12];
+  searchlen=5**corrlen;
 
   NNEW(next,ITG,*nzss);
   NNEW(neighbor,ITG,*ndesi+6);
@@ -55,11 +53,11 @@ void mastructrand(ITG *icols,ITG *jqs,ITG **mast1p,ITG **irowsp,ITG *ipointer,
   for(idesvar=0;idesvar<*ndesi;idesvar++){
       jdof1=idesvar+1;
       
-      /* nodes within 4 times the correlation length */
+      /* nodes within 3 times the correlation length */
       
       FORTRAN(near3d_se,(xo,yo,zo,x,y,z,nx,ny,nz,&xo[idesvar],
 			 &yo[idesvar],&zo[idesvar],ndesi,neighbor,
-			 r,&nnodesinside,&corrlength));
+			 r,&nnodesinside,&searchlen));
       
       for(ii=0;ii<nnodesinside;ii++){
 	  jdof2=neighbor[ii];

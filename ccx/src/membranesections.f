@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
       character*132 textpart(16)
 !
       integer mi(*),istartset(*),iendset(*),ialset(*),ielmat(mi(3),*),
-     &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt,nset,nmat,
+     &  ielorien(mi(3),*),kon(*),ipkon(*),indexe,irstrt(*),nset,nmat,
      &  norien,nlayer,iset,icomposite,nelcon(2,*),ier,
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),iaxial,ipoinpc(0:*)

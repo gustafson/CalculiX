@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,10 +17,10 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine interpolsubmodel(integerglob,doubleglob,value,
-     &     coords,iselect,nselect,nodeface,tieset,istartset,iendset,
+     &     coo,iselect,nselect,nodeface,tieset,istartset,iendset,
      &     ialset,ntie,entity)
 !
-!     interpolates for a node with coordinates in "coords" the
+!     interpolates for a node with coordinates in "coo" the
 !     "nselect" values with relative positions in "iselect" within the
 !     global mesh stored in integerglob and doubleglob. The fields
 !     integerglob and doubleglob are created and filled in
@@ -47,13 +47,9 @@
      &  nlength,id,jfaces,nelems,nktet,netet,ne,nkon,nfaces,nfield,
      &  imastset,nterms,konl(20),nelem,loopa
 !
-      real*8 doubleglob(*),value(*),coords(3),ratio(20)
+      real*8 doubleglob(*),value(*),coo(3),ratio(20),dist,coords(3)
 !
-      intent(in) integerglob,doubleglob,
-     &     coords,iselect,nselect,nodeface,tieset,istartset,iendset,
-     &     ialset,ntie,entity
 !
-      intent(inout) value
 !
 !     if no global file was read, set results to zero
 !
@@ -120,20 +116,24 @@
 !
 !     perform the interpolation
 !
+      coords(1)=coo(1)
+      coords(2)=coo(2)
+      coords(3)=coo(3)
       loopa=8
       call basis(doubleglob(1),doubleglob(netet+1),
-     &   doubleglob(2*netet+1),
-     &   doubleglob(3*netet+1),doubleglob(4*netet+1),
-     &   doubleglob(5*netet+1),integerglob(6),integerglob(netet+6),
-     &   integerglob(2*netet+6),doubleglob(6*netet+1),
-     &   integerglob(3*netet+6),nktet,netet,
-     &   doubleglob(4*nfaces+6*netet+1),nfield,
-     &   doubleglob(13*nktet+4*nfaces+6*netet+1),
-     &   integerglob(7*netet+6),integerglob(ne+7*netet+6),
-     &   integerglob(2*ne+7*netet+6),integerglob(nkon+2*ne+7*netet+6),
-     &   coords(1),coords(2),coords(3),value,ratio,iselect,nselect,
-     &   istartset,iendset,ialset,imastset,
-     &   integerglob(nkon+2*ne+8*netet+6),nterms,konl,nelem,loopa)
+     &     doubleglob(2*netet+1),
+     &     doubleglob(3*netet+1),doubleglob(4*netet+1),
+     &     doubleglob(5*netet+1),integerglob(6),integerglob(netet+6),
+     &     integerglob(2*netet+6),doubleglob(6*netet+1),
+     &     integerglob(3*netet+6),nktet,netet,
+     &     doubleglob(4*nfaces+6*netet+1),nfield,
+     &     doubleglob(13*nktet+4*nfaces+6*netet+1),
+     &     integerglob(7*netet+6),integerglob(ne+7*netet+6),
+     &     integerglob(2*ne+7*netet+6),integerglob(nkon+2*ne+7*netet+6),
+     &     coords(1),coords(2),coords(3),value,ratio,iselect,nselect,
+     &     istartset,iendset,ialset,imastset,
+     &     integerglob(nkon+2*ne+8*netet+6),nterms,konl,nelem,loopa,
+     &     dist)
 !
       return
       end

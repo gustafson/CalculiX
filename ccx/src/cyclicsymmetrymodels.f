@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,7 +69,7 @@
      &  nset,istep,istat,n,key,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),
      &  nr(*),nz(*),jdep,jindep,l,noded,ikmpc(*),ilmpc(*),lcs(*),
      &  kflag,node,ncsnodes,ncs_,iline,ipol,inl,ipoinp(2,*),nneigh,
-     &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal(2),ncounter,
+     &  inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal(*),ncounter,
      &  nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
      &  ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,id,jfaces,
      &  noden(2),ntrans,ntrans_,nef,mi(*),ifaceq(8,6),ifacet(6,4),
@@ -724,7 +724,8 @@
                endif
 !
                call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rpd,zpd,ncsnodes,
-     &            node,nneigh)
+     &              noden,nneigh)
+               node=noden(1)
 !
                nodei=ics(node)
                if(nodei.lt.0) cycle
@@ -807,7 +808,8 @@
                endif
 !     
                call near2d(rcs0,zcs0,rcs,zcs,nr,nz,rpd,zpd,ncsnodes,
-     &              node,nneigh)
+     &              noden,nneigh)
+               node=noden(1)
 !     
                nodei=ics(node)
                if(nodei.lt.0) cycle

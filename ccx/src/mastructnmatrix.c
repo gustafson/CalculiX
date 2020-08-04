@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -26,7 +26,6 @@
 
 void mastructnmatrix(ITG *icols,ITG *jqs,ITG **mast1p,ITG **irowsp,
                   ITG *ipointer,ITG *nzss,ITG *nactive,ITG *nnlconst){
-		  
 
   /* determines the structure of the (N^T*N)-Matrix;
      (i.e. the location of the nonzeros */

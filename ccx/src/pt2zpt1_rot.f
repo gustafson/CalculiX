@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -54,9 +54,7 @@
      &     Z2_min,Z2_max,M2,M2_min,M2_max,tcdkm1,km1d2,ca,cb,cc,alpha,
      &     beta,A1,A2,M1_root,M2_root
 !
-      intent(in) pt2,pt1,kappa,r,l,icase,ca,cb,cc,alpha,beta
 !
-      intent(inout) Qred1_crit,crit,pt2zpt1_c,M1,M2
 !
       crit=.false.
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,92 +16,20 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-c> \brief subroutine to calculate internal forces with transformed basis functions
-c> see phd-thesis Sitzmann Chapter 4.1.
-c> Author: Saskia Sitzmann
-c> @see: resultsmech.f
-c>
-c> @param [in] co		coordinates of nodes 
-c> @param [in] kon 		.. for element i storing the connectivity list of elem. in succ. order 
-c> @param [in] ipkon		pointer into field kon... 
-c> @param [in] lakon		(i) label for element i
-c> @param [in] ne		number of elements
-c> @param [in,out] v		displacements in nodes
-c> @param [in,out] stx		intermediate variables?
-c> @param [in] elcon		material parameters
-c> @param [in] nelcon           (1,i) number of elastic constants for material i (2,i) number of temperature points 
-c> @param [in] rhcon		(0,j,i) temperature (1,j,i) density at the density temperature point j of material i
-c> @param [in] nrhcon		(i) number of temperature data points for the density material i
-c> @param [in] alcon		(0,j,i) temperature, (k,j,i) expansion coefficient k at expansion temperature point j of material i
-c> @param [in] nalcon		(1,i) number of expansion constants  (2,i) number of temperature data points for expansion coefficients for material i
-c> @param [in] alzero		used in material data
-c> @param [in] ielmat           (j,i) material number of layer j
-c> @param [in] ielorien		(j,i) orientation number of layer j
-c> @param [in] norien		number of orientations
-c> @param [in] orab		(7,*) description of local coordinate system
-c> @param [in] ntmat_		maximum number of temperature data points for any material
-c> @param [in] t0		needed for spring elements
-c> @param [in] t1		needed for spring elements
-c> @param [in] ithermal		>0 thermal effects are taken into account 
-c> @param [in] prestr		prestress values /plastic inital strain ???
-c> @param [in] iprestr		flag indicating whether prestress is defined
-c> @param [in] eme		mechanical strain for element quadrature point-wise
-c> @param [in] iperturb		geometrical method
-c> @param [out] fn		internal forces
-c> @param [in] iout		flag indicating what to calculate in results
-c> @param [in] qa		q contains the contributions to the nodal force in the nodes belonging to the element at stake from other elements (elements already treated).
-c> @param [in] vold		displacements in nodes
-c> @param [in] nmethod		analysis method 
-c> @param [in] veold		velocities in nodes
-c> @param [in] dtime		real time increment size
-c> @param [in] time		real time size of all previous increments including the present increment 
-c> @param [in] ttime		real time size of all previous steps
-c> @param [in] plicon		isotropic hardening curve 
-c> @param [in] nplicon          pointer to isotropic hardening curve 
-c> @param [in] plkcon		kinematic hardening curve
-c> @param [in] nplkcon		pointer to kinematik hardening curve
-c> @param [in] xstateini	state variables at start if the increment
-c> @param [in] xstiff		(1:27,k,i) stiffness matrix of element i in integration point k for last increment
-c> @param [in] xstate		current state variables
-c> @param [in] npmat_		maximum number of data points for plicon
-c> @param [in] matname		(i) name of material i
-c> @param [in] mi		(1) max # of integration points per element (2) max degree of freedom per element
-c> @param [in] ielas		used in mechmodel  
-c> @param [in] icmd 		used in mechmodel
-c> @param [in] ncmat_		maximum number of elastic material constants 
-c> @param [in] nstate_		maximum number of state variables
-c> @param [in] stiini		(1:6,k,i) 2nd order stress of element i in integration point k at start of the increment
-c> @param [in] vini		displacements at the start of the increment
-c> @param [in] ener		internal energy and kinetic energy
-c> @param [in] eei		mechanical strain ?
-c> @param [in] enerini		internal engery at the start od the increment
-c> @param [in] istep		step number
-c> @param [in] iinc		increment number
-c> @param [in] springarea	used in spring elements
-c> @param [in] reltime		theta+dtheta
-c> @param [in] calcul_fn	flag indicating whether to calculate internal forces
-c> @param [in] calcul_qa	flag indicating whether to calculate qa
-c> @param [in] calcul_cauchy	falg indicating whether to calculate the cauchy stress
-c> @param [in] iener		flag indicating whether internal energy is calculated
-c> @param [in] ikin		flag indicating whether to calculate the kinetic energy
-c> @param [in] nal		used for qa
-c> @param [in] ne0		used in spring elements
-c> @param [in] thicke		thickness matrix
-c> @param [in] emeini		?
-c> @param [in] pslavsurf	field storing  position xil, etal and weight for integration point on slave side
-c> @param [in] pmastsurf 	field storing position and etal for integration points on master side
-c> @param [in] mortar		param indicating what contact formulation is used (=0 NTS penalty, =1 GPTS penalty , >1 STS mortar)
-c> @param [in] clearini		used for spring elements
-c> @param [in] nea		starting element index
-c> @param [in] neb		end element index
-c> @param [in] ielprop		used for beam elements
-c> @param [in] prop		used for beam elements
-c> @param [in] islavelinv       (i)==0 if there is no slave node in the element, >0 otherwise
-c> @param [in] islavsurf	islavsurf(1,i) slaveface i islavsurf(2,i) # integration points generated before looking at face i 
-c> @param [in] autloc		transformation matrix \f$ T[p,q]\f$ for slave nodes \f$ p,q \f$  
-c> @param [in] irowtloc		field containing row numbers of autloc
-c> @param [in] jqtloc	        pointer into field irowtloc
-c>
+!     subroutine to calculate internal forces with transformed basis functions
+!     see phd-thesis Sitzmann Chapter 4.1.
+!     Author: Saskia Sitzmann
+!
+!  [in] pslavsurf	field storing  position xil, etal and weight for integration point on slave side
+!  [in] pmastsurf 	field storing position and etal for integration points on master side
+!  [in] clearini		used for spring elements
+!  [in] nea		starting element index
+!  [in] neb		end element index
+!  [in] islavelinv       (i)==0 if there is no slave node in the element, >0 otherwise
+!  [in] autloc		transformation matrix \f$ T[p,q]\f$ for slave nodes \f$ p,q \f$  
+!  [in] irowtloc		field containing row numbers of autloc
+!  [in] jqtloc	        pointer into field irowtloc
+!
 
       subroutine resultsmech_dstil(co,kon,ipkon,lakon,ne,v,
      &  stx,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
@@ -114,10 +42,13 @@ c>
      &  ikin,nal,ne0,thicke,emeini,pslavsurf,
      &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale,
      &  list,ilist,
-     &  islavelinv,islavsurf,autloc,irowtloc,jqtloc)
+     &  islavelinv,autloc,irowtloc,jqtloc)
 !
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
+!
+!     difference with resultsmech.f: use of modified quadratic
+!     shape functions (because of Mortar contact)
 !
       implicit none
 !
@@ -129,7 +60,7 @@ c>
       integer kon(*),konl(26),nea,neb,mi(*),mint2d,nopes,
      &  nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
      &  ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,null,kscale,
-     &  istep,iinc,mt,ne,mattyp,ithermal(2),iprestr,i,j,k,m1,m2,jj,
+     &  istep,iinc,mt,ne,mattyp,ithermal(*),iprestr,i,j,k,m1,m2,jj,
      &  i1,m3,m4,kk,nener,indexe,nope,norien,iperturb(*),iout,
      &  nal,icmd,ihyper,nmethod,kode,imat,mint3d,iorien,ielas,
      &  istiff,ncmat_,nstate_,ikin,ilayer,nlayer,ki,kl,ielprop(*),
@@ -137,7 +68,7 @@ c>
      &  calcul_cauchy,calcul_qa,nopered,mortar,jfaces,igauss,
      &  istrainfree,nlgeom_undo,list,ilist(*),m,
      &  irowtloc(*),jqtloc(*),
-     &  jqtloc1(21),irowtloc1(96),islavelinv(*),islavsurf(*),
+     &  jqtloc1(21),irowtloc1(96),islavelinv(*),
      &  node1,node2,j1,j2,ii
 !
       real*8 co(3,*),v(0:mi(2),*),shp(4,26),stiini(6,mi(1),*),
@@ -161,20 +92,7 @@ c>
      &  autloc(*), autloc1(96),shptil(4,26),
      &  pslavsurf(3,*),pmastsurf(6,*)
 !
-      intent(in) co,kon,ipkon,lakon,ne,v,
-     &  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-     &  ielorien,norien,orab,ntmat_,t0,t1,ithermal,
-     &  iprestr,iperturb,iout,vold,nmethod,
-     &  veold,dtime,time,ttime,plicon,nplicon,plkcon,nplkcon,
-     &  xstateini,xstate,npmat_,matname,mi,ielas,icmd,
-     &  ncmat_,nstate_,stiini,vini,enerini,istep,iinc,
-     &  springarea,reltime,calcul_fn,calcul_qa,calcul_cauchy,nener,
-     &  ikin,ne0,thicke,pslavsurf,
-     &  pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale,
-     &  list,ilist
 !
-      intent(inout) nal,qa,fn,xstiff,ener,eme,eei,stx,ielmat,prestr,
-     &  emeini
 !
       include "gauss.f"
 !
@@ -231,7 +149,7 @@ c>
             imat=ielmat(1,i)
             amat=matname(imat)
             if(norien.gt.0) then
-               iorien=ielorien(1,i)
+               iorien=max(0,ielorien(1,i))
             else
                iorien=0
             endif
@@ -283,7 +201,6 @@ c>
             do k=1,4
                dlayer(k)=0.d0
             enddo
-!     
 !
 !     S6 - composite element
 !
@@ -421,31 +338,28 @@ c     Bernhardi end
 !        mortar start
 !        autloc for element
 !
-        if(islavelinv(i).gt.0)then
-           if(nope.eq.20 .or. nope.eq.10 .or. nope.eq.15)then
-              jqtloc1(1)=1
-              ii=1
-              do i1=1,nope
-                 node1=konl(i1)
-                 do j1=jqtloc(node1),jqtloc(node1+1)-1
-                    node2=irowtloc(j1)
-c                 write(*,*)'n1',node1,'n2',node2
-                    do j2=1,nope
-                       if(konl(j2).eq.node2)then
-c                     write(*,*)'i',i1,'j',j2,'v',autloc(j1)
-                          autloc1(ii)=autloc(j1)
-                          irowtloc1(ii)=j2
-                          ii=ii+1
-                       endif
-                    enddo
-                 enddo
-                 jqtloc1(i1+1)=ii
-              enddo
-           endif
-        endif
-!
-!      mortar end
-!
+         if(islavelinv(i).gt.0)then
+            if(nope.eq.20 .or. nope.eq.10 .or. nope.eq.15)then
+               jqtloc1(1)=1
+               ii=1
+               do i1=1,nope
+                  node1=konl(i1)
+                  do j1=jqtloc(node1),jqtloc(node1+1)-1
+                     node2=irowtloc(j1)
+                     do j2=1,nope
+                        if(konl(j2).eq.node2)then
+                           autloc1(ii)=autloc(j1)
+                           irowtloc1(ii)=j2
+                           ii=ii+1
+                        endif
+                     enddo
+                  enddo
+                  jqtloc1(i1+1)=ii
+               enddo
+            endif
+         endif
+!     
+!        mortar end
 !
 !        q contains the nodal forces per element; initialisation of q
 !
@@ -460,7 +374,6 @@ c                     write(*,*)'i',i1,'j',j2,'v',autloc(j1)
 !
 !        calculating the forces for the contact elements
 !
-c         write(*,*) 'resultsmech ',i,lakonl,mint3d
          if(mint3d.eq.0) then
 !
 !           "normal" spring and dashpot elements
@@ -581,7 +494,7 @@ c         write(*,*) 'resultsmech ',i,lakonl,mint3d
                   imat=ielmat(ilayer,i)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,i)
+                     iorien=max(0,ielorien(ilayer,i))
                   else
                      iorien=0
                   endif
@@ -642,7 +555,7 @@ c         write(*,*) 'resultsmech ',i,lakonl,mint3d
                   imat=ielmat(ilayer,i)
                   amat=matname(imat)
                   if(norien.gt.0) then
-                     iorien=ielorien(ilayer,i)
+                     iorien=max(0,ielorien(ilayer,i))
                   else
                      iorien=0
                   endif
@@ -686,52 +599,39 @@ c     Bernhardi end
             else
                call shape6w(xi,et,ze,xl,xsj,shp,iflag)
             endif
-c        mortar start
-           do i1=1,nope
-             shptil(1,i1)=shp(1,i1)
-             shptil(2,i1)=shp(2,i1)
-             shptil(3,i1)=shp(3,i1)
-             shptil(4,i1)=shp(4,i1)
-           enddo
-         if(islavelinv(i).gt.0)then
-         if(nope.eq.20 .or. nope.eq.10 .or. nope.eq.15)then
-          do i1=1,nope
-            if(jqtloc1(i1+1)-jqtloc1(i1).gt.0)then
-             shptil(1,i1)=0.0
-             shptil(2,i1)=0.0
-             shptil(3,i1)=0.0
-             shptil(4,i1)=0.0
-            endif
-            do j1=jqtloc1(i1),jqtloc1(i1+1)-1
-                 j2=irowtloc1(j1)
-                 shptil(1,i1)=shptil(1,i1)+autloc1(j1)*shp(1,j2)
-                 shptil(2,i1)=shptil(2,i1)+autloc1(j1)*shp(2,j2)
-                 shptil(3,i1)=shptil(3,i1)+autloc1(j1)*shp(3,j2)
-                 shptil(4,i1)=shptil(4,i1)+autloc1(j1)*shp(4,j2)
+            
+!           mortar start
+            
+            do i1=1,nope
+               shptil(1,i1)=shp(1,i1)
+               shptil(2,i1)=shp(2,i1)
+               shptil(3,i1)=shp(3,i1)
+               shptil(4,i1)=shp(4,i1)
             enddo
-c          write(*,*) i1,'   shp',shp(4,i1),shptil(4,i1),
-c     &      shptil(4,i1)-shp(4,i1)
-          enddo
-
-         endif
-         endif
-c         if(debug)write(*,*)'point',jj
-c         do i1=1,nope
-c          if(debug)write(*,*) i1,'shp',shp(1,i1),shptil(1,i1)
-c          if(debug)write(*,*) i1,'shp',shp(2,i1),shptil(2,i1)
-c          if(debug)write(*,*) i1,'shp',shp(3,i1),shptil(3,i1)
-c     &      shptil(4,i1)-shp(4,i1)
-c          shp(1,i1)=shptil(1,i1)
-c          shp(2,i1)=shptil(2,i1)
-c          shp(3,i1)=shptil(3,i1)
-c          shp(4,i1)=shptil(4,i1)
-c          write(*,*)'point',kk,'n',i1,'shp',shp(4,i1)
-c         enddo
-c        mortar end
+            if(islavelinv(i).gt.0)then
+               if(nope.eq.20 .or. nope.eq.10 .or. nope.eq.15)then
+                  do i1=1,nope
+                     if(jqtloc1(i1+1)-jqtloc1(i1).gt.0)then
+                        shptil(1,i1)=0.0
+                        shptil(2,i1)=0.0
+                        shptil(3,i1)=0.0
+                        shptil(4,i1)=0.0
+                     endif
+                     do j1=jqtloc1(i1),jqtloc1(i1+1)-1
+                        j2=irowtloc1(j1)
+                        shptil(1,i1)=shptil(1,i1)+autloc1(j1)*shp(1,j2)
+                        shptil(2,i1)=shptil(2,i1)+autloc1(j1)*shp(2,j2)
+                        shptil(3,i1)=shptil(3,i1)+autloc1(j1)*shp(3,j2)
+                        shptil(4,i1)=shptil(4,i1)+autloc1(j1)*shp(4,j2)
+                     enddo
+                  enddo
+!     
+               endif
+            endif
 !
-!                 vkl(m2,m3) contains the derivative of the m2-
-!                 component of the displacement with respect to
-!                 direction m3
+!           vkl(m2,m3) contains the derivative of the m2-
+!           component of the displacement with respect to
+!           direction m3
 !
             do m2=1,3
                do m3=1,3
@@ -744,7 +644,6 @@ c        mortar end
                   do m3=1,3
                      vkl(m2,m3)=vkl(m2,m3)+shp(m3,m1)*vl(m2,m1)
                   enddo
-c                  write(*,*) 'vnoeie',i,konl(m1),(vkl(m2,k),k=1,3)
                enddo
             enddo
 !
@@ -982,7 +881,8 @@ c     Bernhardi end
                      enddo
                   elseif(lakonl(4:6).eq.'20 ') then
                      nopered=20
-                     call lintemp(t0,t1,konl,nopered,jj,t0l,t1l)
+                     call lintemp(t0,konl,nopered,jj,t0l)
+                     call lintemp(t1,konl,nopered,jj,t1l)
                   elseif(lakonl(4:6).eq.'10T') then
                      call linscal10(t0,konl,t0l,null,shp)
                      call linscal10(t1,konl,t1l,null,shp)
@@ -1062,7 +962,7 @@ c               enddo
 !           subtracting the initial strains
 !
             if(iprestr.eq.2) then
-               if(istrainfree==0) then
+               if(istrainfree.eq.0) then
                   do m1=1,6
                      emec(m1)=emec(m1)-prestr(m1,jj,i)
                   enddo
@@ -1165,31 +1065,7 @@ c               enddo
      &         ((nmethod.eq.4).and.
      &          ((iperturb(1).gt.1).and.(nlgeom_undo.eq.0)).and.
      &          (ithermal(1).le.1))) then
-c
-c               if(ithermal(1).eq.0) then
-c                  do m1=1,6
-c                     eth(m1)=0.d0
-c                  enddo
-c               endif
-c               if(nener.eq.1) then
-c                  ener(jj,i)=enerini(jj,i)+
-c     &                 ((eloc(1)-eth(1)-emeini(1,jj,i))*
-c     &                  (stre(1)+stiini(1,jj,i))+
-c     &                  (eloc(2)-eth(2)-emeini(2,jj,i))*
-c     &                  (stre(2)+stiini(2,jj,i))+
-c     &                  (eloc(3)-eth(3)-emeini(3,jj,i))*
-c     &                  (stre(3)+stiini(3,jj,i)))/2.d0+
-c     &         (eloc(4)-eth(4)-emeini(4,jj,i))*(stre(4)+stiini(4,jj,i))+
-c     &         (eloc(5)-eth(5)-emeini(5,jj,i))*(stre(5)+stiini(5,jj,i))+
-c     &         (eloc(6)-eth(6)-emeini(6,jj,i))*(stre(6)+stiini(6,jj,i))
-c               endif
-c               eme(1,jj,i)=eloc(1)-eth(1)
-c               eme(2,jj,i)=eloc(2)-eth(2)
-c               eme(3,jj,i)=eloc(3)-eth(3)
-c               eme(4,jj,i)=eloc(4)-eth(4)
-c               eme(5,jj,i)=eloc(5)-eth(5)
-c               eme(6,jj,i)=eloc(6)-eth(6)
-
+!
                if(nener.eq.1) then
                   ener(jj,i)=enerini(jj,i)+
      &                 ((emec(1)-emeini(1,jj,i))*

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -36,7 +36,7 @@ void extrapol_velmain(ITG *nface,ITG *ielfa,double *xrlfa,double *vel,
 		      double *xxj,double *xlet,double *coefmpc,ITG *nmpc,
 		      char *labmpc,ITG *ipompc,ITG *nodempc,ITG *ifaext,
 		      ITG *nfaext,ITG *nactdoh,ITG *iitg,ITG *num_cpus,
-                      ITG *compressible,double *xxna,ITG *ncfd){
+                      ITG *compressible,double *xxna,ITG *ncfd,double *cofa){
   
   ITG i,is,ie,m,im;
   

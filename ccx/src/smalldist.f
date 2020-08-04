@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,9 +28,7 @@
 !
       real*8 dist,distmin,co(3,*)
 !
-      intent(in) co,lakon,ipkon,kon,ne
 !
-      intent(inout) distmin
 !
       neigh2=reshape((/1,2/),(/2,1/))
       neigh4=reshape((/1,2,2,3,3,1,1,4,2,4,3,4/),(/2,6/))

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -59,10 +59,7 @@
      &  xl(3,8),dd,xnoref(3),dot,xnorloc(3,3),det(3),sort(3),xdir,
      &  ydir,zdir
 !
-      intent(in) nk,co,iponoelfa,inoelfa,konfa,
-     &  ipkonfa,lakonfa,ne,jobnamef
 !
-      intent(out) iponor,xnor
 !
 !     In this routine the faces at the free surface play an
 !     important role. They are considered to be like a layer of

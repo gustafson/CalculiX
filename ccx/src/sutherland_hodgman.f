@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,9 @@
 !
       real*8 pvertex(3,*),xn(3),xl2sp(3,*),pa(3),pb(3),xinters(3),
      &  xcp(3),diff,dd,xl2mp(3,*),c_pvertex(3,13),t,cedge(3),xtest(3),
-     &  eplane,area,areax,areay,areaz,p1(3),p2(3),areaface
+     &     eplane,area,areax,areay,areaz,p1(3),p2(3),areaface
+!
+!
 !     
       data ithree /3/
 !     

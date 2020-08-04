@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,10 +35,7 @@
       real*8 prop(*),xi,et,ze,weight,ratio,ratio2,dtheta,theta,r,
      &  t1,t2,t3,t4,a,b
 !
-      intent(in) lakonl,npropstart,prop,
-     &  kk
 !
-      intent(inout) weight,xi,et,ze,mint3d
 !
       if(lakonl(8:8).eq.'P') then
 !

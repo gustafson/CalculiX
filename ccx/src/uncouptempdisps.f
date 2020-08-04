@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,6 +29,7 @@
 !             4: sgi solver
 !             5: TAUCS
 !             7: pardiso
+!             8: pastix
 !
       implicit none
 !
@@ -38,8 +39,8 @@
       character*20 solver
       character*132 textpart(16)
 !
-      integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,
-     &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
+      integer nmethod,iperturb(*),isolver,istep,istat,n,key,i,idrct,
+     &  ithermal(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),ipoinpc(0:*),
      &  nener,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha(*),ctrl(*),ttime
@@ -51,9 +52,9 @@
       nmethod=4
       timereset=.false.
 !
-      if(iperturb.eq.0) then
-         iperturb=2
-      elseif((iperturb.eq.1).and.(istep.gt.1)) then
+      if(iperturb(1).eq.0) then
+         iperturb(1)=2
+      elseif((iperturb(1).eq.1).and.(istep.gt.1)) then
          write(*,*) 
      &       '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
          write(*,*) '       perturbation analysis is not provided in a '
@@ -86,6 +87,8 @@
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       do i=2,n
@@ -129,8 +132,8 @@
       enddo
       if(nmethod.eq.1) ctrl(27)=1.d30
 !
-      if((ithermal.eq.0).and.(nmethod.ne.1).and.
-     &   (nmethod.ne.2).and.(iperturb.ne.0)) then
+      if((ithermal(1).eq.0).and.(nmethod.ne.1).and.
+     &   (nmethod.ne.2).and.(iperturb(1).ne.0)) then
          write(*,*) 
      &        '*ERROR reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
          write(*,*) '       please define initial '
@@ -138,7 +141,7 @@
          ier=1
          return
       else
-         ithermal=4
+         ithermal(1)=4
       endif
 !
       if(solver(1:7).eq.'SPOOLES') then
@@ -153,6 +156,8 @@
          isolver=5
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:6).eq.'PASTIX') then
+         isolver=8
       else
          write(*,*) 
      &       '*WARNING reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
@@ -163,7 +168,7 @@
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
-         if(iperturb.ge.2) then
+         if(iperturb(1).ge.2) then
             write(*,*) 
      &       '*WARNING reading *UNCOUPLED TEMPERATURE-DISPLACEMENT:'
             write(*,*) '         a nonlinear analysis is requested'

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
       character*132 textpart(16)
 !
       integer nset,nprint,nprint_,istep,istat,n,i,ii,key,ier,
-     &  jout(2),joutl,ipos,nmethod,nener,ithermal,iline,ipol,inl,
+     &  jout(2),joutl,ipos,nmethod,nener,ithermal(*),iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),nam,itpamp,idrct,ipoinpc(0:*),nef
 !
       if(istep.lt.1) then
@@ -64,6 +64,8 @@
      &         (prlab(i)(1:4).eq.'EBHE').or.
      &         (prlab(i)(1:4).eq.'SVF ').or.
      &         (prlab(i)(1:4).eq.'HFLF').or.
+     &         (prlab(i)(1:4).eq.'COOR').or.
+     &         (prlab(i)(1:4).eq.'CENT').or.
      &         (prlab(i)(1:4).eq.'HFL ')) cycle
             ii=ii+1
             prlab(ii)=prlab(i)
@@ -193,7 +195,8 @@
                   cycle
                endif
             elseif((textpart(ii)(1:4).eq.'CEEQ').or.
-     &             (textpart(ii)(1:2).eq.'CE').or.
+     &              ((textpart(ii)(1:2).eq.'CE').and.
+     &               (textpart(ii)(1:4).ne.'CENT')).or.
      &             (textpart(ii)(1:2).eq.'PE')) then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
                   write(*,*) 
@@ -222,7 +225,7 @@
      &             (textpart(ii)(1:4).eq.'ELKE')) then
                nener=1
             elseif(textpart(ii)(1:4).eq.'HFL ') then
-               if(ithermal.lt.2) then
+               if(ithermal(1).lt.2) then
                   write(*,*) 
      &               '*WARNING reading *EL PRINT: HFL only makes '
                   write(*,*) '         sense for heat transfer '
@@ -230,6 +233,7 @@
                   cycle
                endif
             elseif((textpart(ii)(1:4).eq.'SVF ').or.
+     &             (textpart(ii)(1:4).eq.'SF  ').or.
      &             (textpart(ii)(1:4).eq.'HFLF')) then
                if(nef.eq.0) then
                   write(*,*) 
@@ -245,6 +249,8 @@
      &             (textpart(ii)(1:4).ne.'ME  ').and.
      &             (textpart(ii)(1:4).ne.'EVOL').and.
      &             (textpart(ii)(1:4).ne.'EMAS').and.
+     &             (textpart(ii)(1:4).ne.'COOR').and.
+     &             (textpart(ii)(1:4).ne.'CENT').and.
      &             (textpart(ii)(1:4).ne.'EBHE')) then
                write(*,*) 
      &             '*WARNING reading *EL PRINT: label not applicable'

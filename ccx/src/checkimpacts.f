@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2019 Guido Dhondt
+!     Copyright (C) 1998-2020 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -67,12 +67,7 @@
      & energyini(4),dampwk,dampwkini,emax,fact,
      & r_rel_bc,maxdecay,r_abs,enetoll,delta_r_abs
 !     
-      intent(in) ne,neini,tmin,tper,energyref,dtheta,
-     & temax,mortar,allwk,allwkini,energy,energyini,dampwk,
-     & dampwkini,emax
 !     
-      intent(out) sizemaxinc,idivergence,iforceincsize,
-     & istab
 !     
 !     Initialization
 !     

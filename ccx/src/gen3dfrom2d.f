@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -41,9 +41,9 @@
      &  inotr(2,*),nodefixz,norien,norien_,norieninput,iflag,
      &  ikboun(*),ilboun(*),nboun,nboun_,nodeboun(*),ndirboun(*),
      &  iamboun(*),nam,ipompc(*),nodempc(3,*),nmpc,nmpc_,mpcfree,
-     &  ikmpc(*),ilmpc(*),nk,nk_,i,rig(*),nmethod,iperturb,ishift,
+     &  ikmpc(*),ilmpc(*),nk,nk_,i,rig(*),nmethod,iperturb(*),ishift,
      &  indexe,j,nodel(8),indexx,indexk,k,nedge,nodes(3,8),nodec(3,8),
-     &  iamplitude,l,newnode,idir,idof,id,m,mpcfreenew,node,ithermal(2),
+     &  iamplitude,l,newnode,idir,idof,id,m,mpcfreenew,node,ithermal(*),
      &  jmin,jmax,idummy,mi(*),indexc,indexl,icomposite,ielmat(mi(3),*),
      &  nope,neworien(0:norien),iorien,ipos,ielorien(mi(3),*)
 ! 
@@ -542,7 +542,7 @@ c               call bounadd(nodes(2,j),k,k,val,nodeboun,
 !            
             if(ielmat(j,i).le.0) exit
 !
-            iorien=ielorien(j,i)
+            iorien=max(0,ielorien(j,i))
 !
 !           check whether this orientation already occurred within
 !           this element (i.e. for a previous layer)

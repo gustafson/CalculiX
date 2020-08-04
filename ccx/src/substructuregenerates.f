@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,6 +24,7 @@
 !
 !     isolver=0: SPOOLES
 !             7: pardiso
+!             8: pastix
 !
       implicit none
 !
@@ -32,11 +33,11 @@
       character*87 filab(*)
       character*132 textpart(16)
 !
-      integer nmethod,iperturb,isolver,istep,istat,n,key,i,
-     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal,ipoinpc(0:*),
+      integer nmethod,iperturb(*),isolver,istep,istat,n,key,i,
+     &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal(*),ipoinpc(0:*),
      &  ier
 !
-      if((iperturb.eq.1).and.(istep.ge.1)) then
+      if((iperturb(1).eq.1).and.(istep.ge.1)) then
          write(*,*) '*ERROR reading *SUBSTRUCTURE GENERATE:'
          write(*,*) '       perturbation analysis is'
          write(*,*) '       not provided in a *SUBSTRUCTURE'
@@ -55,8 +56,8 @@
 !
 !     no heat transfer analysis
 !
-      if(ithermal.gt.1) then
-         ithermal=1
+      if(ithermal(1).gt.1) then
+         ithermal(1)=1
       endif
 !
 !     default solver
@@ -74,6 +75,8 @@
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       do i=2,n
@@ -93,6 +96,8 @@
          isolver=0
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
+      elseif(solver(1:6).eq.'PASTIX') then
+         isolver=8
       else
          write(*,*) '*ERROR reading *SUBSTRUCTURE GENERATE:'
          write(*,*) '       solver:',solver,'is not allowed.'

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &  ialset,nset,ielmat,matname,nmat,ielorien,orname,norien,
      &  lakon,thicke,kon,ipkon,irstrt,istep,istat,n,iline,ipol,inl,
      &  ipoinp,inp,cs,mcs,iaxial,ipoinpc,mi,co,ixfree,xnor,iponor,
-     &  nelcon,ier)
+     &  ier,orab)
 !
 !     reading the input deck: *SOLID SECTION
 !
@@ -39,10 +39,12 @@
      &  norien,ielem,node1,node2,m,indexx,ixfree,iponor(2,*),
      &  istep,istat,n,key,i,j,k,l,imaterial,iorientation,ipos,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),mcs,iaxial,ipoinpc(0:*),
-     &  nelcon(2,*),ier,numnod
+     &  ier,numnod
 !
       real*8 thicke(mi(3),*),thickness,pi,cs(17,*),xn(3),co(3,*),p(3),
-     &  dd,xnor(*)
+     &     dd,xnor(*),orab(7,*)
+!
+!
 !
       if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *SOLID SECTION: *SOLID SECTION'
@@ -82,7 +84,7 @@
          endif
       enddo
 !
-!     check for the existence of the set,the material and orientation
+!     check for the existence of the material
 !
       do i=1,nmat
          if(matname(i).eq.material) exit
@@ -106,6 +108,8 @@
       endif
       imaterial=i
 !
+!     check for the existence of the orientation
+!
       if(orientation.eq.'                    ') then
          iorientation=0
       else
@@ -122,6 +126,8 @@
          endif
          iorientation=i
       endif
+!
+!     check for the existence of the set
 !
       if(ipos.eq.0) then
          write(*,*) '*ERROR reading *SOLID SECTION: no element set ',
@@ -148,18 +154,35 @@
 !
       do j=istartset(i),iendset(i)
          if(ialset(j).gt.0) then
-            if((lakon(ialset(j))(1:1).eq.'B').or.
-     &         (lakon(ialset(j))(1:1).eq.'S')) then
+            k=ialset(j)
+            if((lakon(k)(1:1).eq.'B').or.
+     &         (lakon(k)(1:1).eq.'S')) then
                write(*,*) 
      &          '*ERROR reading *SOLID SECTION: *SOLID SECTION can'
                write(*,*) '       not be used for beam or shell elements
      &'
-               write(*,*) '       Faulty element: ',ialset(j)
+               write(*,*) '       Faulty element: ',k
                ier=1
                return
             endif
-            ielmat(1,ialset(j))=imaterial
-            ielorien(1,ialset(j))=iorientation
+            ielmat(1,k)=imaterial
+            if(ielorien(1,k).lt.0) then
+!
+!              an orientation based on a distribution has the
+!              same name as the distribution. However, to a
+!              distribution which is not used in any orientation
+!              definition no local coordinate system has been
+!              assigned (i.e. orab(7,..)=0.d0)
+!
+               if((orname(-ielorien(1,k)).eq.orientation).and.
+     &              (orab(7,-ielorien(1,k)).ne.0.d0)) then
+                  ielorien(1,k)=-ielorien(1,k)
+               else
+                  ielorien(1,k)=iorientation
+               endif
+            else
+               ielorien(1,k)=iorientation
+            endif
          else
             k=ialset(j-2)
             do
@@ -176,7 +199,23 @@
                   return
                endif
                ielmat(1,k)=imaterial
-               ielorien(1,k)=iorientation
+               if(ielorien(1,k).lt.0) then
+!
+!                 an orientation based on a distribution has the
+!                 same name as the distribution. However, to a
+!                 distribution which is not used in any orientation
+!                 definition no local coordinate system has been
+!                 assigned (i.e. orab(7,..)=0.d0)
+!     
+                  if((orname(-ielorien(1,k)).eq.orientation).and.
+     &                 (orab(7,-ielorien(1,k)).ne.0.d0)) then
+                     ielorien(1,k)=-ielorien(1,k)
+                  else
+                     ielorien(1,k)=iorientation
+                  endif
+               else
+                  ielorien(1,k)=iorientation
+               endif
             enddo
          endif
       enddo

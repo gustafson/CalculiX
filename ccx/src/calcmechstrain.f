@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,9 +28,7 @@
       real*8 elineng(6),vkl(0:3,3),vokl(3,3),emec(6),eth(6),
      &     wkl(3,3),wokl(3,3)
 !
-      intent(in) vkl,vokl,eth,iperturb
 !
-      intent(inout) emec
 !
 c      write(*,*) 'calcmechstrain',iperturb(1),iperturb(2)
 !

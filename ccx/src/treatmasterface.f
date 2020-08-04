@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,15 +34,11 @@
      &  nnodelem,nodem(*),modf,nelemm,k_max,nipold
 !
       real*8 pvertex(3,13),slavstraight(36),xn(3),xilm,etlm,xnl(3),
-     &  xl2s(3,*),p1(2),p2(2),pslavsurf(3,*),xil,etl,
+     &  xl2s(3,*),p1(2),p2(2),pslavsurf(3,*),xil,etl,p(3),dist,
      &  area,xl2m(3,8),xl2m2(3,8),al,err,xns(3,8),
      &  xl2sp(3,*),xl2mp(3,8),cgp(3),pm(3),ps(3),xit(3),etat(3),areaslav
 !
-      intent(in) nopes,slavstraight,xn,xns,xl2s,xl2sp,
-     &  ipe,ime,iactiveline,ifreeintersec,nelemm,
-     &  xl2m,nnodelem,xl2m2,nmp,nodem
 !
-      intent(inout) pslavsurf,nintpoint,areaslav,nactiveline
 !     
       include "gauss.f"
 !     
@@ -74,7 +70,7 @@
       enddo
       if(nvertex.lt.3) return       
 !     
-      if(nvertex==3)then
+      if(nvertex.eq.3)then
          do k=1,3
             cgp(k)=pvertex(k,nvertex)
          enddo
@@ -91,7 +87,7 @@
 !     
 !     Project center point back on slave face
 !     
-      call attachline(xl2s,cgp,nopes,xit(3),etat(3),xn)
+      call attachline(xl2s,cgp,nopes,xit(3),etat(3),xn,p,dist)
 !     
 !     generating integration points on the slave surface S
 !     
@@ -100,9 +96,9 @@
 !     Project back on slave surface
 !     
          call attachline(xl2s,pvertex(1:3,modf(nvertex,k)),
-     &        nopes,xit(1),etat(1),xn)
+     &        nopes,xit(1),etat(1),xn,p,dist)
          call attachline(xl2s,pvertex(1:3,modf(nvertex,k+1)),
-     &        nopes,xit(2),etat(2),xn)
+     &        nopes,xit(2),etat(2),xn,p,dist)
 !
          p1(1)=xit(1)-xit(3)
          p1(2)=etat(1)-etat(3)
@@ -148,7 +144,7 @@
 !     master surface in order to get the local coordinates
 !     own xn for every integration point?
 !     
-            call attachline(xl2m,ps,nnodelem,xilm,etlm,xn)
+            call attachline(xl2m,ps,nnodelem,xilm,etlm,xn,p,dist)
             call evalshapefunc(xilm,etlm,xl2m,nnodelem,pm)   
 !
             pslavsurf(1,nintpoint)=xil

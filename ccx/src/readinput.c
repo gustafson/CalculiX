@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2019 Guido Dhondt                          */
+/*              Copyright (C) 1998-2020 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -24,7 +24,7 @@
 
 void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
 	       ITG *ipoinp, ITG **inpp, ITG **ipoinpcp, ITG *ithermal,
-               ITG *nuel){
+               ITG *nuel,ITG *inp_size){
 
   /*   reads and stores the input deck in inpcp; determines the
        number of sets  */
@@ -38,11 +38,11 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
       icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
       norien,nam,nprint,mi[3],ntrans,ncs,namtot,ncmat,memmpc,ne1d,
       ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
-      nener,nstate,nentries=17,ifreeinp,ikey,lincludefn,nslavs,
+      nener,nstate,nentries=18,ifreeinp,ikey,lincludefn,nslavs,
       nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon,
       ifile,mcs,initialtemperature=0,nprop,mortar,ifacecount,
       nintpoint,infree[4],iheading=0,ichangesurfacebehavior=0,
-      nef; 
+      nef,mpcend; 
 
   /* initialization */
 
@@ -248,6 +248,10 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*DISTRIBUTION")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"DISTRIBUTION",
+                          nline,&ikey));
+      }
       else if(strcmp1(&buff[0],"*ELASTIC")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
@@ -371,7 +375,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
               &ne1d,&ne2d,&nflow,set,meminset,rmeminset,jobnamec,
 	      &irestartstep,&icntrl,ithermal,&nener,&nstate,&ntie,
 	      &nslavs,&nkon,&mcs,&nprop,&mortar,&ifacecount,&nintpoint,
-	      infree,&nef));
+	      infree,&nef,&mpcend));
             FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"RESTART,READ",
                               nline,&ikey));
 	  }
@@ -459,7 +463,10 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
 
   inp[3*ipoinp[2*ikey-1]-2]=*nline;
   RENEW(inpc,char,(long long)132**nline);
-  RENEW(inp,ITG,3*ipoinp[2*ikey-1]);
+  
+  *inp_size=3*ipoinp[2*ikey-1];
+  RENEW(inp,ITG,*inp_size);
+  
   *inpcp=inpc;
   *ipoinpcp=ipoinpc;
   *inpp=inp;

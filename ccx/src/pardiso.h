@@ -24,9 +24,10 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
 		ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,
 		ITG *jq,ITG *nzs3);
 
-void pardiso_solve(double *b,ITG *neq,ITG *symmetryflag,ITG *nrhs);
+void pardiso_solve(double *b,ITG *neq,ITG *symmetryflag,ITG *inputformat,
+		   ITG *nrhs);
 
-void pardiso_cleanup(ITG *neq,ITG *symmetryflag);
+void pardiso_cleanup(ITG *neq,ITG *symmetryflag,ITG *inputformat);
 
 void FORTRAN(pardiso,(long long *pt,ITG *maxfct,ITG *mnum,ITG *mtype,ITG *phase,
                    ITG *neq,double *aupardiso,ITG *pointers,ITG *irowpardiso,

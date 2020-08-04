@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,12 +16,10 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine openfile(jobname,output)
+      subroutine openfile(jobname)
 !
       implicit none
 !
-c      logical exi
-      character*4 output
       character*132 jobname,fndat,fnfrd,fnsta,fncvg,fncel
       integer i
 !
@@ -38,16 +36,6 @@ c      logical exi
          call exit(201)
       endif
 !
-c      fnin=jobname(1:i)//'.inp'
-c      inquire(file=fnin(1:i+4),exist=exi)
-c      if(exi) then
-c         open(1,file=fnin(1:i+4),status='old',err=1)
-c      else
-c         write(*,*) '*ERROR in openfile: input file ',fnin
-c         write(*,*) 'does not exist'
-c         call exit(201)
-c      endif
-!
       fndat=jobname(1:i)//'.dat'
       open(5,file=fndat(1:i+4),status='unknown',err=51)
       close(5,status='delete',err=52)
@@ -58,12 +46,6 @@ c      endif
       fnfrd=jobname(1:i)//'.frd'
       open(7,file=fnfrd(1:i+4),status='unknown',err=71)
       close(7,status='delete',err=72)
-!
-!     delete the f.frd file (it is reopened in openfilefluid.f)
-!
-c      fnfrd=jobname(1:i)//'f.frd'
-c      open(13,file=fnfrd(1:i+5),status='unknown',err=71)
-c      close(13,status='delete',err=73)
 !
 !     delete the .fcv file (it is reopened in compfluid.c)
 !
@@ -109,8 +91,6 @@ c      close(13,status='delete',err=73)
 !
       return
 !
-c 1    write(*,*) '*ERROR in openfile: could not open file ',fnin(1:i+4)
-c      call exit(201)
  51   write(*,*) '*ERROR in openfile: could not open file ',fndat(1:i+4)
       call exit(201)
  52   write(*,*) '*ERROR in openfile: could not delete file ',

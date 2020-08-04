@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2019 Guido Dhondt
+!              Copyright (C) 1998-2020 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,6 +28,7 @@
 !             4: sgi solver
 !             5: TAUCS
 !             7: pardiso
+!             8: pastix
 !
       implicit none
 !
@@ -37,9 +38,9 @@
       character*20 solver
       character*132 textpart(16)
 !
-      integer nmethod,iperturb,isolver,istep,istat,n,key,i,idrct,nev,
-     &  ithermal,iline,ipol,inl,ipoinp(2,*),inp(3,*),mei(4),ncv,mxiter,
-     &  ipoinpc(0:*),idirect,ier
+      integer nmethod,iperturb(*),isolver,istep,istat,n,key,i,idrct,nev,
+     &  ithermal(*),iline,ipol,inl,ipoinp(2,*),inp(3,*),mei(4),ncv,
+     &  mxiter,ipoinpc(0:*),idirect,ier
 !
       real*8 tinc,tper,tmin,tmax,alpha(*),fei(3),tol,fmin,fmax,ctrl(*),
      &  ttime
@@ -56,9 +57,9 @@
       fmin=-1.d0
       fmax=-1.d0
 !
-      if(iperturb.eq.0) then
-         iperturb=2
-      elseif((iperturb.eq.1).and.(istep.gt.1)) then
+      if(iperturb(1).eq.0) then
+         iperturb(1)=2
+      elseif((iperturb(1).eq.1).and.(istep.gt.1)) then
          write(*,*) 
      &     '*ERROR reading *HEAT TRANSFER: perturbation analysis is'
          write(*,*) '       not provided in a *HEAT TRANSFER step.'
@@ -89,6 +90,8 @@
          solver(1:5)='TAUCS'
       elseif(isolver.eq.7) then
          solver(1:7)='PARDISO'
+      elseif(isolver.eq.8) then
+         solver(1:6)='PASTIX'
       endif
 !
       idirect=2
@@ -105,7 +108,7 @@
          elseif(textpart(i)(1:9).eq.'FREQUENCY') then
             nmethod=2
          elseif(textpart(i)(1:12).eq.'MODALDYNAMIC') then
-            iperturb=0
+            iperturb(1)=0
          elseif(textpart(i)(1:11).eq.'STORAGE=YES') then
             mei(4)=1
          elseif(textpart(i)(1:7).eq.'DELTMX=') then
@@ -128,7 +131,7 @@
 !     default for modal dynamic calculations is DIRECT,
 !     for static or dynamic calculations DIRECT=NO
 !
-      if(iperturb.eq.0) then
+      if(iperturb(1).eq.0) then
          idrct=1
          if(idirect.eq.0)idrct=0
       else
@@ -136,18 +139,18 @@
          if(idirect.eq.1)idrct=1
       endif
 !
-      if((ithermal.eq.0).and.(nmethod.ne.1).and.
-     &   (nmethod.ne.2).and.(iperturb.ne.0)) then
+      if((ithermal(1).eq.0).and.(nmethod.ne.1).and.
+     &   (nmethod.ne.2).and.(iperturb(1).ne.0)) then
          write(*,*) 
      &     '*ERROR reading *HEAT TRANSFER: please define initial '
          write(*,*) '       conditions for the temperature'
          ier=1
          return
       else
-         ithermal=2
+         ithermal(1)=2
       endif
 !
-      if((nmethod.ne.2).and.(iperturb.ne.0)) then
+      if((nmethod.ne.2).and.(iperturb(1).ne.0)) then
 !
 !        static or dynamic thermal analysis
 !
@@ -165,6 +168,8 @@
             isolver=6
          elseif(solver(1:7).eq.'PARDISO') then
             isolver=7
+         elseif(solver(1:6).eq.'PASTIX') then
+            isolver=8
          else
             write(*,*) 
      &          '*WARNING reading *HEAT TRANSFER: unknown solver;'
@@ -174,7 +179,7 @@
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          if((istat.lt.0).or.(key.eq.1)) then
-            if(iperturb.ge.2) then
+            if(iperturb(1).ge.2) then
                write(*,*) 
      &              '*WARNING reading *HEAT TRANSFER: a nonlinear geomet
      &ric analysis is requested'
@@ -244,7 +249,7 @@ c               tmin=min(tinc,1.d-5*tper)
 !
 !        thermal eigenmode analysis
 !
-         iperturb=0
+         iperturb(1)=0
 !
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
