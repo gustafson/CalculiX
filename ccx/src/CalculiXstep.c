@@ -272,11 +272,11 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
       if(jin==0){strcpy(jobnamec,argv[1]);strcpy1(jobnamef,argv[1],132);}
 
       /* next lines deactivated on March 18, 2020 */
-    
-      /*    for(i=1;i<argc;i++){
-	    if(strcmp1(argv[i],"-o")==0) {
-	    strcpy(output,argv[i+1]);break;}
-	    }*/
+      /* Reactived by Pete to allow exodus output */
+      for(i=1;i<argc;i++){
+	if(strcmp1(argv[i],"-o")==0) {
+	  strcpy(output,argv[i+1]);break;}
+      }
     }
 
     putenv("CCX_JOBNAME_GETJOBNAME=jobnamec");

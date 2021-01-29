@@ -1029,7 +1029,15 @@ dynacont.c \
 dynboun.c \
 electromagnetics.c \
 elemChecker.c \
+exo.c \
+exoselect.c \
+exosetfind.c \
+exovector.c \
 elementcpuload.c \
+exo.c \
+exoselect.c \
+exosetfind.c \
+exovector.c \
 expand.c \
 external.c \
 extrapol_dpelmain.c \
