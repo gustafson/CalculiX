@@ -481,7 +481,7 @@ void *resultsmechmt(ITG *i){
   return NULL;
 }
 
-/* subroutine for multithreading of resultsmech */
+/* subroutine for multithreading of resultstherm */
 
 void *resultsthermmt(ITG *i){
 
