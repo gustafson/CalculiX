@@ -145,6 +145,7 @@ int main(int argc,char *argv[])
 
   printf("\n************************************************************\n\n");
   printf("CalculiX Version 2.17, Copyright(C) 1998-2020 Guido Dhondt\n");
+  printf("CalculiX Extras version 2.17, Copyright(C) 2013-2021 Peter A. Gustafson\n");
   printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
   printf("software, and you are welcome to redistribute it under\n");
   printf("certain conditions, see gpl.htm\n\n");
