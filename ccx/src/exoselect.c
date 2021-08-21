@@ -67,20 +67,32 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
   
   float *nodal_var_vals = (float *) calloc(num_nodes, sizeof(float));
   ITG   *node_map       = (ITG *)   calloc(num_nodes, sizeof(ITG));
+  ITG   *inode_map       = (ITG *)   calloc(num_nodes, sizeof(ITG));
 
-  // Seed with NaN for non-stored output
-  for (j=0; j<num_nodes; j++){
-    nodal_var_vals[j]=nanf("");
-  }
-
-  // Pull node map
   errr = ex_get_id_map (exoid, EX_NODE_MAP, node_map);
   if(errr)printf("*ERROR in exo: failed to get prior node map");
 
+  for (j=0; j<num_nodes; j++){
+    // Seed with NaN for non-stored output
+    nodal_var_vals[j]=nanf("");
+
+    // Pull node map and create inverse
+    // WHY DO WE NEED A INVERSE NODE MAP?
+    // FRD doesn't require results to be sequential be we do!
+    // FRD can be out of sequence (based on set order)
+    // FRD tags each result with the associated node number.
+    // Hence we need inverse and FRD does not
+    for(i=0;i<*nkcoords;i++){
+      int q=0;
+      while(node_map[q]!=i+1){q++;}
+      inode_map[i]=q;
+    }
+  }
+
   for(j=0;j<*ncomp;j++){
-    int q=0; // Create an inverse node map.  It doesn't need to be stored and you can count upwards.
     if(*iset==0){
       for(i=0;i<*nkcoords;i++){
+
 	/* check whether output is requested for solid nodes or
 	   network nodes */
 
@@ -92,13 +104,12 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	  if(inum[i]==0) continue;
 	}
 
-	// while(node_map[q]!=i+1){q++;printf("DEBUG q %i i+1 %i node_map[q] %i\n", q, i+1, node_map[q]);}
-	while(node_map[q]!=i+1){q++;}
 	/* storing the entities */
 	if(ifield[j]==1){
-	  nodal_var_vals[q]=field1[i*nfield[0]+icomp[j]];
+	  // It is getting here and assigning -nan
+	  nodal_var_vals[inode_map[i]]=field1[i*nfield[0]+icomp[j]];
 	}else{
-	  nodal_var_vals[q]=field2[i*nfield[1]+icomp[j]];
+	  nodal_var_vals[inode_map[i]]=field2[i*nfield[1]+icomp[j]];
 	}
       }
     }else{
@@ -120,12 +131,11 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	      if(inum[i]==0) continue;
 	    }
 	
-	    while(node_map[q]!=i+1){q++;}
 	    /* storing the entities */
 	    if(ifield[j]==1){
-	      nodal_var_vals[q]=field1[i*nfield[0]+icomp[j]];
+	      nodal_var_vals[inode_map[i]]=field1[i*nfield[0]+icomp[j]];
 	    }else{
-	      nodal_var_vals[q]=field2[i*nfield[1]+icomp[j]];
+	      nodal_var_vals[inode_map[i]]=field2[i*nfield[1]+icomp[j]];
 	    }
 	  }
 	}else{
@@ -147,12 +157,11 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 		if(inum[i]==0) continue;
 	      }
 	
-	      while(node_map[q]!=i+1){q++;}
 	      /* storing the entities */
 	      if(ifield[j]==1){
-		nodal_var_vals[q]=field1[i*nfield[0]+icomp[j]];
+		nodal_var_vals[inode_map[i]]=field1[i*nfield[0]+icomp[j]];
 	      }else{
-		nodal_var_vals[q]=field2[i*nfield[1]+icomp[j]];
+		nodal_var_vals[inode_map[i]]=field2[i*nfield[1]+icomp[j]];
 	      }
 	    }
 	  }while(1);
@@ -170,6 +179,7 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
   }
 
   free(node_map);
+  free(inode_map);
   free(nodal_var_vals);
   return;
 
