@@ -129,15 +129,17 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   // Write optional node map
   j = 0; // Counter for the exo order of the nodes
   ITG *node_map,*node_map_inv;
-  node_map = (ITG *) calloc(nout, sizeof(ITG));
   // Note that the node_map_inv changes in subsequent passes if
   // element deletion or incomplete results storage is used.  However,
   // the map is recreated in exovector.c and exoselect.c so it only
   // needs to be correct here once.
+  node_map = (ITG *)     calloc(nout, sizeof(ITG));
   node_map_inv = (ITG *) calloc(nkcoords, sizeof(ITG));
+
   /* storing the coordinates of the nodes */
   if(*nmethod!=0){
-    for(i=0;i<*nk;i++){
+    // for(i=0;i<*nk;i++){
+    for(i=0;i<nkcoords;i++){
       if(inum[i]==0){continue;}
       // The difference between i and j is that not all values of i
       // increment j.
@@ -148,7 +150,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       z[j++] = co[3*i+2];
     }
   }else{
-    for(i=0;i<*nk;i++){
+    // for(i=0;i<*nk;i++){
+    for(i=0;i<nkcoords;i++){
       node_map[j] = i+1;
       node_map_inv[i] = j+1;
       x[j]   = co[3*i];
@@ -421,8 +424,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     ITG num_elem_in_blk;
     ITG blksize[num_elem_blk];
 
-    for(l=0;l<num_elem_blk;l++){
-      // First determine the size of the block
+    for(l=0;l<num_elem_blk;l++){ 
+      // Go over each element type and figure out how many elements
+      // exist.  Called block size.
       j=0;
       m=0;
       for(i=0;i<*ne0;i++){
@@ -463,8 +467,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    for(m=9;m<12;m++){connect[k++] = node_map_inv[kon[indexe+m]-1];}
 	  }else if (blkassign[o]==2){ // Composite
 	    nlayer=0;
-	    for(l=0;l<mi[2];l++){
-	      if(ielmat[i*mi[2]+l]==0) break;
+	    for(m=0;m<mi[2];m++){
+	      if(ielmat[i*mi[2]+m]==0) break;
 	      nlayer++;
 	    }
 	    for(n=0;n<nlayer;n++){
