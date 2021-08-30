@@ -67,7 +67,7 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
   
   float *nodal_var_vals = (float *) calloc(num_nodes, sizeof(float));
   ITG   *node_map       = (ITG *)   calloc(num_nodes, sizeof(ITG));
-  ITG   *inode_map      = (ITG *)   calloc(num_nodes, sizeof(ITG));
+  ITG   *inode_map      = (ITG *)   calloc(*nkcoords, sizeof(ITG));
   
   errr = ex_get_id_map (exoid, EX_NODE_MAP, node_map);
   if(errr)printf("*ERROR in exo: failed to get prior node map");
