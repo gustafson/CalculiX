@@ -48,13 +48,25 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     if (store) {
       // Find and store the set numbers
       // The pointer integers are 1 based (fortran)
-      s=istartset[i]-1;
+      s=istartset[i]-1; // break here if s=50523
       e=iendset[i]-1;
       // Determine if generate was used
-      gen=0; l=0;
+      gen=0; l=0; n=1;
       for (j=s; j<=e; j++){
 	if (ialset[j]<0) {
-	  gen+=(ialset[j-1]-ialset[j-2])/(-ialset[j])+1;
+	  // I think this breaks when the generated list has an implicit one such as
+	  // *nset, nset=set, generate
+	  //   1, 4 [,implicit 1]
+	  k=ialset[j-1]-ialset[j-2];
+	  if (k<0){
+	    if (n){
+	      printf("Warning: Exodus deduced a generated set with decreasing numbers.\n");
+	      printf("         These numbers will be reverse. Check the input deck.\n");
+	      n=0;
+	    }
+	    k=-k;
+	  }
+	  gen+=(k)/(-ialset[j])+1;
 	  l-=3;
 	}
       }
@@ -70,8 +82,17 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	while (j<=e-2){
 	  // Account for generated ids
 	  if (ialset[j+2]<0) {
-	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){
-	      set_nums[n++]=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
+	    if (ialset[j+1]-ialset[j]<0){
+	      // Deal with reversed generated sets
+	      printf("REversal\n");
+	      for (k=ialset[j+1]; k<=ialset[j]; k-=ialset[j+2]){
+		set_nums[n++]=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
+		printf("%i, ", set_nums[n-1]);
+	      }
+	    } else {
+	      for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){
+		set_nums[n++]=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
+	      }
 	    }
 	    j+=3;
 	  }else{
@@ -108,8 +129,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	if (errr) printf ("Error writing set numbers\n");
 	// ex_put_set_dist_fact (exoid, EX_NODE_SET, i, set_nums);  //
       }
-    }
-    if(strcmp1(pos,"E")==0) {
+    }else if(strcmp1(pos,"E")==0) {
       (*num_es)++; // printf ("Element set identified\n");}
       /* No element set storage mechanism?
       if (store){
@@ -119,8 +139,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
       	if (errr) printf ("Error writing set numbers\n");
       	// ex_put_set_dist_fact (exoid, EX_ELEM_SET, i, set_nums);  //
 	} */
-    }
-    if(strcmp1(pos,"S")==0) {
+    }else if(strcmp1(pos,"S")==0) {
       (*num_ss)++; // printf ("Node side set surface identified\n");}
       /* Side sets (node surfaces) not yet implemented
 	 if (store){
@@ -130,8 +149,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
       	if (errr) printf ("Error writing set numbers\n");
       	// ex_put_set_dist_fact (exoid, EX_SIDE_SET, i, set_nums);  //
 	} */
-    }
-    if(strcmp1(pos,"T")==0) {
+    }else if(strcmp1(pos,"T")==0) {
       (*num_fs)++; // printf ("Face set surface identified\n");}
       /* Face sets not yet implemented
 	 if (store){

@@ -285,6 +285,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     elem_map  = (ITG *) calloc(num_elem, sizeof(ITG));
     ITG *blkassign;
     blkassign = (ITG *) calloc(num_elem, sizeof(ITG));
+    for (i=0; i<*ne0; i++){blkassign[i]=-1;}
     ITG *blkindexe;
     blkindexe = (ITG *) calloc(num_elem, sizeof(ITG));
     ITG *elem_mat;
@@ -330,7 +331,6 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       // printf ("TODO store material identifier and name.\n");
       // printf("%s\n", curblk);
       // printf("%s\n", material);
-
       // Identify element type
       if(strcmp2(&lakon[8*i+6],"LC",2)==0){
 	// Deal with all the layered composite elements first. Count the layers.
@@ -504,42 +504,16 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       k=0; // k keeps track of connectivity for the elements... (each
 	   // node in each element increments k).  This is reset for
 	   // each block.
-      
+
       // Now connectivity
       for(i=0;i<*ne0;i++){
-	// IDENTICAL TO ABOVE
-	// For each element.  Composite elements are one increment in
-	// this loop (all layers are tracked within one loop)
-	if(ipkon[i]<=-1){
-	  if(ioutall==0){
-	    continue;
-	  }else if(ipkon[i]!=-1){
-	    // in case also inactivated elements are to be stored,
-	    // calculate the appropriate index
-	    indexe=-2-ipkon[i];
-	  }
-	}else if(strcmp1(&lakon[8*i],"F")==0){
-	  continue;
-	}else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){
-	  continue;
-	}else if(strcmp1(&lakon[8*i],"ESPRNGF")==0){
-	  continue;
-	}else if((strcmp1(&lakon[8*i],"E")==0)&&
-		 (strcmp1(&lakon[8*i+6],"1")==0)){
-	  continue;
-	}else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
-	  continue;
-	}else if(strcmp1(&lakon[8*i],"MASS")==0){
-	  continue;
-	}else if(strcmp1(&lakon[8*i],"U")==0){
-	  continue;
-	}else{
-	  indexe=ipkon[i];
-	}
-	// IDENTICAL TO ABOVE
-	
-	if (indexe!=blkindexe[o]){continue;}
-	if (blkassign[o]!=l){continue;}
+	// There should now be one block assignment per element.
+	// Skipped elements would be assigned -1 above.
+	// Skip any elements not in this block (l)
+	if (blkassign[i]!=l){continue;}
+
+	// Reset the element index
+	indexe=blkindexe[i];
 	
 	if(strcmp2(&lakon[8*i+6],"LC",2)==0){ //composite
 	  // Deal with all the composite elements first
@@ -550,7 +524,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  }
 	  
 	  for(n=0;n<nlayer;n++){
-	    switch(blkassign[o]) // Recall blockassign[0]=l here
+	    switch(blkassign[i]) // Recall blockassign[i]=l here
 	      {
 	      case 10:  // C3D15
 		// The order of nodes is different from ccx to exodus formats
@@ -579,9 +553,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	      }
 	    o++;
 	  }
-	} else if ((blkassign[o]==1)||(blkassign[o]==10)){
+	} else if ((blkassign[i]==1)||(blkassign[i]==10)){
 	  // Non composite elements that have out of order issues
-	  switch (blkassign[o])
+	  switch (blkassign[i])
 	    {
 	    case 1: // C3D20
 	      // The order of nodes is different from ccx to exodus formats
@@ -598,7 +572,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    }
 	  o++;
 	} else { // All other elements have a consistent offset
-	  switch (blkassign[o])
+	  switch (blkassign[i])
 	    {
 	    case 4: // 8 Node 2D elements CAX8 S8 S8R etc
 	      m=20;
@@ -703,7 +677,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     // Free up memory which is gathering dust
     free (elem_map);
     free (blkassign);
-
+    free (blkindexe);
+    free (elem_mat);
+    
     // Close files
     ex_update (exoid);
     ex_close (exoid);
