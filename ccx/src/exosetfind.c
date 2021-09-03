@@ -51,18 +51,18 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   // Individual set names are set after the initial count, so this
   // should work even when sized to zero in the first call
   char *names_nset[*num_ns];
-  char *names_eset[*num_es];
-  char *names_sset[*num_ss];
-  char *names_fset[*num_fs];
+  // char *names_eset[*num_es];
+  // char *names_sset[*num_ss];
+  // char *names_fset[*num_fs];
 
   char *space = " ";
   char *pos0;
   char *pos1;
 
   int use_ns=0;
-  int use_es=0;
-  int use_ss=0;
-  int use_fs=0;
+  // int use_es=0;
+  // int use_ss=0;
+  // int use_fs=0;
     
   for (int i=0; i<*nset; i++){
     // set names are stored in set, and appear to be 80 characters in
@@ -194,37 +194,40 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     
     // Write the number of sets
     if (n_in_set[i]>0){
-      if (settype[i]==type_ns){
-	errr = ex_put_set_param (exoid, EX_NODE_SET, use_ns,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	if (errr) printf ("ERROR in exo: failed node set parameters\n");
-	errr = ex_put_set       (exoid, EX_NODE_SET, use_ns++, set_nums, NULL);
-	if (errr) printf ("ERROR in exo: failed node set\n");
-      }else if (settype[i]==type_es){
-	1;
-	// printf("Exodus Warning: Element sets not implemented. Affected set is %s\n", names[i]);
-	// I haven't figured out how to implement element sets which I think must be based on blocks.
-	
-	// errr = ex_put_set_param (exoid, EX_ELEM_SET, use_es,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	// if (errr) printf ("ERROR in exo: failed elem set parameters\n");
-	// errr = ex_put_set       (exoid, EX_ELEM_SET, use_es++, set_nums, NULL);
-	// if (errr) printf ("ERROR in exo: failed elem set\n");
-      }else if (settype[i]==type_fs){
-	1;
-	// printf("Exodus Warning: Face sets not implemented. Affected set is %s\n", names[i]);
-	
-	// errr = ex_put_set_param (exoid, EX_FACE_SET, use_fs,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	// if (errr) printf ("ERROR in exo: failed face set parameters\n");
-	// errr = ex_put_set       (exoid, EX_FACE_SET, use_fs++, set_nums, NULL);
-	// if (errr) printf ("ERROR in exo: failed face set\n");
-      }else if (settype[i]==type_ss){
-	1;
-	// printf("Exodus Warning: Face sets not implemented. Affected set is %s\n", names[i]);
-	
-	// errr = ex_put_set_param (exoid, EX_SIDE_SET, use_ss,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	// if (errr) printf ("ERROR in exo: failed side set parameters\n");
-	// errr = ex_put_set       (exoid, EX_SIDE_SET, use_ss++, set_nums, NULL);
-	// if (errr) printf ("ERROR in exo: failed side set\n");
-      }
+      switch (settype[i])
+	{
+	case type_ns:
+	  errr = ex_put_set_param (exoid, EX_NODE_SET, use_ns,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	  if (errr) printf ("ERROR in exo: failed node set parameters\n");
+	  errr = ex_put_set       (exoid, EX_NODE_SET, use_ns++, set_nums, NULL);
+	  if (errr) printf ("ERROR in exo: failed node set\n");
+	  break;
+	case type_es:
+	  // printf("Exodus Warning: Element sets not implemented. Affected set is %s\n", names[i]);
+	  // I haven't figured out how to implement element sets which I think must be based on blocks.
+	  
+	  // errr = ex_put_set_param (exoid, EX_ELEM_SET, use_es,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	  // if (errr) printf ("ERROR in exo: failed elem set parameters\n");
+	  // errr = ex_put_set       (exoid, EX_ELEM_SET, use_es++, set_nums, NULL);
+	  // if (errr) printf ("ERROR in exo: failed elem set\n");
+	  // break;
+	case type_fs:
+	  // printf("Exodus Warning: Face sets not implemented. Affected set is %s\n", names[i]);
+	  
+	  // errr = ex_put_set_param (exoid, EX_FACE_SET, use_fs,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	  // if (errr) printf ("ERROR in exo: failed face set parameters\n");
+	  // errr = ex_put_set       (exoid, EX_FACE_SET, use_fs++, set_nums, NULL);
+	  // if (errr) printf ("ERROR in exo: failed face set\n");
+	  // break
+	case type_ss:
+	  // printf("Exodus Warning: Face sets not implemented. Affected set is %s\n", names[i]);
+	  
+	  // errr = ex_put_set_param (exoid, EX_SIDE_SET, use_ss,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	  // if (errr) printf ("ERROR in exo: failed side set parameters\n");
+	  // errr = ex_put_set       (exoid, EX_SIDE_SET, use_ss++, set_nums, NULL);
+	  // if (errr) printf ("ERROR in exo: failed side set\n");
+	  continue;
+	}
     }else{
       printf("Exodus Warning: Empty set skipped: %s\n", names[i]);
     }
@@ -234,13 +237,13 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 
   /// Last thing is to issue warnings
   printf("Exodus Warning: element, face, and side sets not implemented. Affected sets are:\n");
-  int warnempty=0;
+  // int warnempty=0;
   for(i=0; i<*nset; i++){
     if (settype[i]!=type_ns){
       printf(" %s", names[i]);
-      if (n_in_set[i]==0){
-	warnempty=1;
-      }
+      // if (n_in_set[i]==0){
+      // 	warnempty=1;
+      // }
     }
   }
   printf("\n");
@@ -255,7 +258,8 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   //   }
   //   printf("\n");
   // }
-  
+
+  ex_put_names (exoid, EX_NODE_SET, names_nset);
   return;
 }
 
