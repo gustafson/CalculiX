@@ -250,15 +250,15 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     num_elem = nelout;
 
     /* initialize file with parameters */
-    printf("\nData writen to the .exo file\n");
+    printf("\n Data writen to the .exo file\n");
     num_nodes=nout;
-    printf("Number of nodes: %" ITGFORMAT "\n", num_nodes);
-    printf("Number of elements %" ITGFORMAT "\n", num_elem);
-    printf("Number of element blocks %" ITGFORMAT "\n", num_elem_blk);
-    printf("Number of node sets %" ITGFORMAT "\n", num_ns);
-    printf("Number of element sets %" ITGFORMAT "\n", num_es);
-    // printf("Number of side sets %" ITGFORMAT "\n", num_ss);
-    // printf("Number of face sets %" ITGFORMAT "\n", num_fs);
+    printf("\t- Number of nodes: %" ITGFORMAT "\n", num_nodes);
+    printf("\t- Number of elements: %" ITGFORMAT "\n", num_elem);
+    printf("\t- Number of element blocks: %" ITGFORMAT "\n", num_elem_blk);
+    printf("\t- Number of node sets: %" ITGFORMAT "\n", num_ns);
+    printf("\t- Number of element sets: %" ITGFORMAT "\n", num_es);
+    // printf("\t- Number of side sets: %" ITGFORMAT "\n", num_ss);
+    // printf("\t- Number of face sets: %" ITGFORMAT "\n", num_fs);
 
     errr = ex_put_init (exoid, "CalculiX EXO File",
 			num_dim, num_nodes,
@@ -696,13 +696,11 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   errr = ex_inquire (exoid, EX_INQ_TIME, &num_time_steps, &fdum, &cdum);
   errr = ex_get_time (exoid, num_time_steps, &timet);
   if (num_time_steps>0){
-    printf ("\t%i Time periods in exo file, most recent at time=%f\n", num_time_steps, timet);
-  } else {
-    printf ("\t0 Time periods in exo file\n");
+    printf ("Data in the .exo file\n    - %i Time periods , most recent at time=%f\n", num_time_steps, timet);
   }
   timet = (float) *time;
   ++num_time_steps;
-  printf ("\tWriting new time period %" ITGFORMAT " at time=%f\n", num_time_steps, *time);
+  printf ("    - Writing .exo file time period %" ITGFORMAT " at time=%f\n", num_time_steps, *time);
   errr = ex_put_time (exoid, num_time_steps, &timet);
   if (errr) printf ("Error storing time into exo file.\n");
 
