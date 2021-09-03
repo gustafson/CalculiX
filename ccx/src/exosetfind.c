@@ -26,183 +26,238 @@
 #include "exodusII.h"
 #include "exo.h"
 
+#define NAMELEN 81
+#define type_ns 0
+#define type_es 1
+#define type_ss 2
+#define type_fs 3
+
 void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs, ITG *node_map_inv,
 		int exoid, int store, ITG *nk){
 
-  ITG i,j,k,l,n,s,e,gen;
-  char tmpstr[81];
-  char *space = " ";
-  char *pos;
-  ITG *set_nums;
+  // Note first call to this function counts the sets.  Second call to
+  // the function (store=1) actually stores the sets.
+
+  ITG i,j,k,l,n,s,e,gen,z;
+  
   int errr;
   int dropped=0, unidentified=0;
 
-  *num_ns = 0;
-  *num_ss = 0;
-  *num_es = 0;
-  *num_fs = 0;
+  int settype[*nset];
+  int n_in_set[*nset];
 
+  char *names[*nset];
+  // Individual set names are set after the initial count, so this
+  // should work even when sized to zero in the first call
+  char *names_nset[*num_ns];
+  char *names_eset[*num_es];
+  char *names_sset[*num_ss];
+  char *names_fset[*num_fs];
+
+  char *space = " ";
+  char *pos0;
+  char *pos1;
+
+  int use_ns=0;
+  int use_es=0;
+  int use_ss=0;
+  int use_fs=0;
+    
+  for (int i=0; i<*nset; i++){
+    // set names are stored in set, and appear to be 80 characters in
+    // length, but is deliminated by a space
+    pos0 = set+i*NAMELEN;
+    pos1 = strpbrk(pos0, space)-1;
+    int strl = (int) (pos1-pos0);
+
+    char* tmpstr = strndup(pos0, strl);
+    names[i] = tmpstr;
+    pos1 = strpbrk(pos1, space)-1;
+    if(strcmp1(pos1,"N")==0){ // printf("Found node set\n");
+      settype[i] = type_ns;
+      char* tmpstr = strndup(pos0, strl);
+      if (store){names_nset[use_ns++] = tmpstr;} else {(*num_ns)++;}
+    }else if(strcmp1(pos1,"E")==0){ // printf("Found element set\n");
+      settype[i] = type_es;
+      // char* tmpstr = strndup(pos0, strl);
+      // if (store){names_eset[use_es++] = tmpstr;} else {(*num_es)++;}
+    }else if(strcmp1(pos1,"S")==0){ // printf("Found side set\n");
+      settype[i] = type_ss;
+      // char* tmpstr = strndup(pos0, strl);
+      // if (store){names_sset[use_ss++] = tmpstr;} else {(*num_ss)++;}
+    }else if(strcmp1(pos1,"T")==0){ // printf("Found face set\n");
+      settype[i] = type_fs;
+      // char* tmpstr = strndup(pos0, strl);
+      // if (store){names_fset[use_fs++] = tmpstr;} else {(*num_fs)++;}
+    }
+  } // end loop i over all sets
+
+
+  if (store==0){
+    printf("FIRST PASS %i %i %i %i\n", *num_ns, *num_es, *num_ss, *num_fs);
+    return;
+  }
+
+  // Get actual numbers for number of nodes and total number etc.
   for (i=0; i<*nset; i++){
-
-    if (store) {
-      // Find and store the set numbers
-      // The pointer integers are 1 based (fortran)
-      s=istartset[i]-1; // break here if s=50523
-      e=iendset[i]-1;
-      // Determine if generate was used
-      gen=0; l=0; n=1;
-      for (j=s; j<=e; j++){
-	if (ialset[j]<0) {
-	  // I think this breaks when the generated list has an implicit one such as
-	  // *nset, nset=set, generate
-	  //   1, 4 [,implicit 1]
-	  k=ialset[j-1]-ialset[j-2];
-	  if (k<0){
-	    if (n){
-	      printf("Warning: Exodus deduced a generated set with decreasing numbers.\n");
-	      printf("         These numbers will be reverse. Check the input deck.\n");
-	      n=0;
-	    }
-	    k=-k;
+    
+    // printf("Assessing set %s with type %i\n", names[i], settype[i]);
+    // ONLY WORKS FOR NSETS FOR NOW... We also need the element number inverse map
+    if (settype[i] != type_ns){n_in_set[i]=0; continue;}
+    
+    // Find and store the set numbers
+    // The pointer integers are 1 based (fortran)
+    s=istartset[i]-1;
+    e=iendset[i]-1;
+    // Determine if generate was used
+    gen=0; l=0; n=1;
+    
+    for (j=s; j<=e; j++){
+      if (ialset[j]<0){
+	// This is a generated set
+	k=ialset[j-1]-ialset[j-2];
+	if (k<0){
+	  if (n){
+	    printf("Warning: Exodus deduced a generated set with decreasing numbers.\n");
+	    printf("         These numbers will be reverse. Check the input deck.\n");
+	    n=0;
 	  }
-	  gen+=(k)/(-ialset[j])+1;
-	  l-=3;
+	  k=-k;
 	}
+	gen+=(k)/(-ialset[j])+1;
+	l-=3;
       }
-
-      // Now set the length of the set allocation
-      l=e-s+1+gen+l;
-      set_nums = (ITG *) calloc(l, sizeof(ITG));
-
-      /* Only add the generate code if there are at least
-	 three points in the vector */
-      n=0; j=s;
-      if (l>2){
-	while (j<=e-2){
-	  // Account for generated ids
-	  if (ialset[j+2]<0) {
-	    if (ialset[j+1]-ialset[j]<0){
-	      // Deal with reversed generated sets
-	      printf("REversal\n");
-	      for (k=ialset[j+1]; k<=ialset[j]; k-=ialset[j+2]){
-		set_nums[n++]=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
-		printf("%i, ", set_nums[n-1]);
-	      }
-	    } else {
-	      for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){
-		set_nums[n++]=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
-	      }
-	    }
-	    j+=3;
-	  }else{
-	    // Account for directly added id
-	    gen=ialset[j++]-1;
-	    set_nums[n++]=exoset_check(gen, node_map_inv, nk, &dropped, &unidentified);
-	  }
-	}
-	// Must finish the last two of directly added set
-	if (ialset[e]>0){ // only if the last set is not a generated set
-	  // 1+n++ and -1+n++ to preserve order
-	  set_nums[1+n++]=exoset_check(ialset[e]-2, node_map_inv, nk, &dropped, &unidentified);
-	  if (ialset[e-1]>0){
-	    set_nums[-1+n++]=exoset_check(ialset[e]-3, node_map_inv, nk, &dropped, &unidentified);
-	  }
-	}
-      }else if(l>1){
-	set_nums[n++]=exoset_check(ialset[s]-1, node_map_inv, nk, &dropped, &unidentified);
-	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
-      }else{
-	set_nums[n++]=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
-      }
-    } // if (store)
-
-    strncpy(tmpstr,set+i*81,81);
-    pos = strpbrk(tmpstr, space)-1;
-
-    if(strcmp1(pos,"N")==0){
-      (*num_ns)++; // printf ("Node set identified\n");
-      if (store){
-	errr = ex_put_set_param (exoid, EX_NODE_SET, i, n, 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	if (errr) printf ("Error writing set parameters\n");
-	errr = ex_put_set       (exoid, EX_NODE_SET, i, set_nums, NULL);
-	if (errr) printf ("Error writing set numbers\n");
-	// ex_put_set_dist_fact (exoid, EX_NODE_SET, i, set_nums);  //
-      }
-    }else if(strcmp1(pos,"E")==0) {
-      (*num_es)++; // printf ("Element set identified\n");}
-      /* No element set storage mechanism?
-      if (store){
-      	errr = ex_put_set_param (exoid, EX_ELEM_SET, i, n, 0);
-      	if (errr) printf ("Error writing set parameters\n");
-      	errr = ex_put_set       (exoid, EX_ELEM_SET, i, set_nums, NULL);
-      	if (errr) printf ("Error writing set numbers\n");
-      	// ex_put_set_dist_fact (exoid, EX_ELEM_SET, i, set_nums);  //
-	} */
-    }else if(strcmp1(pos,"S")==0) {
-      (*num_ss)++; // printf ("Node side set surface identified\n");}
-      /* Side sets (node surfaces) not yet implemented
-	 if (store){
-      	errr = ex_put_set_param (exoid, EX_SIDE_SET, i, n, 0);
-      	if (errr) printf ("Error writing set parameters\n");
-      	errr = ex_put_set       (exoid, EX_SIDE_SET, i, set_nums, side_set_side_list);
-      	if (errr) printf ("Error writing set numbers\n");
-      	// ex_put_set_dist_fact (exoid, EX_SIDE_SET, i, set_nums);  //
-	} */
-    }else if(strcmp1(pos,"T")==0) {
-      (*num_fs)++; // printf ("Face set surface identified\n");}
-      /* Face sets not yet implemented
-	 if (store){
-	 errr = ex_put_set_param (exoid, EX_FACE_SET, i, n, 0);
-	 if (errr) printf ("Error writing set parameters\n");
-	 errr = ex_put_set       (exoid, EX_FACE_SET, i, set_nums);
-	 if (errr) printf ("Error writing set numbers\n");
-	 // ex_put_set_dist_fact (exoid, EX_FACE_SET, i, set_nums);  //
-	 } */
     }
-    if (store) {free (set_nums);}
-  }
-
-  if (store){
-    // char *namesnset[*num_ns]; j=0;
-    // char *namessset[*num_ss]; k=0;
-    // char *nameseset[*num_es]; l=0;
-    // char *namesfset[*num_fs]; n=0;
-
-    for (i=0; i<*nset; i++){
-      strncpy(tmpstr,set+i*81,81);
-      pos = strpbrk(tmpstr, space)-1;
-      // This crashed in valgrind
-      // if(strcmp1(pos,"N")==0) {strncpy(namesnset[j++], tmpstr, MAX_STR_LENGTH);}
-      // if(strcmp1(pos,"E")==0) {strcpy(nameseset[l++],tmpstr);}
-      // if(strcmp1(pos,"S")==0) {strcpy(namessset[k++],tmpstr);}
-      // if(strcmp1(pos,"T")==0) {strcpy(namesfset[n++],tmpstr);}
+    
+    
+    // Now set the length of the set allocation
+    l=e-s+1+gen+l;
+    ITG *set_nums;
+    set_nums = (ITG *) calloc(l, sizeof(ITG));
+    
+    /* Only add the generate code if there are at least
+       three points in the vector */
+    n=0; j=s;
+    if (l>2){
+      while (j<=e-2){
+	// Account for generated ids
+	if (ialset[j+2]<0) {
+	  if (ialset[j+1]-ialset[j]<0){
+	    // Deal with reversed generated sets
+	    printf("REversal\n");
+	    for (k=ialset[j+1]; k<=ialset[j]; k-=ialset[j+2]){
+	      z=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
+	      if (z>=0){set_nums[n++]=z;}
+	    }
+	  } else {
+	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){
+	      // printf("generated set ialset[k]=%i\n", ialset[k]);
+	      z=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
+	      if (z>=0){set_nums[n++]=z;}
+	    }
+	  }
+	  j+=3;
+	} else {
+	  // Account for directly added id
+	  gen=ialset[j++]-1;
+	  z=exoset_check(gen, node_map_inv, nk, &dropped, &unidentified);
+	  if (z>=0){set_nums[n++]=z;}
+	}
+      }
+      // Must finish the last two of directly added set
+      if (ialset[e]>0){ // only if the last set is not a generated set
+	// 1+n++ and -1+n++ to preserve order
+	z=exoset_check(ialset[e]-2, node_map_inv, nk, &dropped, &unidentified);
+	if (z>=0){set_nums[1+n++]=z;}
+	if (ialset[e-1]>0){
+	  z=exoset_check(ialset[e]-3, node_map_inv, nk, &dropped, &unidentified);
+	  if (z>=0){set_nums[-1+n++]=z;}
+	}
+      }
+    }else if(l>1){
+      // When a generated set is only of length 2.
+      z=exoset_check(ialset[s]-1, node_map_inv, nk, &dropped, &unidentified);
+      if (z>=0){set_nums[n++]=z;}
+      z=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
+      if (z>=0){set_nums[n++]=z;}
+    } else {
+      z=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
+      if (z>=0){set_nums[n++]=z;}
     }
+    n_in_set[i]=n;
 
-    // if (*num_ns>0){
-    //   errr = ex_put_names (exoid, EX_NODE_SET, namesnset);
-    //   if (errr) printf ("Error writing node set names\n");
-    // }
-    /* side sets not implemented yet
-       if (*num_ss>0){
-       errr = ex_put_names (exoid, EX_SIDE_SET, namessset);
-       if (errr) printf ("Error writing side set names\n");
-       }
-    */
+    // // DEBUG
+    // printf("Set %s has %i members ",names[i], n);
+    // for (j=0; j<n; j++){printf("%i, ",set_nums[j]);}
+    // printf("\n");
+    
+    // Write the number of sets
+    if (n_in_set[i]>0){
+      if (settype[i]==type_ns){
+	errr = ex_put_set_param (exoid, EX_NODE_SET, use_ns,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	if (errr) printf ("ERROR in exo: failed node set parameters\n");
+	errr = ex_put_set       (exoid, EX_NODE_SET, use_ns++, set_nums, NULL);
+	if (errr) printf ("ERROR in exo: failed node set\n");
+      }else if (settype[i]==type_es){
+	1;
+	// printf("Exodus Warning: Element sets not implemented. Affected set is %s\n", names[i]);
+	// I haven't figured out how to implement element sets which I think must be based on blocks.
+	
+	// errr = ex_put_set_param (exoid, EX_ELEM_SET, use_es,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	// if (errr) printf ("ERROR in exo: failed elem set parameters\n");
+	// errr = ex_put_set       (exoid, EX_ELEM_SET, use_es++, set_nums, NULL);
+	// if (errr) printf ("ERROR in exo: failed elem set\n");
+      }else if (settype[i]==type_fs){
+	1;
+	// printf("Exodus Warning: Face sets not implemented. Affected set is %s\n", names[i]);
+	
+	// errr = ex_put_set_param (exoid, EX_FACE_SET, use_fs,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	// if (errr) printf ("ERROR in exo: failed face set parameters\n");
+	// errr = ex_put_set       (exoid, EX_FACE_SET, use_fs++, set_nums, NULL);
+	// if (errr) printf ("ERROR in exo: failed face set\n");
+      }else if (settype[i]==type_ss){
+	1;
+	// printf("Exodus Warning: Face sets not implemented. Affected set is %s\n", names[i]);
+	
+	// errr = ex_put_set_param (exoid, EX_SIDE_SET, use_ss,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	// if (errr) printf ("ERROR in exo: failed side set parameters\n");
+	// errr = ex_put_set       (exoid, EX_SIDE_SET, use_ss++, set_nums, NULL);
+	// if (errr) printf ("ERROR in exo: failed side set\n");
+      }
+    }else{
+      printf("Exodus Warning: Empty set skipped: %s\n", names[i]);
+    }
+    free(set_nums);
+  } //end i loop
+
+
+  /// Last thing is to issue warnings
+  printf("Exodus Warning: element, face, and side sets not implemented. Affected sets are:\n");
+  int warnempty=0;
+  for(i=0; i<*nset; i++){
+    if (settype[i]!=type_ns){
+      printf(" %s", names[i]);
+      if (n_in_set[i]==0){
+	warnempty=1;
+      }
+    }
   }
-
-  if (dropped){
-    printf ("\nExodus Output WARNING: At least one node or element is dropped from a set.\n");
-    printf ("  This may be due rigid bodies or 3D expansion (beams, shells, OUTPUT=3D).\n\n");
-  }
-
-  if (unidentified){
-    printf ("\nExodus Output WARNING: At least one unidentified node or element is dropped from a set.\n\n");
-  }
-
+  printf("\n");
+  // if (warnempty){
+  //   printf("Exodus Warning: empty sets not saved. Affected sets are:\n");
+  //   for(i=0; i<*nset; i++){
+  //     if (settype[i]!=type_ns){
+  // 	if (n_in_set[i]==0){
+  // 	  printf(" %s", names[i]);
+  // 	}
+  //     }
+  //   }
+  //   printf("\n");
+  // }
+  
   return;
 }
-
 
 ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentified){
   ITG val=0;
@@ -213,8 +268,7 @@ ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentif
     if (val==-1) {
       *dropped = 1;
     }
-  }else{
-    // printf("UNIDENTIFIED %" ITGFORMAT "\n", n);
+  } else {
     *unidentified = 1;
   }
   return val;

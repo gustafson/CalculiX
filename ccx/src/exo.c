@@ -187,9 +187,10 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     num_elem_blk = 17;
 
     // Find the number of sets
+    num_ns=0; num_es=0; num_ss=0; num_fs=0;
+    int writeset=0;
     exosetfind(set, nset, ialset, istartset, iendset,
-	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, (int) 0, nk);
-    printf ("Side sets to exo file not implemented.\n");
+	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, writeset, nk);
     num_ss=0;
 
 #ifdef LONGLONG
@@ -209,7 +210,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     /* determining the number of elements */
     if(*nmethod!=0){
       nelout=0;
-      for(i=0;i<*ne0;i++){
+      for(i=0;i<*ne0;i++){ // NOTE I believe ne0 is up to the highest
+			   // element number, regardless of actual #
+			   // of elements
 	if(((ipkon[i]<=-1)&&(ioutall==0))||(ipkon[i]==-1)){
 	  continue;
 	}else if(strcmp1(&lakon[8*i],"ESPRNGC")==0){ // contact spring element
@@ -253,7 +256,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     printf("Number of elements %" ITGFORMAT "\n", num_elem);
     printf("Number of element blocks %" ITGFORMAT "\n", num_elem_blk);
     printf("Number of node sets %" ITGFORMAT "\n", num_ns);
-    printf("Number of side sets %" ITGFORMAT "\n", num_ss);
+    printf("Number of element sets %" ITGFORMAT "\n", num_es);
+    // printf("Number of side sets %" ITGFORMAT "\n", num_ss);
+    // printf("Number of face sets %" ITGFORMAT "\n", num_fs);
 
     errr = ex_put_init (exoid, "CalculiX EXO File",
 			num_dim, num_nodes,
@@ -284,14 +289,14 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     ITG *elem_map;
     elem_map  = (ITG *) calloc(num_elem, sizeof(ITG));
     ITG *blkassign;
-    blkassign = (ITG *) calloc(num_elem, sizeof(ITG));
-    for (i=0; i<*ne0; i++){blkassign[i]=-1;}
+    blkassign = (ITG *) calloc(*ne0, sizeof(ITG));
     ITG *blkindexe;
-    blkindexe = (ITG *) calloc(num_elem, sizeof(ITG));
-    ITG *elem_mat;
-    elem_mat  = (ITG *) calloc(num_elem, sizeof(ITG));
+    blkindexe = (ITG *) calloc(*ne0, sizeof(ITG));
+    for (i=0; i<*ne0; i++){blkassign[i]=-1;}
     char curblk[8]="       ";
-
+    ITG blksize[num_elem_blk];
+    for(i=0; i<num_elem_blk; i++){blksize[i]=0;}
+    
     l=0;
     for(i=0;i<*ne0;i++){
       // For each element.  Composite elements are one increment in
@@ -323,7 +328,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	indexe=ipkon[i];
       }
 
-      elem_map[l] = i+1;
+      // These set for all
+      elem_map[l++] = i+1;
+      blkindexe[i]=indexe;
       
       strcpy1(curblk,&lakon[8*i],8);
       strcpy1(material,&matname[80*(ielmat[i*mi[2]]-1)],5);
@@ -339,17 +346,20 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  if(ielmat[i*mi[2]+k]==0) break;
 	  nlayer++;
 	}
+
+	// For composite elements we need to move back one l
+	l--;
 	for(k=0;k<nlayer;k++){
+	  // Increment the element map
+	  elem_map[l++] = i+1;
 	  nemax++;
-	  elem_map[l] = i+1;
-	  // Material property for the layer!
-	  elem_mat[l]=ielmat[i*mi[2]];
+
 	  if(strcmp2(&lakon[8*i+3],"15",2)==0){ // 15 node layered shell expansion, i.e, S6
-	    blkindexe[l]=indexe;
-	    blkassign[l++]=10;
+	    blkassign[i]=10;
+	    blksize[10]=blksize[10]+1;
 	  }else if(strcmp2(&lakon[8*i+3],"20",2)==0){ // 20 node layered shell expansion, i.e, S8[R]
-	    blkindexe[l]=indexe;
-	    blkassign[l++]=2;
+	    blkassign[i]=2;
+	    blksize[2]=blksize[2]+1;
 	  }
 	}
       }else if(strcmp1(&lakon[8*i+3],"2")==0){
@@ -357,64 +367,68 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)||
 	   (strcmp1(&lakon[8*i+6],"I")==0)){
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=1;
+	  blkassign[i]=1;
+	  blksize[1]=blksize[1]+1;
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){
 	  /* 3-node beam element */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=3;
+	  blkassign[i]=3;
+	  blksize[3]=blksize[3]+1;
 	}else{
 	  /* 8-node 2d element */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=4;
+	  blkassign[i]=4;
+	  blksize[4]=blksize[4]+1;
 	}
       }else if(strcmp1(&lakon[8*i+3],"8")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
 	  /* 8-node brick element */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=5;
+	  blkassign[i]=5;
+	  blksize[5]=blksize[5]+1;
 	}else if(strcmp1(&lakon[8*i+6],"B")==0){
 	  /* 2-node 1d element */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=6;
+	  blkassign[i]=6;
+	  blksize[6]=blksize[6]+1;
 	  // if(strcmp1(&lakon[8*i+4],"R")==0){
-	  //   blkassign[l++]=6;
+	  //   blkassign[i]=6;
+	  //   blksize[6]=blksize[6]+1;
 	  // }else if(strcmp1(&lakon[8*i+4],"I")==0){
-	  //   blkassign[l++]=6;
+	  //   blkassign[i]=6;
+	  //   blksize[6]=blksize[6]+1;
 	  // }
 	}else{
 	  /* 4-node 2d element */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=7;
+	  blkassign[i]=7;
+	  blksize[7]=blksize[7]+1;
 	  /* not sure exactly what this does, probably axisymmetric? */
 	  // if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
 	  // 
 	  // if(strcmp1(&lakon[8*i+4],"R")==0){
-	  //   blkassign[l++]=7;
+	  //   blkassign[i]=7;
+	  //   blksize[7]=blksize[7]+1;
 	  // }else if(strcmp1(&lakon[8*i+4],"I")==0){
-	  //   blkassign[l++]=7;
+	  //   blkassign[i]=7;
+	  //   blksize[7]=blksize[7]+1;
 	  // }	    
 	}
       }else if((strcmp1(&lakon[8*i+3],"10")==0)||
 	       (strcmp1(&lakon[8*i+3],"14")==0)){
 	/* 10-node tetrahedral element */
-	blkindexe[l]=indexe;
-	blkassign[l++]=8;
+	blkassign[i]=8;
+	blksize[8]=blksize[8]+1;
       }else if(strcmp1(&lakon[8*i+3],"4")==0){
 	/* 4-node tetrahedral element */
-	blkindexe[l]=indexe;
-	blkassign[l++]=9;
+	blkassign[i]=9;
+	blksize[9]=blksize[9]+1;
       }else if(strcmp1(&lakon[8*i+3],"15")==0){
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
 	  /* 15-node wedge element */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=10;
+	  blkassign[i]=10;
+	  blksize[10]=blksize[10]+1;
 	}else{
 	  /* 6-node 2d element */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=11;
+	  blkassign[i]=11;
+	  blksize[11]=blksize[11]+1;
 	  /* not sure exactly what this does */
 	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
 	}
@@ -422,84 +436,82 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	if((strcmp1(&lakon[8*i+6]," ")==0)||
 	   (strcmp1(&filab[4],"E")==0)){
 	  /* 6-node wedge element */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=12;
+	  blkassign[i]=12;
+	  blksize[12]=blksize[12]+1;
 	}else{
 	  /* 3-node 2d element */ /* Shells and triangles */
 	  /* not sure exactly what this does */
 	  if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=13;
+	  blkassign[i]=13;
+	  blksize[13]=blksize[13]+1;
 	}
 	//      }else if((strcmp1(&lakon[8*i],"D")==0)&&
 	//	       (strcmp1(&lakon[8*i],"DCOUP3D")!=0)){
       }else if(strcmp1(&lakon[8*i],"D")==0){
 	if(kon[indexe]==0){
 	  /* 2-node 1d element (network entry element) */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=14;
+	  blkassign[i]=14;
+	  blksize[14]=blksize[14]+1;
 	}else if(kon[indexe+2]==0){
 	  /* 2-node 1d element (network exit element) */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=15;
+	  blkassign[i]=15;
+	  blksize[15]=blksize[15]+1;
 	}else{
 	  /* 3-node 1d element (genuine network element) */
-	  blkindexe[l]=indexe;
-	  blkassign[l++]=16;
+	  blkassign[i]=16;
+	  blksize[16]=blksize[16]+1;
 	}
       }else if((strcmp1(&lakon[8*i],"E")==0)&&
 	       (strcmp1(&lakon[8*i+6],"A")==0)){
 	/* Not sure exactly what iaxial does yet */
 	if(strcmp1(&lakon[8*i+6],"A")==0) iaxial=1;
 	/* 2-node 1d element (spring element) */
-	blkindexe[l]=indexe;
-	blkassign[l++]=17;
+	blkassign[i]=17;
+	blksize[17]=blksize[17]+1;
       }
     }
 
-    // Create a list of block sizes for later use
-    ITG blksize[num_elem_blk];
-    for (j=0; j<18; j++){
-      k=0;
-      for (m=0; m<l; m++){
-	if (blkassign[m]==j){k++;}
-      }
-      blksize[j]=k;
-    }
+    // printf("DEBUG total number of elements is %i\n", l);
+    // // Create a list of block sizes for later use
+    // for (j=0; j<num_elem_blk; j++){
+    //   printf ("block size %i\n", blksize[j]);
+    // }
 
-    int num_nodes_per_elem[num_elem_blk], num_edges_per_elem[num_elem_blk], num_faces_per_elem[num_elem_blk];
-    char *blknames[num_elem_blk];
+    int node_per_e[num_elem_blk], edge_per_e[num_elem_blk], face_per_e[num_elem_blk];
+    char *blkname[num_elem_blk], *blktype[num_elem_blk];
     j=0;
-    num_nodes_per_elem[j]=1;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="PNT";
-    num_nodes_per_elem[j]=20; num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="C3D20[R]";
-    num_nodes_per_elem[j]=20; num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="COMPOSITE LAYER C3D20";
-    num_nodes_per_elem[j]=3;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="Beam B32[R]";
-    num_nodes_per_elem[j]=8;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS8 CPE8 CAX8 S8[R]";
-    num_nodes_per_elem[j]=8;  num_edges_per_elem[j]=12; num_faces_per_elem[j]=6;  blknames[j++]="C3D8[R]";
-    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="TRUSS2";
-    num_nodes_per_elem[j]=4;  num_edges_per_elem[j]=4;  num_faces_per_elem[j]=4;  blknames[j++]="CPS4[RI] CPE4[RI] CAX4 S4[R]";
-    num_nodes_per_elem[j]=10; num_edges_per_elem[j]=6;  num_faces_per_elem[j]=4;  blknames[j++]="C3D10";
-    num_nodes_per_elem[j]=4;  num_edges_per_elem[j]=6;  num_faces_per_elem[j]=4;  blknames[j++]="C3D4";
-    num_nodes_per_elem[j]=15; num_edges_per_elem[j]=9;  num_faces_per_elem[j]=5;  blknames[j++]="C3D15";
-    num_nodes_per_elem[j]=6;  num_edges_per_elem[j]=3;  num_faces_per_elem[j]=3;  blknames[j++]="CPS6 CPE6 S6";
-    num_nodes_per_elem[j]=6;  num_edges_per_elem[j]=3;  num_faces_per_elem[j]=3;  blknames[j++]="C3D6";
-    num_nodes_per_elem[j]=3;  num_edges_per_elem[j]=3;  num_faces_per_elem[j]=3;  blknames[j++]="CPS3 CPE3 S3";
-    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="2-node 1d network entry elem";
-    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="2-node 1d network exit elem";
-    num_nodes_per_elem[j]=3;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="2-node 1d genuine network elem";
-    num_nodes_per_elem[j]=2;  num_edges_per_elem[j]=0;  num_faces_per_elem[j]=0;  blknames[j++]="2-node 1d spring elem";
+    node_per_e[j]=1;  edge_per_e[j]=0;  face_per_e[j]=0; blktype[j]="SPHERE";   blkname[j++]="PNT";
+    node_per_e[j]=20; edge_per_e[j]=12; face_per_e[j]=6; blktype[j]="HEX";      blkname[j++]="C3D20[R]";
+    node_per_e[j]=20; edge_per_e[j]=12; face_per_e[j]=6; blktype[j]="HEX";      blkname[j++]="COMPOSITE LAYER C3D20";
+    node_per_e[j]=3;  edge_per_e[j]=4;  face_per_e[j]=4; blktype[j]="TRUSS";    blkname[j++]="Beam B32[R]";
+    node_per_e[j]=8;  edge_per_e[j]=4;  face_per_e[j]=4; blktype[j]="QUAD";     blkname[j++]="CPS8 CPE8 CAX8 S8[R]";
+    node_per_e[j]=8;  edge_per_e[j]=12; face_per_e[j]=6; blktype[j]="HEX";      blkname[j++]="C3D8[R]";
+    node_per_e[j]=2;  edge_per_e[j]=0;  face_per_e[j]=0; blktype[j]="TRUSS";    blkname[j++]="TRUSS2";
+    node_per_e[j]=4;  edge_per_e[j]=4;  face_per_e[j]=4; blktype[j]="SHELL";    blkname[j++]="CPS4[RI] CPE4[RI] CAX4 S4[R]";
+    node_per_e[j]=10; edge_per_e[j]=6;  face_per_e[j]=4; blktype[j]="TETRA";    blkname[j++]="C3D10";
+    node_per_e[j]=4;  edge_per_e[j]=6;  face_per_e[j]=4; blktype[j]="TETRA";    blkname[j++]="C3D4";
+    node_per_e[j]=15; edge_per_e[j]=9;  face_per_e[j]=5; blktype[j]="WEDGE";    blkname[j++]="C3D15";
+    node_per_e[j]=6;  edge_per_e[j]=3;  face_per_e[j]=3; blktype[j]="HEX";      blkname[j++]="CPS6 CPE6 S6";
+    node_per_e[j]=6;  edge_per_e[j]=3;  face_per_e[j]=3; blktype[j]="WEDGE";    blkname[j++]="C3D6";
+    node_per_e[j]=3;  edge_per_e[j]=3;  face_per_e[j]=3; blktype[j]="TRIANGLE"; blkname[j++]="CPS3 CPE3 S3";
+    node_per_e[j]=2;  edge_per_e[j]=0;  face_per_e[j]=0; blktype[j]="TRUSS";    blkname[j++]="2-node 1d network entry elem";
+    node_per_e[j]=2;  edge_per_e[j]=0;  face_per_e[j]=0; blktype[j]="TRUSS";    blkname[j++]="2-node 1d network exit elem";
+    node_per_e[j]=3;  edge_per_e[j]=0;  face_per_e[j]=0; blktype[j]="TRUSS";    blkname[j++]="2-node 1d genuine network elem";
+    node_per_e[j]=2;  edge_per_e[j]=0;  face_per_e[j]=0; blktype[j]="TRUSS";    blkname[j++]="2-node 1d spring elem";
 
-    errr = ex_put_names (exoid, EX_ELEM_BLOCK, blknames);
+    errr = ex_put_names (exoid, EX_ELEM_BLOCK, blkname);
     if(errr){printf("*ERROR in exo: cannot write block names");}
 
     /* write element connectivity */
     ITG *connect;
+    // ITG *blkmat;
 
     o=0; // o is the integer tracking block assignment for a given
 	 // element (included expanded elements)
     for(l=0;l<num_elem_blk;l++){
 
-      connect = (ITG *) calloc (blksize[l]*num_nodes_per_elem[l], sizeof(ITG));
+      connect = (ITG *) calloc (blksize[l]*node_per_e[l], sizeof(ITG));
+      // blkmat =  (ITG *) calloc (blksize[l], sizeof(ITG));
       
       k=0; // k keeps track of connectivity for the elements... (each
 	   // node in each element increments k).  This is reset for
@@ -515,6 +527,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	// Reset the element index
 	indexe=blkindexe[i];
 	
+	// blkmat[o]=ielmat[i*mi[2]]; // Will be updated for composite materials
+	
 	if(strcmp2(&lakon[8*i+6],"LC",2)==0){ //composite
 	  // Deal with all the composite elements first
 	  nlayer=0;
@@ -524,6 +538,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	  }
 	  
 	  for(n=0;n<nlayer;n++){
+	    // Grab the material
+	    // blkmat[o] = ielmat[i*mi[2]+n];
+	    
 	    switch(blkassign[i]) // Recall blockassign[i]=l here
 	      {
 	      case 10:  // C3D15
@@ -593,92 +610,60 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	      m=8;
 	      break;
 	    }
-	  for (j=0; j <num_nodes_per_elem[l]; j++){
+	  for (j=0; j <node_per_e[l]; j++){
 	    connect[k++] = node_map_inv[kon[indexe+m+j]-1];
 	  }
 	  o++;
 	}
       } // This ends the loop over the element numbers
       
-      // Still looping on blocks (l)
-      int num_attr=0;
-      switch (l)
-	{
-	case 0:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "SPHERE", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 1:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 2:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 3:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 4:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "QUAD", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 5:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 6:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 7:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "SHELL", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 8:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TETRA", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 9:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TETRA", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 10:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 11:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "HEX", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 12:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	case 13:
-	  // KEEP FOR AWHILE CHECKING BREAKAGE
-	  // errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "WEDGE", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRIANGLE", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	default:
-	  // case 14:
-	  // case 15:
-	  // case 16:
-	  // case 17:
-	  errr = ex_put_block (exoid, EX_ELEM_BLOCK, l, "TRUSS", blksize[l], num_nodes_per_elem[l], num_edges_per_elem[l], num_faces_per_elem[l], num_attr);
-	  break;
-	};
 
-      if (blksize[l]>0){
+      // Still looping on blocks (l)
+      // Attributes are a float that describes the entire block.
+      int num_attr=0;
+
+      // Empty blocks must be initialized.
+      errr = ex_put_block (exoid, EX_ELEM_BLOCK, l,
+			   blktype[l],
+			   blksize[l],
+			   node_per_e[l],
+			   edge_per_e[l],
+			   face_per_e[l],
+			   num_attr);
+      if (errr)printf("ERROR in exo: failed element block\n");
+      if (blksize[l]){
+	// Empty blocks should not put connectivity
 	errr = ex_put_conn (exoid, EX_ELEM_BLOCK, l, connect, NULL, NULL);
-	if (errr)
-	  printf ("ERROR in ex_put_conn %i\n", errr);
+	if (errr)printf("ERROR in exo: failed element connectivity\n");
       }
+
+      // char *attr_names[1];
+      // attr_names[0] = "Material ID";
+      // ex_put_elem_attr_names (exoid, l, attr_names);
+      // Attributes is for a float that describes the entire block.
+      // errr = ex_put_elem_attr(exoid, l, blkmat);
+      // if (errr)
+      // 	printf ("ERROR in ex_put_elem_attr %i\n", errr);
+
       free (connect);
+      // free (blkmat);
     }
 
     // Write the element map into the file
     errr = ex_put_id_map (exoid, EX_ELEM_MAP, elem_map);
     if (errr)
-      printf ("ERROR in ex_put_id_map %i\n", errr);
+      printf ("ERROR in exo: failed element map\n");
 
     // Write the node sets into the file
+    writeset=1;
     exosetfind(set, nset, ialset, istartset, iendset,
-	       &num_ns, &num_ss, &num_es, &num_fs, node_map_inv, exoid, (int) 1, nk);
+	       &num_ns, &num_ss, &num_es, &num_fs,
+	       node_map_inv, exoid, writeset, nk);
 
     // Free up memory which is gathering dust
     free (elem_map);
     free (blkassign);
     free (blkindexe);
-    free (elem_mat);
     
     // Close files
     ex_update (exoid);
@@ -724,7 +709,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   // Statically allocate an array of pointers.  Can't figure out how to do this dynamically.
   // 100 should be enough to store the variable names.
   char *var_names[100];
-
+  
   int countvars=0;
   int countbool=3;
 
@@ -2080,7 +2065,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}
       }
 
-      //  for (i=0; i<countvars; i++)
+      //for (i=0; i<countvars; i++)
       // 	{
       // 	  free(var_names[i]);
       // 	}
