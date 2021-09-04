@@ -72,7 +72,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 
   for (i=0; i<*nset; i++){
     // set names are stored in set, and appear to be 80 characters in
-    // length, but is deliminated by a space
+    // length
     pos0 = set+i*NAMELEN;
     pos1 = strpbrk(pos0, space)-1;
     int strl = (int) (pos1-pos0);
