@@ -256,6 +256,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     printf("\t  These numbers will be reversed. Check the input deck.\n");
   }
 
+  exodus_sort(dropped_set, &dropped);
   printf("\t- Inactive nodes (unused or due to shell and beam expansion):");
   for(i=0; i<dropped; i++){
     if ((i%8)==0){printf("\n\t\t");}
@@ -281,14 +282,26 @@ ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentif
   
   if (n<=*nk){
     val = node_map_inv[n]-1;
-    // if (val==-1) {
-    //   (*dropped)++;
-    // }
   } else {
     *unidentified = 1;
   }
 
   return val;
+}
+
+void exodus_sort(ITG *a, ITG *n){
+  ITG i, j, tmp;
+  
+  for(i=0; i<*n; i++){
+    for(j=i+1; j<*n; j++){
+      if(a[j] <a[i]){
+	tmp = a[i];
+	a[i] = a[j];
+	a[j] = tmp;
+      }
+    }
+  }
+  return;
 }
 
 #endif

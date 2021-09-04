@@ -50,3 +50,5 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	       ITG *istartset,ITG *iendset,ITG *ialset,ITG *ngraph,ITG *ncomp,
 	       ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,ITG exoid,
 	       ITG time_step, int countvar);
+
+void exodus_sort(ITG *a, ITG *n);
