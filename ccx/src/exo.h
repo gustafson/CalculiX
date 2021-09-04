@@ -35,7 +35,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	 ITG *ielprop,double *prop);
 
 void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
-		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs, ITG *node_map_inv,
+		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs,
+		ITG *node_map_inv, ITG *elem_map_inv,
 		int exoid, int store, ITG *nk);
 
 ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentified);

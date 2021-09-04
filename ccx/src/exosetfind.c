@@ -33,7 +33,8 @@
 #define type_fs 3
 
 void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
-		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs, ITG *node_map_inv,
+		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs,
+		ITG *node_map_inv, ITG *elem_map_inv,
 		int exoid, int store, ITG *nk){
 
   // Note first call to this function counts the sets.  Second call to
@@ -265,7 +266,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   printf("\t- Inactive nodes (unused or due to shell and beam expansion):");
   for(i=0; i<dropped; i++){
     if ((i%8)==0){printf("\n\t\t");}
-    printf("%i, ", dropped_set[i]+1);
+    printf("%i,\t", dropped_set[i]+1);
   }
   printf("\n");
   ex_put_names (exoid, EX_NODE_SET, names_nset);

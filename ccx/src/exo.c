@@ -190,7 +190,8 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     num_ns=0; num_es=0; num_ss=0; num_fs=0;
     int writeset=0;
     exosetfind(set, nset, ialset, istartset, iendset,
-	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, writeset, nk);
+	       &num_ns, &num_ss, &num_es, &num_fs,
+	       NULL, NULL, exoid, writeset, nk);
     num_ss=0;
 
 #ifdef LONGLONG
@@ -287,7 +288,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
     // Initialize enough memory to store the element numbers
     ITG *elem_map;
-    elem_map  = (ITG *) calloc(num_elem, sizeof(ITG));
+    elem_map  = (ITG *)     calloc(num_elem, sizeof(ITG));
+    ITG *elem_map_inv;
+    elem_map_inv  = (ITG *) calloc(*ne0, sizeof(ITG));
     ITG *blkassign;
     blkassign = (ITG *) calloc(*ne0, sizeof(ITG));
     ITG *blkindexe;
@@ -658,9 +661,10 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     writeset=1;
     exosetfind(set, nset, ialset, istartset, iendset,
 	       &num_ns, &num_ss, &num_es, &num_fs,
-	       node_map_inv, exoid, writeset, nk);
+	       node_map_inv, elem_map_inv, exoid, writeset, nk);
 
     // Free up memory which is gathering dust
+    free (elem_map_inv);
     free (elem_map);
     free (blkassign);
     free (blkindexe);
