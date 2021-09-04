@@ -149,43 +149,48 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	    // Deal with reversed generated sets
 	    for (k=ialset[j+1]; k<=ialset[j]; k-=ialset[j+2]){
 	      z=exoset_check(k, node_map_inv, nk, &dropped, &unidentified);
-	      if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=k;}
+	      if (z>=0){set_nums[n++]=z;}else{exoset_dups(dropped_set, &dropped, k);}
 	    }
 	  } else {
 	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){ // Index arrays are fortran based (1)
 	      z=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
 	      // printf("Generated is index k=%i with resulting node index %i\n", k-1, z);
-	      if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=k;}
+	      if (z>=0){set_nums[n++]=z;}else{exoset_dups(dropped_set, &dropped, k);}
 	    }
 	  }
 	  j+=3;
 	} else {
 	  // Account for directly added id
-	  gen=ialset[j++];
+	  k=ialset[j++];
 	  z=exoset_check(gen, node_map_inv, nk, &dropped, &unidentified);
 	  // printf("Direct add %i with resulting node index %i\n", gen, z);
-	  if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=gen;}
+	  if (z>=0){set_nums[n++]=z;}else{exoset_dups(dropped_set, &dropped, k);}
 	}
       }
       // Must finish the last two of directly added set
       if (ialset[e]>0){ // only if the last set is not a generated set
 	// 1+n++ and -1+n++ to preserve order
-	z=exoset_check(ialset[e]-2, node_map_inv, nk, &dropped, &unidentified);
-	if (z>=0){set_nums[1+n++]=z;}else{dropped_set[dropped++]=ialset[e]-2;}
+	k=ialset[e]-2;
+	z=exoset_check(k, node_map_inv, nk, &dropped, &unidentified);
+	if (z>=0){set_nums[1+n++]=z;}else{exoset_dups(dropped_set, &dropped, k);}
 	if (ialset[e-1]>0){
-	  z=exoset_check(ialset[e]-3, node_map_inv, nk, &dropped, &unidentified);
-	  if (z>=0){set_nums[-1+n++]=z;}else{dropped_set[dropped++]=ialset[e]-3;}
+	  k=ialset[e]-3;
+	  z=exoset_check(k, node_map_inv, nk, &dropped, &unidentified);
+	  if (z>=0){set_nums[-1+n++]=z;}else{exoset_dups(dropped_set, &dropped, k);}
 	}
       }
     }else if(l>1){
       // When a generated set is only of length 2.
-      z=exoset_check(ialset[s]-1, node_map_inv, nk, &dropped, &unidentified);
-      if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=ialset[s]-1;}
-      z=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
-      if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=ialset[e]-1;}
+      k=ialset[s]-1;
+      z=exoset_check(k, node_map_inv, nk, &dropped, &unidentified);
+      if (z>=0){set_nums[n++]=z;}else{exoset_dups(dropped_set, &dropped, k);}
+      k=ialset[e]-1;
+      z=exoset_check(k, node_map_inv, nk, &dropped, &unidentified);
+      if (z>=0){set_nums[n++]=z;}else{exoset_dups(dropped_set, &dropped, k);}
     } else {
-      z=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
-      if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=ialset[e]-1;}
+      k=ialset[e]-1;
+      z=exoset_check(k, node_map_inv, nk, &dropped, &unidentified);
+      if (z>=0){set_nums[n++]=z;}else{exoset_dups(dropped_set, &dropped, k);}
     }
     n_in_set[i]=n;
 
@@ -304,4 +309,10 @@ void exodus_sort(ITG *a, ITG *n){
   return;
 }
 
+void exoset_dups(ITG *set, ITG *n, ITG k){
+  for (ITG i=0; i<*n; i++){
+    if (set[i]==k){return;};
+  }
+  set[(*n)++] = k;
+}
 #endif
