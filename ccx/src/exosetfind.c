@@ -47,12 +47,15 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 
   int settype[*nset];
   int n_in_set[*nset];
+
+  // These could be allocated more precisely by counting at the cost of CPU cycles
   ITG dropped_nset[*nk];
   ITG dropped_eset[*nk];
   
   char *names[*nset];
   // Individual set names are set after the initial count, so this
   // should work even when sized to zero in the first call
+
   char *names_nset[*num_ns];
   // char *names_eset[*num_es];
   // char *names_sset[*num_ss];
