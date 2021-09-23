@@ -43,11 +43,12 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   ITG i,j,k,l,n,s,e,gen,z;
   
   int errr;
-  int dropped_ni=0, unidentified=0;
+  ITG dropped_ni=0, dropped_ei=0, unidentified=0;
 
   int settype[*nset];
   int n_in_set[*nset];
-  int dropped_nset[*nk];
+  ITG dropped_nset[*nk];
+  // ITG dropped_eset[*nk];
   
   char *names[*nset];
   // Individual set names are set after the initial count, so this
@@ -95,7 +96,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     }
   } // end loop i over all sets
 
-
+  
   if (store==0){
     // printf("FIRST PASS %i %i %i %i\n", *num_ns, *num_es, *num_ss, *num_fs);
     return;
@@ -266,14 +267,15 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   printf("\t- Inactive nodes (unused or due to shell and beam expansion):");
   for(i=0; i<dropped_ni; i++){
     if ((i%8)==0){printf("\n\t\t");}
-    printf("%i,\t", dropped_nset[i]+1);
+    // printf("%i,\t", dropped_nset[i]+1);
+    1;
   }
   printf("\n");
   ex_put_names (exoid, EX_NODE_SET, names_nset);
   return;
 }
 
-ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped_ni, int *unidentified){
+ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, ITG *dropped_ni, ITG *unidentified){
   // Submitted should be an index which is zero based
   // Returned should be an index which is zero based
   ITG val=0;
