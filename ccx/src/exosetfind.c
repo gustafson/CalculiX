@@ -43,12 +43,12 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   ITG i,j,k,l,n,s,e,gen,z;
   
   int errr;
-  ITG dropped_ni=0, dropped_ei=0, unidentified=0;
+  ITG dropped_ni=0, dropped_ei=0;
 
   int settype[*nset];
   int n_in_set[*nset];
   ITG dropped_nset[*nk];
-  // ITG dropped_eset[*nk];
+  ITG dropped_eset[10000];
   
   char *names[*nset];
   // Individual set names are set after the initial count, so this
@@ -167,12 +167,12 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	  if (ialset[j+1]-ialset[j]<0){
 	    // Deal with reversed generated sets
 	    for (k=ialset[j+1]; k<=ialset[j]; k-=ialset[j+2]){
-	      z=exoset_check(k, node_map_inv, nk, setindex, &unidentified);
+	      z=exoset_check(k, node_map_inv, nk);
 	      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
 	    }
 	  } else {
 	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){ // Index arrays are fortran based (1)
-	      z=exoset_check(k-1, node_map_inv, nk, setindex, &unidentified);
+	      z=exoset_check(k-1, node_map_inv, nk);
 	      // printf("Generated is index k=%i with resulting node index %i\n", k-1, z);
 	      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
 	    }
@@ -181,7 +181,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	} else {
 	  // Account for directly added id
 	  k=ialset[j++];
-	  z=exoset_check(gen, node_map_inv, nk, setindex, &unidentified);
+	  z=exoset_check(gen, node_map_inv, nk);
 	  // printf("Direct add %i with resulting node index %i\n", gen, z);
 	  if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
 	}
@@ -190,25 +190,25 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
       if (ialset[e]>0){ // only if the last set is not a generated set
 	// 1+n++ and -1+n++ to preserve order
 	k=ialset[e]-2;
-	z=exoset_check(k, node_map_inv, nk, setindex, &unidentified);
+	z=exoset_check(k, node_map_inv, nk);
 	if (z>=0){set_nums[1+n++]=z;}else{exoset_dups(setarray, setindex, k);}
 	if (ialset[e-1]>0){
 	  k=ialset[e]-3;
-	  z=exoset_check(k, node_map_inv, nk, setindex, &unidentified);
+	  z=exoset_check(k, node_map_inv, nk);
 	  if (z>=0){set_nums[-1+n++]=z;}else{exoset_dups(setarray, setindex, k);}
 	}
       }
     }else if(l>1){
       // When a generated set is only of length 2.
       k=ialset[s]-1;
-      z=exoset_check(k, node_map_inv, nk, setindex, &unidentified);
+      z=exoset_check(k, node_map_inv, nk);
       if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
       k=ialset[e]-1;
-      z=exoset_check(k, node_map_inv, nk, setindex, &unidentified);
+      z=exoset_check(k, node_map_inv, nk);
       if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
     } else {
       k=ialset[e]-1;
-      z=exoset_check(k, node_map_inv, nk, setindex, &unidentified);
+      z=exoset_check(k, node_map_inv, nk);
       if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
     }
     n_in_set[i]=n;
@@ -304,25 +304,14 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   return;
 }
 
-ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, ITG *dropped_ni, ITG *unidentified){
+ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk){
   // Submitted should be an index which is zero based
   // Returned should be an index which is zero based
   ITG val=0;
-  // printf ("%" ITGFORMAT ", %" ITGFORMAT "\n", n, *nk);
-  // printf("nk = %i\n", *nk);
-  // DEBUG // int count=0;
-  // DEBUG // for (ITG z=0; z<*nk; z++){
-  // DEBUG //   if (node_map_inv[z]!=0){count++;
-  // DEBUG //     printf("Node map input=%i, z=%i, inv=%i\n", n, z, node_map_inv[z]);
-  // DEBUG //   }
-  // DEBUG // };
-  
   if (n<=*nk){
+    // This returns < 0 if the n id is dropped
     val = node_map_inv[n]-1;
-  } else {
-    *unidentified = 1;
   }
-
   return val;
 }
 
