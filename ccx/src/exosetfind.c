@@ -106,8 +106,9 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   int warnreverse = 0;
   // Get actual numbers for number of nodes and total number etc.
   for (i=0; i<*nset; i++){
-    ITG *setarray;
-    ITG *setindex;
+
+    ITG *setarray; // Used to store the array of numbers that are dropped
+    ITG *setindex; // Used to store the number of numbers that are dropped
     switch(settype[i])
       {
       case type_ns:
@@ -125,7 +126,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
       }
 	
     // ONLY WORKS FOR NSETS FOR NOW... We also need the element number inverse map
-    if (settype[i] != type_ns){n_in_set[i]=0; continue;}
+    // if (settype[i] != type_ns){n_in_set[i]=0; continue;}
     
     // Find and store the set numbers
     // The pointer integers are 1 based (fortran)
@@ -151,16 +152,17 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
       }
     }
     
-    
     // Now set the length of the set allocation
     l=e-s+1+gen+l;
+
+    // These are the numbers in the set. dropped_nset (setarray) are
+    // the numbers not in any set
     ITG *set_nums;
     set_nums = (ITG *) calloc(l, sizeof(ITG));
     
-    /* Only add the generate code if there are at least
-       three points in the vector */
     n=0; j=s;
-    if (l>2){
+    if (l>2){/* Only add the generate code if there are at least
+		three points in the vector */
       while (j<=e-2){
 	// generated ids
 	if (ialset[j+2]<0) {
