@@ -54,4 +54,5 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 
 void exodus_sort(ITG *a, ITG *n);
 
-void exoset_dups(ITG *set, ITG *n, ITG k);
+void exoset_dups(ITG *set, ITG *setindex, ITG k, char *name);
+// void exoset_dups(ITG *set, ITG *setindex, ITG k, char *name);

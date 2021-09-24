@@ -27,6 +27,7 @@
 #include "exo.h"
 
 #define NAMELEN 81
+#define DROPLIMIT 5000
 #define type_ns 0
 #define type_es 1
 #define type_ss 2
@@ -43,12 +44,19 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   ITG i,j,k,l,n,s,e,gen,z;
   
   int errr;
-  ITG dropped_ni=0, dropped_ei=0;
 
   int settype[*nset];
   int n_in_set[*nset];
+
+  // Set limits on the tracking of the dropped nodes/elements.  It is
+  // not clear why by it crashes when allocating two arrays (i.e.,
+  // when dropped_eset is allocated with *nk)
+  // int droplimit = *nk;
+  // if (droplimit>DROPLIMIT){droplimit=DROPLIMIT;}
+  ITG dropped_ni=0, dropped_ei=0;
   ITG dropped_nset[*nk];
-  ITG dropped_eset[10000];
+  // ITG dropped_nset[droplimit];
+  // ITG dropped_eset[droplimit];
   
   char *names[*nset];
   // Individual set names are set after the initial count, so this
@@ -106,9 +114,11 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   int warnreverse = 0;
   // Get actual numbers for number of nodes and total number etc.
   for (i=0; i<*nset; i++){
+    dropped_ni=0;
+    dropped_ei=0;
 
-    ITG *setarray; // Used to store the array of numbers that are dropped
-    ITG *setindex; // Used to store the number of numbers that are dropped
+    ITG *setarray; // Used to point to the array that stores the numbers that are dropped
+    ITG *setindex; // Used to point to the array that stores the number of numbers that are dropped
     switch(settype[i])
       {
       case type_ns:
@@ -116,9 +126,9 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	setindex = &dropped_ni;
 	break;
       case type_es:
-	// setarray = dropped_eset;
-	// setindex = &dropped_ei;
-	// break;
+	setarray = dropped_nset;
+	setindex = &dropped_ei;
+	break;
       case type_fs:
       case type_ss:
 	continue;
@@ -156,7 +166,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     l=e-s+1+gen+l;
 
     // These are the numbers in the set. dropped_nset (setarray) are
-    // the numbers not in any set
+    // the numbers in a set but dropped from output
     ITG *set_nums;
     set_nums = (ITG *) calloc(l, sizeof(ITG));
     
@@ -170,13 +180,14 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	    // Deal with reversed generated sets
 	    for (k=ialset[j+1]; k<=ialset[j]; k-=ialset[j+2]){
 	      z=exoset_check(k, node_map_inv, nk);
-	      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
+	      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k, names[i]);}
+	      // if (z>=0){set_nums[n++]=z;}else{exoset_dups(setindex, k, names[i]);}
 	    }
 	  } else {
 	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){ // Index arrays are fortran based (1)
 	      z=exoset_check(k-1, node_map_inv, nk);
 	      // printf("Generated is index k=%i with resulting node index %i\n", k-1, z);
-	      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
+	      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k, names[i]);}
 	    }
 	  }
 	  j+=3;
@@ -185,7 +196,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	  k=ialset[j++];
 	  z=exoset_check(gen, node_map_inv, nk);
 	  // printf("Direct add %i with resulting node index %i\n", gen, z);
-	  if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
+	  if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k, names[i]);}
 	}
       }
       // Must finish the last two of directly added set
@@ -193,34 +204,34 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	// 1+n++ and -1+n++ to preserve order
 	k=ialset[e]-2;
 	z=exoset_check(k, node_map_inv, nk);
-	if (z>=0){set_nums[1+n++]=z;}else{exoset_dups(setarray, setindex, k);}
+	if (z>=0){set_nums[1+n++]=z;}else{exoset_dups(setarray, setindex, k, names[i]);}
+	// if (z>=0){set_nums[1+n++]=z;}else{exoset_dups(setindex, k, names[i]);}
 	if (ialset[e-1]>0){
 	  k=ialset[e]-3;
 	  z=exoset_check(k, node_map_inv, nk);
-	  if (z>=0){set_nums[-1+n++]=z;}else{exoset_dups(setarray, setindex, k);}
+	  if (z>=0){set_nums[-1+n++]=z;}else{exoset_dups(setarray, setindex, k, names[i]);}
+	  // if (z>=0){set_nums[-1+n++]=z;}else{exoset_dups(setindex, k, names[i]);}
 	}
       }
     }else if(l>1){
       // When a generated set is only of length 2.
       k=ialset[s]-1;
       z=exoset_check(k, node_map_inv, nk);
-      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
+      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k, names[i]);}
+      // if (z>=0){set_nums[n++]=z;}else{exoset_dups(setindex, k, names[i]);}
       k=ialset[e]-1;
       z=exoset_check(k, node_map_inv, nk);
-      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
+      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k, names[i]);}
+      // if (z>=0){set_nums[n++]=z;}else{exoset_dups(setindex, k, names[i]);}
     } else {
       k=ialset[e]-1;
       z=exoset_check(k, node_map_inv, nk);
-      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k);}
+      if (z>=0){set_nums[n++]=z;}else{exoset_dups(setarray, setindex, k, names[i]);}
+      // if (z>=0){set_nums[n++]=z;}else{exoset_dups(setindex, k, names[i]);}
     }
     n_in_set[i]=n;
 
-    // // DEBUG
-    // printf("Set %s has %i members ",names[i], n);
-    // for (j=0; j<n; j++){printf("%i, ",set_nums[j]);}
-    // printf("\n");
-    
-    // Write the number of sets
+    // Write the number of sets to exodus file 
     if (n_in_set[i]>0){
       switch (settype[i])
 	{
@@ -254,17 +265,35 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	  // if (errr) printf ("ERROR in exo: failed side set parameters\n");
 	  // errr = ex_put_set       (exoid, EX_SIDE_SET, use_ss++, set_nums, NULL);
 	  // if (errr) printf ("ERROR in exo: failed side set\n");
-	  continue;
+	  break;
 	}
     }else{
       if (warnempty){
-	printf("\t- Empty set(s) skipped. ");
-	printf("(Due to shell and beam\n\t  expansions or non-use.) ");
-	printf("Affected sets are:\n");
+	printf("\n\t- Empty set(s) skipped (Due to shell and beam expansions or non-use)");
 	warnempty=0;
       }
-      printf("\t\t- %s\n", names[i]);
+      printf("\n\t  %s is empty.\n", names[i]);
     }
+
+    if (dropped_ni){
+      exodus_sort(dropped_nset, &dropped_ni);
+      printf("\t- Inactive nodes (unused or due to shell and beam expansion):");
+      for(i=0; i<dropped_ni; i++){
+	if ((i%8)==0){printf("\n\t\t");}
+	printf("%i,\t", dropped_nset[i]);
+      }
+      printf("\n");
+    }
+    if (dropped_ei){
+      exodus_sort(dropped_nset, &dropped_ei);
+      printf("\t- Inactive elements (generated unused or due to shell and beam expansion):");
+      for(i=0; i<dropped_ei; i++){
+	if ((i%8)==0){printf("\n\t\t");}
+	printf("%i,\t", dropped_nset[i]);
+      }
+      printf("\n");
+    }
+    
     free(set_nums);
   } //end i loop
 
@@ -278,42 +307,45 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   }
   
   if (warnreverse){
-    printf("\t- Found a generated set with decreasing numbers.\n");
+    printf("\t- Found at least one generated set with decreasing numbers.\n");
     printf("\t  These numbers will be reversed. Check the input deck.\n");
   }
 
-  if (dropped_ni){
-    exodus_sort(dropped_nset, &dropped_ni);
-    printf("\t- Inactive nodes (unused or due to shell and beam expansion):");
-    for(i=0; i<dropped_ni; i++){
-      if ((i%8)==0){printf("\n\t\t");}
-      printf("%i,\t", dropped_nset[i]);
-    }
-    printf("\n");
-  }
-  
-  // Element sets // if (dropped_ei){
-  // Element sets //   exodus_sort(dropped_eset, &dropped_ei);
-  // Element sets //   printf("\t- Inactive elements (generated unused or due to shell and beam expansion):");
-  // Element sets //   for(i=0; i<dropped_ei; i++){
-  // Element sets //     if ((i%8)==0){printf("\n\t\t");}
-  // Element sets //     printf("%i,\t", dropped_eset[i]);
-  // Element sets //   }
-  // Element sets // }
-  printf("\n");
+  // if (dropped_ni){
+  //   exodus_sort(dropped_nset, &dropped_ni);
+  //   printf("\t- Inactive nodes (unused or due to shell and beam expansion):");
+  //   for(i=0; i<dropped_ni; i++){
+  //     if ((i%8)==0){printf("\n\t\t");}
+  //     printf("%i,\t", dropped_nset[i]);
+  //   }
+  //   printf("\n");
+  // }
+  // 
+  // if (dropped_ei){
+  //   exodus_sort(dropped_eset, &dropped_ei);
+  //   printf("\t- Inactive elements (generated unused or due to shell and beam expansion):");
+  //   for(i=0; i<dropped_ei; i++){
+  //     if ((i%8)==0){printf("\n\t\t");}
+  //     printf("%i,\t", dropped_eset[i]);
+  //   }
+  // }
+  // printf("\n");
 
   ex_put_names (exoid, EX_NODE_SET, names_nset);
   return;
 }
 
 ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk){
+
   // Submitted should be an index which is zero based
   // Returned should be an index which is zero based
+
   ITG val=0;
-  if (n<=*nk){
+  if (n<=*nk){ // Make sure its within the size of the inverse map
     // This returns < 0 if the n id is dropped
     val = node_map_inv[n]-1;
   }
+
   return val;
 }
 
@@ -332,10 +364,26 @@ void exodus_sort(ITG *a, ITG *n){
   return;
 }
 
-void exoset_dups(ITG *set, ITG *n, ITG k){
-  for (ITG i=0; i<*n; i++){
+void exoset_dups(ITG *set, ITG *setindex, ITG k, char *name){
+  // void exoset_dups(ITG *setindex, ITG k, char *name){
+  // *setindex is the number of nodes in the set... so were checking
+  // *if any of the existing numbers in the set are the same as the
+  // *number passed.
+
+  // if (*setindex==DROPLIMIT){
+  //   printf("\t\t- Limit reached for reporting dropped nodes or dropped elements: (%i identifiers)\n", DROPLIMIT);
+  // }
+  // if (*setindex>=DROPLIMIT){return;}
+
+  for (ITG i=0; i<*setindex; i++){
     if (set[i]==k){return;};
   }
-  set[(*n)++] = k;
+
+  // PRINT LOCALLY // if ((*setindex)==0){printf("\n\t- Dropped from set %s are:", name);}
+  // PRINT LOCALLY // if ((*setindex)%8==0){printf("\n\t\t");}
+  // PRINT LOCALLY // printf("%i, ", k);
+
+  // This is where setindex gets incremented and the set gets defined
+  set[(*setindex)++] = k;
 }
 #endif
