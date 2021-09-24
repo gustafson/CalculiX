@@ -269,7 +269,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	}
     }else{
       if (warnempty){
-	printf("\n\t- Empty set(s) skipped (Due to shell and beam expansions or non-use)");
+	printf("\n\t- Empty set(s) skipped (Likely due to shell and beam expansions or non-use)");
 	warnempty=0;
       }
       printf("\n\t  %s is empty.\n", names[i]);
@@ -277,7 +277,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 
     if (dropped_ni){
       exodus_sort(dropped_nset, &dropped_ni);
-      printf("\t- Inactive nodes (unused or due to shell and beam expansion):");
+      printf("\t- Inactive nodes in set %s (Unused or replaced due to shell and beam expansion):", names[i]);
       for(i=0; i<dropped_ni; i++){
 	if ((i%8)==0){printf("\n\t\t");}
 	printf("%i,\t", dropped_nset[i]);
@@ -286,7 +286,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     }
     if (dropped_ei){
       exodus_sort(dropped_nset, &dropped_ei);
-      printf("\t- Inactive elements (generated unused or due to shell and beam expansion):");
+      printf("\t- Inactive elements in set %s (unused or due to shell and beam expansion):", names[i]);
       for(i=0; i<dropped_ei; i++){
 	if ((i%8)==0){printf("\n\t\t");}
 	printf("%i,\t", dropped_nset[i]);
