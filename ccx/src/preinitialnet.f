@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2020 Guido Dhondt
+!     Copyright (C) 1998-2021 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -883,10 +883,10 @@ c         enddo
 c         if(v(2,node).lt.0.d0) v(2,node)=0.d0
          if(v(2,node).lt.0.d0) v(2,node)=-v(2,node)
       enddo
-         write(*,*) 'preinitialnet end '
-         do i=1,ntg
-            write(*,'(i10,3(1x,e11.4))') itg(i),(v(j,itg(i)),j=0,2)
-         enddo
+c         write(*,*) 'preinitialnet end '
+c         do i=1,ntg
+c            write(*,'(i10,3(1x,e11.4))') itg(i),(v(j,itg(i)),j=0,2)
+c         enddo
 !
 !     same for temperatures?
 !     

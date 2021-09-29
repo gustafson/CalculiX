@@ -40,10 +40,11 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
     Datasets *lcase=NULL;
     
     ITG *kontet=NULL,*ifatet=NULL,*inodfa=NULL,*ipofa=NULL,type,n1,n2,n3,n4,
-	*nnx=NULL,*nny=NULL,*nnz=NULL,*kon=NULL,*ipkon=NULL,*kontyp=NULL,
-	*iparent=NULL,ifreefa=1,kflag=2,ne,netet,numnodes,nkon,
-	indexe,istep,loadcase,nfaces,netet_,nktet=0,nfield,j,nodes[4],i,
-	read_mode=0,nodenr,*integerglob=NULL,*ielemnr=NULL,istep_global;
+      *nnx=NULL,*nny=NULL,*nnz=NULL,*kon=NULL,*ipkon=NULL,*kontyp=NULL,
+      *iparent=NULL,ifreefa=1,kflag=2,ne,netet,numnodes,nkon,
+      indexe,istep,loadcase,nfaces,netet_,nktet=0,nfield,j,nodes[4],i,
+      read_mode=0,nodenr,*integerglob=NULL,*ielemnr=NULL,istep_global,
+      iparentel;
     
     ITG i1[24]={3,7,8,6,4,3,8,1,3,8,5,6,3,5,8,1,2,3,5,6,2,5,3,1};
     ITG i2[12]={1,2,3,5,1,5,3,4,4,5,3,6};
@@ -259,11 +260,12 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 		nodes[1]=kon[indexe+i1[4*j+1]];
 		nodes[2]=kon[indexe+i1[4*j+2]];
 		nodes[3]=kon[indexe+i1[4*j+3]];
-		iparent[netet]=i+1;
+		iparentel=i+1;
+		iparent[netet]=iparentel;
 		netet++;
 		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
 				     &ifreefa,planfa,ipofa,nodes,cotet,
-				     &iparent[netet]));
+				     &iparentel));
 	    }
 	}
 	else if(type==2){
@@ -275,11 +277,12 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 		nodes[1]=kon[indexe+i2[4*j+1]];
 		nodes[2]=kon[indexe+i2[4*j+2]];
 		nodes[3]=kon[indexe+i2[4*j+3]];
-		iparent[netet]=i+1;
+		iparentel=i+1;
+		iparent[netet]=iparentel;
 		netet++;
 		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
 				     &ifreefa,planfa,ipofa,nodes,cotet,
-				     &iparent[netet]));
+				     &iparentel));
 	    }
 	}
 	else if(type==3){
@@ -290,11 +293,12 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 	    nodes[1]=kon[indexe+2];
 	    nodes[2]=kon[indexe+3];
 	    nodes[3]=kon[indexe+4];
-	    iparent[netet]=i+1;
+	    iparentel=i+1;
+	    iparent[netet]=iparentel;
 	    netet++;
 	    FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
 				 &ifreefa,planfa,ipofa,nodes,cotet,
-				 &iparent[netet]));
+				 &iparentel));
 	}
 	else if(type==4){
 	    
@@ -305,11 +309,12 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 		nodes[1]=kon[indexe+i4[4*j+1]];
 		nodes[2]=kon[indexe+i4[4*j+2]];
 		nodes[3]=kon[indexe+i4[4*j+3]];
-		iparent[netet]=i+1;
+		iparentel=i+1;
+		iparent[netet]=iparentel;
 		netet++;
 		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
 				     &ifreefa,planfa,ipofa,nodes,cotet,
-				     &iparent[netet]));
+				     &iparentel));
 	    }
 	}
 	else if(type==5){
@@ -321,11 +326,12 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 		nodes[1]=kon[indexe+i5[4*j+1]];
 		nodes[2]=kon[indexe+i5[4*j+2]];
 		nodes[3]=kon[indexe+i5[4*j+3]];
-		iparent[netet]=i+1;
+		iparentel=i+1;
+		iparent[netet]=iparentel;
 		netet++;
 		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
 				     &ifreefa,planfa,ipofa,nodes,cotet,
-				     &iparent[netet]));
+				     &iparentel));
 	    }
 	}
 	else if(type==6){
@@ -337,11 +343,12 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 		nodes[1]=kon[indexe+i6[4*j+1]];
 		nodes[2]=kon[indexe+i6[4*j+2]];
 		nodes[3]=kon[indexe+i6[4*j+3]];
-		iparent[netet]=i+1;
+		iparentel=i+1;
+		iparent[netet]=iparentel;
 		netet++;
 		FORTRAN(createtet,(kontet,ifatet,&netet,inodfa,
 				     &ifreefa,planfa,ipofa,nodes,cotet,
-				     &iparent[netet]));
+				     &iparentel));
 	    }
 	}
     }

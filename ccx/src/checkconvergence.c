@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2020 Guido Dhondt                          */
+/*              Copyright (C) 1998-2021 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -236,7 +236,8 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      // deactivated on 22.03.2019
 	      // energy/work may not be calculated correctly for forced BC
 	      // (example: shaft)
-	      		idivergence=1;
+	      // following line deactiveted on 16.07.2021
+	      //      		idivergence=1;
 	    }else{
 		
 		/* Check if the residual is too close to the boundary */
@@ -382,7 +383,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
                         ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,
-                        cdn,mortar,cdnr,cdni,nmat,ielprop,prop);
+                        cdn,mortar,cdnr,cdni,nmat,ielprop,prop,sti);
 
 		    FORTRAN(stop,());
 		}
@@ -503,7 +504,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
 		&ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
 		ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
-		mortar,cdnr,cdni,nmat,ielprop,prop);
+		mortar,cdnr,cdni,nmat,ielprop,prop,sti);
 
 	    FORTRAN(stop,());
 	}	
@@ -605,7 +606,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 			    ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
 			    &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
 			    ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
-			    mortar,cdnr,cdni,nmat,ielprop,prop);
+			    mortar,cdnr,cdni,nmat,ielprop,prop,sti);
 			
 			FORTRAN(stop,());
 		    }
@@ -667,7 +668,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
                         ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
-			mortar,cdnr,cdni,nmat,ielprop,prop);
+			mortar,cdnr,cdni,nmat,ielprop,prop,sti);
 
 			FORTRAN(stop,());
 		    }
@@ -698,7 +699,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
                         ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
-			mortar,cdnr,cdni,nmat,ielprop,prop);
+			mortar,cdnr,cdni,nmat,ielprop,prop,sti);
 
 			FORTRAN(stop,());
 		    }
@@ -777,7 +778,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
                         ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
-			mortar,cdnr,cdni,nmat,ielprop,prop);
+			mortar,cdnr,cdni,nmat,ielprop,prop,sti);
 
 			FORTRAN(stop,());
 		    }
@@ -807,7 +808,7 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
                         ipneigh,neigh,mi,sti,vr,vi,stnr,stni,vmax,stnmax,
                         &ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
                         ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,cdn,
-			mortar,cdnr,cdni,nmat,ielprop,prop);
+			mortar,cdnr,cdni,nmat,ielprop,prop,sti);
 
 			FORTRAN(stop,());
 		    }

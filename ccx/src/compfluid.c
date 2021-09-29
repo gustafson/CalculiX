@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2020 Guido Dhondt                     */
+/*              Copyright (C) 1998-2021 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -424,7 +424,7 @@ void compfluid(double **cop,ITG *nk,ITG **ipkonfp,ITG *konf,char **lakonfp,
 	ntrans,trab,inotr,vold,integerglob,doubleglob,tieset,istartset,
 	iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
 	ipobody,iponoel,inoel,ipkon,kon,ielprop,prop,ielmat,
-	shcon,nshcon,rhcon,nrhcon,cocon,ncocon,ntmat_,lakon));
+	shcon,nshcon,rhcon,nrhcon,cocon,ncocon,ntmat_,lakon,set,nset));
 	
     /* body forces (gravity,centrifugal and Coriolis forces */
 	
@@ -765,7 +765,7 @@ void compfluid(double **cop,ITG *nk,ITG **ipkonfp,ITG *konf,char **lakonfp,
 			  ntrans,trab,inotr,vold,integerglob,doubleglob,tieset,istartset,
 			  iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
 			  ipobody,iponoel,inoel,ipkon,kon,ielprop,prop,ielmat,
-			  shcon,nshcon,rhcon,nrhcon,cocon,ncocon,ntmat_,lakon));
+			  shcon,nshcon,rhcon,nrhcon,cocon,ncocon,ntmat_,lakon,set,nset));
 		
 	/* body forces (gravity,centrifugal and Coriolis forces) */
 		

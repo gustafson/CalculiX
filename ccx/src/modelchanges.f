@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -180,8 +180,11 @@
                   noelset(81:81)=' '
                   ipos=index(noelset,' ')
                   noelset(ipos:ipos)='E'
-                  do j=1,nset
-                     if(noelset.eq.set(j)) then
+c                  do j=1,nset
+c                     if(noelset.eq.set(j)) then
+                  call cident81(set,noelset,nset,j)
+                  if(j.gt.0) then
+                    if(noelset.eq.set(j)) then
                         m=iendset(j)-istartset(j)+1
                         do k=1,m
                            nelem=ialset(istartset(j)+k-1)
@@ -191,9 +194,11 @@
                            if(strainfree) ielmat(1,nelem)=
      &                                   -ielmat(1,nelem)
                         enddo
-                        exit
-                     endif
-                  enddo
+c                        exit
+                      endif
+                    endif
+c                     endif
+c                  enddo
                   if(noelset.ne.set(j)) then
                      noelset(ipos:ipos)=' '
                      write(*,*) '*ERROR reading *MODEL CHANGE:',

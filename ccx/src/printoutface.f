@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
       integer konl(20),ifaceq(8,6),nelem,ii,nprint,i,j,i1,i2,j1,
      &  ncocon(2,*),k1,jj,ig,nrhcon(*),nshcon(*),ntmat_,nope,nopes,imat,
      &  mint2d,ifacet(6,4),ifacew(8,5),iflag,indexe,jface,istartset(*),
-     &  iendset(*),ipkonf(*),konf(*),iset,ialset(*),nset,ipos,
+     &  iendset(*),ipkonf(*),konf(*),iset,ialset(*),nset,ipos,id,
      &  mi(*),ielmat(mi(3),*),nactdoh(*),icfd,nelemcfd,ithermal(*)
 !
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),dvi,f(0:3),time,
@@ -80,8 +80,13 @@
 !        SOF: forces and moments  on a section 
 !              (= an internal or external surface)
 !
-         if((prlab(ii)(1:4).eq.'DRAG').or.(prlab(ii)(1:4).eq.'FLUX').or.
+!     DRAG removed on 13 Dec 2020: DRAG only accessible for FEM-CBS
+!     through printoutfacefem.f
+!
+         if((prlab(ii)(1:4).eq.'FLUX').or.
      &      (prlab(ii)(1:3).eq.'SOF'))      
+c         if((prlab(ii)(1:4).eq.'DRAG').or.(prlab(ii)(1:4).eq.'FLUX').or.
+c     &      (prlab(ii)(1:3).eq.'SOF'))      
      &      then
 !
             ipos=index(prset(ii),' ')
@@ -139,9 +144,16 @@ c            faset='                    '
 !     
 !           printing the data
 !
-            do iset=1,nset
-               if(set(iset).eq.prset(ii)) exit
-            enddo
+c            do iset=1,nset
+c               if(set(iset).eq.prset(ii)) exit
+c            enddo
+            call cident81(set,prset(ii),nset,id)
+            iset=nset+1
+            if(id.gt.0) then
+              if(prset(ii).eq.set(id)) then
+                iset=id
+              endif
+            endif
 !
             do jj=istartset(iset),iendset(iset)
 !     

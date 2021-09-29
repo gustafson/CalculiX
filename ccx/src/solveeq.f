@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,8 +16,8 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine solveeq(adb,aub,adl,addiv,b,sol,aux,icol,irow,jq,
-     &  neq,nzs,nzl)
+      subroutine solveeq(adb,aub,adl,b,sol,aux,irow,jq,
+     &  neq,maxit)
 !
 !     solving a system of equations by iteratively solving the
 !     lumped version
@@ -30,17 +30,14 @@
 !
       implicit none
 !
-      integer icol(*),irow(*),jq(*),neq,nzs,nzl,i,j,k,maxit
+      integer irow(*),jq(*),neq,i,k,maxit
 !
-      real*8 adb(*),aub(*),adl(*),addiv(*),b(*),sol(*),aux(*),p
-!
-      data maxit /1/
+      real*8 adb(*),aub(*),adl(*),b(*),sol(*),aux(*)
 !
 !     first iteration
 !
       do i=1,neq
          sol(i)=b(i)*adl(i)
-c         write(*,*) 'solveeq ',i,b(i),adl(i)
       enddo
       if(maxit.eq.1) return
 !
@@ -51,7 +48,6 @@ c         write(*,*) 'solveeq ',i,b(i),adl(i)
 !        multiplying the difference of the original matrix
 !        with the lumped matrix with the actual solution 
 !
-c         call opfem(neq,p,sol,aux,adb,aub,icol,irow,nzl)
          call op(neq,sol,aux,adb,aub,jq,irow)
 !
          do i=1,neq

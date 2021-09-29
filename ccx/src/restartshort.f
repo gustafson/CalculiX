@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2020 Guido Dhondt
+!     Copyright (C) 1998-2021 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &     ntrans,ncs_,namtot,ncmat_,memmpc_,ne1d,ne2d,nflow,
      &     set,meminset,rmeminset,jobnamec,irestartstep,icntrl,ithermal,
      &     nener,nstate_,ntie,nslavs,nkon,mcs,nprop,mortar,
-     &     ifacecount,nintpoint,infree,nef,mpcend)
+     &     ifacecount,nintpoint,infree,nef,mpcend,nheading_,network)
 !     
 !     istartset := meminset
 !     iendset := rmeminset
@@ -39,7 +39,7 @@
      &     i,j,k,ipos,icntrl,nener,irestartstep,im0,im1,im2,mem,iact,
      &     istat,nkon,nlabel,iplas,ithermal(*),nstate_,iprestr,
      &     mcs,ntie,nbody,nslavs,ifacecount,iversion,nef,mpcend,
-     &     maxlenmpc
+     &     maxlenmpc,nheading_,network
 !     
       if(icntrl.eq.0) then
 !     
@@ -120,8 +120,8 @@
 !     
           read(15)nmpc
           read(15)mpcend
-          read(15)memmpc_
           read(15)maxlenmpc
+          read(15)memmpc_
 !     
 !     material size
 !     
@@ -179,6 +179,8 @@
             read(15)ifacecount
             read(15)nintpoint
           endif
+          read(15)nheading_
+          read(15)network
 !     
 !     skipping the next entries
 !     
@@ -188,7 +190,7 @@
      &         ntrans,nam,nprint,nlabel,ncs_,ne1d,ne2d,infree,
      &         nmethod,iperturb,nener,ithermal,nstate_,iprestr,
      &         mcs,ntie,nslavs,nprop,mortar,ifacecount,nintpoint,
-     &         nef)
+     &         nef,nheading_)
 !     
         enddo
 !     
@@ -257,8 +259,8 @@
 !     
         read(15)nmpc
         read(15)mpcend
-        read(15)memmpc_
         read(15)maxlenmpc
+        read(15)memmpc_
 !     
 !     material size
 !     
@@ -316,6 +318,8 @@
           read(15)ifacecount
           read(15)nintpoint
         endif
+        read(15)nheading_
+        read(15)network
 !     
         if(istep.eq.irestartstep) exit
 !     
@@ -325,7 +329,7 @@
      &       nkon,mi,nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,
      &       ntrans,nam,nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
      &       iperturb,nener,ithermal,nstate_,iprestr,mcs,ntie,
-     &       nslavs,nprop,mortar,ifacecount,nintpoint,nef)
+     &       nslavs,nprop,mortar,ifacecount,nintpoint,nef,nheading_)
 !     
       enddo
 !     

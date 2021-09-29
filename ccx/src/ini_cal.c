@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2020 Guido Dhondt                          */
+/*              Copyright (C) 1998-2021 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -40,7 +40,7 @@ void ini_cal(char *jobnamec,char *output,char *fneig,char *kind1,char *kind2,
 	     double *ctrl,double *alpha,double *qaold,double *physcon,
 	     ITG *istep,ITG *istat,ITG *iprestr,ITG *kode,ITG *nload,
 	     ITG *nbody,ITG *nforc,ITG *nboun,ITG *nk,ITG *nmpc,ITG *nam,
-	     ITG *nzs_,ITG *nlabel,double *ttime){
+	     ITG *nzs_,ITG *nlabel,double *ttime,ITG *iheading){
 
   /* used for initialization and re-initialization */
   
@@ -50,7 +50,8 @@ void ini_cal(char *jobnamec,char *output,char *fneig,char *kind1,char *kind2,
   
   for(i=132;i<792;i++) strcpy1(&jobnamec[i]," ",1);
   for(i=0;i<132;i++){strcpy1(&fneig[i]," ",1);}
-  
+
+  *iheading=0;
   *nheading_=0;
 
   /* parameters involved in reading the input deck */
@@ -183,7 +184,7 @@ void ini_cal(char *jobnamec,char *output,char *fneig,char *kind1,char *kind2,
      - change the dimension of label in geomview.f
      - change the documentation (tex-file)  */
 
-  *nlabel=48;
+  *nlabel=55;
   *nprint_=0;
   *nprint=0;
   *kode=0;
@@ -203,7 +204,7 @@ void ini_cal(char *jobnamec,char *output,char *fneig,char *kind1,char *kind2,
   *jrstrt=0;
   for(i=0;i<2;i++) irstrt[i]=0;
 
-  /* basis dimensional information */
+  /* basic dimensional information */
   
   mi[0]=0;
   mi[1]=3;
@@ -220,7 +221,7 @@ void ini_cal(char *jobnamec,char *output,char *fneig,char *kind1,char *kind2,
   
   *ifacecount=0;
   *nslavs=0;
-  *mortar=0;
+  *mortar=-2;
   *icontact=0;
 
   /* energy requests */

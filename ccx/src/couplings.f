@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -124,15 +124,29 @@
             ipos=index(surfset,' ')
             surfkind='S'
             surfset(ipos:ipos)=surfkind
-            do j=1,nset
-               if(set(j).eq.surfset) exit
-            enddo
+c            do j=1,nset
+c               if(set(j).eq.surfset) exit
+c            enddo
+            call cident81(set,surfset,nset,id)
+            j=nset+1
+            if(id.gt.0) then
+              if(surfset.eq.set(id)) then
+                j=id
+              endif
+            endif
             if(j.gt.nset) then
                surfkind='T'
                surfset(ipos:ipos)=surfkind
-               do j=1,nset
-                  if(set(j).eq.surfset) exit
-               enddo
+c               do j=1,nset
+c                  if(set(j).eq.surfset) exit
+c               enddo
+               call cident81(set,surfset,nset,id)
+               j=nset+1
+               if(id.gt.0) then
+                 if(surfset.eq.set(id)) then
+                   j=id
+                 endif
+               endif
                if(j.gt.nset) then
                   write(*,*) '*ERROR reading *COUPLING:'
                   write(*,*) '       surface ',surfset

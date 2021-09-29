@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2020 Guido Dhondt
+!     Copyright (C) 1998-2021 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,9 +34,15 @@
      &     nodes(4),ifatet(4,*),ifreetet,itetfa(2,*),ifreefa,ipofa(*),
      &     ipoeln(*),ieln(2,*),node,ifreeln,kontetor(6,*),iquad,nset,
      &     istartset(*),iendset(*),ialset(*),indexe,k,nope,jfix(*),
-     &     iparentel(*)
+     &     iparentel(*),id
 !     
       real*8 bc(4,*),planfa(4,*),cotet(3,*),cg(3,*)
+!
+!     open a file for nodes which are not properly projected on the
+!     free surface      
+!
+      open(40,file='WarnNodeNotProjected.nam',status='unknown')
+      write(40,*) '*NSET,NSET=WarnNodeNotProjected'
 !
 !     read the element set name to refine, if any
 !     default: all tetrahedral elements are refined      
@@ -49,9 +55,16 @@
 !
 !     determining the number of the set
 !
-      do i=1,nset
-        if(set(i).eq.elset)exit
-      enddo
+c      do i=1,nset
+c        if(set(i).eq.elset) exit
+c      enddo
+      call cident81(set,elset,nset,id)
+      i=nset+1
+      if(id.gt.0) then
+        if(elset.eq.set(id)) then
+          i=id
+        endif
+      endif
 !
 !     if element set detected:
 !
@@ -191,9 +204,10 @@ c          endif
       enddo
       ieln(2,4*netet_)=0
 !     
-!     adding the tetrahedral elements one by one
-!     tagging these elements to be removed
-!
+!     adding the tetrahedral elements one by one in kontet
+!     tagging the original elements in kon to be removed
+!     by using a model change in input deck jobname.rfn.inp
+!     
 !     creating the file name
 !
       do i=1,132

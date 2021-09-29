@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2020 Guido Dhondt
+!     Copyright (C) 1998-2021 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -119,9 +119,16 @@
 !     
 !     determining the slave surface 
 !     
-          do j=1,nset
-            if(set(j).eq.slavset) exit
-          enddo
+c          do j=1,nset
+c            if(set(j).eq.slavset) exit
+c          enddo
+          call cident81(set,slavset,nset,id)
+          j=nset+1
+          if(id.gt.0) then
+            if(slavset.eq.set(id)) then
+              j=id
+            endif
+          endif
           if(j.gt.nset) then
             do j=1,nset
               if((set(j)(1:ipos-1).eq.slavset(1:ipos-1)).and.
@@ -503,13 +510,32 @@ c     inoels(2,ifreenoels)=ifreenoelold
             nslavnode(i+1)=nslavs
             itiefac(2,i)=ifacecount
           endif
+!
+!     for massless contact: marking the elements adjacent to
+!     the slave faces with the slave face number
+!
+          if(mortar.eq.-1) then
+            do j=itiefac(1,i),itiefac(2,i)
+              iface=islavsurf(1,j)
+              nelem=int(iface/10.d0)
+              jface=iface-10*nelem
+              write(lakon(nelem)(7:7),'(i1)') jface
+            enddo
+          endif
 !     
 !     determining the master surface
 !     
           mastset=tieset(3,i)
-          do j=1,nset
-            if(set(j).eq.mastset) exit
-          enddo
+c          do j=1,nset
+c            if(set(j).eq.mastset) exit
+c          enddo
+          call cident81(set,mastset,nset,id)
+          j=nset+1
+          if(id.gt.0) then
+            if(mastset.eq.set(id)) then
+              j=id
+            endif
+          endif
           if(j.gt.nset) then
             write(*,*) '*ERROR in tiefaccont: master surface'
             write(*,*) '       does not exist'
@@ -588,7 +614,6 @@ c     inoels(2,ifreenoels)=ifreenoelold
 !     no contact tie
 !     
           nslavnode(i+1)=nslavnode(i)
-c     if(mortar.eq.1) nmastnode(i+1)=nmastnode(i)
           nmastnode(i+1)=nmastnode(i)
         endif 
       enddo      

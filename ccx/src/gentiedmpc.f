@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@
       character*20 labmpc(*)
       character*81 tieset(3,*),slavset,set(*)
 !
-      integer ntie,nset,istartset(*),iendset(*),ialset(*),
+      integer ntie,nset,istartset(*),iendset(*),ialset(*),iwrite,
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),node,
      &  neigh(1),iflag,kneigh,i,j,k,l,isol,itri,ll,kflag,n,nx(*),
      &  ny(*),nz(*),nstart,ifaceq(8,6),ifacet(6,4),nboun,
@@ -81,16 +81,9 @@
 !
 !     opening a file to store the nodes which are not connected
 !
+      iwrite=0
       open(40,file='WarnNodeMissTiedContact.nam',status='unknown')
       write(40,*) '*NSET,NSET=WarnNodeMissTiedContact'
-      write(*,*) '*INFO in gentiedmpc:'
-      write(*,*) '      failed nodes (if any) are stored in file'
-      write(*,*) '      WarnNodeMissTiedContact.nam'
-      write(*,*) '      This file can be loaded into'
-      write(*,*) '      an active cgx-session by typing'
-      write(*,*) 
-     &     '      read WarnNodeMissTiedContact.nam inp'
-      write(*,*)
 !
       nmpctied=nmpc
 !
@@ -165,11 +158,18 @@
 !     determining the slave set
 !     
          if(ifaceslave(i).eq.0) then
-            do j=1,nset
-               if(set(j).eq.slavset) then
-                  exit
-               endif
-            enddo
+c            do j=1,nset
+c               if(set(j).eq.slavset) then
+c                  exit
+c               endif
+c            enddo
+           call cident81(set,slavset,nset,id)
+           j=nset+1
+           if(id.gt.0) then
+             if(slavset.eq.set(id)) then
+               j=id
+             endif
+           endif
             jstart=istartset(j)
             jend=iendset(j)
          else
@@ -290,16 +290,17 @@ c                              write(*,*) '**regular solution'
                   write(*,*) '*WARNING in gentiedmpc: no tied MPC'
                   write(*,*) '         generated for node ',node
                   if(isol.eq.0) then
-                     write(*,*) '         master face too far away'
-                     write(*,*) '         distance: ',dist
+                    write(*,*)
+     &                   '         opposite master face found but'
+                     write(*,*) '         too far away; distance: ',dist
                      write(*,*) '         tolerance: ',tietol(1,i)
                   else
-                     write(*,*) '         no corresponding master face'
-                     write(*,*) '         found; tolerance: ',
+                     write(*,*) '         no opposite master face'
+                     write(*,*) '         found; in-face tolerance: ',
      &                       tolloc
-c     &                       tietol(1,i)
                   endif
                   write(40,*) node
+                  iwrite=1
                 else
 !     
                   nelem=int(koncont(4,itri)/10.d0)
@@ -393,6 +394,7 @@ c     &                       tietol(1,i)
                            write(*,*) '         no tied constraint ',
      &                                'is generated'
                            write(40,*) node
+                           iwrite=1
                            cycle
                         endif
                      endif
@@ -406,6 +408,7 @@ c     &                       tietol(1,i)
                            write(*,*) '         no tied constraint ',
      &                                'is generated'
                            write(40,*) node
+                           iwrite=1
                            cycle
                         endif
                      endif
@@ -553,6 +556,7 @@ c                              write(*,*) '**regular solution'
 c     &                                tietol(1,i)
                   endif
                   write(40,*) node
+                  iwrite=1
                else
 !     
                   nelem=int(koncont(4,itri)/10.d0)
@@ -646,6 +650,7 @@ c     &                                tietol(1,i)
                               write(*,*) '         no tied constraint ',
      &                             'is generated'
                               write(40,*) node
+                              iwrite=1
                               cycle
                            endif
                         endif
@@ -659,6 +664,7 @@ c     &                                tietol(1,i)
                               write(*,*) '         no tied constraint ',
      &                             'is generated'
                               write(40,*) node
+                              iwrite=1
                               cycle
                            endif
                         endif
@@ -710,7 +716,19 @@ c     &                                tietol(1,i)
 !
       nmpctied=nmpc-nmpctied
 !
-      close(40)
+      if(iwrite.eq.1) then
+        write(*,*) '*INFO in gentiedmpc:'
+        write(*,*) '      failed nodes are stored in file'
+        write(*,*) '      WarnNodeMissTiedContact.nam'
+        write(*,*) '      This file can be loaded into'
+        write(*,*) '      an active cgx-session by typing'
+        write(*,*) 
+     &       '      read WarnNodeMissTiedContact.nam inp'
+        write(*,*)
+        close(40)
+      else
+        close(40,status='delete')
+      endif
 !     
       return
 !

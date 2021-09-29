@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@
      &  nmethod,mi,imastop,nslavnode,islavnode,islavsurf,
      &  itiefac,areaslav,iponoels,inoels,springarea,set,nset,istartset,
      &  iendset,ialset,tietol,reltime,filab,nasym,xnoels,icutb,ne0,
-     &  jobnamef)
+     &  jobnamef,mortar,auw,jqw,iroww,nzsw,imastnode,nmastnode)
 !
 !     generate contact elements for the slave contact nodes
 !
@@ -35,10 +35,10 @@
       character*87 filab(*)
       character*132 jobnamef(*)
 !
-      integer ntie,ifree,nasym,icutb,ne0,
+      integer ntie,ifree,nasym,icutb,ne0,mortar,jqw(*),iroww(*),
      &  itietri(2,ntie),ipkon(*),kon(*),koncont(4,*),ne,node,
      &  neigh(1),iflag,kneigh,i,j,k,l,isol,iset,idummy,
-     &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),
+     &  itri,ll,kflag,n,nx(*),ny(*),istep,iinc,mi(*),nzsw,
      &  nz(*),nstart,ielmat(mi(3),*),imat,ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
      &  nface,nope,nodef(9),ncmat_,ntmat_,index1,indexel,
@@ -46,14 +46,15 @@
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,nslavnode(*),islavnode(*),islavsurf(2,*),
      &  itiefac(2,*),iponoels(*),inoels(2,*),konl(26),nelems,m,
-     &  mint2d,nopes,ipos,nset,istartset(*),iendset(*),
-     &  ialset(*)
+     &  mint2d,nopes,ipos,nset,istartset(*),iendset(*),m1,m2,
+     &  ialset(*),length,iorder(4),imastnode(*),nmastnode(*),
+     &  jbasis,kbasis
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
-     &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),c0coef,
-     &  beta,c0,elcon(0:ncmat_,ntmat_,*),weight,
+     &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),c0coef,auw(*),
+     &  beta,c0,elcon(0:ncmat_,ntmat_,*),weight,t1(3),t2(3),dt1,
      &  areaslav(*),springarea(2,*),xl2(3,9),area,xi,et,shp2(7,9),
-     &  xs2(3,2),xsj2(3),adjust,tietol(3,*),reltime,
+     &  xs2(3,2),xsj2(3),adjust,tietol(3,*),reltime,xns(3,3),
      &  clear,ratio(9),pl(3,9),
      &  pproj(3),al(3),xn(3),xm(3),dm,xnoels(*)
 !
@@ -147,6 +148,10 @@
          enddo
       endif
 !
+!     massless contact: initialization of nzsw
+!
+      if(mortar.eq.-1) nzsw=0
+!
       do i=1,ntie
          if(tieset(1,i)(81:81).ne.'C') cycle
          kneigh=1
@@ -165,9 +170,16 @@ c         if((istep.eq.1).and.(iinc.eq.1).and.(iit.le.0)) then
                noset(81:81)=' '
                ipos=index(noset,' ')
                noset(ipos:ipos)='N'
-               do iset=1,nset
-                  if(set(iset).eq.noset) exit
-               enddo
+c               do iset=1,nset
+c                  if(set(iset).eq.noset) exit
+c               enddo
+               call cident81(set,noset,nset,id)
+               iset=nset+1
+               if(id.gt.0) then
+                 if(noset.eq.set(id)) then
+                   iset=id
+                 endif
+               endif
                kflag=1
                call isortii(ialset(istartset(iset)),idummy,
      &            iendset(iset)-istartset(iset)+1,kflag)
@@ -521,16 +533,12 @@ c     write(*,*) '**regular solution'
 !
 !                 determining the jacobian vector on the surface 
 !
-c                  if(nopes.eq.9) then
-c                     call shape9q(xi,et,pl,xm,xs2,shp2,iflag)
                   if(nopes.eq.8) then
                      call shape8q(xi,et,pl,xm,xs2,shp2,iflag)
                   elseif(nopes.eq.4) then
                      call shape4q(xi,et,pl,xm,xs2,shp2,iflag)
                   elseif(nopes.eq.6) then
                      call shape6tri(xi,et,pl,xm,xs2,shp2,iflag)
-c                  elseif(nopes.eq.7) then
-c                     call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
                   else
                      call shape3tri(xi,et,pl,xm,xs2,shp2,iflag)
                   endif
@@ -541,6 +549,74 @@ c                     call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
                   do l=1,3
                      xn(l)=xm(l)/dm
                   enddo
+!
+!                 massless contact: filling matrix Wb
+!
+                  if(mortar.eq.-1) then
+!
+!                   determining a local system (cf. springforc_n2f.f)
+!
+                    if(1.d0 - dabs(xn(1)).lt.1.5231d-6) then       
+!     
+!     calculating the local directions on master surface
+!
+                      t1(1)=-xn(3)*xn(1)
+                      t1(2)=-xn(3)*xn(2)
+                      t1(3)=1.d0-xn(3)*xn(3)
+                    else
+                      t1(1)=1.d0-xn(1)*xn(1)
+                      t1(2)=-xn(1)*xn(2)
+                      t1(3)=-xn(1)*xn(3)
+                    endif
+                    dt1=dsqrt(t1(1)*t1(1)+t1(2)*t1(2)+t1(3)*t1(3))
+                    do m1=1,3
+                      t1(m1)=t1(m1)/dt1
+                    enddo
+                    t2(1)=xn(2)*t1(3)-xn(3)*t1(2)
+                    t2(2)=xn(3)*t1(1)-xn(1)*t1(3)
+                    t2(3)=xn(1)*t1(2)-xn(2)*t1(1)           
+!
+!                   storing in a matrix xns=[xn t1 t2]
+!
+                    do m1=1,3
+                      xns(m1,1)=xn(m1)
+                      xns(m1,2)=t1(m1)
+                      xns(m1,3)=t2(m1)
+                    enddo
+!
+!                   sorting the nodes of the master face in
+!                   ascending order
+!
+                    length=nmastnode(i+1)-nmastnode(i)
+                    do k=1,nopes
+                      iorder(k)=k
+                    enddo
+                    kflag=2
+                    call isortii(nodef,iorder,nopes,kflag)
+!
+                    jbasis=3*(j-1)
+                    do m2=1,3
+                      jqw(jbasis+m2)=nzsw+1
+                      do m1=1,3
+                        nzsw=nzsw+1
+                        auw(nzsw)=xns(m1,m2)
+                        iroww(nzsw)=jbasis+m1
+                      enddo
+!
+                      do k=1,nopes
+                        call nident(imastnode(nmastnode(i)+1),
+     &                       nodef(k),length,id)
+                        kbasis=3*(nslavnode(ntie+1)+nmastnode(i)+id-1)
+                        do m1=1,3
+                          nzsw=nzsw+1
+                          auw(nzsw)=-ratio(iorder(k))*xns(m1,m2)
+                          iroww(nzsw)=kbasis+m1
+                        enddo
+                      enddo
+!                          
+                    enddo
+                    cycle
+                  endif
 !
 !                 distance from surface along normal (= clearance)
 !
@@ -691,5 +767,11 @@ c                  endif
          close(27)
       endif
 !
+!     complete the definition of jqw for massless contact
+!      
+      if(mortar.eq.-1) then
+        jqw(3*nslavnode(ntie+1)+1)=nzsw+1
+      endif
+!      
       return
       end

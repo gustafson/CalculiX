@@ -1,6 +1,6 @@
 
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2020 Guido Dhondt                          */
+/*              Copyright (C) 1998-2021 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -508,7 +508,7 @@ void spooles_factor(double *ad, double *au,  double *adb, double *aub,
 	    /* inputformat:
 	       0: sparse lower triangular matrix in ad (diagonal)
 	          and au (lower triangle)
-	       1: sparse lower + upper triangular matrix in ad (diagonal)
+	       1: sparse full matrix in ad (diagonal)
 	          and au (first lower triangle, then upper triangle; lower
 	          and upper triangle have nonzero's at symmetric positions)
 	       2: full matrix in field ad

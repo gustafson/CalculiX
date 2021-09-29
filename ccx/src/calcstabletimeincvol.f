@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -98,7 +98,7 @@
       quadfac=0.3d0
 !
       damping=0
-      icount = 0
+      icount=0
 !
       bet=(1.d0-alpha)*(1.d0-alpha)/4.d0
       gam=0.5d0-alpha
@@ -415,7 +415,7 @@ c               call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
 !
 !     scaling of element: time increment required by element
 !
-             smscale(nelem)=critom/2* hmin/wavspd*geomfac
+             smscale(nelem)=critom/2*hmin/wavspd*geomfac
 !
 !     smallest dtvol
              dtvol=min(dtvol,smscale(nelem))
@@ -430,7 +430,7 @@ c               call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
       write(*,*)
 !
 !     ------------Mass Scaling ----------------------------------------
-!     mscalmethod = 1: selective mass scaling SMS
+!     mscalmethod=1: selective mass scaling SMS
 !
       if(dtvol.lt.dtset/safefac)then
           dtset=dtset/safefac
@@ -450,23 +450,27 @@ c               call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
             endif
           enddo
 !
-          write(*,*) 'Selective Mass Scaling is active'
-          write(*,*)
-          write(*,*) 'Scaling factor of time increment:',dtset/dtvol
-          write(*,*) 'Overall mass is not changed:'
-          write(*,*) 'Manipulation of M matrix by beta (maximum) =',
-     &                (((dtset/dtvol)**2)-1)
-          write(*,*) 'In total ',icount,'elements were scaled'
-          write(*,*) 
-          write(*,*) '*INFO in calcstabletimeincvol:'
-          write(*,*) '      scaled nodes are stored in file'
-          write(*,*) '      WarnElementMassScaled.nam'
-          write(*,*) '      This file can be loaded into'
-          write(*,*) '      an active cgx-session by typing'
-          write(*,*)
-     &     '      read WarnElementMassScaled.nam inp'
-          write(*,*)
-          close(40)          
+          if(icount.gt.0) then
+            write(*,*) 'Selective Mass Scaling is active'
+            write(*,*)
+            write(*,*) 'Scaling factor of time increment:',dtset/dtvol
+            write(*,*) 'Overall mass is not changed:'
+            write(*,*) 'Manipulation of M matrix by beta (maximum) =',
+     &           (((dtset/dtvol)**2)-1)
+            write(*,*) 'In total ',icount,'elements were scaled'
+            write(*,*) 
+            write(*,*) '*INFO in calcstabletimeincvol:'
+            write(*,*) '      scaled nodes are stored in file'
+            write(*,*) '      WarnElementMassScaled.nam'
+            write(*,*) '      This file can be loaded into'
+            write(*,*) '      an active cgx-session by typing'
+            write(*,*)
+     &           '      read WarnElementMassScaled.nam inp'
+            write(*,*)
+            close(40)
+          else
+            close(40,status='delete')
+          endif
 !
           dtset=dtset*safefac
       endif !endif (dtvol.lt.dtset)

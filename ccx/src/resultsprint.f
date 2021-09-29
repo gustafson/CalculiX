@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -113,7 +113,7 @@ c         endif
      &  orab,ielorien,norien,nk,ne,inum,filab,vold,ikin,ielmat,thicke,
      &  eme,islavsurf,mortar,time,ielprop,prop,veold,orname,
      &  nelemload,nload,sideload,xload,rhcon,nrhcon,ntmat_,ipobody,
-     &  ibody,xbody,nbody)
+     &  ibody,xbody,nbody,nmethod)
 !
 !     for facial information (*section print): if forces and/or
 !     moments in sections are requested, the stresses have to be
@@ -262,7 +262,8 @@ c         endif
 !
 !     determining the total strains in the nodes for output in frd format
 !
-      if((filab(4)(1:4).eq.'E   ').or.(filab(30)(1:4).eq.'MAXE')) then
+      if((filab(4)(1:4).eq.'E   ').or.(filab(30)(1:4).eq.'MAXE'))
+     &     then
          nfield=6
          ndim=6
          if((norien.gt.0).and.(filab(4)(6:6).eq.'L')) then

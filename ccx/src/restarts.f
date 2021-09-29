@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,8 @@
      &  ttime,qaold,cs,mcs,output,physcon,ctrl,typeboun,iline,ipol,inl,
      &  ipoinp,inp,fmpc,tieset,ntie,tietol,ipoinpc,nslavs,t0g,t1g,nprop,
      &  ielprop,prop,mortar,nintpoint,ifacecount,islavsurf,pslavsurf,
-     &  clearini,ier,vel,nef,velo,veloo,ne2boun)
+     &  clearini,ier,vel,nef,velo,veloo,ne2boun,heading,network,
+     &  irestartread)
 !
       implicit none
 !
@@ -45,6 +46,7 @@
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
+      character*66 heading(*)
       character*80 orname(*),amname(*),matname(*)
       character*81 set(*),prset(*),tieset(3,*),cbody(*)
       character*87 filab(*)
@@ -62,7 +64,7 @@
      &  inotr(*),nprop,ielprop(*),mortar,nintpoint,ifacecount,
      &  namta(*),iamt1(*),ielmat(*),nodebounold(*),ndirbounold(*),
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),islavsurf(*),
-     &  nshcon(*),ncocon(*),ics(*),infree(*),ier,
+     &  nshcon(*),ncocon(*),ics(*),infree(*),ier,network,
      &  nener,irestartstep,irestartread,irstrt(*),istat,n,i,key,
      &  iprestr,mcs,maxlenmpc,iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),ntie,ibody(*),nbody,nslavs,nef,
@@ -77,7 +79,7 @@
      &  ttime,qaold(2),cs(17,*),physcon(*),pslavsurf(*),
      &  ctrl(*),fmpc(*),xbody(*),xbodyold(*),vel(*),velo(*),veloo(*)
 !
-      irestartread=0
+c      irestartread=0
       irestartstep=0
 !
       do i=2,n
@@ -132,7 +134,7 @@
      &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,
      &  t0g,t1g,nprop,ielprop,prop,mortar,nintpoint,ifacecount,
      &  islavsurf,pslavsurf,clearini,irstrt,vel,nef,velo,veloo,
-     &  ne2boun)
+     &  ne2boun,heading,network)
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2020 Guido Dhondt                     */
+/*              Copyright (C) 1998-2021 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -353,7 +353,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		 &cam1t,&cam1f,&cam1p,&cam2t,&cam2f,&cam2p,&cam0t,&cam0f,
 		 &cam0p,&icntrl,&dtheta,ctrl,&cam1a,&cam2a,&cam0a,
 		 &vamt,&vamf,&vamp,&vama,qa,&qamt,&qamf,&ramt,&ramf,&ramp,
-		 &iplausi,&ichannel);
+		 &iplausi,&ichannel,iaxial);
 	  }
       }
 
@@ -439,10 +439,25 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
       if(*ntr<num_cpus) num_cpus=*ntr;
       
       pthread_t tid[num_cpus];
+
+      /* update of vold for the boundary conditions (only in the first
+	 iteration of each increment and if not already done in 
+	 initialnet.f) */
+
+      /* in principle ok, does lead for thermomech.inp to much more
+         iterations, results the same; */
+      
+      /*     if(*iit<1){
+      	if(*ntg==0){
+	  for(i=0;i<*nboun;i++){
+	    vold[mt*(nodeboun[i]-1)+ndirboun[i]]=xbounact[i];
+	  }
+	}
+	}*/
       
       /*the default sink temperature is updated at the start of each
 	increment */
-     
+      
       for(i=0;i<*ntr;i++){
 	  node=nelemload[2*nloadtr[i]-1];
 	  if(node!=0){
