@@ -102,7 +102,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	ipneigh,neigh,mi,stx,vr,vi,stnr,stni,vmax,stnmax,
 	ngraph,veold,ener,ne,cs,set,nset,istartset,iendset,
 	ialset,eenmax,fnr,fni,emn,thicke,jobnamec,output,qfx,
-	cdn,mortar,cdnr,cdni,nmat,ielprop,prop);
+	cdn,mortar,cdnr,cdni,nmat,ielprop,prop,sti);
     return;
   }
 #endif
@@ -219,7 +219,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1,"%5sUHOST                                                              \n",p1);
     fprintf(f1,"%5sUPGM               CalculiX                                        \n",p1);
     fprintf(f1,"%5sUVERSION           Version 2.18                             \n",p1);
-    fprintf(f1,"%5sUCOMPILETIME       Wed Sep 15 21:41:41 CEST 2021                    \n",p1);
+    fprintf(f1,"%5sUCOMPILETIME       Fri Oct  1 15:40:49 UTC 2021                    \n",p1);
     fprintf(f1,"%5sUDIR                                                               \n",p1);
     fprintf(f1,"%5sUDBN                                                               \n",p1);
     

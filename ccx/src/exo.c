@@ -45,7 +45,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	 double *eenmax,double *fnr,double *fni,double *emn,
 	 double *thicke,char *jobnamec,char *output,double *qfx,
          double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat,
-	 ITG *ielprop,double *prop){
+	 ITG *ielprop,double *prop,double *sti){
 
 #ifdef EXODUSII
   /* stores the results in exo format

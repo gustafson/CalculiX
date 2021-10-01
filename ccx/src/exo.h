@@ -32,7 +32,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	 double *eenmax,double *fnr,double *fni,double *emn,
 	 double *thicke,char *jobnamec,char *output,double *qfx,
          double *cdn,ITG *mortar,double *cdnr,double *cdni,ITG *nmat,
-	 ITG *ielprop,double *prop);
+	 ITG *ielprop,double *prop,double *sti);
 
 void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs, ITG *node_map_inv,
