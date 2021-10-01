@@ -128,11 +128,12 @@ int main(int argc,char *argv[])
     if(jin==0){strcpy(jobnamec,argv[1]);strcpy1(jobnamef,argv[1],132);}
 
     /* next lines deactivated on March 18, 2020 */
-    
-    /*    for(i=1;i<argc;i++){
+    /* Reactived by Pete to allow exodus output */
+
+    for(i=1;i<argc;i++){
       if(strcmp1(argv[i],"-o")==0){
 	strcpy(output,argv[i+1]);break;}
-	}*/
+	}
   }
 
   putenv("CCX_JOBNAME_GETJOBNAME=jobnamec");
@@ -147,6 +148,7 @@ int main(int argc,char *argv[])
 
   printf("\n************************************************************\n\n");
   printf("CalculiX Version 2.18, Copyright(C) 1998-2021 Guido Dhondt\n");
+  printf("CalculiX Extras version 2.18, Copyright(C) 2013-2021 Peter A. Gustafson\n");
   printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
   printf("software, and you are welcome to redistribute it under\n");
   printf("certain conditions, see gpl.htm\n\n");
@@ -1807,8 +1809,14 @@ int main(int argc,char *argv[])
     printf("*ERROR in frd: cannot open frd file for writing...");
     exit(0);
   }
+#ifdef EXODUSII
+ if(strcmp1(output,"exo")==1){
+#endif
   fprintf(f1," 9999\n");
   fclose(f1);
+#ifdef EXODUSII
+ }
+#endif
 
   /* deallocating the fields
      this section is addressed immediately after leaving calinput */
