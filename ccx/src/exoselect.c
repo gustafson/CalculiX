@@ -32,7 +32,7 @@
 void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	       ITG *istartset,ITG *iendset,ITG *ialset,ITG *ngraph,ITG *ncomp,
 	       ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,ITG exoid,
-	       ITG time_step, int countvar){
+	       ITG time_step, int countvar, ITG *node_map_inv){
 
   /* storing scalars, components of vectors and tensors without additional
      transformations */
@@ -66,33 +66,12 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
   errr = ex_get_init (exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
   
   float *nodal_var_vals = (float *) calloc(num_nodes, sizeof(float));
-  ITG   *node_map       = (ITG *)   calloc(num_nodes, sizeof(ITG));
-  ITG   *inode_map      = (ITG *)   calloc(*nkcoords, sizeof(ITG));
   
-  errr = ex_get_id_map (exoid, EX_NODE_MAP, node_map);
-  if(errr)printf("*ERROR in exo: failed to get prior node map");
-
   for (i=0; i<num_nodes; i++){
     // Seed with NaN for non-stored output
     nodal_var_vals[i]=nanf("");
   }
   
-  {j=0;
-    // Pull node map and create inverse
-    // WHY DO WE NEED A INVERSE NODE MAP?
-    // FRD doesn't require results to be sequential be we do!
-    // FRD can be out of sequence (based on set order)
-    // FRD tags each result with the associated node number.
-    // Hence we need inverse and FRD does not
-    // Note also that changes in output sets, element deletion, etc
-    // means the initial from exo.c must be recreated each time
-    for(i=0;i<*nkcoords;i++){
-      if(inum[i]<=0) continue;
-      while(node_map[j%*nkcoords]!=i+1){j++;}
-      inode_map[i] = (j%*nkcoords);
-    }
-  }
-
   for(j=0;j<*ncomp;j++){
     if(*iset==0){
       for(i=0;i<*nkcoords;i++){
@@ -111,9 +90,9 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	/* storing the entities */
 	if(ifield[j]==1){
 	  // It is getting here and assigning -nan
-	  nodal_var_vals[inode_map[i]]=field1[i*nfield[0]+icomp[j]];
+	  nodal_var_vals[node_map_inv[i]-1]=field1[i*nfield[0]+icomp[j]];
 	}else{
-	  nodal_var_vals[inode_map[i]]=field2[i*nfield[1]+icomp[j]];
+	  nodal_var_vals[node_map_inv[i]-1]=field2[i*nfield[1]+icomp[j]];
 	}
       }
     }else{
@@ -137,9 +116,9 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	
 	    /* storing the entities */
 	    if(ifield[j]==1){
-	      nodal_var_vals[inode_map[i]]=field1[i*nfield[0]+icomp[j]];
+	      nodal_var_vals[node_map_inv[i]-1]=field1[i*nfield[0]+icomp[j]];
 	    }else{
-	      nodal_var_vals[inode_map[i]]=field2[i*nfield[1]+icomp[j]];
+	      nodal_var_vals[node_map_inv[i]-1]=field2[i*nfield[1]+icomp[j]];
 	    }
 	  }
 	}else{
@@ -163,9 +142,9 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	
 	      /* storing the entities */
 	      if(ifield[j]==1){
-		nodal_var_vals[inode_map[i]]=field1[i*nfield[0]+icomp[j]];
+		nodal_var_vals[node_map_inv[i]-1]=field1[i*nfield[0]+icomp[j]];
 	      }else{
-		nodal_var_vals[inode_map[i]]=field2[i*nfield[1]+icomp[j]];
+		nodal_var_vals[node_map_inv[i]-1]=field2[i*nfield[1]+icomp[j]];
 	      }
 	    }
 	  }while(1);
@@ -182,8 +161,6 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
     if (errr) printf ("ERROR exoselect data for dim %i record %i.\n", j, k+1+countvar);
   }
 
-  free(node_map);
-  free(inode_map);
   free(nodal_var_vals);
   return;
 

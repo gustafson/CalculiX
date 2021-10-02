@@ -44,9 +44,9 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
                ITG *inum,char *m1,ITG *inotr,double *trab,double *co,
                ITG *istartset,ITG *iendset,ITG *ialset,ITG *mi,ITG *ngraph,
                FILE *f1,char *output,char *m3, int exoid, ITG time_step,
-	       int countvar);
+	       int countvar, ITG *node_map_inv);
 
 void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	       ITG *istartset,ITG *iendset,ITG *ialset,ITG *ngraph,ITG *ncomp,
 	       ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,ITG exoid,
-	       ITG time_step, int countvar);
+	       ITG time_step, int countvar, ITG *node_map_inv);

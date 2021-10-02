@@ -30,7 +30,7 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
                ITG *inum,char *m1,ITG *inotr,double *trab,double *co,
                ITG *istartset,ITG *iendset,ITG *ialset,ITG *mi,ITG *ngraph,
                FILE *f1,char *output,char *m3, int exoid, ITG time_step,
-	       int countvar){
+	       int countvar, ITG *node_map_inv){
 
   ITG nksegment;
   ITG i,j,k,l,m,ii,jj,kk;
@@ -56,33 +56,12 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
   errr = ex_get_init (exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
   
   float *nodal_var_vals = (float *) calloc(num_nodes, sizeof(float));
-  ITG   *node_map       = (ITG *)   calloc(num_nodes, sizeof(ITG));
-  ITG   *inode_map      = (ITG *)   calloc(*nkcoords, sizeof(ITG));
   
-  errr = ex_get_id_map (exoid, EX_NODE_MAP, node_map);
-  if(errr)printf("*ERROR in exo: failed to get prior node map");
-
   for (i=0; i<num_nodes; i++){
     // Seed with NaN for non-stored output
     nodal_var_vals[i]=nanf("");
   }
-  
-  {j=0;
-    // Pull node map and create inverse
-    // WHY DO WE NEED A INVERSE NODE MAP?
-    // FRD doesn't require results to be sequential be we do!
-    // FRD can be out of sequence (based on set order)
-    // FRD tags each result with the associated node number.
-    // Hence we need inverse and FRD does not.
-    // Note also that changes in output sets, element deletion, etc
-    // means the initial from exo.c must be recreated each time
-    for(i=0;i<*nkcoords;i++){
-      if(inum[i]<=0) continue;
-      while(node_map[j%*nkcoords]!=i+1){j++;}
-      inode_map[i] = (j%*nkcoords);
-    }
-  }
-  
+    
   int num_nod_vars=3;
   
   for (j=1; j<=num_nod_vars; j++){ // For each direction
@@ -90,20 +69,20 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
       if((*ntrans==0)||(strcmp1(&filabl[5],"G")==0)){
 	for(i=0;i<*nkcoords;i++){
 	  if(inum[i]<=0) continue;
-	  nodal_var_vals[inode_map[i]]=v[(mi[1]+1)*(i)+j];
+	  nodal_var_vals[node_map_inv[i]-1]=v[(mi[1]+1)*(i)+j];
 	}
       }else{
 	for(i=0;i<*nkcoords;i++){
 	  if(inum[i]<=0) continue;
 
 	  if(inotr[2*i]==0){
-	    nodal_var_vals[inode_map[i]]=v[(mi[1]+1)*i+j];
+	    nodal_var_vals[node_map_inv[i]-1]=v[(mi[1]+1)*i+j];
 	  }else{
 	    ii=(mi[1]+1)*i+1;
 	    jj=(mi[1]+1)*i+2;
 	    kk=(mi[1]+1)*i+3;
 	    FORTRAN(transformatrix,(&trab[7*(inotr[2*i]-1)],&co[3*i],a));
-	    nodal_var_vals[inode_map[i]]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
+	    nodal_var_vals[node_map_inv[i]-1]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
 	  }
 	}
       }
@@ -115,14 +94,14 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
 	    i=ialset[k]+l*nksegment-1;
 	    if(inum[i]<=0) continue;
 	    if((*ntrans==0)||(strcmp1(&filabl[5],"G")==0)||(inotr[2*i]==0)){
-	      nodal_var_vals[inode_map[i]]=v[(mi[1]+1)*i+j];
+	      nodal_var_vals[node_map_inv[i]-1]=v[(mi[1]+1)*i+j];
 	    }else{
 	      // Transform into global directions
 	      FORTRAN(transformatrix,(&trab[7*(inotr[2*i]-1)],&co[3*i],a));
 	      ii=(mi[1]+1)*i+1;
 	      jj=(mi[1]+1)*i+2;
 	      kk=(mi[1]+1)*i+3;
-	      nodal_var_vals[inode_map[i]]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
+	      nodal_var_vals[node_map_inv[i]-1]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
 	    }
 	  }
 	}else{
@@ -134,13 +113,13 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
 	      i=l+m*nksegment-1;
 	      if(inum[i]<=0) continue;
 	      if((*ntrans==0)||(strcmp1(&filabl[5],"G")==0)||(inotr[2*i]==0)){
-		nodal_var_vals[inode_map[i]]=v[(mi[1]+1)*i+j];
+		nodal_var_vals[node_map_inv[i]-1]=v[(mi[1]+1)*i+j];
 	      }else{
 		FORTRAN(transformatrix,(&trab[7*(inotr[2*i]-1)],&co[3*i],a));
 		ii=(mi[1]+1)*i+1;
 		jj=(mi[1]+1)*i+2;
 		kk=(mi[1]+1)*i+3;
-		nodal_var_vals[inode_map[i]]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
+		nodal_var_vals[node_map_inv[i]-1]=v[ii]*a[0+(j-1)*3]+v[jj]*a[1+(j-1)*3]+v[kk]*a[2+(j-1)*3];
 	      }
 	    }
 	  }while(1);
@@ -152,8 +131,6 @@ void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
     if (errr) printf ("ERROR storing vector data into exo file.\n");
   }
     
-  free(node_map);
-  free(inode_map);
   free(nodal_var_vals);
   return;
 
