@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
      &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,
      &  t0g,t1g,nprop,ielprop,prop,mortar,nintpoint,ifacecount,
      &  islavsurf,pslavsurf,clearini,irstrt,vel,nef,velo,veloo,
-     &  ne2boun)
+     &  ne2boun,heading,network)
 !
       implicit none
 !
@@ -45,13 +45,14 @@
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
+      character*66 heading(*)
       character*80 orname(*),amname(*),matname(*),version
       character*81 set(*),prset(*),tieset(*),cbody(*)
       character*87 filab(*)
       character*132 fnrstrt,jobnamec(*)
 !
       integer istep,nset,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,
-     &  ntmat_,npmat_,norien,nam,nprint,mi(*),ntrans,ncs_,
+     &  ntmat_,npmat_,norien,nam,nprint,mi(*),ntrans,ncs_,nheading_,
      &  namtot,ncmat_,mpcfree,ne1d,ne2d,nflow,nlabel,iplas,nkon,
      &  ithermal(*),nmethod,iperturb(*),nstate_,istartset(*),iendset(*),
      &  ialset(*),kon(*),ipkon(*),nodeboun(*),ndirboun(*),iamboun(*),
@@ -65,7 +66,7 @@
      &  nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,
      &  nener,irestartstep,istat,iprestr,irstrt(*),
      &  maxlenmpc,mcs,mpcend,ntie,ibody(*),nbody,nslavs,nef,
-     &  ne2boun(*),memmpc_
+     &  ne2boun(*),memmpc_,network
 !
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &  rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
@@ -134,8 +135,8 @@
 !
          read(15)nmpc
          read(15)mpcend
-         read(15)memmpc_
          read(15)maxlenmpc
+         read(15)memmpc_
 !
 !        material size
 !
@@ -190,9 +191,11 @@
          read(15)iprestr
          read(15)mortar
          if(mortar.eq.1) then
-            read(15)ifacecount
-            read(15)nintpoint
+           read(15)ifacecount
+           read(15)nintpoint
          endif
+         read(15)nheading_
+         read(15)network
 !
          if(istep.eq.irestartstep) exit
 !
@@ -202,7 +205,7 @@
      &     mi(1),nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,
      &     nam,nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
      &     iperturb,nener,ithermal,nstate_,iprestr,mcs,ntie,
-     &     nslavs,nprop,mortar,ifacecount,nintpoint,nef)
+     &     nslavs,nprop,mortar,ifacecount,nintpoint,nef,nheading_)
 !
       enddo
 !
@@ -214,6 +217,10 @@
       do i=1,nalset
          read(15)ialset(i)
       enddo
+!
+!     header lines
+!
+      read(15)(heading(i),i=1,nheading_)
 !
 !     mesh
 !

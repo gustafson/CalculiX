@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2020 Guido Dhondt
+!     Copyright (C) 1998-2021 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
      &     physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,t0g,t1g,
      &     nprop,ielprop,prop,mortar,nintpoint,ifacecount,islavsurf,
      &     pslavsurf,clearini,irstrt,vel,nef,velo,veloo,ne2boun,
-     &     memmpc_)
+     &     memmpc_,heading,nheading_,network)
 !     
 !     writes all information needed for a restart to file
 !     
@@ -52,6 +52,7 @@
       character*6 prlab(*)
       character*8 lakon(*)
       character*20 labmpc(*),sideload(*)
+      character*66 heading(*)
       character*80 orname(*),amname(*),matname(*),version
       character*81 set(*),prset(*),tieset(*),cbody(*)
       character*87 filab(*)
@@ -72,7 +73,7 @@
      &     nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,
      &     nener,iprestr,istepnew,maxlenmpc,mcs,ntie,
      &     ibody(*),nbody,mt,nslavs,namtot,nef,ne2boun(*),
-     &     memmpc_
+     &     memmpc_,nheading_,network
 !     
       real*8 co(*),xboun(*),coefmpc(*),xforc(*),xload(*),elcon(*),
      &     rhcon(*),alcon(*),alzero(*),plicon(*),plkcon(*),orab(*),
@@ -117,11 +118,7 @@
      &        FORM='UNFORMATTED',err=151)
       endif
 !     
-c     do i=1,80
-c     version(i:i)=' '
-c     enddo
-c     version(1:20)='Version 2.17'
-      version='Version 2.17'
+      version='Version 2.18'
       write(15) version
 !     
       write(15)istepnew
@@ -207,9 +204,11 @@ c     version(1:20)='Version 2.17'
       write(15)iprestr
       write(15)mortar
       if(mortar.eq.1) then
-         write(15)ifacecount
-         write(15)nintpoint
+        write(15)ifacecount
+        write(15)nintpoint
       endif
+      write(15)nheading_
+      write(15)network
 !     
 !     sets
 !     
@@ -233,6 +232,10 @@ c     version(1:20)='Version 2.17'
       do i=1,nalset
          write(15) ialset(i)
       enddo
+!     
+!     header lines
+!     
+      write(15)(heading(i),i=1,nheading_)
 !     
 !     mesh
 !     

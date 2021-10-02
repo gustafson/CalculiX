@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2020 Guido Dhondt
+!     Copyright (C) 1998-2021 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -57,8 +57,6 @@
      &     areaslav(*),xl2(3,8),area,xi,et,shp2(7,8),
      &     xs2(3,2),xsj2(3),tietol(3,*),adjust
 !     
-!     
-!     
 !     flag for shape functions
 !     
       data iflag /2/
@@ -83,9 +81,16 @@
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
-            do iset=1,nset
-              if(set(iset).eq.noset) exit
-            enddo
+c            do iset=1,nset
+c              if(set(iset).eq.noset) exit
+c            enddo
+            call cident81(set,noset,nset,id)
+            iset=nset+1
+            if(id.gt.0) then
+              if(noset.eq.set(id)) then
+                iset=id
+              endif
+            endif
             kflag=1
             call isortii(ialset(istartset(iset)),idummy,
      &           iendset(iset)-istartset(iset)+1,kflag)

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2020 Guido Dhondt
+!     Copyright (C) 1998-2021 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -707,6 +707,14 @@
             write(*,*) '  comprised between 0 grad and 90 grad'
             call exit(201)
 !     
+          endif
+!
+        elseif(lakon(nelem)(2:5).eq.'GAPF') then
+          if(prop(index+5).eq.0.d0) then
+            write(*,*) '*ERROR in checkinputvaluesnet: form factor'
+            write(*,*) '       is equal to zero'
+            write(*,*) '       element number:',nelem
+            call exit(201)
           endif
 !     
         elseif((lakon(nelem)(2:5).ne.'LIPU').and.

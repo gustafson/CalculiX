@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2020 Guido Dhondt                          */
+/*              Copyright (C) 1998-2021 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -89,25 +89,6 @@ void resultsini(ITG *nk,double *v,ITG *ithermal,char *filab,ITG *iperturb,
 	    if(ithermal[0]!=2){
 		iniparll(&mt,nactdof,b,v,veold,accold,bet,gam,
 			 dtime,cam,nk,num_cpus);
-/*		scal1=*bet**dtime**dtime;
-		scal2=*gam**dtime;
-
-		for(i=0;i<*nk;i++){
-		    for(j=1;j<mt;j++){
-			if(nactdof[mt*i+j]>0){
-			    bnac=b[nactdof[mt*i+j]-1];
-			}else{
-			    continue;
-			}
-			v[mt*i+j]+=scal1*bnac;
-			if(fabs(scal1*bnac)>cam[0]){
-			    cam[0]=fabs(scal1*bnac);
-			    cam[3]=nactdof[mt*i+j]-0.5;
-			}
-			veold[mt*i+j]+=scal2*bnac;
-			accold[mt*i+j]+=bnac;
-		    }
-		    }*/
 	    }
 	    
 	    /* transient thermal step */
@@ -388,7 +369,7 @@ void resultsini(ITG *nk,double *v,ITG *ithermal,char *filab,ITG *iperturb,
 
 /*!
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

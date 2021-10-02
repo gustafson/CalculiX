@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2020 Guido Dhondt                          */
+/*              Copyright (C) 1998-2021 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -74,8 +74,9 @@ void tiedcontact(ITG *ntie, char *tieset, ITG *nset, char *set,
 
   /* triangulation of the master surface */
 
-  FORTRAN(triangucont,(&ncont,ntie,tieset,nset,set,istartset,iendset,
-	  ialset,itietri,lakon,ipkon,kon,koncont,kind1,kind2,co,nk));
+  FORTRAN(triangucont,(&ncont,ntie,tieset,nset,set,istartset,iendset,ialset,
+		       itietri,lakon,ipkon,kon,koncont,kind1,kind2,co,nk,
+		       &mortar));
   
   /* catalogueing the neighbors of the master triangles */
   

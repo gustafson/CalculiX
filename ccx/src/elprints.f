@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@
       character*81 set(*),elset,prset(*)
       character*132 textpart(16)
 !
-      integer nset,nprint,nprint_,istep,istat,n,i,ii,key,ier,
+      integer nset,nprint,nprint_,istep,istat,n,i,ii,key,ier,id,
      &  jout(2),joutl,ipos,nmethod,nener,ithermal(*),iline,ipol,inl,
      &  ipoinp(2,*),inp(3,*),nam,itpamp,idrct,ipoinpc(0:*),nef
 !
@@ -84,9 +84,16 @@
           elset(1:80)=textpart(ii)(7:86)
           ipos=index(elset,' ')
           elset(ipos:ipos)='E'
-          do i=1,nset
-            if(set(i).eq.elset) exit
-          enddo
+c          do i=1,nset
+c            if(set(i).eq.elset) exit
+c          enddo
+          call cident81(set,elset,nset,id)
+          i=nset+1
+          if(id.gt.0) then
+            if(elset.eq.set(id)) then
+              i=id
+            endif
+          endif
           if(i.gt.nset) then
              write(*,*) '*WARNING reading *EL PRINT: elementset ',
      &            elset(1:ipos-1),' does not exist'

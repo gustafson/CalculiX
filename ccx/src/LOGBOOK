@@ -1,6 +1,6 @@
  
 ========
-LOG-BOOK Version 2.17
+LOG-BOOK Version 2.18
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -4443,3 +4443,358 @@ Dec 2002        - started to work on single crystal plasticity
 	       
  23 July 2020  - looked into the output of valgrind: solved memory
                  issued before the next release
+
+ 27 July 2020  - posted ccx_2.17
+ 
+ 30 July 2020  - changed applybounfem.f for incompressible fluids
+
+ 2 Aug 2020    - worked on the compressible circular Couette problem
+                 with the CBS-Method
+               - implemented output of SA
+
+ 3 Aug 2020    - changed presgradient.f: velocity direction dependent
+                 smoothing
+
+ 6 Aug 2020    - removed an error in cascade.c
+               - worked on crack propagation (cracklength, smoothing..)
+               - change in refinemesh: all old nodes are now connected
+	         to the new nodes, i.e. the MPC's are generated only once.
+
+ 8 Aug 2020    - made a change in applybounfem.f
+
+ 3 Sept 2020   - worked on crack propagation
+               - implemented the interpolation of the temperatures for
+	         a refined mesh
+
+ 5 Sept 2020   - made a change in e_c3d_v2hrs.f (got rid of the wrong
+                 factor of 2)
+
+ 6 Sept 2020   - worked on implicit compressible finite element
+                 CFD-calculations
+
+ 10 Sept 2020  - allowed for user-defined crack propagation law
+                 in the input deck
+               - allowed for user-defined maximum crack propagation
+	         increment in the input deck
+               - OP=NEW also works now in the first step as expected
+	         (change in calinput.f)
+               - cleaned up crack propagation output
+
+ 3 Oct 2020    - worked on turbulence for compressible flow
+
+ 4 Oct 2020    - optimized cfdconv.f
+
+ 5 Oct 2020    - created file calcdatarget.f
+
+ 6 Oct 2020    - split sensitivity.c into sensi_coor.c and sensi_orien.c
+
+ 8 Oct 2020    - worked on sensitivity
+               - improved crack propagation calculations
+
+ 10 Oct 2020   - worked on turbulence (compressible fluids)
+
+ 15 Oct 2020   - reading and processing complete missions for
+                 crack propagation
+
+ 16 Oct 2020   - worked on turbulence (SST-model, compressible fluids)
+
+ 19 Oct 2020   - replaced the internal read statement in e_c3d_krhs.f
+                 (cause the parallellization to fail)
+               - created getuncrackedresults.c
+	       - included kode in the compfluidfem.c header
+
+ 22 Oct 2020   - made some changes in crackpropagation.c and its
+                 subroutines
+
+ 24 Oct 2020   - iterated to solve the equation system for k and omega
+
+ 29 Oct 2020   - finished the crack propagation routines (apart from
+                 the documentation)
+               - checked different methods to calculate the crack
+	         length
+               - contributed test examples
+	       
+ 30 Oct 2020   - coded y+ for storage in the .frd-file (CBS)
+
+ 1 Nov 2020    - started optimizing the CFD code (CBS-Method)
+
+ 2 Nov 2020    - continued to optimize the CFD code (CBS-Method)
+
+ 5 Nov 2020    - installed new version of PaStiX
+               - wrote output routine for trilinos
+	       
+ 6 Nov 2020    - convergence check should only be made in nodes in which
+                 no boundary conditions is applied (CFD-CBS)
+
+ 10 Nov 2020   - updated aerodynamic networks
+               - corrected an error in restartshort.f and
+	         restartread.f
+
+ 12 Nov 2020   - corrected an error in complexfreq.c
+               - made the output of test example segment.inp independent
+	         of the sector for which results are shown
+               - set phase=0 for amplitudes<1.e-10 in arpackcs.c,
+	         complexfreq.c and steadystate.c
+               - results within a step with contact were not always
+	         correct; made a substantial change in gencontelem_f2f.f
+		 to check!
+
+ 20 Nov 2020   - CBS CFD: extrapolated pressure from previous increment at
+                 the start of a new increment: important for subsonic
+		 calculations
+
+ 26 Nov 2020   - important correction in calinput.f (related to the one but
+                 last change on Sept. 10 2020, which was not done
+		 correctly).
+
+ 3 Dec 2020    - change in dyna.c: vini is set to vold only in the absence
+                 of perturbation; for perturbation the initial conditions
+		 are zero
+
+ 4 Dec 2020    - paralellized smoothshock.f
+
+ 7 Dec 2020    - improved time management for the CBS-FEM-method
+
+ 10 Dec 2020   - included the *heading lines in the restart file:
+                 header lines are repeated in a frd-file at restart
+
+ 11 Dec 2020   - provided for *initial conditions in combination with
+                 turbulence
+               - updated generatecycmpcs for turbulence equations
+
+ 12 Dec 2020   - performed some optimizations regarding the calculation of
+                 the density for incompressible materials in the CFD-CBS
+		 method
+
+ 19 Dec 2020   - implemented a loop in compfluidfem.c for the automatic
+                 increase of shock smoothing in case of divergence of
+		 compressible calculations
+
+ 30 Dec 2020   - CBS-method for incompressible fluids: included the
+                 pressure MPC's in the LHS-matrix
+               - corrected an error in normmpc.f
+
+ 31 Dec 2020   - coded the shallow water modifications in the CBS methodx
+
+ 1 Jan 2021    - worked on shallow water equations
+
+ 3 Jan 2021    - introduced variable depth in the shallow water implementation
+
+ 5 Jan 2021    - included the variable "network" in the restart file: needed
+                 for network calculations.
+
+ 6 Jan 2021    - corrected an error in compfluidfem related to the application
+                 of force in combination with amplitudes
+               - introduced DTF as output of the time increment in CFD-CBS
+	         calculations
+
+ 7 Jan 2021    - ran some channel examples with the shallow water method
+               - provided DEPF for dat-file output
+
+ 13 Jan 2021   - made a correction in radflowload.c
+               - corrected some passages in the User's Manual.
+
+ 16 Jan 2021   - completed the shallow water equation description in the
+                 manual
+
+ 17 Jan 2021   - worked on isothermal shallow water equations
+
+ 18 Jan 2021   - changed *SHELL SECTION for user elements
+               - corrected compfluidfem.c for isothermal shallow water
+	         equations
+
+ 20 Jan 2021   - provided for user elements in frd.c
+
+ 26 Jan 2021   - stored the displacements as vector for true shells
+               - made a change in crackpropagation.c
+	       - started the documentation on crack propagation calculations
+
+ 27 Jan 2021   - increased the order of integration for the lhs of the
+                 FEM-CBS-method
+
+ 30 Jan 2021   - worked on the implicit CBS-method for compressible
+                 fluids
+
+ 4 Feb 2021    - made a change in gen3dconnect.f, gen3dboun.f, gen3dsurf.f,
+                 gen3dmpc.f, gen3dtemp.f and gen3dforc.f
+
+ 6 Feb 2021    - worked on the documentation of the crack propagation
+                 procedure
+
+ 9 Feb 2021    - worked on the documentation of the crack propagation
+                 procedure
+
+ 15 Feb 2021   - started sorting the set names
+
+ 16 Feb 2021   - finished sorting the set names
+
+ 17 Feb 2021   - started sensitivity analysis for missions
+
+ 25 Feb 2021   - optimized nodes.f and elements.f
+
+ 26 Feb 2021   - changed tieset in submodels.f; target: use ordering of
+                 sets obtained in allocation.f in calinput.f instead of
+		 repeating it.
+
+ 2 Mar 2021    - sorted sets only once in allocation.f and reused the
+                 ordering in calinput.f
+		 
+ 3 Mar 2021    - corrected an error in allocation.f
+
+ 7 Mar 2021    - removed the changes after 3 Mar (introduction of
+                 lengthset and lengthmat: not effective)
+	       - made some corrections in the parallellization
+	         pointed out by the POP-team in Aachen
+
+ 10 Mar 2021   - made some modifications in crackprop.f
+               - made a change in pastix.c (for frequency calculations
+	         the iterative improvement after double precision
+		 direct solving is not done).
+
+ 15 Mar 2021   - removed variable icontact; introduced mortar=-2
+                 for "no contact" and mortar=-1 for "massless contact"
+               - started to code changes for massless contact
+               - coded the calculation of the Wp-matrix in gencontelem_n2f.f
+
+ 20 Mar 2021   - coded inviscid preconditioning in the CBS-Method
+
+ 23 Mar 2021   - included a change in pastix.c
+               - update of sensitivity calculations
+
+ 25 Mar 2021   - worked on modal stress sensitivity
+
+ 27 Mar 2021   - removed the pressure gradient stability term for the
+                 continuity equation for incompressible fluids
+
+ 29 Mar 2021   - started working on modal stress sensitivity
+
+ 31 Mar 2021   - worked on sensitivity in general (input routines)
+
+ 5 Apr 2021    - worked on the implicit CBS-method for compressible
+                 media
+
+ 6 Apr 2021    - worked on MPC's connecting the parent mesh with the
+                 refined mesh: needed for treating SPC's.
+
+ 8 Apr 2021   - continued to work on MPC's for the refined mesh
+
+ 9 Apr 2021   - continued to work on MPC's for the refined mesh
+              - worked on sensitivity (documentation, cleaning up the
+	        code)
+
+ 12 Apr 2021  - continued to work on MPC's for the refined mesh
+
+ 13 Apr 2021  - continued to work on MPC's for the refined mesh
+              - added t0g and t1g for the user element routines
+	        resultsmech_u*f
+
+ 29 Apr 2021  - made a correction to the projected front end nodes
+                in crackprop.f
+
+ 4 May 2021   - updated robust design routines
+
+ 5 May 2021   - worked on massless dynamic contact
+              
+ 6 May 2021   - made some corrections in catsmpcslavno.f
+
+ 7 May 2021   - made corrections in frd.c and projectmidnodes.f
+
+ 10 May 2021  - changed the sign of the cyclic axis in the frd-file (PAX)
+                if the nodal diameter exceeds half the number of segments
+
+ 11 May 2021  - worked on automatic remeshing
+
+ 15 May 2021  - output of the thermal strains THE to the frd-file
+              - correction in gencontelem_n2f.f and catsmpcslavno.f
+	      
+
+ 16 May 2021  - worked on implicit compressible fluids (CBS)
+
+ 17 May 2021  - worked on crack propagation
+
+ 19 Mai 2021  - worked on mesh refinement: midnode projection
+
+ 20 Mai 2021  - removed checks in checkspcmpc.f (was moved to
+                catsmpcslavno.f)
+
+ 21 Mai 2021  - improved the projection of the refined mesh on
+                the surface of the unrefined mesh
+
+ 22 Mai 2021  - corrected an error in dfluxs.f (element sets
+                did not work properly)
+
+ 31 Mai 2021  - updated projection and smoothing of midnodes in
+                refinemesh.c
+
+ 1 June 2021  - worked on the smoothing of midnodes in refinemesh.c
+
+ 2 June 2021  - started adding smoothing for subsonic compressible
+	        CBS calculations
+
+ 6 June 2021  - updated 3- and 4-noded shells
+
+ 21 June 2021 - started changes in the CBS CFD-method for acceleration
+                purposes
+
+ 22 June 2021 - adapted fminsi for use in the mesh refinement procedure
+              - continued to work on the CBS CFD-method  
+            
+ 25 June 2021 - worked on the use of fminsi for mesh refinement
+              
+ 26 June 2021 - continued to work on the CBS CFD-method
+
+ 30 June 2021 - made a change in arpackcs.c (direction of PAX in
+                the frd-file, introduction of the modulo function)
+
+ 1 July 2021  - made an update of the sensitivity routines (change of dat
+                output, DISPLACEMENT->ALL-DISP..)
+
+ 5 July 2021  - updated dynamic contact algorithms of Carlo
+
+ 8 July 2021  - made a change in frd.c for nmethod=0
+              - corrected an error in getglobalresults.c
+	      - selected binary output in writenewmesh.c
+	      - corrected body load treatment in readnewmesh.c
+
+ 9 July 2021  - continued CFD-CBS restructuring
+
+ 14 July 2021 - removed errors in readnewmesh.c
+
+ 15 July 2021 - changed the meaning of CYCLES in the frd-file for
+                crack propagation calculations
+
+ 16 July 2021 - adapted the integration in resultsmech.f for
+                intscheme=1 (initial acceleration in nonlingeo)
+
+ 17 July 2021 - worked on restructuring CFD-CBS; example cou2dfem
+                works again.
+
+ 20 July 2021 - worked on heat induction due to alternating current
+              - rearranged nodes and elements (to avoid gaps) for
+	        CFD-CBS calculations
+
+ 25 July 2021 - worked on rearrangecfd in nonlingeo.c
+              - made a correction in electromagnetics.c
+
+ 26 July 2021 - update the us3 elements
+
+ 27 July 2021 - made some small changes in electromagnetics
+
+ 28 July 2021 - tested CFD-CBS
+
+ 31 July 2021 - all CFD-CBS test examples work again
+
+ 2 Aug 2021   - worked on reducing the work load collecting the
+                parallel contributions after mafillv1rhs.f
+
+ 4 Aug 2021   - finished the parallel work on collecting the
+                contributions (fields jqcpu and irowcpu); does not work
+
+ 2 Sep 2021   - made some corrections in electromagnetics.c
+              - corrected an error in compfluidfem.c
+
+ 5 Sep 2021   - removed the Finite Volume Method for CFD from the
+                documentation; removed the FVM-examples. Focus
+		is on the CBS-FEM method for CFD.
+
+ 7 Sep 2021   - made some corrections for user element u1 and us3

@@ -2,14 +2,25 @@
 
 chomp($date=`date`);
 
-# inserting the date into ccx_2.17.c
+# inserting the date into ccx_2.18.c
 
-@ARGV="ccx_2.17.c";
+@ARGV="ccx_2.18.c";
 $^I=".old";
 while(<>){
     s/You are using an executable made on.*/You are using an executable made on $date\\n");/g;
     print;
 }
+
+# inserting the date into ccx_2.18step.c
+
+@ARGV="ccx_2.18step.c";
+$^I=".old";
+while(<>){
+    s/You are using an executable made on.*/You are using an executable made on $date\\n");/g;
+    print;
+}
+
+# inserting the date into frd.c
 
 @ARGV="frd.c";
 $^I=".old";
@@ -18,5 +29,6 @@ while(<>){
     print;
 }
 
-system "rm -f ccx_2.17.c.old";
+system "rm -f ccx_2.18.c.old";
+system "rm -f ccx_2.18step.c.old";
 system "rm -f frd.c.old";

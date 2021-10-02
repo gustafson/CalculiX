@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,7 @@
      &  iface,ithermal(*),imach,ikappa,imat,nshcon(*),ntmat_,mi(*),
      &  ielmat(mi(3),*),iturb,ifabou(*)
 !
-      real*8 vfa(0:7,*),v(0:4,*),cp,r,xk,xmach(*),xkappa(*),t1l,
+      real*8 vfa(0:7,*),v(0:mi(2),*),cp,r,xk,xmach(*),xkappa(*),t1l,
      &  shcon(0:3,ntmat_,*),physcon(*),xturb(2,*),gradtfa(3,*),
      &  gradvfa(3,3,*),gradpfa(3,*),gradkfa(3,*),gradofa(3,*),
      &  vfal(0:7),co(3,*),cofa(3,*)

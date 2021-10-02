@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2020 Guido Dhondt                          */
+/*              Copyright (C) 1998-2021 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -57,10 +57,10 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		 double *ctrl,ITG *itpamp,double *tietol,ITG *nalset,
 		 ITG *ikforc,ITG *ilforc,double *thicke,
 		 char *jobnamef,ITG *mei,ITG *nmat,ITG *ielprop,double *prop,
-		 char *orname,char *typeboun){
+		 char *orname,char *typeboun,double *t0g,double *t1g){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
-    *lakont=NULL,*turdir=NULL;
+    *lakont=NULL,*turdir=NULL,*labmpc2=NULL;
 
   ITG nev,i,j,k,idof,*inum=NULL,id,
     iinc=0,l,iout=1,ielas,icmd=3,ifreebody,mode,m,nherm,
@@ -77,7 +77,10 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     ielset,*istartnmd=NULL,*iendnmd=NULL,inmd,neqact,*nshcon=NULL,
     *ipev=NULL,icfd=0,*inomat=NULL,mortar=0,*islavsurf=NULL,
     *iponoel=NULL,*inoel=NULL,iperturbsav,nevcomplex,*itiefac=NULL,
-    mscalmethod=0;
+    mscalmethod=0,*islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,nboun2,
+    *ndirboun2=NULL,*nodeboun2=NULL,nmpc2,*ipompc2=NULL,*nodempc2=NULL,
+    *ikboun2=NULL,*ilboun2=NULL,*ikmpc2=NULL,*ilmpc2=NULL,mortartrafoflag=0,
+    intscheme=0;
 
   long long i2;
 
@@ -100,7 +103,8 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     *eigxr=NULL,*eigxi=NULL,*xmac=NULL,*bett=NULL,*betm=NULL,*xmaccpx=NULL,
     fmin=0.,fmax=1.e30,*xmr=NULL,*xmi=NULL,*zi=NULL,*eigx=NULL,
     *pslavsurf=NULL,*pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,
-    *tmin,*tmax,*energyini=NULL,*energy=NULL,e1[3],e2[3],xn[3],*smscale=NULL;
+    *tmin,*tmax,*energyini=NULL,*energy=NULL,e1[3],e2[3],xn[3],*smscale=NULL,
+    *autloc=NULL,*xboun2=NULL,*coefmpc2=NULL;
 
   FILE *f1;
 
@@ -1460,7 +1464,11 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		&mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 		islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
 		inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
-		itiefac,tieset,smscale,&mscalmethod,nbody);}
+		itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
+		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
+		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
+		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		&intscheme);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
 		&stx[kkx],elcon,
@@ -1481,7 +1489,11 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		&mortar,islavact,cdn,islavnode,nslavnode,ntie,clearini,
 		islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
 		inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
-		itiefac,tieset,smscale,&mscalmethod,nbody);
+		itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
+		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
+		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
+		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		&intscheme);
       }
 
     }
@@ -1848,7 +1860,9 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	  vreal=vt[l];
 	  vimag=vt[l+mt**nk*ngraph];
 	  vr[l]=sqrt(vreal*vreal+vimag*vimag);
-	  if(fabs(vreal)<1.e-10){
+	  if(vr[l]<1.e-10){
+	    vi[l]=0.;
+	  }else if(fabs(vreal)<1.e-10){
 	    if(vimag>0){vi[l]=90.;}
 	    else{vi[l]=-90.;}
 	  }
@@ -1869,7 +1883,9 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	  stnreal=stnt[l];
 	  stnimag=stnt[l+6**nk*ngraph];
 	  stnr[l]=sqrt(stnreal*stnreal+stnimag*stnimag);
-	  if(fabs(stnreal)<1.e-10){
+	  if(stnr[l]<1.e-10){
+	    stni[l]=0.;
+	  }else if(fabs(stnreal)<1.e-10){
 	    if(stnimag>0){stni[l]=90.;}
 	    else{stni[l]=-90.;}
 	  }
@@ -1896,7 +1912,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	ntrans,orab,ielorien,norien,description,ipneigh,neigh,
 	mi,stxt,vr,vi,stnr,stni,vmax,stnmax,&ngraph,veold,ener,&net,
 	cs,set,nset,istartset,iendset,ialset,eenmax,fnr,fni,emnt,
-	thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,ielprop,prop);
+	thicke,jobnamec,output,qfx,cdn,&mortar,cdnr,cdni,nmat,ielprop,prop,sti);
     if(strcmp1(&filab[1044],"ZZS")==0){SFREE(ipneigh);SFREE(neigh);}
     
   }   // end loop over the eigenfrequencies
@@ -1913,7 +1929,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 
   if(*nmethod==6){
   
-    FORTRAN(writeturdir,(xn,turdir,&nev));
+    FORTRAN(writeturdir,(xn,turdir,&nevcomplex));
     SFREE(turdir);
       
     /* reconverting Coriolis force into centrifugal force */

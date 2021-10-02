@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2020 Guido Dhondt
+!              Copyright (C) 1998-2021 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,8 +31,8 @@
 !             7: pardiso
 !             8: pastix
 !
-!      iexpl==0:  structure:implicit, fluid:incompressible
-!      iexpl==2:  structure:explicit, fluid:incompressible
+!      iexpl=0:  structure:implicit, fluid:incompressible
+!      iexpl=2:  structure:explicit, fluid:incompressible
 !
       implicit none
 !

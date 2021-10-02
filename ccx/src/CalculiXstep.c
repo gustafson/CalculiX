@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2020 Guido Dhondt                          */
+/*              Copyright (C) 1998-2021 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -190,7 +190,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
     *ncocon=NULL,*ibody=NULL,*ielprop=NULL,*islavsurf=NULL,
     *ipoinpc=NULL,mt,nxstate,nload0,iload,*iuel=NULL,*ne2boun=NULL,
     *irandomtype=NULL,irobustdesign[3],*iparentel=NULL,ifreebody,
-    *ipobody=NULL,inewton=0;
+    *ipobody=NULL,inewton=0,*iprfn=NULL,*konrfn=NULL;
      
   static ITG nmpc,nforc,nprint,nset,nalset,nentries=18,
     neq[3],i,mpcfree,mei[4],j,nzl,nam,nbounold,
@@ -199,7 +199,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
     nmat,ntmat_,norien,ithermal[2]={0,0},nmpcold,
     iprestr,kode,isolver,nslavs,nkon_,ne0,nkon0,mortar,
     jout[2],nkon,idrct,jmax[2],iexpl,nevtot,ifacecount,
-    iplas,npmat_,mi[3],ntrans,mpcend,namtot_,iumat,
+    iplas,npmat_,mi[3],ntrans,mpcend,namtot_,iumat,iheading,
     icascade,maxlenmpc,mpcinfo[4],ne1d,ne2d,infree[4],
     callfrommain,nflow,jin=0,nener,jrstrt,nenerold,
     nline,*ipoinp=NULL,*inp=NULL,ntie,ntie_,mcs,nprop_,
@@ -207,7 +207,8 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
     nmethodl,iaxial,inext,icontact,nobject,nobject_,iit,
     nzsprevstep[3],memmpcref_,mpcfreeref,maxlenmpcref,*nodempcref=NULL,
     *ikmpcref=NULL,isens,namtot,nstam,ndamp,nef,inp_size,
-    *ipoinp_sav=NULL,*inp_sav=NULL,irefineloop=0;
+    *ipoinp_sav=NULL,*inp_sav=NULL,irefineloop=0,icoordinate=0,
+    *nodedesi=NULL,ndesi=0,nobjectstart=0;
 
   static ITG *meminset=NULL,*rmeminset=NULL;
 
@@ -224,7 +225,8 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
     *xstate=NULL,*trab=NULL,*ener=NULL,*shcon=NULL,*cocon=NULL,
     *cs=NULL,*tietol=NULL,*fmpc=NULL,*prop=NULL,*t0g=NULL,*t1g=NULL,
     *xbody=NULL,*xbodyold=NULL,*coefmpcref=NULL,*dacon=NULL,*vel=NULL,
-    *velo=NULL,*veloo=NULL,energy[5];
+    *velo=NULL,*veloo=NULL,energy[5],*ratiorfn=NULL,*dgdxglob=NULL,
+    *g0=NULL,*xdesi=NULL;
     
   static double ctrl[57];
 
@@ -290,12 +292,12 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
     FORTRAN(openfile,(jobnamef));
 
     printf("\n************************************************************\n\n");
-    printf("CalculiX Version DEVELOPMENT, Copyright(C) 1998-2020 Guido Dhondt\n");
+    printf("CalculiX Version DEVELOPMENT, Copyright(C) 1998-2021 Guido Dhondt\n");
     printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
     printf("software, and you are welcome to redistribute it under\n");
     printf("certain conditions, see gpl.htm\n\n");
     printf("************************************************************\n\n");
-    printf("You are using an executable made on Fri Jul 10 20:43:00 CEST 2020\n");
+    printf("You are using an executable made on Wed Sep 15 21:15:15 CEST 2021\n");
     fflush(stdout);
 
     NNEW(ipoinp,ITG,2*nentries);
@@ -325,7 +327,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 	    &ndamp,&nef,&nk_,&ne_,&nalset_,&nmat_,&norien_,&nam_,
 	    &ntrans_,&ncs_,&nstate_,&ncmat_,&memmpc_,&nprint_,energy,ctrl,alpha,
 	    qaold,physcon,&istep,&istat,&iprestr,&kode,nload,&nbody,&nforc,
-	    nboun,nk,&nmpc,&nam,&nzs_,nlabel,&ttime);
+	    nboun,nk,&nmpc,&nam,&nzs_,nlabel,&ttime,&iheading);
   
     NNEW(set,char,81*nset_);
     NNEW(meminset,ITG,nset_);
@@ -592,8 +594,12 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
       /* objectives for sensitivity analysis */
 
       if(nobject_>0){
-	NNEW(objectset,char,324*nobject_);
-	for(i=0;i<324*nobject_;i++){objectset[i]=' ';}
+	NNEW(nodedesi,ITG,nk_);
+	NNEW(dgdxglob,double,nobject_*2*nk_);
+	NNEW(g0,double,nobject_);
+	NNEW(xdesi,double,3*nk_);
+	NNEW(objectset,char,405*nobject_);
+	for(i=0;i<405*nobject_;i++){objectset[i]=' ';}
       }
     
       /* temporary fields for cyclic symmetry calculations */
@@ -819,7 +825,9 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		  &prestr,&vold,&veold,&ielmat,irobustdesign,&irandomtype,
 		  &randomval,&nalset,&nalset_,&nkon,xnor,&iaxial,
 		  &network,nlabel,iuel,iperturb,&iprestr,&ntie,tieset,
-		  &iparentel,ikboun,&ifreebody,&ipobody,&nbody);
+		  &iparentel,ikboun,&ifreebody,&ipobody,&nbody,&iprfn,
+		  &konrfn,&ratiorfn,nodempcref,coefmpcref,&memmpcref_,
+		  &mpcfreeref,&maxlenmpcref,&maxlenmpc,&norien);
     }
 
 #ifdef CALCULIX_EXTERNAL_BEHAVIOURS_SUPPORT
@@ -831,13 +839,17 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
     if((istep==1)&&(mortar==-1)){mortar=0;}else{icontact=1;}
 
     nload0=*nload;
-    //SFREE(idefforc);SFREE(idefload);SFREE(idefbody);
 
-    if(nheading_>=0){
+    if(iheading==0){
+      writeheading(jobnamec,heading,&nheading_);
+      iheading=1;
+    }
+
+    /*    if(nheading_>=0){
       writeheading(jobnamec,heading,&nheading_);
       SFREE(heading);
       nheading_=-1;
-    }
+      }*/
 
     if((abs(*nmethod)!=1)||(iperturb[0]<2))icascade=0;
 
@@ -1054,6 +1066,16 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 	RENEW(cs,double,17*mcs);
       }else{
 	SFREE(cs);
+      }
+
+      /* check for design variables */
+      
+      for(i=0;i<ntie;i++){
+        if(strcmp1(&tieset[i*243+80],"D")==0){
+          if(strcmp1(&tieset[i*243],"COORDINATE")==0){
+	    icoordinate=1;
+	  }
+	}
       }
 
     }else{
@@ -1351,8 +1373,8 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		    prset,&nener,trab,inotr,&ntrans,fmpc,ipobody,ibody,xbody,
 		    &nbody,
 		    xbodyold,timepar,thicke,jobnamec,tieset,&ntie,&istep,&nmat,
-		    ielprop,prop,typeboun,&mortar,mpcinfo,tietol,ics,&icontact,
-		    orname,itempuser);
+		    ielprop,prop,typeboun,&mortar,mpcinfo,tietol,ics,
+		    orname,itempuser,t0g,t1g);
 
 	  for(i=0;i<3;i++){nzsprevstep[i]=nzs[i];}
 
@@ -1386,7 +1408,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		    &nintpoint,&mortar,&ifacecount,typeboun,&islavsurf,
 		    &pslavsurf,&clearini,&nmat,xmodal,&iaxial,&inext,&nprop,
 		    &network,orname,vel,&nef,velo,veloo,energy,itempuser,
-		    ipobody,&inewton);
+		    ipobody,&inewton,t0g,t1g,&ifreebody);
 
 	  memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
 	  maxlenmpc=mpcinfo[3];
@@ -1420,7 +1442,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 	       ibody,xbody,&nbody,thicke,&nslavs,tietol,&nkon,mpcinfo,
 	       &ntie,&istep,&mcs,ics,tieset,cs,&nintpoint,&mortar,&ifacecount,
 	       &islavsurf,&pslavsurf,&clearini,&nmat,typeboun,ielprop,prop,
-	       orname,&inewton);
+	       orname,&inewton,t0g,t1g);
 
 	memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
 	maxlenmpc=mpcinfo[3];
@@ -1456,7 +1478,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		 ibody,xbody,&nbody,&nevtot,thicke,&nslavs,tietol,mpcinfo,
 		 &ntie,&istep,tieset,&nintpoint,&mortar,&ifacecount,&islavsurf,
 		 &pslavsurf,&clearini,&nmat,typeboun,ielprop,prop,orname,
-		 &inewton);
+		 &inewton,t0g,t1g);
 
 	memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
 	maxlenmpc=mpcinfo[3];
@@ -1486,7 +1508,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 	       set,&nset,istartset,iendset,ialset,&nprint,prlab,
 	       prset,&nener,&isolver,trab,inotr,&ntrans,&ttime,fmpc,ipobody,
 	       ibody,xbody,&nbody,thicke,jobnamec,&nmat,ielprop,prop,
-	       orname,typeboun);
+	       orname,typeboun,t0g,t1g);
 #else
       printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
       FORTRAN(stop,());
@@ -1521,7 +1543,8 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 	     prset,&nener,trab,&inotr,&ntrans,&fmpc,ipobody,ibody,xbody,&nbody,
 	     xbodyold,&istep,&isolver,jq,output,&mcs,&nkon,&mpcend,ics,cs,
 	     &ntie,tieset,&idrct,jmax,ctrl,&itpamp,tietol,&nalset,
-	     ikforc,ilforc,thicke,&nslavs,&nmat,typeboun,ielprop,prop,orname);
+	     ikforc,ilforc,thicke,&nslavs,&nmat,typeboun,ielprop,prop,orname,
+	     t0g,t1g);
       }
     else if(*nmethod==5)
       {
@@ -1558,7 +1581,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		    &mpcend,
 		    ctrl,ikforc,ilforc,thicke,&nmat,typeboun,ielprop,prop,
 		    orname,
-		    &ndamp,dacon);
+		    &ndamp,dacon,t0g,t1g);
       }
     else if((*nmethod==6)||(*nmethod==7))
       {
@@ -1588,7 +1611,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		    cs,
 		    &ntie,tieset,&idrct,jmax,ctrl,&itpamp,tietol,&nalset,
 		    ikforc,ilforc,thicke,jobnamef,mei,&nmat,ielprop,prop,orname,
-		    typeboun);
+		    typeboun,t0g,t1g);
       }
     else if((*nmethod>7)&&(*nmethod<12)){
 
@@ -1620,32 +1643,60 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		       &ntie,&tieset,&itpamp,&iviewfile,jobnamec,&tietol,
 		       &nslavs,thicke,
 		       ics,&nalset,&nmpc_,&nmat,typeboun,&iaxial,&nload_,&nprop,
-		       &network,orname);
+		       &network,orname,t0g,t1g);
 
       memmpc_=mpcinfo[0];mpcfree=mpcinfo[1];icascade=mpcinfo[2];
       maxlenmpc=mpcinfo[3];
     }
 
     else if(*nmethod==12){
-  
-      sensitivity(co,nk,&kon,&ipkon,&lakon,ne,nodeboun,ndirboun,
-		  xboun,nboun,ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,
-		  ndirforc,xforc,&nforc,nelemload,sideload,xload,nload,
-		  nactdof,icol,jq,&irow,neq,&nzl,nmethod,ikmpc,
-		  ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
-		  alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,
-		  t0,t1,t1old,ithermal,prestr,&iprestr,vold,iperturb,sti,nzs,
-		  &kode,filab,eme,&iexpl,plicon,
-		  nplicon,plkcon,nplkcon,&xstate,&npmat_,matname,
-		  &isolver,mi,&ncmat_,&nstate_,cs,&mcs,&nkon,&ener,
-		  xbounold,xforcold,xloadold,amname,amta,namta,
-		  &nam,iamforc,iamload,iamt1,iamboun,&ttime,
-		  output,set,&nset,istartset,iendset,ialset,&nprint,prlab,
-		  prset,&nener,trab,inotr,&ntrans,fmpc,ipobody,ibody,xbody,&nbody,
-		  xbodyold,timepar,thicke,jobnamec,tieset,&ntie,&istep,&nmat,
-		  ielprop,prop,typeboun,&mortar,mpcinfo,tietol,ics,&icontact,
-		  &nobject,&objectset,&istat,orname,nzsprevstep,nlabel,physcon,
-		  jobnamef,iponor,knor,&ne2d,iponoel,inoel,&mpcend);
+      
+      if(icoordinate==1){
+        sensi_coor(co,nk,&kon,&ipkon,&lakon,ne,nodeboun,ndirboun,
+		   xboun,nboun,ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,
+		   ndirforc,xforc,&nforc,nelemload,sideload,xload,nload,
+		   nactdof,icol,jq,&irow,neq,&nzl,nmethod,ikmpc,
+		   ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
+		   alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,
+		   t0,t1,t1old,ithermal,prestr,&iprestr,vold,iperturb,sti,nzs,
+		   &kode,filab,eme,&iexpl,plicon,
+		   nplicon,plkcon,nplkcon,&xstate,&npmat_,matname,
+		   &isolver,mi,&ncmat_,&nstate_,cs,&mcs,&nkon,&ener,
+		   xbounold,xforcold,xloadold,amname,amta,namta,
+		   &nam,iamforc,iamload,iamt1,iamboun,&ttime,
+		   output,set,&nset,istartset,iendset,ialset,&nprint,prlab,
+		   prset,&nener,trab,inotr,&ntrans,fmpc,ipobody,ibody,xbody,
+		   &nbody,
+		   xbodyold,timepar,thicke,jobnamec,tieset,&ntie,&istep,&nmat,
+		   ielprop,prop,typeboun,&mortar,mpcinfo,tietol,ics,
+		   &nobject,&objectset,&istat,orname,nzsprevstep,nlabel,
+		   physcon,
+		   jobnamef,iponor,knor,&ne2d,iponoel,inoel,&mpcend,dgdxglob,
+		   g0,&nodedesi,&ndesi,&nobjectstart,&xdesi);
+    
+      }else{
+        sensi_orien(co,nk,&kon,&ipkon,&lakon,ne,nodeboun,ndirboun,
+		    xboun,nboun,ipompc,nodempc,coefmpc,labmpc,&nmpc,nodeforc,
+		    ndirforc,xforc,&nforc,nelemload,sideload,xload,nload,
+		    nactdof,icol,jq,&irow,neq,&nzl,nmethod,ikmpc,
+		    ilmpc,ikboun,ilboun,elcon,nelcon,rhcon,nrhcon,
+		    alcon,nalcon,alzero,&ielmat,&ielorien,&norien,orab,&ntmat_,
+		    t0,t1,t1old,ithermal,prestr,&iprestr,vold,iperturb,sti,nzs,
+		    &kode,filab,eme,&iexpl,plicon,
+		    nplicon,plkcon,nplkcon,&xstate,&npmat_,matname,
+		    &isolver,mi,&ncmat_,&nstate_,cs,&mcs,&nkon,&ener,
+		    xbounold,xforcold,xloadold,amname,amta,namta,
+		    &nam,iamforc,iamload,iamt1,iamboun,&ttime,
+		    output,set,&nset,istartset,iendset,ialset,&nprint,prlab,
+		    prset,&nener,trab,inotr,&ntrans,fmpc,ipobody,ibody,xbody,
+		    &nbody,
+		    xbodyold,timepar,thicke,jobnamec,tieset,&ntie,&istep,&nmat,
+		    ielprop,prop,typeboun,&mortar,mpcinfo,tietol,ics,
+		    &nobject,&objectset,&istat,orname,nzsprevstep,nlabel,
+		    physcon,
+		    jobnamef,iponor,knor,&ne2d,iponoel,inoel,&mpcend);
+      }
+    
     }
 
     else if(*nmethod==14){
@@ -1664,7 +1715,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		   iendset,ialset,&nprint,prlab,prset,&nener,trab,inotr,
 		   &ntrans,fmpc,ipobody,ibody,xbody,&nbody,xbodyold,timepar,
 		   thicke,jobnamec,tieset,&ntie,&istep,&nmat,ielprop,prop,
-		   typeboun,&mortar,mpcinfo,tietol,ics,&icontact,&nobject,
+		   typeboun,&mortar,mpcinfo,tietol,ics,&nobject,
 		   &objectset,&istat,orname,nzsprevstep,nlabel,physcon,
 		   jobnamef,iponor,knor,&ne2d,iponoel,inoel,&mpcend,
 		   irobustdesign,irandomtype,randomval);
@@ -1675,7 +1726,19 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
       crackpropagation(&ipkon,&kon,&lakon,ne,nk,jobnamec,nboun,iamboun,xboun,
 		       nload,sideload,iamload,&nforc,iamforc,xforc,ithermal,t1,
 		       iamt1,&co,&nkon,mi,&ielmat,matname,output,&nmat,set,
-		       &nset,istartset,iendset,ialset,jmax);
+		       &nset,istartset,iendset,ialset,jmax,timepar,nelcon,
+		       elcon,&ncmat_,&ntmat_,&istep,filab,nmethod);
+    }
+
+    else if(*nmethod==16){
+    
+      feasibledirection(&nobject,&objectset,&dgdxglob,g0,&ndesi,nodedesi,nk,
+			&isolver,&ipkon,&kon,&lakon,ne,nelemload,nload,
+			nodeboun,nboun,ndirboun,ithermal,co,vold,mi,&ielmat,
+			ielprop,prop,&kode,nmethod,filab,&nstate_,&istep,cs,
+			set,&nset,istartset,iendset,ialset,jobnamec,output,
+			&ntrans,inotr,trab,orname,xdesi);         
+      
     }
 
     SFREE(nactdof);SFREE(icol);SFREE(jq);SFREE(irow);SFREE(ipobody);
@@ -1713,7 +1776,8 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		    &knor,&thicke,&offset,&iponoel,&inoel,&rig,
 		    &ne2boun,&islavsurf,&mortar,&pslavsurf,&clearini,
 		    &nobject_,&objectset,nmethod,iperturb,&irefineloop,
-		    &iparentel);
+		    &iparentel,&iprfn,&konrfn,&ratiorfn,&heading,
+		    &nodedesi,&dgdxglob,&g0,&nuel_,&xdesi);
 
 	/* closing and reopening the output files */
 	
@@ -1733,7 +1797,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 		&nk_,&ne_,&nalset_,&nmat_,&norien_,&nam_,&ntrans_,
 		&ncs_,&nstate_,&ncmat_,&memmpc_,&nprint_,energy,ctrl,alpha,
 		qaold,physcon,&istep,&istat,&iprestr,&kode,nload,&nbody,&nforc,
-		nboun,nk,&nmpc,&nam,&nzs_,nlabel,&ttime);
+		nboun,nk,&nmpc,&nam,&nzs_,nlabel,&ttime,&iheading);
   
 	NNEW(set,char,81*nset_);
 	NNEW(meminset,ITG,nset_);
@@ -1883,7 +1947,7 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 			      tietol,&nslavs,t0g,t1g,&nprop,ielprop,prop,
 			      &mortar,&nintpoint,&ifacecount,islavsurf,
 			      pslavsurf,clearini,irstrt,vel,&nef,velo,veloo,
-			      ne2boun,&memmpc_));
+			      ne2boun,&memmpc_,heading,&nheading_,&network));
       }
     } 
 
@@ -1946,74 +2010,8 @@ void CalculiXstep(int argc,char argv[][133],ITG **nelemloadp,double **xloadp,
 	      &knor,&thicke,&offset,&iponoel,&inoel,&rig,
 	      &ne2boun,&islavsurf,&mortar,&pslavsurf,&clearini,
 	      &nobject_,&objectset,nmethod,iperturb,&irefineloop,
-	      &iparentel);
-  
-  /************************
-  
-  if(ncs_>0) SFREE(ics);
-  if(mcs>0) SFREE(cs);
-  SFREE(tieset);SFREE(tietol);
-
-  SFREE(co);SFREE(kon);SFREE(ipkon);SFREE(lakon);
-
-  SFREE(nodeboun);SFREE(ndirboun);SFREE(typeboun);SFREE(xboun);SFREE(ikboun);
-  SFREE(ilboun);SFREE(nodebounold);SFREE(ndirbounold);SFREE(xbounold);
-
-  SFREE(ipompc);SFREE(labmpc);SFREE(ikmpc);SFREE(ilmpc);SFREE(fmpc);
-  SFREE(nodempc);SFREE(coefmpc);
-
-  SFREE(nodempcref);SFREE(coefmpcref);SFREE(ikmpcref);
-
-  SFREE(nodeforc);SFREE(ndirforc);SFREE(xforc);SFREE(ikforc);SFREE(ilforc);
-  SFREE(xforcold);
-
-  SFREE(nelemload);SFREE(sideload);SFREE(xload);SFREE(xloadold);
-
-  SFREE(cbody);SFREE(ibody);SFREE(xbody);SFREE(xbodyold);
-
-  if(nam>0){SFREE(iamboun);SFREE(iamforc);SFREE(iamload);SFREE(amname);
-    SFREE(amta);SFREE(namta);}
-
-  SFREE(set);SFREE(istartset);SFREE(iendset);SFREE(ialset);
-
-  SFREE(elcon);SFREE(nelcon);SFREE(rhcon);SFREE(nrhcon);SFREE(shcon);
-  SFREE(nshcon);
-  SFREE(cocon);SFREE(ncocon);SFREE(alcon);SFREE(nalcon);SFREE(alzero);
-  if(nprop>0){SFREE(ielprop);SFREE(prop);}
-  if(npmat_>0){SFREE(plicon);SFREE(nplicon);SFREE(plkcon);SFREE(nplkcon);}
-  if(ndamp>0){SFREE(dacon);}
-
-  if(norien>0){SFREE(orname);SFREE(orab);SFREE(ielorien);}
-  if(ntrans>0){SFREE(trab);SFREE(inotr);}
-  if(iprestr>0){SFREE(prestr);}
-
-  if(ithermal[0]!=0){
-    SFREE(t0);SFREE(t1);SFREE(t1old);
-    if(nam>0) SFREE(iamt1);
-    if((ne1d!=0)||(ne2d!=0)){SFREE(t0g);SFREE(t1g);}
-  }
-
-  if(irobustdesign[0]>0){SFREE(irandomtype);SFREE(randomval);}
-  
-  SFREE(prlab);SFREE(prset);SFREE(filab);SFREE(xmodal);
-
-  SFREE(ielmat);SFREE(matname);
-
-  SFREE(sti);SFREE(eme);SFREE(ener);SFREE(xstate);
-
-  SFREE(vold);SFREE(veold);SFREE(vel);SFREE(velo);SFREE(veloo);
-
-  if((ne1d!=0)||(ne2d!=0)){
-    SFREE(iponor);SFREE(xnor);SFREE(knor);SFREE(thicke);SFREE(offset);
-    SFREE(iponoel);SFREE(inoel);SFREE(rig);SFREE(ne2boun);
-  }
-
-  SFREE(islavsurf);
-  if(mortar==1){SFREE(pslavsurf);SFREE(clearini);}
-
-  if(nobject_>0){SFREE(objectset);}
-
-  ******************/
+	      &iparentel,&iprfn,&konrfn,&ratiorfn,&heading,
+	      &nodedesi,&dgdxglob,&g0,&nuel_,&xdesi);
   
 #ifdef CALCULIX_MPI
   MPI_Finalize();

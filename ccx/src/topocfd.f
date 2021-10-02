@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2020 Guido Dhondt
+!     Copyright (C) 1998-2021 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,7 +38,7 @@
      &     ifaceq(8,6),ifacet(7,4),ifacew(8,5),kon(*),nodes(4),iel1,j2,
      &     indexold,ifree,ifreenew,ifreenei,mi(*),neij(*),ifreenei2,nef,
      &     nactdoh(*),ipkonf(*),ielmatf(mi(3),*),ielmat(mi(3),*),nf(5),
-     &     nope,ielorien(mi(3),*),ielorienf(mi(3),*),norien,
+     &     nope,ielorien(mi(3),*),ielorienf(mi(3),*),norien,id,
      &     jopposite6(5),itie,nx(*),ny(*),nz(*),noden(1),nelemm,nelems,
      &     n,mcs,l,jfacem,jfaces,islav,imast,ifaces,ifacem,ifatie(*),
      &     nodeinface,nodeoutface,nopes,jop,initial,jopposite8(6)
@@ -334,15 +334,29 @@ c     call isortii(nodes,iaux,ithree,kflag)
         slavset=tieset(2,itie)
         mastset=tieset(3,itie)
 !     
-        do j=1,nset
-          if(set(j).eq.slavset) exit
-        enddo
-        islav=j
+c        do j=1,nset
+c          if(set(j).eq.slavset) exit
+c        enddo
+c        islav=j
+        call cident81(set,slavset,nset,id)
+        islav=nset+1
+        if(id.gt.0) then
+          if(slavset.eq.set(id)) then
+            islav=id
+          endif
+        endif
 !     
-        do j=1,nset
-          if(set(j).eq.mastset) exit
-        enddo
-        imast=j
+c        do j=1,nset
+c          if(set(j).eq.mastset) exit
+c        enddo
+c        imast=j
+        call cident81(set,mastset,nset,id)
+        imast=nset+1
+        if(id.gt.0) then
+          if(mastset.eq.set(id)) then
+            imast=id
+          endif
+        endif
 !     
 !     catalogueing the center of gravity of the master faces
 !     

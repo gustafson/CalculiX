@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2020 Guido Dhondt                     */
+/*              Copyright (C) 1998-2021 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -37,7 +37,8 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
              ITG *nasym,double *xnoels,ITG *mortar,double *pslavsurf,
              double *pmastsurf,double *clearini,double *theta,
              double *xstateini,double *xstate,ITG *nstate_,ITG *icutb,
-             ITG *ialeatoric,char *jobnamef,double *alea){
+             ITG *ialeatoric,char *jobnamef,double *alea,double *auw,
+	     ITG *jqw,ITG *iroww,ITG *nzsw){
 
     ITG i,ntrimax,*nx=NULL,*ny=NULL,*nz=NULL,im;
     
@@ -47,7 +48,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
        setting up bordering planes for the master triangles;
        these planes are common between neighboring traingles */
 
-    if(*mortar==0){
+    if(*mortar<=0){
 
 	DMEMSET(xmastnor,0,3*nmastnode[*ntie],0.);
     
@@ -74,7 +75,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
     NNEW(ny,ITG,ntrimax);
     NNEW(nz,ITG,ntrimax);
     
-    if(*mortar==0){
+    if(*mortar<=0){
     
 	FORTRAN(gencontelem_n2f,(tieset,ntie,itietri,ne,ipkon,kon,lakon,
 	  cg,straight,ifree,koncont,
@@ -83,7 +84,8 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
           imastop,nslavnode,islavnode,islavsurf,itiefac,areaslav,iponoels,
           inoels,springarea,
           set,nset,istartset,iendset,ialset,tietol,reltime,
-	  filab,nasym,xnoels,icutb,ne0,jobnamef));
+	  filab,nasym,xnoels,icutb,ne0,jobnamef,mortar,auw,jqw,iroww,nzsw,
+	  imastnode,nmastnode));
 
     }else if(*mortar==1){
 

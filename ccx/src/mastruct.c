@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2020 Guido Dhondt                          */
+/*              Copyright (C) 1998-2021 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -72,8 +72,16 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 	if(ipkon[i]<0) continue;
 	if(strcmp1(&lakon[8*i],"F")==0)continue;
 	indexe=ipkon[i];
+	if(strcmp1(&lakon[8*i],"U")==0){
+
+	  /* user element
+	     number of dofs: 7th entry of label
+	     number of nodes: 8th entry of label */
+
+	  ndof=lakon[8*i+6];
+	  nope=lakon[8*i+7];}
 	/* Bernhardi start */
-	if (strcmp1(&lakon[8*i+3],"8I")==0){nope=11;ndof=3;}
+	else if (strcmp1(&lakon[8*i+3],"8I")==0){nope=11;ndof=3;}
 	else if(strcmp1(&lakon[8*i+3],"20")==0){nope=20;ndof=3;}
 	/* Bernhardi end */
 	else if (strcmp1(&lakon[8*i+3],"8")==0){nope=8;ndof=3;}
@@ -102,14 +110,6 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
 
 	    continue;
 	  }
-	}else if(strcmp1(&lakon[8*i],"U")==0){
-
-	  /* user element
-	     number of dofs: 7th entry of label
-	     number of nodes: 8th entry of label */
-
-	  ndof=lakon[8*i+6];
-	  nope=lakon[8*i+7];
 	}else continue;
 	      
 	/* displacement degrees of freedom */
@@ -210,12 +210,12 @@ void mastruct(ITG *nk, ITG *kon, ITG *ipkon, char *lakon, ITG *ne,
       
     for(i=0;i<*nboun;++i){
       if(ndirboun[i]>mi[1]) continue;
-      if (strcmp1(&typeboun[i],"F")==0) continue;
+      if(strcmp1(&typeboun[i],"F")==0) continue;
       nactdof[mt*(nodeboun[i]-1)+ndirboun[i]]=-2*(i+1);
     }
       
     for(i=0;i<*nmpc;++i){
-      if (strcmp1(&labmpc[20*i],"FLUID")==0) continue;
+      if(strcmp1(&labmpc[20*i],"FLUID")==0) continue;
       index=ipompc[i]-1;
       if(nodempc[3*index+1]>mi[1]) continue;
       nactdof[mt*(nodempc[3*index]-1)+nodempc[3*index+1]]=-2*i-1;

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2020 Guido Dhondt
+!     Copyright (C) 1998-2021 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -575,7 +575,13 @@ c     call shape7tri(xi,et,pl,xm,xs2,shp2,iflag)
 !     
                 if((istep.eq.1).and.(iit.le.0.d0)) then
                   if(clear.lt.0.d0) then
-                    springarea(2,igauss)=clear/(1.d0-theta)
+cccc start change 12 nov 2020
+c                    if(iinc.eq.1) then
+cccc end change 12 nov 2020
+                      springarea(2,igauss)=clear/(1.d0-theta)
+cccc start change 12 nov 2020
+c                    endif
+cccc end change 12 nov 2020
                   elseif(clear.lt.1.d0/elcon(2,1,imat)) then
                     clear=0.d0
                   endif
