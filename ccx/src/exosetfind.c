@@ -103,25 +103,10 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     // Determine if generate was used
     gen=0; l=0; n=1;
     
-    for (j=s; j<=e; j++){
-      if (ialset[j]<0){
-	// printf("Generating set for set %i for set %s.\n", i, names[i]);
-	k=ialset[j-1]-ialset[j-2];
-	if (k<0){
-	  if (n){
-	    warnreverse=1;
-	    n=0;
-	  }
-	  k=-k;
-	}
-	// printf("k=%i\n",k);
-	gen+=(k)/(-ialset[j])+1;
-	l-=3;
-      }
-    }
-    
     // Now set the length of the set allocation
-    l=e-s+1+gen+l;
+    // l=e-s+1+gen+l;
+    l = exoset_count_set(&i, ialset, istartset, iendset, &warnreverse, &s);
+    
     ITG *set_nums;
     set_nums = (ITG *) calloc(l, sizeof(ITG));
     
@@ -135,12 +120,12 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	  if (ialset[j+1]-ialset[j]<0){
 	    // Deal with reversed generated sets
 	    for (k=ialset[j+1]; k<=ialset[j]; k-=ialset[j+2]){
-	      z=exoset_check(k, node_map_inv, nk, &dropped, &unidentified);
+	      z=exoset_check_in_set(k, node_map_inv, nk, &dropped, &unidentified);
 	      if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=k;}
 	    }
 	  } else {
 	    for (k=ialset[j]; k<=ialset[j+1]; k-=ialset[j+2]){ // Index arrays are fortran based (1)
-	      z=exoset_check(k-1, node_map_inv, nk, &dropped, &unidentified);
+	      z=exoset_check_in_set(k-1, node_map_inv, nk, &dropped, &unidentified);
 	      // printf("Generated is index k=%i with resulting node index %i\n", k-1, z);
 	      if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=k;}
 	    }
@@ -149,7 +134,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	} else {
 	  // Account for directly added id
 	  gen=ialset[j++];
-	  z=exoset_check(gen, node_map_inv, nk, &dropped, &unidentified);
+	  z=exoset_check_in_set(gen, node_map_inv, nk, &dropped, &unidentified);
 	  // printf("Direct add %i with resulting node index %i\n", gen, z);
 	  if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=gen;}
 	}
@@ -157,21 +142,21 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
       // Must finish the last two of directly added set
       if (ialset[e]>0){ // only if the last set is not a generated set
 	// 1+n++ and -1+n++ to preserve order
-	z=exoset_check(ialset[e]-2, node_map_inv, nk, &dropped, &unidentified);
+	z=exoset_check_in_set(ialset[e]-2, node_map_inv, nk, &dropped, &unidentified);
 	if (z>=0){set_nums[1+n++]=z;}else{dropped_set[dropped++]=ialset[e]-2;}
 	if (ialset[e-1]>0){
-	  z=exoset_check(ialset[e]-3, node_map_inv, nk, &dropped, &unidentified);
+	  z=exoset_check_in_set(ialset[e]-3, node_map_inv, nk, &dropped, &unidentified);
 	  if (z>=0){set_nums[-1+n++]=z;}else{dropped_set[dropped++]=ialset[e]-3;}
 	}
       }
     }else if(l>1){
       // When a generated set is only of length 2.
-      z=exoset_check(ialset[s]-1, node_map_inv, nk, &dropped, &unidentified);
+      z=exoset_check_in_set(ialset[s]-1, node_map_inv, nk, &dropped, &unidentified);
       if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=ialset[s]-1;}
-      z=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
+      z=exoset_check_in_set(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
       if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=ialset[e]-1;}
     } else {
-      z=exoset_check(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
+      z=exoset_check_in_set(ialset[e]-1, node_map_inv, nk, &dropped, &unidentified);
       if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=ialset[e]-1;}
     }
     n_in_set[i]=n;
@@ -182,19 +167,20 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     // printf("\n");
     
     // Write the number of sets
+    printf("DEBUG %i %i\n", *num_ns, n_in_set[i]);
     if (n_in_set[i]>0){
       switch (settype[i])
 	{
 	case type_ns:
 	  if (store==1){
 	    errr = ex_put_set_param (exoid, EX_NODE_SET, *num_ns,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	    if (errr) printf ("ERROR in exo: failed node set parameters\n");
-	    errr = ex_put_set       (exoid, EX_NODE_SET, *num_ns++, set_nums, NULL);
+	    if (errr) printf ("ERROR in exo: failed node set parameters (i=%i, num_ns=%i, n_in_set=)\n", i, *num_ns, n_in_set[i]);
+	    errr = ex_put_set       (exoid, EX_NODE_SET, *num_ns, set_nums, NULL);
 	    if (errr) printf ("ERROR in exo: failed node set\n");
-	  }else{
-	    *num_ns++;
 	  }
-	  break;
+	  (*num_ns)++;
+	  printf ("DEBUG incrementing num_ns to %i\n", *num_ns);
+	  continue;
 	case type_es:
 	case type_fs:
 	case type_ss:
@@ -210,11 +196,13 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
       }
       printf("\t\t- %s\n", names[i]);
     }
+    printf("DEBUG nset %i %i %i\n", i, *num_ns, n_in_set[i]);
     free(set_nums);
   } //end i loop
 
   if (store==0){
-    printf("FIRST PASS %i %i %i %i\n", *num_ns, *num_es, *num_ss, *num_fs);
+    // printf("FIRST PASS %i %i %i %i\n", (*num_ns)++, *num_es, *num_ss, *num_fs);
+    // printf("FIRST PASS %i %i %i %i\n", *num_ns, *num_es, *num_ss, *num_fs);
     return;
   }
 
@@ -241,7 +229,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   return;
 }
 
-ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentified){
+ITG exoset_check_in_set(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentified){
   // Submitted should be an index which is zero based
   // Returned should be an index which is zero based
   ITG val=0;
@@ -264,6 +252,37 @@ ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentif
   }
 
   return val;
+}
+
+ITG exoset_count_set(ITG *i, ITG *ialset, ITG *istartset, ITG *iendset, int *warnreverse, int *s){
+  // Find and store the set numbers
+  // The pointer integers are 1 based (fortran)
+  ITG j,k,l,n,e,gen,z;
+  *s=istartset[*i]-1;
+  e=iendset[*i]-1;
+  
+  // Determine if generate was used
+  gen=0; l=0; n=1;
+    
+  for (j=*s; j<=e; j++){
+    if (ialset[j]<0){
+      k=ialset[j-1]-ialset[j-2];
+      if (k<0){
+	if (n){
+	  *warnreverse=1;
+	  n=0;
+	}
+	k=-k;
+      }
+      // printf("k=%i\n",k);
+      gen+=(k)/(-ialset[j])+1;
+      l-=3;
+    }
+  }
+    
+  // Now set the length of the set allocation
+  l=e-*s+1+gen+l;
+  return l;
 }
 
 #endif

@@ -38,7 +38,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs, ITG *node_map_inv,
 		int exoid, int store, ITG *nk);
 
-ITG exoset_check(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentified);
+ITG exoset_check_in_set(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *unidentified);
 
 void exovector(double *v,ITG *iset,ITG *ntrans,char * filabl,ITG *nkcoords,
                ITG *inum,char *m1,ITG *inotr,double *trab,double *co,
@@ -50,3 +50,5 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	       ITG *istartset,ITG *iendset,ITG *ialset,ITG *ngraph,ITG *ncomp,
 	       ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,ITG exoid,
 	       ITG time_step, int countvar, ITG *node_map_inv);
+
+ITG exoset_count_set(ITG *i, ITG *ialset, ITG *istartset, ITG *iendset, int *warnreverse, int *s);
