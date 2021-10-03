@@ -148,9 +148,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   j = 0; // Counter for the exo order of the nodes
   ITG *node_map,*node_map_inv;
   // Note that the node_map_inv changes in subsequent passes if
-  // element deletion or incomplete results storage is used.  However,
-  // the map is recreated in exovector.c and exoselect.c so it only
-  // needs to be correct here once.
+  // element deletion, shell expansion, or inconsistent results
+  // storage is used from step to step.  For now, this is dealt with
+  // by issuing a warning.
   node_map =     (ITG *) calloc(nout, sizeof(ITG));
   node_map_inv = (ITG *) calloc(nkcoords, sizeof(ITG));
 

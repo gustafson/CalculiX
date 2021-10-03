@@ -36,6 +36,9 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 		ITG *num_ns, ITG *num_ss, ITG *num_es, ITG *num_fs, ITG *node_map_inv,
 		int exoid, int store, ITG *nk){
 
+  // Paraview cannot deal with empty sets in exodus files.  Thus we
+  // need to count carefully the number of sets.
+
   // Note first call to this function counts the sets.  Second call to
   // the function (store=1) actually stores the sets.
 
@@ -60,11 +63,6 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   char *pos0;
   char *pos1;
 
-  int use_ns=0;
-  // int use_es=0;
-  // int use_ss=0;
-  // int use_fs=0;
-
   for (i=0; i<*nset; i++){
     // set names are stored in set, and appear to be 80 characters in
     // length, but is deliminated by a space
@@ -72,33 +70,20 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     pos1 = strpbrk(pos0, space)-1;
     int strl = (int) (pos1-pos0);
 
+    // Find name and type
     char* tmpstr = strndup(pos0, strl);
     names[i] = tmpstr;
     pos1 = strpbrk(pos1, space)-1;
-    if(strcmp1(pos1,"N")==0){ // printf("Found node set\n");
+    if(strcmp1(pos1,"N")==0){
       settype[i] = type_ns;
-      char* tmpstr = strndup(pos0, strl);
-      if (store){names_nset[use_ns++] = tmpstr;} else {(*num_ns)++;}
-    }else if(strcmp1(pos1,"E")==0){ // printf("Found element set\n");
+    }else if(strcmp1(pos1,"E")==0){
       settype[i] = type_es;
-      // char* tmpstr = strndup(pos0, strl);
-      // if (store){names_eset[use_es++] = tmpstr;} else {(*num_es)++;}
-    }else if(strcmp1(pos1,"S")==0){ // printf("Found side set\n");
+    }else if(strcmp1(pos1,"S")==0){
       settype[i] = type_ss;
-      // char* tmpstr = strndup(pos0, strl);
-      // if (store){names_sset[use_ss++] = tmpstr;} else {(*num_ss)++;}
-    }else if(strcmp1(pos1,"T")==0){ // printf("Found face set\n");
+    }else if(strcmp1(pos1,"T")==0){
       settype[i] = type_fs;
-      // char* tmpstr = strndup(pos0, strl);
-      // if (store){names_fset[use_fs++] = tmpstr;} else {(*num_fs)++;}
     }
   } // end loop i over all sets
-
-
-  if (store==0){
-    // printf("FIRST PASS %i %i %i %i\n", *num_ns, *num_es, *num_ss, *num_fs);
-    return;
-  }
 
   int warnempty = 1;
   int warnreverse = 0;
@@ -107,6 +92,9 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     
     // ONLY WORKS FOR NSETS FOR NOW... We also need the element number inverse map
     if (settype[i] != type_ns){n_in_set[i]=0; continue;}
+
+    // If the inverse node map is null, skip (i.e., if set is empty)
+    if (!node_map_inv){continue;}
     
     // Find and store the set numbers
     // The pointer integers are 1 based (fortran)
@@ -131,7 +119,6 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	l-=3;
       }
     }
-    
     
     // Now set the length of the set allocation
     l=e-s+1+gen+l;
@@ -188,7 +175,7 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
       if (z>=0){set_nums[n++]=z;}else{dropped_set[dropped++]=ialset[e]-1;}
     }
     n_in_set[i]=n;
-
+    
     // // DEBUG
     // printf("Set %s has %i members ",names[i], n);
     // for (j=0; j<n; j++){printf("%i, ",set_nums[j]);}
@@ -199,35 +186,19 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
       switch (settype[i])
 	{
 	case type_ns:
-	  errr = ex_put_set_param (exoid, EX_NODE_SET, use_ns,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	  if (errr) printf ("ERROR in exo: failed node set parameters\n");
-	  errr = ex_put_set       (exoid, EX_NODE_SET, use_ns++, set_nums, NULL);
-	  if (errr) printf ("ERROR in exo: failed node set\n");
+	  if (store==1){
+	    errr = ex_put_set_param (exoid, EX_NODE_SET, *num_ns,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	    if (errr) printf ("ERROR in exo: failed node set parameters\n");
+	    errr = ex_put_set       (exoid, EX_NODE_SET, *num_ns++, set_nums, NULL);
+	    if (errr) printf ("ERROR in exo: failed node set\n");
+	  }else{
+	    *num_ns++;
+	  }
 	  break;
 	case type_es:
-	  // printf("Exodus Warning: Element sets not implemented. Affected set is %s\n", names[i]);
-	  // I haven't figured out how to implement element sets which I think must be based on blocks.
-	  
-	  // errr = ex_put_set_param (exoid, EX_ELEM_SET, use_es,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	  // if (errr) printf ("ERROR in exo: failed elem set parameters\n");
-	  // errr = ex_put_set       (exoid, EX_ELEM_SET, use_es++, set_nums, NULL);
-	  // if (errr) printf ("ERROR in exo: failed elem set\n");
-	  // break;
 	case type_fs:
-	  // printf("Exodus Warning: Face sets not implemented. Affected set is %s\n", names[i]);
-	  
-	  // errr = ex_put_set_param (exoid, EX_FACE_SET, use_fs,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	  // if (errr) printf ("ERROR in exo: failed face set parameters\n");
-	  // errr = ex_put_set       (exoid, EX_FACE_SET, use_fs++, set_nums, NULL);
-	  // if (errr) printf ("ERROR in exo: failed face set\n");
-	  // break
 	case type_ss:
-	  // printf("Exodus Warning: Face sets not implemented. Affected set is %s\n", names[i]);
-	  
-	  // errr = ex_put_set_param (exoid, EX_SIDE_SET, use_ss,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	  // if (errr) printf ("ERROR in exo: failed side set parameters\n");
-	  // errr = ex_put_set       (exoid, EX_SIDE_SET, use_ss++, set_nums, NULL);
-	  // if (errr) printf ("ERROR in exo: failed side set\n");
+	  printf("\t- Element, face, and sides sets not implemented to exodus file.\n");
 	  continue;
 	}
     }else{
@@ -242,6 +213,10 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     free(set_nums);
   } //end i loop
 
+  if (store==0){
+    printf("FIRST PASS %i %i %i %i\n", *num_ns, *num_es, *num_ss, *num_fs);
+    return;
+  }
 
   printf("\t- Element, and surface sets not written to .exo.\n\t  Affected sets are:\n");
   // printf("\t- Element, face, and side sets not written to .exo.\n\t  Affected sets are:\n");
