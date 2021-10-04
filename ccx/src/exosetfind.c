@@ -62,16 +62,22 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
   char *pos0;
   char *pos1;
 
+  int use_ns=0;
+  // int use_es=0;
+  // int use_ss=0;
+  // int use_fs=0;
+
   for (i=0; i<*nset; i++){
     // set names are stored in set, and appear to be 80 characters in
     // length, but is deliminated by a space
     pos0 = set+i*NAMELEN;
     pos1 = strpbrk(pos0, space)-1;
-    int strl = (int) (pos1-pos0);
 
-    // Find name and type
-    char* tmpstr = strndup(pos0, strl);
+    // This seems redudant to below and could be optimized
+    char* tmpstr = strndup(pos0, (int) (pos1-pos0));
     names[i] = tmpstr;
+
+    // Find type
     pos1 = strpbrk(pos1, space)-1;
     if(strcmp1(pos1,"N")==0){
       settype[i] = type_ns;
@@ -118,6 +124,13 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	{
 	case type_ns:
 	  if (store){
+
+	    // Add to the list of names.  This seems redundant to above and could be optimized
+	    pos0 = set+i*NAMELEN;
+	    pos1 = strpbrk(pos0, space)-1;
+	    char* tmpstr = strndup(pos0, (int) (pos1-pos0));
+	    names_nset[use_ns++] = tmpstr;
+
 	    errr = ex_put_set_param (exoid, EX_NODE_SET, *num_ns, n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
 	    if (errr) printf ("ERROR in exo: failed node set parameters\n");
 	    errr = ex_put_set       (exoid, EX_NODE_SET, *num_ns, set_nums, NULL);
