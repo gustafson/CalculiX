@@ -190,7 +190,7 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     num_ns=0; num_es=0; num_ss=0; num_fs=0;
     int writeset=0;
     exosetfind(set, nset, ialset, istartset, iendset,
-	       &num_ns, &num_ss, &num_es, &num_fs, NULL, exoid, writeset, nk);
+	       &num_ns, &num_ss, &num_es, &num_fs, node_map_inv, exoid, writeset, nk);
     num_ss=0;
 
 #ifdef LONGLONG

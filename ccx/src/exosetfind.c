@@ -91,40 +91,39 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
     
     // ONLY WORKS FOR NSETS FOR NOW... We also need the element number inverse map
     if (settype[i] != type_ns){n_in_set[i]=0; continue;}
-
-    // If the inverse node map is null, skip (i.e., if set is empty)
-    if (!node_map_inv){continue;}
-
+    
     // Now get the length of the set allocation (stored in l)
     exoset_count_set(ialset, istartset, iendset, &warnreverse, &i, &s, &e, &l);
+    if (l==0){
+      exoset_warn_empty(&warnempty);
+      printf("\t\t- %s\n", names[i]);
+      continue;
+    }
     
+    // The rest is done only if there is a non-empty set!
     // Allocate an array to store the set numbers
     ITG *set_nums;
     set_nums = (ITG *) calloc(l, sizeof(ITG));
 
-    // Actually get the set
-    exoset_get_set(ialset, istartset, iendset, &i, &s, &l, &e, set_nums, dropped_set,
-		   nk, n_in_set, node_map_inv, &dropped);
-    
-    // // DEBUG
-    // printf("Set %s has %i members ",names[i], n);
-    // for (j=0; j<n; j++){printf("%i, ",set_nums[j]);}
-    // printf("\n");
-    
-    // Write the number of sets
-    printf("DEBUG %i %i\n", *num_ns, n_in_set[i]);
+    // Actually get the set.  The actual set size (n_in_set) may be
+    // different than what was allocated (l) due to node drops and
+    // shell expansions etc
+    exoset_get_set(ialset, istartset, iendset, &i, &s, &l, &e, 
+		   set_nums, dropped_set, nk, n_in_set,
+		   node_map_inv, &dropped);
+
+    // Store the results (but only after initializing the exodus file) when store=1
     if (n_in_set[i]>0){
       switch (settype[i])
 	{
 	case type_ns:
-	  if (store==1){
-	    errr = ex_put_set_param (exoid, EX_NODE_SET, *num_ns,   n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
-	    if (errr) printf ("ERROR in exo: failed node set parameters (i=%i, num_ns=%i, n_in_set=%i)\n", i, *num_ns, n_in_set[i]);
+	  if (store){
+	    errr = ex_put_set_param (exoid, EX_NODE_SET, *num_ns, n_in_set[i], 0); // CURRENTLY NO DISTRIBUTIONS ADDED
+	    if (errr) printf ("ERROR in exo: failed node set parameters\n");
 	    errr = ex_put_set       (exoid, EX_NODE_SET, *num_ns, set_nums, NULL);
 	    if (errr) printf ("ERROR in exo: failed node set\n");
 	  }
 	  (*num_ns)++;
-	  printf ("DEBUG incrementing num_ns to %i\n", *num_ns);
 	  continue;
 	case type_es:
 	case type_fs:
@@ -132,21 +131,12 @@ void exosetfind(char *set, ITG *nset, ITG *ialset, ITG *istartset, ITG *iendset,
 	  printf("\t- Element, face, and sides sets not implemented to exodus file.\n");
 	  continue;
 	}
-    }else{
-      if (warnempty){
-	printf("\t- Empty set(s) skipped. ");
-	printf("(Due to shell and beam\n\t  expansions or non-use.) ");
-	printf("Affected sets are:\n");
-	warnempty=0;
-      }
-      printf("\t\t- %s\n", names[i]);
+    }else{ // T
     }
-    printf("DEBUG nset %i %i %i\n", i, *num_ns, n_in_set[i]);
     free(set_nums);
   } //end i loop
 
-  if (store==0){
-    // printf("FIRST PASS %i %i %i %i\n", (*num_ns)++, *num_es, *num_ss, *num_fs);
+  if (!store){
     // printf("FIRST PASS %i %i %i %i\n", *num_ns, *num_es, *num_ss, *num_fs);
     return;
   }
@@ -188,10 +178,10 @@ ITG exoset_check_in_set(ITG n, ITG *node_map_inv, ITG *nk, int *dropped, int *un
 }
 
 void exoset_count_set(ITG *ialset, ITG *istartset, ITG *iendset, int *warnreverse, ITG *i, ITG *s, ITG *e, ITG *l){
-  
   // Count the length of the set.  Helps to determine how much memory
   // to allocate and whether to write a set into exodus (paraview
   // cannot handle empty sets)
+
   ITG j,k,n,gen;
   *s=istartset[*i]-1;
   *e=iendset[*i]-1;
@@ -219,19 +209,22 @@ void exoset_count_set(ITG *ialset, ITG *istartset, ITG *iendset, int *warnrevers
   *l=*e-*s+1+gen+*l;
 }
 
-void exoset_get_set(ITG *ialset, ITG *istartset, ITG *iendset, ITG *i, ITG *s, ITG *l, ITG *e,
-		    ITG *set_nums, int *dropped_set, ITG *nk, int *n_in_set, ITG *node_map_inv, int *dropped){
+void exoset_get_set(ITG *ialset, ITG *istartset, ITG *iendset,
+		    ITG *i, ITG *s, ITG *l, ITG *e,
+		    ITG *set_nums, int *dropped_set, ITG *nk,
+		    int *n_in_set, ITG *node_map_inv, int *dropped){
 
   // Find and store the set numbers
   // The pointer integers are 1 based (fortran)
 
-  /* Only add the generate code if there are at least
-     three points in the vector */  
   ITG j=*s;
   ITG n,k,gen,z;
   int unidentified=0;
   
   n=0;
+  
+  /* Only add the generate code if there are at least
+     three points in the vector */  
   if (*l>2){
     while (j<=*e-2){
       // generated ids
@@ -279,6 +272,15 @@ void exoset_get_set(ITG *ialset, ITG *istartset, ITG *iendset, ITG *i, ITG *s, I
     if (z>=0){set_nums[n++]=z;}else{dropped_set[(*dropped)++]=ialset[*e]-1;}
   }
   n_in_set[*i]=n;
+}
+
+void exoset_warn_empty(int *warnempty){
+  if (*warnempty){
+    printf("\t- Empty set(s) skipped. ");
+    printf("(Could be skipped due to shell and beam\n\t  expansions or non-use.) ");
+    printf("Affected sets are:\n");
+    *warnempty=0;
+  }
 }
 
 #endif

@@ -51,7 +51,10 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
 	       ITG *ifield,ITG *icomp,ITG *nfield,ITG *iselect,ITG exoid,
 	       ITG time_step, int countvar, ITG *node_map_inv);
 
-void exoset_count_set(ITG *ialset, ITG *istartset, ITG *iendset, int *warnreverse, ITG *i, ITG *s, ITG *e, ITG *l);
+void exoset_count_set(ITG *ialset, ITG *istartset, ITG *iendset, int *warnreverse,
+		      ITG *i, ITG *s, ITG *e, ITG *l);
 
 void exoset_get_set(ITG *ialset, ITG *istartset, ITG *iendset, ITG *i, ITG *s, ITG *l, ITG *e,
 		    ITG *set_nums, int *dropped_set, ITG *nk, int *n_in_set, ITG *node_map_inv, int *dropped);
+
+void exoset_warn_empty(int *warnempty);
