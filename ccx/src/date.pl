@@ -11,14 +11,14 @@ while(<>){
     print;
 }
 
-# inserting the date into ccx_2.19step.c
-
-@ARGV="ccx_2.19step.c";
-$^I=".old";
-while(<>){
-    s/You are using an executable made on.*/You are using an executable made on $date\\n");/g;
-    print;
-}
+## # inserting the date into ccx_2.19step.c
+## 
+## @ARGV="ccx_2.19step.c";
+## $^I=".old";
+## while(<>){
+##     s/You are using an executable made on.*/You are using an executable made on $date\\n");/g;
+##     print;
+## }
 
 # inserting the date into frd.c
 
