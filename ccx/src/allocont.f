@@ -38,7 +38,7 @@
      &  imast,nelem,jface,ncone,islav,ismallsliding,ipos,mortar,istep,
      &  kflag,idummy,jact,id
 !
-      real*8 tietol(3,*)
+      real*8 tietol(4,*)
 !
 !     number of master triangles
 !

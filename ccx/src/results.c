@@ -174,14 +174,14 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	       labmpc2,nmpc2,nmethod,cam,neq,
 	       veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
 	       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
-	       &ikin,&intpointvart,typeboun,&num_cpus);
+	       &ikin,&intpointvart,typeboun,&num_cpus,mortar);
   }else{
     resultsini(nk,v,ithermal,filab,iperturb,f,fn,
 	       nactdof,iout,qa,vold,b,nodeboun,ndirboun,
 	       xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
 	       veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
 	       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
-	       &ikin,&intpointvart,typeboun,&num_cpus);
+	       &ikin,&intpointvart,typeboun,&num_cpus,mortar);
   }
 
   /* next statement allows for storing the displacements in each

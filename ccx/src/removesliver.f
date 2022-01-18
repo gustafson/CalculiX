@@ -57,7 +57,7 @@
 !
           if(quality(i).gt.tol) then
 !
-!           no edges should be sharp
+!           a sliver element with a sharp edge is not removed;
 !           at least 4 or 5 edges must be external
 !
             icount=0
@@ -79,7 +79,6 @@
      &             ifreefa,ipofa,i,ipoeln,ieln,ifreeln,
      &             ipoeled,ieled,ifreele,iedtet,ipoed,iedg,
      &             ifreeed,iexternfa,iexternedg)
-c              kontet(1,i)=0
             endif
 !     
           endif

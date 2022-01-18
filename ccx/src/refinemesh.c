@@ -617,7 +617,7 @@ void refinemesh(ITG *nk,ITG *ne,double *co,ITG *ipkon,ITG *kon,
   NNEW(ilist,ITG,nexternfa);
   NNEW(ibadnodes,ITG,nktet);
 
-  c1=0.6;
+  c1=0.4;
   iwrite=0;
   FORTRAN(projectvertexnodes,(ipoed,iexternedg,iedgext,cotet,&nktet,iedg,
 			      iexternfa,ifacext,itreated,ilist,isharp,ipofa,
@@ -627,8 +627,8 @@ void refinemesh(ITG *nk,ITG *ne,double *co,ITG *ipkon,ITG *kon,
   /* optimizing the position of subsurface neighbors of vertices,
      which were not fully projected */
   
-  /*  FORTRAN(smoothbadvertex,(cotet,kontet,ipoeln,ieln,&nbadnodes,ibadnodes,
-      iponn,inn,iexternnode,ipoeled,ieled,iedgmid,iedtet));*/
+  FORTRAN(smoothbadvertex,(cotet,kontet,ipoeln,ieln,&nbadnodes,ibadnodes,
+			   iponn,inn,iexternnode,ipoeled,ieled,iedgmid,iedtet));
   
   /* determining the quality of the elements */
 
@@ -646,7 +646,7 @@ void refinemesh(ITG *nk,ITG *ne,double *co,ITG *ipkon,ITG *kon,
   /* start vertex projection loop */
 
   jflag=0;
-  for(ij=0;ij<3;ij++){
+  for(ij=0;ij<5;ij++){
   
     /* smoothing the mesh */
 
@@ -655,8 +655,8 @@ void refinemesh(ITG *nk,ITG *ne,double *co,ITG *ipkon,ITG *kon,
 
     /* projecting the vertex nodes */
 
-    c1=0.4+0.2*(ij+1);
-    if(ij==2) jflag=1;
+    c1=0.5+0.1*(ij+1);
+    if(ij==4) jflag=1;
     FORTRAN(projectvertexnodes,(ipoed,iexternedg,iedgext,cotet,&nktet,iedg,
 				iexternfa,ifacext,itreated,ilist,isharp,ipofa,
 				ifac,iedgextfa,ifacexted,co,idimsh,ipoeln,ieln,
@@ -737,13 +737,12 @@ void refinemesh(ITG *nk,ITG *ne,double *co,ITG *ipkon,ITG *kon,
   /* start mid projection loop */
 
     jflag=0;
-    for(ij=0;ij<3;ij++){
+    for(ij=0;ij<5;ij++){
 
       /* projecting the external midnodes on the surface */
     
-      c1=0.4+0.2*(ij+1);
-      // c1=1.;
-      if(ij==2) jflag=1;
+      c1=0.5+0.1*(ij+1);
+      if(ij==4) jflag=1;
       FORTRAN(projectmidnodes,(&nktet_,ipoed,iedgmid,iexternedg,iedgext,cotet,
 			       &nktet,iedg,iexternfa,ifacext,itreated,ilist,
 			       isharp,ipofa,ifac,iedgextfa,ifacexted,jfix,co,
@@ -754,7 +753,7 @@ void refinemesh(ITG *nk,ITG *ne,double *co,ITG *ipkon,ITG *kon,
 			    ibadnodes,iexternedg,ipoeled,ieled,iedgmid,
 			    iedtet));
 
-      if(ij<2){
+      if(ij<4){
 
 	ielem=0;
 	FORTRAN(quadmeshquality,(&netet_,cotet,kontet,iedtet,

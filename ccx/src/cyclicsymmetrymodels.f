@@ -73,13 +73,14 @@
      &     nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
      &     ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,id,jfaces,
      &     noden(2),ntrans,ntrans_,nef,mi(*),ifaceq(8,6),ifacet(6,4),
-     &     ifacew1(4,5),ifacew2(8,5),idof,ier,icount
+     &     ifacew1(4,5),ifacew2(8,5),idof,ier,icount,nodeaxd,nodeaxi
 !     
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
-     &     csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(3,*),cs(17,*),
+     &     csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(4,*),cs(17,*),
      &     gsectors,x3,y3,z3,phi,rcscg(*),rcs0cg(*),zcscg(*),zcs0cg(*),
      &     straight(9,*),x1,y1,z1,x2,y2,z2,zp,rp,dist,trab(7,*),rpd,zpd,
-     &     vold(0:mi(2),*),calculated_angle,user_angle,xsectors
+     &     vold(0:mi(2),*),calculated_angle,user_angle,xsectors,
+     &     axdistmin
 !     
 !     nodes per face for hex elements
 !     
@@ -117,6 +118,7 @@
         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
         write(*,*) '       *CYCLIC SYMMETRY MODEL should'
         write(*,*) '       be placed before all step definitions'
+        write(*,*)
         ier=1
         return
       endif
@@ -204,9 +206,6 @@
 !     same as on the slave side)
 !     
           indepset=tieset(3,itie)
-c     do j=1,nset
-c     if(set(j).eq.indepset) exit
-c     enddo
           call cident81(set,indepset,nset,id)
           j=nset+1
           if(id.gt.0) then
@@ -235,6 +234,7 @@ c     enddo
             write(*,*) 
      &           '       is lacking on the *CYCLIC SYMMETRY MODEL'
             write(*,*) '       keyword card or has a value <=0'
+            write(*,*)
             ier=1
             return
           endif
@@ -255,9 +255,6 @@ c     enddo
 !     same as on the slave side)
 !     
           indepset=tieset(3,itie)
-c     do j=1,nset
-c     if(set(j).eq.indepset) exit
-c     enddo
           call cident81(set,indepset,nset,id)
           j=nset+1
           if(id.gt.0) then
@@ -309,6 +306,7 @@ c     enddo
         write(*,*) '       the required parameter N'
         write(*,*) '       is lacking on the *CYCLIC SYMMETRY MODEL'
         write(*,*) '       keyword card or has a value <=0'
+        write(*,*)
         ier=1
         return
       endif
@@ -316,6 +314,7 @@ c     enddo
         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
         write(*,*) '         cannot plot less than'
         write(*,*) '         one sector: one sector will be plotted'
+        write(*,*)
         gsectors=1
       endif
       if(gsectors.gt.xsectors) then
@@ -324,6 +323,7 @@ c     enddo
         write(*,*) '         ',xsectors,'sectors;',
      &       xsectors,' sectors will'
         write(*,*) '       be plotted'
+        write(*,*)
         gsectors=xsectors
       endif
 !     
@@ -345,12 +345,6 @@ c     enddo
         call inputinfo(inpc,ipoinpc,iline,
      &       "*CYCLIC SYMMETRY MODEL%")
       else
-c     do i=1,nset
-c     if(set(i).eq.elset) then
-c     iset=i
-c     exit
-c     endif
-c     enddo
         call cident81(set,elset,nset,id)
         if(id.gt.0) then
           if(elset.eq.set(id)) then
@@ -375,6 +369,7 @@ c     enddo
         write(*,*)'*ERROR reading *CYCLIC SYMMETRY MODEL:'
         write(*,*) '      definition of the cyclic'
         write(*,*) '      symmetry model is not complete'
+        write(*,*)
         ier=1
         return
       endif
@@ -383,6 +378,7 @@ c     enddo
       if(ntrans.gt.ntrans_) then
         write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
         write(*,*) '       increase ntrans_'
+        write(*,*)
         ier=1
         return
       endif
@@ -411,9 +407,6 @@ c     enddo
       ipos=index(depset,' ')
       depkind='S'
       depset(ipos:ipos)=depkind
-c     do i=1,nset
-c     if(set(i).eq.depset) exit
-c     enddo
       call cident81(set,depset,nset,id)
       i=nset+1
       if(id.gt.0) then
@@ -424,9 +417,6 @@ c     enddo
       if(i.gt.nset) then
         depkind='T'
         depset(ipos:ipos)=depkind
-c     do i=1,nset
-c     if(set(i).eq.depset) exit
-c     enddo
         call cident81(set,depset,nset,id)
         i=nset+1
         if(id.gt.0) then
@@ -436,8 +426,9 @@ c     enddo
         endif
         if(i.gt.nset) then
           write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
-          write(*,*) '       surface ',depset
+          write(*,*) '       surface ',depset(1:ipos-1)
           write(*,*) '       has not yet been defined.' 
+          write(*,*)
           ier=1
           return
         endif
@@ -447,9 +438,6 @@ c     enddo
       ipos=index(indepset,' ')
       indepkind='S'
       indepset(ipos:ipos)=indepkind
-c     do i=1,nset
-c     if(set(i).eq.indepset) exit
-c     enddo
       call cident81(set,indepset,nset,id)
       i=nset+1
       if(id.gt.0) then
@@ -460,9 +448,6 @@ c     enddo
       if(i.gt.nset) then
         indepkind='T'
         indepset(ipos:ipos)=indepkind
-c     do i=1,nset
-c     if(set(i).eq.indepset) exit
-c     enddo
         call cident81(set,indepset,nset,id)
         i=nset+1
         if(id.gt.0) then
@@ -472,8 +457,9 @@ c     enddo
         endif
         if(i.gt.nset) then
           write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
-          write(*,*) '       surface ',indepset
+          write(*,*) '       surface ',indepset(1:ipos-1)
           write(*,*) '       has not yet been defined.' 
+          write(*,*)
           ier=1
           return
         endif
@@ -562,6 +548,7 @@ c     enddo
               if(lprev+l.gt.ncs_) then
                 write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
                 write(*,*) '       increase ncs_'
+                write(*,*)
                 ier=1
                 return
               endif
@@ -585,6 +572,7 @@ c     enddo
               if(lprev+l.gt.ncs_) then
                 write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
                 write(*,*) '       increase ncs_'
+                write(*,*)
                 ier=1
                 return
               endif
@@ -610,6 +598,7 @@ c     enddo
             if(l.gt.ncs_) then
               write(*,*) '*ERROR reading *CYCLIC SYMMETRY MODEL:'
               write(*,*) '       increase ncs_'
+              write(*,*)
               ier=1
               return
             endif
@@ -693,6 +682,7 @@ c     enddo
       calcangle=.false.
       nodesonaxis=.false.
       phi=0.d0
+      axdistmin=1.d30
 !     
       nneigh=1
       loop1: do i=istartset(jdep),iendset(jdep)
@@ -789,6 +779,15 @@ c     enddo
 !     
           zp=xap*xn+yap*yn+zap*zn
           rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
+!
+!         store the minimum axial distance between dependent and
+!         independent nodes
+!
+          if(dabs(zp-zpd).lt.axdistmin) then
+            axdistmin=dabs(zp-zpd)
+            nodeaxd=noded
+            nodeaxi=nodei
+          endif
 !     
 !     in order for the angle to be correct the axial position
 !     of the dependent and independent node must be the same
@@ -819,6 +818,7 @@ c     enddo
      &               user_angle*57.29577951d0
                 write(*,*)'       angle based on the geometry:',
      &               calculated_angle*57.29577951d0
+                write(*,*)
                 ier=1
                 return
               endif
@@ -873,6 +873,15 @@ c     enddo
 !     
           zp=xap*xn+yap*yn+zap*zn
           rp=dsqrt((xap-zp*xn)**2+(yap-zp*yn)**2+(zap-zp*zn)**2)
+!
+!         store the minimum axial distance between dependent and
+!         independent nodes
+!
+          if(dabs(zp-zpd).lt.axdistmin) then
+            axdistmin=dabs(zp-zpd)
+            nodeaxd=noded
+            nodeaxi=nodei
+          endif
 !     
 !     in order for the angle to be correct the axial position
 !     of the dependent and independent node must be the same
@@ -903,6 +912,7 @@ c     enddo
      &               user_angle*57.29577951d0
                 write(*,*) '       angle based on the geometry:'
      &               ,calculated_angle*57.29577951d0
+                write(*,*)
                 ier=1
                 return
               endif
@@ -920,7 +930,13 @@ c     enddo
         write(*,*) '       sector angle cannot be determined:'
         write(*,*) '       there exists no dependent node'
         write(*,*) '       with the same axial position as'
-        write(*,*) '       an independent node'
+        write(*,*) '       an independent node (a tolerance'
+        write(*,*) '       of 1.e-10 length units is applied).'
+        write(*,*) '       The smallest axial distance of ',
+     &       axdistmin
+        write(*,*) '       exists between dependent node ',nodeaxd
+        write(*,*) '       and independent node ',nodeaxi
+        write(*,*)
         ier=1
         return
       endif
@@ -955,6 +971,7 @@ c     enddo
         write(*,*) '      and/or the applied temperature is not'
         write(*,*) '      cyclic symmetric this may lead to'
         write(*,*) '      additional stresses'
+        write(*,*)
       endif
 !     
       loop2: do i=istartset(jdep),iendset(jdep)
@@ -1084,7 +1101,12 @@ c     enddo
         write(*,*)
         close(40)
       else
-        close(40,status='delete')
+        close(40)
+c
+c     the following statement causes problems when splitting
+c     an input deck in several decks for parallel treatment
+c     (splitcycsym..)        
+c        close(40,status='delete')
       endif
 !     
       if(ncounter.ne.0) then
@@ -1094,6 +1116,7 @@ c     enddo
         write(*,*) '        independent counterpart was found.'
         write(*,*) '        Failed nodes are stored in file '
         write(*,*) '        WarnNodeMissCyclicSymmetry.nam'
+        write(*,*)
       endif
 !     
 !     sorting ics

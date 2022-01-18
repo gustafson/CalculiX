@@ -20,7 +20,7 @@
      &     nset,nset_,nalset,nalset_,mi,kon,ipkon,lakon,nkon,ne,ne_,
      &     iponor,xnor,istep,ipoinp,inp,iaxial,ipoinpc,network,
      &     nlabel,iuel,nuel_,ielmat,inpc,iperturb,iprestr,nk,nk_,ntie,
-     &     tieset,iparentel)
+     &     tieset,iparentel,tietol)
 !     
       implicit none
 !
@@ -38,7 +38,7 @@
      &     inp(3,*),iaxial,ipoinpc(0:*),network,nlabel,iuel,nuel_,ier,
      &     iperturb(*),iprestr,key,nk,nk_,ntie,iparentel(*)
 !     
-      real*8 co(3,*),xnor(*)
+      real*8 co(3,*),xnor(*),tietol(4,*)
 !     
       integer nentries
       parameter(nentries=18)
@@ -72,7 +72,7 @@
           call modelchanges(inpc,textpart,tieset,istatrfn,n,iline,
      &         ipol,inl,ipoinp,inp,ntie,ipoinpc,istep,ipkon,nset,
      &         istartset,iendset,set,ialset,ne,mi,ielmat,iprestr,
-     &         iperturb,ier)
+     &         iperturb,ier,tietol)
 !     
         elseif(textpart(1)(1:5).eq.'*NODE') then
           call nodes(inpc,textpart,co,nk,nk_,set,istartset,iendset,

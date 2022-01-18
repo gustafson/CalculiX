@@ -26,8 +26,6 @@
 !
       real*8 elineng(6),vkl(0:3,3),vokl(3,3),eloc(6)
 !
-!
-!
 !     calculating the strain
 !
 !     attention! elineng(4),elineng(5) and elineng(6) are engineering strains!

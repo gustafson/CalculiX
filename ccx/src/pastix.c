@@ -17,8 +17,11 @@
 
 #ifdef PASTIX
 
-#include <pastix.h>
 #include <spm.h>
+#include <pastix.h>
+//#include <api.h>
+//#include <nompi.h>
+//#include <datatypes.h>
 #include <sys/time.h>
 #include <stdio.h>
 #include <math.h>
@@ -224,11 +227,18 @@ void pastix_init(double *ad, double *au, double *adb, double *aub,
     iparm[IPARM_GPU_MEMORY_PERCENTAGE] 	= 95;
     iparm[IPARM_GPU_MEMORY_BLOCK_SIZE] 	= 64 * 1024;
 
-    
+
+    char usage_call = MULTI_SOLVE
+    if( usage == usage_call ){
+        dparm[DPARM_EPSILON_REFINEMENT] 	= 1e-7;
+        iparm[IPARM_ITERMAX]            	= 50;
+        iparm[IPARM_GMRES_IM]            	= 50;
+    } else{
     dparm[DPARM_EPSILON_REFINEMENT] 	= 1e-12;
     dparm[DPARM_EPSILON_MAGN_CTRL]  	= 0.;
     iparm[IPARM_ITERMAX]            	= 70;
     iparm[IPARM_GMRES_IM]            	= 70;
+    }
 
 	// Initialize sparse matrix
 	spm = malloc( sizeof( spmatrix_t ) );
@@ -829,7 +839,8 @@ ITG pastix_solve_generic(double *x, ITG *neq,ITG *symmetryflag,ITG *nrhs){
     }
 	
 	// invoke iterative refinement in double precision
-    //	rc = pastix_task_refine( pastix_data, spm->n, *nrhs, (void*)b, spm->n, (void*)x, spm->n );
+    //dparm[DPARM_EPSILON_MAGN_CTRL] = 1e-4;
+    //iparm[IPARM_ITERMAX]           = 3;
 
     char usage_call = SINGLE_SOLVE
     if( usage == usage_call || rc != 0 ){
@@ -842,8 +853,11 @@ ITG pastix_solve_generic(double *x, ITG *neq,ITG *symmetryflag,ITG *nrhs){
   	    rc = pastix_task_refine( pastix_data, spm->n, *nrhs, (void*)b, spm->n, (void*)x, spm->n );
     	iparm[IPARM_GPU_NBR] 		   = (int) gpu;
         iparm[IPARM_ITERMAX]           = 70;
+    } else{
+        rc = pastix_task_refine( pastix_data, spm->n, *nrhs, (void*)b, spm->n, (void*)x, spm->n );
     }
-
+    //    dparm[DPARM_EPSILON_MAGN_CTRL] = 1e-14;
+    //    iparm[IPARM_ITERMAX]           = 70;
 //    FILE *f=fopen("spm.out","a");
 //    fprintf(f,"\n\nMatrix\n");
 //    spmConvert(SpmCSR, spm);

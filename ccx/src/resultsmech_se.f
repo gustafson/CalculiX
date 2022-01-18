@@ -74,8 +74,6 @@
      &  fn0(0:mi(2),*),dfn(0:mi(2),*),hglf(3,4),ahr,
      &  dxstiff(27,mi(1),ne,*),xdesi(3,*)
 !
-!
-!
       include "gauss.f"
 !
       iflag=3

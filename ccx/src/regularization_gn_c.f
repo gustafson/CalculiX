@@ -50,9 +50,7 @@
       real*8 lambdap,gnc,pn_d(40),gn_d(40),aninv1(40),t(40),
      &     beta,p0,aninvloc,elconloc(21),plconloc(802),t1l,
      &     elcon(0:ncmat_,ntmat_,*),plicon(0:2*npmat_,ntmat_,*),
-     &     tietol(3,*),scal
-!
-!
+     &     tietol(4,*),scal
 !      
       kode=-51
       t1l=0.0

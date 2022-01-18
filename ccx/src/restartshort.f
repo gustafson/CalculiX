@@ -21,7 +21,8 @@
      &     ntrans,ncs_,namtot,ncmat_,memmpc_,ne1d,ne2d,nflow,
      &     set,meminset,rmeminset,jobnamec,irestartstep,icntrl,ithermal,
      &     nener,nstate_,ntie,nslavs,nkon,mcs,nprop,mortar,
-     &     ifacecount,nintpoint,infree,nef,mpcend,nheading_,network)
+     &     ifacecount,nintpoint,infree,nef,mpcend,nheading_,network,
+     &     nfc,ndc,iprestr)
 !     
 !     istartset := meminset
 !     iendset := rmeminset
@@ -39,7 +40,7 @@
      &     i,j,k,ipos,icntrl,nener,irestartstep,im0,im1,im2,mem,iact,
      &     istat,nkon,nlabel,iplas,ithermal(*),nstate_,iprestr,
      &     mcs,ntie,nbody,nslavs,ifacecount,iversion,nef,mpcend,
-     &     maxlenmpc,nheading_,network
+     &     maxlenmpc,nheading_,network,nfc,ndc
 !     
       if(icntrl.eq.0) then
 !     
@@ -123,6 +124,11 @@
           read(15)maxlenmpc
           read(15)memmpc_
 !     
+!     coupling, distributing
+!     
+          read(15)nfc
+          read(15)ndc
+!     
 !     material size
 !     
           read(15)nmat
@@ -190,7 +196,7 @@
      &         ntrans,nam,nprint,nlabel,ncs_,ne1d,ne2d,infree,
      &         nmethod,iperturb,nener,ithermal,nstate_,iprestr,
      &         mcs,ntie,nslavs,nprop,mortar,ifacecount,nintpoint,
-     &         nef,nheading_)
+     &         nef,nheading_,nfc,ndc)
 !     
         enddo
 !     
@@ -262,6 +268,11 @@
         read(15)maxlenmpc
         read(15)memmpc_
 !     
+!     coupling, distributing
+!     
+        read(15)nfc
+        read(15)ndc
+!     
 !     material size
 !     
         read(15)nmat
@@ -329,7 +340,8 @@
      &       nkon,mi,nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,
      &       ntrans,nam,nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
      &       iperturb,nener,ithermal,nstate_,iprestr,mcs,ntie,
-     &       nslavs,nprop,mortar,ifacecount,nintpoint,nef,nheading_)
+     &       nslavs,nprop,mortar,ifacecount,nintpoint,nef,nheading_,
+     &       nfc,ndc)
 !     
       enddo
 !     

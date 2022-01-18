@@ -202,6 +202,7 @@
 !                        of element k at the end of the present increment
 !     eei(i,j,k)         total strain component i in integration point j
 !                        of element k at the end of the present iteration
+!                        (only for iout>0)
 !     nal                number of nodal force contributions
 !
       implicit none
@@ -396,7 +397,7 @@
         !
         ! -> eei total strains out
         !
-        if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then 
+        if(iout.gt.0) then 
           eei(1,jjj,i)  = Emf(1)
           eei(2,jjj,i) = Emf(2)
           eei(3,jjj,i) = 0.d0

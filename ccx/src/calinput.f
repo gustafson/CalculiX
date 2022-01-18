@@ -48,7 +48,7 @@
      &     iuel,nuel_,nodempcref,coefmpcref,ikmpcref,memmpcref_,
      &     mpcfreeref,maxlenmpcref,memmpc_,isens,namtot,nstam,dacon,
      &     vel,nef,velo,veloo,ne2boun,itempuser,irobustdesign,
-     &     irandomtype,randomval)
+     &     irandomtype,randomval,nfc,nfc_,coeffc,ikdc,ndc,ndc_,edc)
 !     
       implicit none
 !     
@@ -125,7 +125,7 @@
      &     nodempcref(3,*),ikmpcref(*),memmpcref_,mpcfreeref,
      &     maxlenmpcref,memmpc_,isens,iamplitudedefault,namtot,
      &     nstam,ier,nef,ne2boun(2,*),itempuser(*),irobustdesign(3),
-     &     irandomtype(*),iparentel
+     &     irandomtype(*),iparentel,nfc,nfc_,ikdc(*),ndc,ndc_
 !     
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),fmpc(*),
      &     xload(2,*),alzero(*),offset(2,*),prop(*),pslavsurf(3,*),
@@ -137,11 +137,11 @@
      &     shcon(0:3,ntmat_,*),cocon(0:6,ntmat_,*),timepar(*),
      &     ctrl(*),vold(0:mi(2),*),xbounold(*),xforcold(*),
      &     xloadold(*),t1old(*),eme(*),sti(*),ener(*),
-     &     xstate(nstate_,mi(1),*),ttime,qaold(2),cs(17,*),tietol(2,*),
+     &     xstate(nstate_,mi(1),*),ttime,qaold(2),cs(17,*),tietol(4,*),
      &     xbody(7,*),xbodyold(7,*),t0g(2,*),t1g(2,*),
      &     fei(3),tinc,tper,xmodal(*),tmin,tmax,tincf,
      &     alpha(*),physcon(*),coefmpcref(*),vel(nef,*),velo(*),
-     &     veloo(*),randomval(2,*)
+     &     veloo(*),randomval(2,*),coeffc(0:6,*),edc(12,*)
 !     
       save solid,ianisoplas,out3d,pretension
 !     
@@ -404,8 +404,13 @@ c     write(*,*) textpart(1)
      &       nk,cload_flag,istep,istat,n,iline,ipol,inl,ipoinp,inp,
      &       nam_,namtot_,namta,amta,nmethod,iaxial,iperturb,ipoinpc,
      &       maxsectors,idefforc,ipompc,nodempc,
-     &       nmpc,ikmpc,ilmpc,labmpc,iamplitudedefault,namtot,ier)
+     &       nmpc,ikmpc,ilmpc,labmpc,iamplitudedefault,namtot,ier,
+     &       edc,orab,coeffc,ikdc,ndc)
         cload_flag=.true.
+c        do i=1,nforc
+c          write(*,*) i,nodeforc(1,i),ndirforc(i),xforc(i)
+c        enddo
+c        call exit(201)
 !     
       elseif(textpart(1)(1:17).eq.'*COMPLEXFREQUENCY') then
         call complexfrequencys(inpc,textpart,nmethod,
@@ -481,7 +486,8 @@ c     write(*,*) textpart(1)
      &       mpcfree,ikboun,ikmpc,ilmpc,co,labmpc,istat,n,iline,ipol,
      &       inl,ipoinp,inp,ipoinpc,norien,orname,orab,irstrt,ipkon,
      &       kon,lakon,istep,ics,dcs,nk_,nboun_,nodeboun,ndirboun,
-     &       typeboun,ilboun,xboun,ier)
+     &       typeboun,ilboun,ier,nfc,nfc_,coeffc,ikdc,ndc,ndc_,
+     &       edc)
 !     
       elseif(textpart(1)(1:17).eq.'*CRACKPROPAGATION') then
         call crackpropagations(inpc,textpart,nmethod,iperturb,isolver,
@@ -490,7 +496,7 @@ c     write(*,*) textpart(1)
      &       inp,ithermal,cs,ics,tieset,istartset,
      &       iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
      &       ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,nef,ttime,
-     &       iaxial,nelcon,nmat,tincf,ier,jobnamec,matname)
+     &       iaxial,nelcon,nmat,ier,jobnamec,matname)
 !     
       elseif(textpart(1)(1:6).eq.'*CREEP') then
         call creeps(inpc,textpart,nelcon,imat,ntmat_,npmat_,
@@ -537,7 +543,7 @@ c
       elseif(textpart(1)(1:22).eq.'*DEFORMATIONPLASTICITY') then
         call deformationplasticitys(inpc,textpart,elcon,nelcon,
      &       imat,ntmat_,ncmat_,irstrt,istep,istat,n,iperturb,
-     &       iline,ipol,inl,ipoinp,inp,ipoinpc,ier)
+     &       iline,ipol,inl,ipoinp,inp,ipoinpc,ier,iplas)
 !     
       elseif(textpart(1)(1:8).eq.'*DENSITY') then
         call densitys(inpc,textpart,rhcon,nrhcon,
@@ -768,6 +774,10 @@ c
      &       ipoinp,inp,ithermal,isolver,xboun,nboun,ipoinpc,
      &       ier)
 !     
+      elseif(textpart(1)(1:4).eq.'*HCF') then
+        call hcfs(inpc,textpart,istep,istat,n,iline,ipol,inl,ipoinp,
+     &       inp,ipoinpc,ier,jobnamec,mei,tincf)
+!     
       elseif(textpart(1)(1:8).eq.'*HEADING') then
         call headings(inpc,textpart,istat,n,iline,ipol,inl,
      &       ipoinp,inp,ipoinpc,heading,istep,irstrt,ier)
@@ -844,7 +854,7 @@ c
         call modelchanges(inpc,textpart,tieset,istat,n,iline,
      &       ipol,inl,ipoinp,inp,ntie,ipoinpc,istep,ipkon,nset,
      &       istartset,iendset,set,ialset,ne,mi,ielmat,iprestr,
-     &       iperturb,ier)
+     &       iperturb,ier,tietol)
 !     
       elseif(textpart(1)(1:4).eq.'*MPC') then
         call mpcs(inpc,textpart,set,istartset,iendset,
@@ -989,7 +999,8 @@ c
      &       ipoinp,inp,fmpc,tieset,ntie,tietol,ipoinpc,nslavs,
      &       t0g,t1g,nprop,ielprop,prop,mortar,nintpoint,ifacecount,
      &       islavsurf,pslavsurf,clearini,ier,vel,nef,velo,veloo,
-     &       ne2boun,heading,network,irestartread)
+     &       ne2boun,heading,network,irestartread,nfc,ndc,coeffc,
+     &       ikdc,edc)
 !     
       elseif(textpart(1)(1:18).eq.'*RETAINEDNODALDOFS') then
         call retainednodaldofss(inpc,textpart,set,istartset,
@@ -1505,8 +1516,9 @@ c
 !     check whether the density was defined for dynamic calculations
 !     and transient thermal calculations
 !     
-      if(((nbody.gt.0).or.
-     &     (nmethod.eq.2).or.(nmethod.eq.4)).and.(nef.eq.0)) then
+      if((((nbody.gt.0).or.
+     &     (nmethod.eq.2).or.(nmethod.eq.4)).and.(nef.eq.0)).or.
+     &     ((nef.gt.0).and.(iexpl.ne.1))) then
         ierror=0
         do i=1,nmat
           if((nrhcon(i).ne.0).or.(matname(i)(1:6).eq.'SPRING').or.
@@ -1519,6 +1531,7 @@ c
      &           ' in a dynamic'
             write(*,*) '         calculation or a calculation with'
             write(*,*) '         centrifugal or gravitational loads'
+            write(*,*) '         or an incompressible CFD calculation'
             write(*,*)
           endif
         enddo

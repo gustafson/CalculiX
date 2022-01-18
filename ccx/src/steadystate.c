@@ -124,7 +124,8 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     *doubleglob=NULL,*shcon=NULL,*veold=NULL,*xmr=NULL,*xmi=NULL,*eig=NULL,
     *ax=NULL,*bx=NULL,*pslavsurf=NULL,*pmastsurf=NULL,xnull=0.,
     *cdnr=NULL,*cdni=NULL,*energyini=NULL,*energy=NULL,*v=NULL,*b=NULL,
-    *cco=NULL,*smscale=NULL,*autloc=NULL,*xboun2=NULL,*coefmpc2=NULL;
+    *cco=NULL,*smscale=NULL,*autloc=NULL,*xboun2=NULL,*coefmpc2=NULL,
+    *umubr=NULL,*umubi=NULL;
 
   /* dummy arguments for the call of expand*/
 
@@ -1001,10 +1002,10 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 
       /* direct damping */
 
-      if(iprescribedboundary){
+      /*      if(iprescribedboundary){
 	printf(" *ERROR in steadystate: prescribed boundaries are not allowed in combination with direct modal damping\n");
 	FORTRAN(stop,());
-      }
+	}*/
 	      
       /*copy the damping coefficients for every eigenfrequencie from xmodal[11....] */
       if(nev<(ITG)xmodal[10]){
@@ -1702,14 +1703,14 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	  
 	/* correction for prescribed boundary conditions */
 	  
-	for(i=0;i<neq[1];i++){
+	/*	for(i=0;i<neq[1];i++){
 	  br[i]+=freq[l]*(freq[l]*mubr[i]+alpham*mubi[i]+betam*fi[i]);
 	  bi[i]+=freq[l]*(freq[l]*mubi[i]-alpham*mubr[i]-betam*fr[i]);
-	}
+	  }*/
 	  
 	/* real and imaginary modal coefficients */
 
-	for(i=0;i<nev;i++){
+	/*	for(i=0;i<nev;i++){
 	  aa[i]=0.;
 	  for(j=0;j<neq[1];j++){
 	    aa[i]+=z[(long long)i*neq[1]+j]*br[j];
@@ -1721,8 +1722,43 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	  for(j=0;j<neq[1];j++){
 	    bb[i]+=z[(long long)i*neq[1]+j]*bi[j];
 	  }
+	  }*/
+
+	/* calculating the eigenmodes x mass x particular solution */
+
+	NNEW(umubr,double,nev);
+	NNEW(umubi,double,nev);
+
+	for(i=0;i<nev;i++){
+	  for(j=0;j<neq[1];j++){
+	    umubr[i]+=z[(long long)i*neq[1]+j]*mubr[j];
+	  }
 	}
 	      
+	for(i=0;i<nev;i++){
+	  for(j=0;j<neq[1];j++){
+	    umubi[i]+=z[(long long)i*neq[1]+j]*mubi[j];
+	  }
+	}
+	  
+	/* real and imaginary modal coefficients */
+
+	for(i=0;i<nev;i++){
+	  aa[i]=0.;
+	  for(j=0;j<neq[1];j++){
+	    aa[i]+=z[(long long)i*neq[1]+j]*br[j];
+	  }
+	  aa[i]+=freq[l]*(freq[l]*umubr[i]+fric[i]*umubi[i]);
+	}
+	      
+	for(i=0;i<nev;i++){
+	  bb[i]=0.;
+	  for(j=0;j<neq[1];j++){
+	    bb[i]+=z[(long long)i*neq[1]+j]*bi[j];
+	  }
+	  bb[i]+=freq[l]*(freq[l]*umubi[i]-fric[i]*umubr[i]);
+	}
+	SFREE(umubr);SFREE(umubi);
       }
 	  
       /* calculating the modal coefficients */
@@ -2992,14 +3028,14 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		  
 	  FORTRAN(op,(&neq[1],ubr,mubr,adb,aub,jq,irow));
 		  
-	  for(i=0;i<neq[1];i++){
+	  /*	  for(i=0;i<neq[1];i++){
 	    br[i]+=freq[l]*(freq[l]*mubr[i]);
 	    bi[i]+=freq[l]*(-alpham*mubr[i]-betam*fr[i]);
-	  }
+	    }*/
 	      
 	  /* real and imaginary modal coefficients */
 		  
-	  for(i=0;i<nev;i++){
+	  /*	  for(i=0;i<nev;i++){
 	    aa[i]=0.;
 	    for(j=0;j<neq[1];j++){
 	      aa[i]+=z[(long long)i*neq[1]+j]*br[j];
@@ -3011,7 +3047,36 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	    for(j=0;j<neq[1];j++){
 	      bb[i]+=z[(long long)i*neq[1]+j]*bi[j];
 	    }
+	    }*/
+
+	  /* calculating the eigenmodes x mass x particular solution */
+
+	  NNEW(umubr,double,nev);
+
+	  for(i=0;i<nev;i++){
+	    for(j=0;j<neq[1];j++){
+	      umubr[i]+=z[(long long)i*neq[1]+j]*mubr[j];
+	    }
 	  }
+	  
+	  /* real and imaginary modal coefficients */
+
+	  for(i=0;i<nev;i++){
+	    aa[i]=0.;
+	    for(j=0;j<neq[1];j++){
+	      aa[i]+=z[(long long)i*neq[1]+j]*br[j];
+	    }
+	    aa[i]+=freq[l]*(freq[l]*umubr[i]);
+	  }
+	      
+	  for(i=0;i<nev;i++){
+	    bb[i]=0.;
+	    for(j=0;j<neq[1];j++){
+	      bb[i]+=z[(long long)i*neq[1]+j]*bi[j];
+	    }
+	    bb[i]+=freq[l]*(-fric[i]*umubr[i]);
+	  }
+	  SFREE(umubr);
 	}
 	      
 	/* calculating the modal coefficients */
@@ -3246,9 +3311,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
       SFREE(xforcr);SFREE(xloadr);SFREE(xbodyr);SFREE(br);SFREE(bi);SFREE(freq);
       SFREE(bjr);SFREE(bji);SFREE(aa);SFREE(bb);
 
-      //  if(*nbody>0) SFREE(ipobody);
       if(iprescribedboundary) {SFREE(xbounr);SFREE(fr);SFREE(ubr);SFREE(mubr);}
-	  
 	  
       /* result fields */
 	  

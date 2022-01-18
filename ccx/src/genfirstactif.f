@@ -55,7 +55,7 @@
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &     dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),c0,weight,
      &     areaslav(*),xl2(3,8),area,xi,et,shp2(7,8),
-     &     xs2(3,2),xsj2(3),tietol(3,*),adjust
+     &     xs2(3,2),xsj2(3),tietol(4,*),adjust
 !     
 !     flag for shape functions
 !     

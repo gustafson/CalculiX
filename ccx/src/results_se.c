@@ -148,7 +148,7 @@ void results_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
        xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
        veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
        &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
-       &ikin,&intpointvart,typeboun,&num_cpus);
+       &ikin,&intpointvart,typeboun,&num_cpus,mortar);
 
     NNEW(fn0,double,mt**nkon);
     NNEW(dfn,double,mt**nk);

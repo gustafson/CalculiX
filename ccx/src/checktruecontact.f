@@ -29,7 +29,7 @@
 !
       integer itruecontact,i,ntie,imat,ncmat_,ntmat_
 !
-      real*8 tietol(3,*),elcon(0:ncmat_,ntmat_,*)
+      real*8 tietol(4,*),elcon(0:ncmat_,ntmat_,*)
 !
 !     if at least one tied contact is present, itruecontact
 !     is set to zero and no check is performed whether tension

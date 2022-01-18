@@ -19,7 +19,22 @@
 #include <math.h>
 #include <stdlib.h>
 #include "CalculiX.h"
+
+#ifdef SPOOLES
 #include "spooles.h"
+#endif
+#ifdef SGI
+#include "sgi.h"
+#endif
+#ifdef TAUCS
+#include "tau.h"
+#endif
+#ifdef PARDISO
+#include "pardiso.h"
+#endif
+#ifdef PASTIX
+#include "pastix.h"
+#endif
 
 /**
  * @brief       *MASSLESS DYNAMIC CONTACT*: Main computation of step for dynamic massless contact
@@ -28,8 +43,8 @@
  * + createcontactdofs():
  * + expand_auw:
  * + extract_matrices:
- * + detectactivecont1
- * + detectactivecont2
+ * + resforccont
+ * + detectactivecont
  *
  * @param      au         LOWER triangle of STIFFNESS matrix of size: neq[0]
  * @param      ad         DIAGONAL       of STIFFNESS matrix of size: neq[0]
@@ -45,9 +60,9 @@
  *                        + nzs[0]: sum of projected nonzero mechanical off-diagonal terms
  *                        + nzs[1]: nzs[0]+sum of projected nonzero thermal off-diagonal terms
  *                        + nzs[2]: nzs[1] + sum of nonzero coefficients of SPC DOFs (only for modal calculations)+
- * @param      auwp       The auwp   for W_b matrix??
- * @param      jqwp       The jqwp   for W_b matrix??
- * @param      irowwp     The irowwp for W_b matrix??
+ * @param      auw        The auw   for W_b matrix??
+ * @param      jqw        The jqw   for W_b matrix??
+ * @param      iroww      The iroww for W_b matrix??
  * @param      nzsw       The nzsw   for W_b matrix??
  * @param      islavnode  Slave nodes are stored tie by tie
  * @param      nslavnode  Position in islavnode before the first slave node of tie i.
@@ -71,8 +86,8 @@
  *                        + 4: static pressure
  * @param      nk         highest node number
  * @param      fext       external mechanical forces in DOF i (due to point loads and
-                          distributed loads, including centrifugal and gravity loads,
-                          but excluding temperature loading and displacement loading)
+ distributed loads, including centrifugal and gravity loads,
+ but excluding temperature loading and displacement loading)
  * @param      isolver    Sparse linear solver selector
  *                        + 'SPOOLES'           0
  *                        + 'ITERATIVESCALING'  2
@@ -93,234 +108,290 @@
  *                          +1 : nonlinear geometric (NLGEOM
  *
  */
-void massless(double *au, double *ad, double *aub, double *adb, ITG *jq,
-              ITG *irow, ITG *neq, ITG *nzs, double **auwp, ITG **jqwp,
-              ITG **irowwp, ITG *nzsw, ITG *islavnode, ITG *nslavnode,
-              ITG *nslavs, ITG *imastnode, ITG *nmastnode, ITG *ntie,
-              ITG *nactdof, ITG *mi, double *vold, ITG *nk,
-              double *fext, ITG *isolver, ITG *iperturb, double *co, double *springarea) {
 
-    ITG nzswnew, *jqwnew = NULL, *irowwnew = NULL, *jqw = NULL, *iroww = NULL, nmasts,
-            neqbb, *jqbb = NULL, *irowbb = NULL, *kslav = NULL, *lslav = NULL, *ktot = NULL,
-            *ltot = NULL, neqslav, neqtot, *jqbi = NULL, *jqib = NULL, *irowbi = NULL,
-            *irowib = NULL, nzsbi, nzsib, symmetryflag = 0, inputformat = 0,nrhs=1,
-            nzsbb, *icolbb = NULL,*iacti = NULL, nacti=0;
+void massless(ITG *kslav,ITG *lslav,ITG *ktot,ITG *ltot,double *au,double *ad,
+	      double *auc,double *adc,
+	      ITG *jq,ITG *irow,ITG *neq,ITG *nzs,double *auw,
+	      ITG *jqw,ITG *iroww,ITG *nzsw,ITG *islavnode,ITG *nslavnode,
+	      ITG *nslavs,ITG *imastnode,ITG *nmastnode,ITG *ntie,ITG *nactdof,
+	      ITG *mi,double *vold,double *volddof, double *veold,ITG *nk,
+	      double *fext,ITG *isolver,ITG *iperturb,double *co,
+	      double *springarea,ITG *neqslav,ITG *neqtot,double *qb,
+	      double *b ){
 
-    double *auwnew = NULL, *auw = NULL, *aubb = NULL, *adbb = NULL, *aubi = NULL, *auib = NULL,
-            sigma = 0.0, *gapdof = NULL, *gapnorm = NULL, *qtmp = NULL, *cvec = NULL, sum,
-            *adbbb = NULL, *aubbb = NULL , *gcontvec=NULL, *gcontfull=NULL;
+  printf("\033[0;32m"); // green
+  //   printf("===================> DEBUG: massless.c\n");
 
-    auw = *auwp;
-    jqw = *jqwp;
-    iroww = *irowwp;
-    nmasts = nmastnode[*ntie];
+  /* determining the RHS of the global system for massless contact */
 
-    /* catalogue slave dofs in kslav,lslav and
-       slave and master dofs in ktot,ltot */
+  ITG *jqwnew=NULL,*irowwnew=NULL,symmetryflag=0,mt=mi[1]+1,ncdim,
+    inputformat=0,*iacti=NULL,nacti=0,itranspose,index,i,j,k,kitermax,
+    *jqbb=NULL,*irowbb=NULL,*icolbb=NULL,nzsbb,*jqbi=NULL,*irowbi=NULL,
+    nzsbi,*jqib=NULL,*irowib=NULL,nzsib;
 
-    NNEW(kslav, ITG, 3 * *nslavs);
-    NNEW(lslav, ITG, 3 * *nslavs);
-    NNEW(ktot, ITG, 3 * *nslavs + 3 * nmasts);
-    NNEW(ltot, ITG, 3 * *nslavs + 3 * nmasts);
+  double *auwnew=NULL,sigma=0.0,*gapdisp=NULL,*gapnorm=NULL,*cvec=NULL,sum,
+    *adbbb=NULL,*aubbb=NULL,*gvec=NULL,*gmatrix=NULL,*qi_kbi=NULL,
+    *veolddof=NULL,*pkglob=NULL,mufric,atol,rtol,*aubb=NULL,*adbb=NULL,
+    *al=NULL,*alnew=NULL,*eps_al=NULL,*rhs=NULL,*aubi=NULL,
+    *auib=NULL;
 
-//  Create set of slave and slave+master contact DOFS. Sorted.
-    FORTRAN(create_contactdofs, (kslav, lslav, ktot, ltot, nslavs, islavnode, &nmasts,
-            imastnode, nactdof, mi, &neqslav, &neqtot)); // TODO: nactdof, mi, to declare
+  /* expanding the matrix Wb according to the number of degrees
+     of freedom */
 
-    /* expanding the matrix Wb according to the number of degrees
-       of freedom */
+  NNEW(jqwnew,ITG,3**nslavs+1);
+  NNEW(auwnew,double,*nzsw);
+  NNEW(irowwnew,ITG,*nzsw);
 
-    NNEW(jqwnew, ITG, 3 * *nslavs + 1);
-    NNEW(auwnew, double, 3 * *nzsw);
-    NNEW(irowwnew, ITG, 3 * *nzsw); //TODO: declaring irowwnew?? typo?
+  /* Rearrange the row entries in the Wb matrix, column by column c
+     from the order in islavnode and imastnode to the order as
+     dictated by nactdof */
+  
+  FORTRAN(expand_auw,(auw,jqw,iroww,nslavs,auwnew,jqwnew,irowwnew,neqslav,
+		      nactdof,mi,ktot,neqtot,islavnode,imastnode));
 
-// Expand contact direction matrix W_b from nodal size to DOF size (3x)
-    FORTRAN(expand_auw, (auw, jqw, iroww, nslavs, nzsw, auwnew, jqwnew, irowwnew,
-            &nzswnew, &neqslav, lslav, ntie, nactdof, mi, ktot, &neqtot,
-            islavnode, nslavnode, imastnode));
+  memcpy(jqw,jqwnew,sizeof(ITG)*(3**nslavs+1));
+  memcpy(auw,auwnew,sizeof(double)**nzsw);
+  memcpy(iroww,irowwnew,sizeof(ITG)**nzsw);
 
-    *nzsw = nzswnew;
+  SFREE(jqwnew);SFREE(auwnew);SFREE(irowwnew);
 
-    RENEW(jqw, ITG, 3 * *nslavs + 1);
-    RENEW(auw, double, *nzsw);
-    RENEW(iroww, ITG, *nzsw);
+  /* extracting Kbb,Kbi,Kib,Kii from the stiffness matrix */
 
-    memcpy(jqw, jqwnew, sizeof(ITG) * (3 * *nslavs + 1));
-    memcpy(auw, auwnew, sizeof(double) * *nzsw); // TODO: aunew auwnew?? declare
-    memcpy(iroww, irowwnew, sizeof(ITG) * *nzsw);
+  NNEW(jqbb,ITG,*neqtot+1);
+  NNEW(aubb,double,nzs[0]);
+  NNEW(adbb,double,*neqtot);
+  NNEW(irowbb,ITG,nzs[0]);
+  NNEW(icolbb,ITG,*neqtot);
 
-    SFREE(jqwnew);
-    SFREE(auwnew);
-    SFREE(irowwnew);
+  NNEW(jqbi,ITG,neq[0]+1);
+  NNEW(aubi,double,nzs[0]);
+  NNEW(irowbi,ITG,nzs[0]);
 
-    /* extracting Kbb,Kbi,Kib,Kii from the stiffness matrix */
+  NNEW(jqib,ITG,*neqtot+1);
+  NNEW(auib,double,nzs[0]);
+  NNEW(irowib,ITG,nzs[0]);
 
-    NNEW(jqbb, ITG, neqtot + 1);
-    NNEW(aubb, double, nzs[0]); //  QUESTION: here we are allocation for the size of the  whole K matrix?
-    NNEW(adbb, double, neqtot);
-    NNEW(irowbb, ITG, nzs[0]);
+  NNEW(icolbb,ITG,*neqtot);
 
-    NNEW(jqbi, ITG, neq[0] + 1);
-    NNEW(aubi, double, nzs[0]);
-    NNEW(irowbi, ITG, nzs[0]);
+  /* extracting the submatrices from the global stiffness matrix */
+  
+  FORTRAN(extract_matrices,(au,ad,jq,irow,neq,aubb,adbb,jqbb,irowbb,neqtot,
+			    &nzsbb,aubi,jqbi,irowbi,&nzsbi,auib,jqib,irowib,
+			    &nzsib,ktot,icolbb));
 
-    NNEW(jqib, ITG, neqtot + 1);// QUESTION: do we need also the IB partition? can we just use the transposed BI?
-    NNEW(auib, double, nzs[0]);
-    NNEW(irowib, ITG, nzs[0]);
+  RENEW(aubb,double,nzsbb);
+  RENEW(irowbb,ITG,nzsbb);
+  RENEW(aubi,double,nzsbi);
+  RENEW(irowbi,ITG,nzsbi);
+  RENEW(auib,double,nzsib);
+  RENEW(irowib,ITG,nzsib);
+  SFREE(jqbb);
 
-    NNEW(icolbb, ITG, neqtot);
-    // NNEW(icontactv, ITG, neqtot + 1); // is this size good?
+  /* calculate the residual force in the contact area and store in gapdisp */
+  
+  NNEW(gapdisp,double,*neqtot);
+  NNEW(qi_kbi,double,*neqtot);
+  
+  FORTRAN(resforccont,(vold,nk,mi,aubi,irowbi,jqbi,neqtot,ktot,fext,gapdisp,
+		       auib,irowib,jqib,nactdof,volddof,neq,qi_kbi));
 
-// extracting the submatrices from the global stiffness matrix
-    FORTRAN(extract_matrices, (au, ad, jq, irow, neq, nzs, aubb, adbb, jqbb, irowbb, &neqtot,
-            &nzsbb, islavnode, nslavs, imastnode, &nmasts, aubi, jqbi,
-            irowbi, &nzsbi, auib, jqib, irowib, &nzsib, kslav, ktot, icolbb));
+  /* factorize Kbb and premultiply gapdisp with Kbb^{-1} */
 
-    RENEW(aubb, double, nzsbb);
-    RENEW(irowbb, ITG, nzsbb);
-    // RENEW(icolbb, ITG, neqtot);  /* length of each column  icolbb(i)=jqbb(i+1)-jqbb(i) */
-    RENEW(aubi, double, nzsbi);
-    RENEW(irowbi, ITG, nzsbi);
-    RENEW(auib, double, nzsib);
-    RENEW(irowib, ITG, nzsib);
-
-    /* factorize kbb */
-    NNEW(gapdof, double, neqtot);
-    NNEW(gapnorm, double, *nslavs);
-
-    MNEW(qtmp, double, neq[0]);
-
-        FORTRAN(detectactivecont1, (vold, nk, mi, aubi, irowbi, jqbi, &neqtot, fext, aubb, adbb, ltot,
-            irowbb, jqbb, auw, iroww, jqw, &neqslav, gapdof,
-            auib, irowib, jqib, icolbb, nactdof, qtmp, neq, co));
-
-    /* call spooles_solve..... */
-
-    if (*isolver == 0) {
+  if(*isolver==0){
 #ifdef SPOOLES
-        // spooles(adbb,aubb,adbbb,aubbb,&sigma,gapdof,icolbb,irowbb,&neqtot,&nzsbb,&symmetryflag,
-        //         &inputformat,&nzsbb);
-        spooles_factor(adbb,aubb,adbbb,aubbb,&sigma,icolbb,irowbb,
-                       &neqtot,&nzsbb,&symmetryflag, &inputformat,&nzsbb);
+    spooles_factor_rad(adbb,aubb,adbbb,aubbb,&sigma,icolbb,irowbb,
+		       neqtot,&nzsbb,&symmetryflag,&inputformat);
 
-        spooles_solve(gapdof,&neqtot);
+    spooles_solve_rad(gapdisp,neqtot);
 #else
-        printf("*ERROR in linstatic: the SPOOLES library is not linked\n\n");
-        FORTRAN(stop, ());
+    printf("*ERROR in linstatic: the SPOOLES library is not linked\n\n");
+    FORTRAN(stop,());
 #endif
-    } else if ((*isolver == 2) || (*isolver == 3)) {
-        preiter(ad, &au, gapnorm, &icolbb, &irow, neq, nzs, isolver, iperturb);
-    } else if (*isolver == 4) {
-#ifdef SGI
-        token=1;
-            sgapdof_main(ad,au,adb,aub,&sigma,g,icolbb,irow,neq,nzs,token);
-#else
-        printf("*ERROR in linstatic: the SGI library is not linked\n\n");
-        FORTRAN(stop, ());
-#endif
-    } else if (*isolver == 5) {
-#ifdef TAUCS
-        tau(ad,&au,adb,aub,&sigma,g,icolbb,&irow,neq,nzs);
-#else
-        printf("*ERROR in linstatic: the TAUCS library is not linked\n\n");
-        FORTRAN(stop, ());
-#endif
-    } else if (*isolver == 7) {
+  }else if(*isolver==7){
 #ifdef PARDISO
-        pardiso_main(adbb,aubb,adbbb,aubbb,&sigma,gapdof,icolbb,irowbb,&neqtot,nzsbb,
-                 &symmetryflag,&inputformat,jqbb,&nzs[2],&nrhs); // TODO check PARDISO!
 #else
-        printf("*ERROR in linstatic: the PARDISO library is not linked\n\n");
-        FORTRAN(stop, ());
+    printf("*ERROR in linstatic: the PARDISO library is not linked\n\n");
+    FORTRAN(stop,());
 #endif
-    } else if (*isolver == 8) {
+  }else if(*isolver==8){
 #ifdef PASTIX
-        pastix_main(ad,au,adb,aub,&sigma,gapdof,icolbb,irow,neq,nzs,
-                &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
-        printf("*ERROR in linstatic: the PASTIX library is not linked\n\n");
-        FORTRAN(stop, ());
+    printf("*ERROR in linstatic: the PASTIX library is not linked\n\n");
+    FORTRAN(stop,());
 #endif
+  }
+  SFREE(aubb);SFREE(adbb);SFREE(irowbb);SFREE(icolbb);
+
+  NNEW(gapnorm,double,*nslavs);
+  NNEW(iacti,ITG,*nslavs);
+
+  /* premultiply g by Wb^T and add g0 => determine active degrees => 
+     reduce g to c */
+  
+  FORTRAN(detectactivecont,(gapnorm,gapdisp,auw,iroww,jqw,nslavs,springarea,
+			    iacti,&nacti));
+
+  SFREE(gapdisp);
+
+  printf("---> %i ACTIVE CONTACTS!<---\n",nacti);
+
+  /* reduced the gap dimension to the active dofs */
+  
+  if (nacti>0){
+
+    /* only normal contact so far */
+    
+    ncdim=1;
+
+    /* constructing the c-vector of the inclusion equation */
+    
+    NNEW(cvec,double,nacti*ncdim);
+    for(i=0;i<*nslavs;i++){
+      if(iacti[i]!=0){
+	cvec[iacti[i]-1]=gapnorm[i];
+      }
     }
 
-    NNEW(iacti, ITG, *nslavs);
-    /* premultiply g by Wb^T and add g0 => determine active degrees => reduce g to c */
-    FORTRAN(detectactivecont2, (gapnorm, gapdof, auw, iroww, jqw, &neqtot, nslavs, springarea, iacti,&nacti));
+    /* constructing the g-matrix of the inclusion equation */
+    
+    NNEW(gmatrix,double,nacti*nacti);
 
+    /* calculate G = Wb^T.Kbb^(-1).Wb 
+       only for active slave degrees of freedom */
 
-// ***************** G ("DELASSUS") MATRIX + Cvector  NORMAL CONTACT ***********************++
-int ncdim = 1;
+    /* loop over the columns of Wb */
+    
+    for(i=0;i<*nslavs;i++){
+      
+      if(iacti[i]!=0) {
+	index=3*i;// normal contact index
 
+	NNEW(gvec,double,*neqtot);
 
-// initializing cvec with values of gnorm
-  NNEW(cvec,double,nacti);
-  for(int i=0;i<*nslavs;i++){
-    if(iacti[i]!=0){
-      cvec[iacti[i]-1]=gapnorm[i];
+	/* Filling the vector of Wb column */
+	
+	for(j=jqw[index]-1;j<jqw[index+1]-1;j++){
+	  gvec[iroww[j]-1]=auw[j];
+	}
+ 
+	/* Solving the linear system per column */
+
+	if(*isolver==0){
+#ifdef SPOOLES
+	  spooles_solve_rad(gvec,neqtot);
+#endif
+	}else if(*isolver==7){
+#ifdef PARDISO
+#endif
+	}else if(*isolver==8){
+#ifdef PASTIX
+#endif
+	}
+	
+	/* premultiplying per Wb^T */
+
+	for(j=0;j<*nslavs;++j){
+	  if(iacti[j]!=0){
+	    index=3*j;
+	    sum=0.0;
+	    for(k=jqw[index]-1;k<jqw[index+1]-1;k++){
+	      sum+=auw[k]*gvec[iroww[k]-1];
+	    }
+	    gmatrix[(iacti[i]-1)*nacti+(iacti[j]-1)]=sum;
+	  }
+	}
+	SFREE(gvec);
+      }
+    }
+
+    /* solve the inclusion problem (augmented Lagrange) */
+    
+    mufric=0.0;
+    atol=1.0e-8;
+    rtol=1.0e-8;
+    kitermax=1000;
+
+    NNEW(al,double,nacti*ncdim);
+    NNEW(alnew,double,nacti*ncdim);
+    NNEW(eps_al,double,nacti*ncdim);
+    NNEW(pkglob,double,*neqtot);
+    FORTRAN(auglag_inclusion,
+	    (gmatrix,cvec,iacti,&nacti,&ncdim,&mufric,&atol,&rtol,
+	     pkglob,&kitermax,auw,jqw,iroww,nslavs,al,
+	     alnew,eps_al));
+    SFREE(al);SFREE(alnew);SFREE(eps_al);SFREE(gmatrix);SFREE(cvec);
+
+  }else{
+    NNEW(pkglob,double,*neqtot);
+  }
+
+  SFREE(gapnorm);SFREE(iacti);
+  
+  /* compute q_b^k = Kbb^{-1}*(Wb*al-qi_kbi+fexb) */
+
+  for(i=0;i<*neqtot;i++){
+    qb[i]=pkglob[i]-qi_kbi[i]+fext[ktot[i]-1];
+  }
+
+  SFREE(qi_kbi);SFREE(pkglob);
+
+  if(*isolver==0){
+#ifdef SPOOLES
+    spooles_solve_rad(qb,neqtot);
+#endif
+  }else if(*isolver==7){
+#ifdef PARDISO
+#endif
+  }else if(*isolver==8){
+#ifdef PASTIX
+#endif
+  }
+
+  /* compute the right hand side of the global equation system */
+  
+  /* calculate Kii*qi */
+  
+  NNEW(rhs,double,neq[0]); 
+  FORTRAN(op,(&neq[0],volddof,rhs,ad,au,jq,irow));
+
+  /* calculate Kii*qi+Kib*qb */
+
+  itranspose=0;
+  FORTRAN(mulmatvec_asym,(auib,jqib,irowib,neqtot,qb,rhs,&itranspose));
+  itranspose=1;
+  FORTRAN(mulmatvec_asym,(aubi,jqbi,irowbi,&neq[0],qb,rhs,&itranspose));
+  
+  SFREE(jqbi);SFREE(aubi);SFREE(irowbi);SFREE(jqib);SFREE(auib);SFREE(irowib);
+
+  /* calculate (Mii/Delta_t-Dii/2)*u_i^{k-1/2} */
+
+  /* switch for the velocity from a nodal to a dof representation */
+  
+  NNEW(veolddof,double,neq[0]);
+  for(k=0;k<*nk;++k){
+    for(j=0;j<mt;j++){
+      if(nactdof[mt*k+j]>0){
+        veolddof[nactdof[mt*k+j]-1]=veold[mt*k+j];
+      }
     }
   }
 
-   NNEW(gcontfull, double, nacti *  nacti);
+  FORTRAN(op,(&neq[0],veolddof,b,adc,auc,jq,irow));
 
-//   calculate Wb^T.Kbb^(-1).Wb
-    int indexnorm   ;
-    for (int i = 0; i < *nslavs; i++) {
-        if(iacti[i]!=0){
-            indexnorm= 3*i ; // normal contact index
-            //initialize in zeros vector
-            NNEW(gcontvec, double, neqtot);
-            for(int j=jqw[indexnorm]-1;j<jqw[indexnorm+1]-1;j++){
-                gcontvec[iroww[j]-1]=auw[j];
-            }
-        }
+  for(i=0;i<neq[0];++i){b[i]=fext[i]-rhs[i]+b[i];}
+  SFREE(rhs);SFREE(veolddof);
 
-        spooles_solve(gcontvec,&neqtot); // TODO add other solvers!!!!
-
-        for (int j = 0; j < *nslavs; ++j) {
-            if(iacti[j]!=0){
-                indexnorm= 3*j ;
-                sum=0.0;
-                for (int k = jqw[indexnorm]-1; k < jqw[indexnorm+1]-1 ; k++) {
-                    sum+=auw[k]*gcontvec[iroww[k]-1];
-                }
-                gcontfull[i*nacti+j]=sum;
-            }
-        }
-    }
-
-    FORTRAN(relaxval_al, (gcontfull,&nacti, &ncdim )); // last parameter: nCdim: 1:NORMALonly, 3:NTT
-
-
-// conttype: contact type
-int conttype = 1 ;//'NORMAL'
-double mufric = 0.0;
-double atol = 1.0e-8;
-double rtol = 1.0e-8;
-double *pkvec = NULL;
-int kitermax = 1000;
-int timek = 0.0;
-
-FORTRAN( auglag_inclusion ,(conttype, gcontfull,&nacti, &ncdim, mufric, atol,rtol, pkvec, kitermax, timek  ));
-
-
-
-    if (*isolver == 0) {
+  /* clearing memory for the equation solver */
+  
+  if(*isolver==0){
 #ifdef SPOOLES
-        spooles_cleanup();
+    spooles_cleanup_rad();
+#elif defined(PARDISO)
+      pardiso_cleanup_as(neqtot,&symmetryflag);
+#elif defined(PASTIX)
 #endif
-    }
+  }
 
-    SFREE(kslav);
-    SFREE(lslav);
-    SFREE(ktot);
-    SFREE(ltot);
-
-    *auwp = auw;
-    *jqwp = jqw;
-    *irowwp = iroww; // QUESTION: why ?
-
-    SFREE(gcontvec);
-    SFREE(gcontfull);
-
-    return;
+  printf("\033[0m"); // reset color
+  return;
 }

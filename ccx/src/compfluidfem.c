@@ -489,7 +489,7 @@ void compfluidfem(double **cop,ITG *nk,ITG **ipkonp,ITG **konp,char **lakonp,
 
 	/* check whether an error occurred: if so, increase the shock
 	   coefficient (only for compressible fluids) */
-      
+
 	if(ierr==1){
 	  if(iexplicit==0) FORTRAN(stop,());
 	  ierr=0;
@@ -645,12 +645,13 @@ void compfluidfem(double **cop,ITG *nk,ITG **ipkonp,ITG **konp,char **lakonp,
 	FORTRAN(solveeq,(adbv,aubv,adlv,&b1[i**nk],&v[i**nk],aux,
 			 irowv,jqv,nk,&maxit));
       }
-      //      for(i=5;i<mi[1];i++){
+
       for(i=5;i<mt;i++){
 	FORTRAN(solveeq,(adbv,aubv,adlv,&b1[i**nk],&v[i**nk],aux,
 			 irowv,jqv,nk,&maxit));
       }
       SFREE(aux);
+      
       //         for(i=0;i<*nk;i++){printf("i=%d v(5,6)=%e %e \n",i,v[5**nk+i]),
       //	   v[6**nk+i];}
 

@@ -30,7 +30,7 @@
      &     iedge,ipoeled(*),ieled(2,*),iedgmid(*),iedtet(6,*),
      &     iexternedg(*)
 !     
-      real*8 cotet(3,*),cpycotet(3),x(3),fumid,eps(3),fmin
+      real*8 cotet(3,*),cpycotet(3),x(3),fumid,eps(3),fmin,ref
 !     
       external fumid
 !     
@@ -48,22 +48,32 @@
         do k=1,3
           cpycotet(k)=cotet(k,neigh)
           x(k)=cotet(k,neigh)
-          eps(k)=1.d0
+          eps(k)=0.d0
         enddo
 !     
 !     starting function value (not really necessary, just in
-!     case one want to print this value)
+!     case one wants to print this value)
 !     
         n=3
         fmin=fumid(n,x,cotet,kontet,ipoeln,ieln,neigh,iedge,
      &     ipoeled,ieled,iedgmid,iedtet)
 !     
 !     calling the optimizer
-!     
-        ier=0
-        call fminsirefine(n,x,fumid,eps,fmin,ier,cotet,
-     &       kontet,ipoeln,ieln,neigh,iedge,
-     &       ipoeled,ieled,iedgmid,iedtet)
+!
+        ref=fmin
+        do
+          ier=0
+          call fminsirefine(n,x,fumid,eps,fmin,ier,cotet,
+     &         kontet,ipoeln,ieln,neigh,iedge,
+     &         ipoeled,ieled,iedgmid,iedtet)
+          if(ier.ne.0) then
+            exit
+          elseif(fmin.ge.ref) then
+            exit
+          else
+            ref=fmin
+          endif
+        enddo
 !     
 !     restoring the original coordinates in case of error
 !     

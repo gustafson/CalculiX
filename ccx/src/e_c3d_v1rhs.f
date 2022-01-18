@@ -328,6 +328,7 @@ c        endif
 !     
 !     calculating the turbulent stress
 !     
+c          umttot=dvi
           umttot=dvi+unt*rho
           do i1=1,3
             do j1=i1,3

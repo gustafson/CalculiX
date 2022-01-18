@@ -341,7 +341,8 @@
         write(*,*)
         close(40)
       else
-        close(40,status='delete')
+        close(40)
+c        close(40,status='delete')
       endif
 !
       return

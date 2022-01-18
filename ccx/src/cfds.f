@@ -33,7 +33,6 @@
 !     
 !     iexpl=0:  structure:implicit, fluid:incompressible
 !     iexpl=1:  structure:implicit, fluid:compressible explicit
-!     iexpl=3:  structure:explicit, fluid:compressible implicit
 !     
       implicit none
 !     
@@ -111,8 +110,6 @@ c      fem=.false.
           read(textpart(i)(8:27),'(a20)') solver
         elseif(textpart(i)(1:12).eq.'COMPRESSIBLE') then
           iexpl=1
-        elseif(textpart(i)(1:12).eq.'IMPLICIT') then
-          iexpl=3
         elseif(textpart(i)(1:12).eq.'SHALLOWWATER') then
           shallowwater=.true.
           iexpl=1
@@ -187,7 +184,7 @@ c      fem=.false.
         write(*,*) '         the default solver is used'
       endif
 !
-!     the number of the turbulence model is increase by 20 for
+!     the number of the turbulence model is increased by 20 for
 !     the CBS method for shallow water equations and by 10 for
 !     the CBS method for all other applications
 !

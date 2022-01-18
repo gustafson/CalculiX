@@ -33,7 +33,7 @@
      &     ifacet(6,4),ifacew(8,5),ifree,ifreenew,index,indexold,id,
      &     i,j,k,iactive(3),ntie,nodes(4),nalset,nk,nset,indexe
 !     
-      real*8 tietol(3,*)
+      real*8 tietol(4,*)
 !     
 !     nodes belonging to the element faces
 !     

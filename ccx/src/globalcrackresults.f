@@ -19,7 +19,8 @@
       subroutine globalcrackresults(nfront,ifront,wk1,wk2,wk3,dkeq,
      &     domphi,dadn,ncyc,wk1glob,wk2glob,wk3glob,dkeqglob,phiglob,
      &     dadnglob,dnglob,acrack,acrackglob,nstep,xkeqmin,xkeqmax,
-     &     xkeqminglob,xkeqmaxglob,iinc,iincglob,domstep,domstepglob)
+     &     xkeqminglob,xkeqmaxglob,iinc,iincglob,domstep,domstepglob,
+     &     r,rglob)
 !     
 !     calculate the stress intensity factors along the crack fronts
 !     
@@ -29,9 +30,9 @@
 !     
       real*8 wk1(*),wk2(*),wk3(*),dkeq(*),domphi(*),dadn(*),
      &     wk1glob(*),wk2glob(*),wk3glob(*),dkeqglob(*),phiglob(*),
-     &     dadnglob(*),dnglob(*),acrackglob(*),acrack(nstep,*),
+     &     dadnglob(*),dnglob(*),acrackglob(*),acrack(*),
      &     xkeqmax(*),xkeqminglob(*),xkeqmaxglob(*),domstep(*),
-     &     xkeqmin(*),domstepglob(*)
+     &     xkeqmin(*),domstepglob(*),r(*),rglob(*)
 !
       do i=1,nfront
 !
@@ -39,7 +40,7 @@
 !     the crack length is the one corresponding to step 1;
 !     although acrackglob(node) already has values from the previous
 !     increment (except in the first increment), the value of
-!     acrack(1,i) may be different due to cracklength_smoothing;
+!     acrack(i) may be different due to cracklength_smoothing;
 !
         node=ifront(i)
         wk1glob(node)=wk1(i)
@@ -48,10 +49,11 @@
         xkeqminglob(node)=xkeqmin(i)
         xkeqmaxglob(node)=xkeqmax(i)
         dkeqglob(node)=dkeq(i)
+        rglob(node)=r(i)
         phiglob(node)=domphi(i)
         dadnglob(node)=dadn(i)
 c        dnglob(node)=1.d0*ncyc
-        acrackglob(node)=acrack(1,i)
+        acrackglob(node)=acrack(i)
         iincglob(node)=iinc
         domstepglob(node)=domstep(i)
       enddo

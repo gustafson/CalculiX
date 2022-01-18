@@ -132,7 +132,7 @@ c            enddo
 !     for dynamic massless contact: store contact face number
 !     in element label
 !
-               if(mortar.eq.-1) write(lakon(nelem)(7:7),'(i1)') jface
+c               if(mortar.eq.-1) write(lakon(nelem)(7:7),'(i1)') jface
 !     
                indexe=ipkon(nelem)
 !     

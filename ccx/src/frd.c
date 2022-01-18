@@ -218,8 +218,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1,"%5sUTIME              %8s                                        \n",p1,newclock);
     fprintf(f1,"%5sUHOST                                                              \n",p1);
     fprintf(f1,"%5sUPGM               CalculiX                                        \n",p1);
-    fprintf(f1,"%5sUVERSION           Version 2.18                             \n",p1);
-    fprintf(f1,"%5sUCOMPILETIME       Fri Oct  1 15:40:49 UTC 2021                    \n",p1);
+    fprintf(f1,"%5sUVERSION           Version 2.19                             \n",p1);
+    fprintf(f1,"%5sUCOMPILETIME       Fri Dec 17 13:15:26 CET 2021                    \n",p1);
     fprintf(f1,"%5sUDIR                                                               \n",p1);
     fprintf(f1,"%5sUDBN                                                               \n",p1);
     
