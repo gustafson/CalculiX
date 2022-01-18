@@ -33,7 +33,7 @@
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ntie,ntie_,ipoinpc(0:*),ier
 !
-      real*8 tietol(3,*)
+      real*8 tietol(4,*)
 !
       multistage=.false.
       tied=.true.

@@ -41,7 +41,7 @@
 !     
       integer nelemface(*),nface,ipoface(*),nodface(5,*),nodes(4),
      &     ne,ipkon(*),kon(*),indexe,ifaceq(8,6),ifacet(7,4),index,
-     &     ifacew(8,5),ithree,ifour,iaux,kflag,nnodes,
+     &     ifacew(8,5),ithree,ifour,iaux,kflag,nnodes,ierror,
      &     isolidsurf(*),nsolidsurf,ifreestream(*),
      &     nfreestream,id,nk,node,i,j,k,l,m,neighsolidsurf(*),
      &     iponoel(*),noden,idn,nope,nodemin,ifree,indexold,
@@ -72,6 +72,7 @@
       kflag=1
       ithree=3
       ifour=4
+      ierror=0
 !     
 !     determining the external element faces of the fluid mesh 
 !     the faces are catalogued by the three lowes nodes numbers
@@ -261,9 +262,10 @@
         if(set(i)(1:13).eq.noset(1:13)) exit
       enddo
       if((i.gt.nset).and.(iturbulent.gt.0)) then
-        write(*,*) '*WARNING in precfd: node set SOLID SURFACE '
+        write(*,*) '*WARNING in topocfdfem: node set SOLID SURFACE '
         write(*,*) '         has not been defined. This set may'
         write(*,*) '         be needed in a turbulent calculation'
+        ierror=ierror+1
       elseif(i.le.nset) then
 !     
         do j=istartset(i),iendset(i)
@@ -290,9 +292,19 @@
         if(set(i)(1:18).eq.noset(1:18)) exit
       enddo
       if((i.gt.nset).and.(iturbulent.gt.0)) then
-        write(*,*) '*WARNING in precfd: node set FREESTREAM SURFACE '
-        write(*,*) '         has not been defined. This set may'
-        write(*,*) '         be needed in a turbulent calculation'
+        if(ierror.eq.0) then
+          write(*,*)
+     &         '*WARNING in topocfdfem: node set FREESTREAM SURFACE '
+          write(*,*) '         has not been defined. This set may'
+          write(*,*) '         be needed in a turbulent calculation'
+        else
+          write(*,*)
+     &         '*ERROR in topocfdfem: node set FREESTREAM SURFACE '
+          write(*,*) '         and node set SOLIDSURFACE have not'
+          write(*,*) '         been defined. At least one of these sets'
+          write(*,*) '         is needed in a turbulent calculation'
+          call exit(201)
+        endif
       elseif(i.le.nset) then
 !     
         do j=istartset(i),iendset(i)

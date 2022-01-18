@@ -38,7 +38,7 @@
 !     
       integer itie,imat,ncmat_,ntmat_,regmode,regmodet,iwan
 !     
-      real*8 mu,fkninv,fktauinv,p0,beta,tietol(3,*),
+      real*8 mu,fkninv,fktauinv,p0,beta,tietol(4,*),
      &     elcon(0:ncmat_,ntmat_,*)
 !
       itie=itie+1

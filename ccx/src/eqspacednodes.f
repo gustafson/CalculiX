@@ -38,7 +38,7 @@
       nfronteq=0
       do i=1,nnfront
         istartfronteq(i)=nfronteq+1
-        ifronteq(istartfronteq(i))=ifrontprop(istartfront(i))
+c        ifronteq(istartfronteq(i))=ifrontprop(istartfront(i))
 !     
 !     loop over all nodes belonging to the propagated front
 !     
@@ -49,8 +49,8 @@
           icrack=icrack+1
         endif
 !     
-        dnglob(ifrontprop(istartfront(i)))=1.d0*ncyctot
-        dnglob(ifrontprop(iendfront(i)))=1.d0*ncyctot
+c        dnglob(ifrontprop(istartfront(i)))=1.d0*ncyctot
+c        dnglob(ifrontprop(iendfront(i)))=1.d0*ncyctot
 !        
         do m=istartfront(i),iendfront(i)-1
 !     
@@ -65,6 +65,18 @@
           x(k)=x(k-1)+dist
         enddo
         kend=k
+!
+!     first node of front (position is not changed); done
+!     for consistency in the node numbering along the crack front        
+!
+        nk=nk+1
+        do k=1,3
+          co(k,nk)=co(k,ifrontprop(istartfront(i)))
+        enddo
+        acrackglob(nk)=acrackglob(ifrontprop(istartfront(i)))
+        iincglob(nk)=iinc+1
+        dnglob(nk)=1.d0*ncyctot
+        ifronteq(istartfronteq(i))=nk
 !     
 !     nodesnum is the new number of new nodes on the propagated front
 !     
@@ -94,7 +106,20 @@
 !     
         nfronteq=nfronteq+nodesnum
         iendfronteq(i)=nfronteq
-        ifronteq(iendfronteq(i))=ifrontprop(iendfront(i))
+!
+!     last node of front (position is not changed); done
+!     for consistency in the node numbering along the crack front        
+!
+        nk=nk+1
+        do k=1,3
+          co(k,nk)=co(k,ifrontprop(iendfront(i)))
+        enddo
+        acrackglob(nk)=acrackglob(ifrontprop(iendfront(i)))
+        iincglob(nk)=iinc+1
+        dnglob(nk)=1.d0*ncyctot
+        ifronteq(iendfronteq(i))=nk
+c     ifronteq(iendfronteq(i))=ifrontprop(iendfront(i))
+!        
         if(nfronteq.gt.(2*nfront)) then
           write(*,*) '*ERROR in calccharlength: nfronteq.gt.2*nfront'
           ier=1

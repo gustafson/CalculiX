@@ -19,8 +19,8 @@
       subroutine objective_stress(nodeset,istartset,iendset,ialset,
      &  nk,idesvarc,iobject,mi,g0,nobject,stn,objectset,expks)
 !
-!     calculates the sum of the square of the von Mises stress of a node
-!     set
+!     calculates the Kreisselmeier-Steinhauser function for the
+!     (von Mises) stress
 !
       implicit none
 !
@@ -30,8 +30,6 @@
      &  idesvarc,iobject,mi(*),j,k,nobject,idesvar
 !
       real*8 g0(nobject),stn(6,*),p,rho,xstress,argument,expks
-!
-!
 !
       idesvar=idesvarc+1
 !

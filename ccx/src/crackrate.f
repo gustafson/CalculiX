@@ -20,7 +20,7 @@
      &     dadn,ncyc,icritic,datarget,crcon,temp,ncrtem,
      &     crconloc,ncrconst,xk1,xk2,xk3,nstep,acrack,
      &     wk1,wk2,wk3,xkeqmin,xkeqmax,dkeq,domstep,domphi,
-     &     param,nparam,law,ier)
+     &     param,nparam,law,ier,r)
 !
 !     User Subroutine
 !     
@@ -52,9 +52,13 @@
 !     xk3(m,i)           K3-factor for step m in front-node i     
 !     nstep              number of steps for which stresses (and      
 !                        optionally temperatures) are available
-!     acrack(m,i)        crack length for step m in front-node i;  
-!                        in some methods the crack length is dependent
-!                        on the load, and therefore on the step number;
+!     acrack(i)          crack length in front-node i;  
+!     param(1...nparam)  parameters returned from the crack propagation
+!                        data routine for use in the propagation
+!                        law (character*132)
+!     nparam             number of parameters (integer)
+!     law                number of the crack propagation law (integer)
+!     ier                error parameter; entry value: 0.
 !     
 !     
 !     OUTPUT
@@ -63,7 +67,9 @@
 !     ncyc               number of cycles in this increment
 !     icritic            0: Kc is nowhere reached
 !                        <0: nowhere propagation      
-!                        >0: Kc is reached in at least one front-node
+!                        >0: Kc is reached in at least one front-node:
+!                            CalculiX will stop after returning from
+!                            this subroutine
 !     wk1(i)             worst K1-factor in front-node i; 
 !                        wk1(i) = xk1(m,i) if dabs(xk1(m,i)) is maximal
 !                        over all steps
@@ -73,10 +79,14 @@
 !     xkeqmax(i)         maximum value of xkeq(m,i) over all steps      
 !     dkeq(i)            range of the equivalent stress intensity factor 
 !                        of the main cycle at front-node i
+!     r(i)               r-value of the main cycle at front-node i
 !     domstep(i)         the step dictating the deflection angle at
 !                        front-node i (dominant step)
 !     domphi(i)          deflection angle for the crack propagation in
 !                        front-node i
+!     ier                error parameter;
+!                        0: no error occurred in the present routine
+!                        1: an error occurred and CalculiX should stop
 !
       implicit none
 !
@@ -86,10 +96,10 @@
      &     ncrtem,nstep,m,ifront(*),nparam,law,ier
 !     
       real*8 datarget,damax,xkeq(nstep,*),phi(nstep,*),
-     &     acrack(nstep,*),dadn(*),crcon(0:ncrconst,*),t1l,
+     &     acrack(*),dadn(*),crcon(0:ncrconst,*),t1l,
      &     crconloc(*),dadnref,dkref,xm,epsilon,dkth,delta,dkc,
      &     xk1(nstep,*),xk2(nstep,*),xk3(nstep,*),temp(nstep,*),
-     &     wk1(*),wk2(*),wk3(*),
+     &     wk1(*),wk2(*),wk3(*),w,r(*),fr,
      &     xkeqmin(*),xkeqmax(*),dkeq(*),domstep(*),domphi(*)
 !     
 !     determine the maximal crack propagation in one iteration
@@ -103,7 +113,6 @@
 !     step (same applies to the deflection angle: the deflection
 !     angle of the mission is the deflection angle of this step)
 !
-        dkeq(i)=0.d0
         xkeqmin(i)=1.d30
         xkeqmax(i)=-1.d30
         wk1(i)=0.d0
@@ -111,17 +120,35 @@
         wk3(i)=0.d0
 !        
         do m=1,nstep
-          if(xkeq(m,i).gt.dkeq(i)) then
-            dkeq(i)=xkeq(m,i)
+          if(xkeq(m,i).gt.xkeqmax(i)) then
+            xkeqmax(i)=xkeq(m,i)
             domphi(i)=phi(m,i)
             domstep(i)=1.d0*m
           endif
           xkeqmin(i)=min(xkeqmin(i),xkeq(m,i))
-          xkeqmax(i)=max(xkeqmax(i),xkeq(m,i))
           if(dabs(xk1(m,i)).gt.dabs(wk1(i))) wk1(i)=xk1(m,i)
           if(dabs(xk2(m,i)).gt.dabs(wk2(i))) wk2(i)=xk2(m,i)
           if(dabs(xk3(m,i)).gt.dabs(wk3(i))) wk3(i)=xk3(m,i)
         enddo
+!
+!     if only one step: 0-max cycle is assumed
+!
+        if(nstep.eq.1) then
+          xkeqmin(i)=0.d0
+        endif
+        dkeq(i)=xkeqmax(i)-xkeqmin(i)
+!
+!       determine the R-value
+!
+        if(dabs(xkeqmax(i)).lt.1.d-10) then
+          if(xkeqmax(i).lt.0.d0) then
+            r(i)=1.d10
+          else
+            r(i)=-1.d10
+          endif
+        else
+          r(i)=xkeqmin(i)/xkeqmax(i)
+        endif
 !     
 !     determine the crack propagation data for the local temperature
 !
@@ -138,12 +165,22 @@
         dkth=crconloc(5)
         delta=crconloc(6)
         dkc=crconloc(7)
+        w=crconloc(8)
+!
+!       determine the R-correction
+!
+        if(dabs(1.d0-r(i)).lt.1.d-10) then
+          fr=0.d0
+        else
+          fr=1.d0/(1.d0-r(i))**((1.d0-w)*xm)
+        endif
 !
         if(dkeq(i).ge.dkc) then
           write(*,*) '*WARNING in crackrate: Kc is reached'
           write(*,*) '         original K-value: ',dkeq(i)
           dkeq(i)=dkth+(dkc-dkth)*0.999
           write(*,*) '         dk is reduced to ',dkeq(i)
+          write(*,*)
           icritic=icritic+1
         endif
 !     
@@ -152,19 +189,25 @@
         else
           dadn(i)=dadnref*(dkeq(i)/dkref)**xm*
      &         (1.d0-dexp(epsilon*(1.d0-dkeq(i)/dkth)))/
-     &         (1.d0-dexp(delta*(dkeq(i)/dkc-1.d0)))
+     &         (1.d0-dexp(delta*(xkeqmax(i)/dkc-1.d0)))*fr
         endif
 !        
         damax=max(dadn(i),damax)
       enddo
 !     
 !     determine the number of cycles
+!     for ier=1 the calculation has to be stopped      
 !
-      if(damax.gt.0.d0) then
-c        ncyc=nint(max(datarget/damax,1.d0))
+      if(icritic.gt.0) then
+        ncyc=0
+        return
+      elseif(damax.gt.0.d0) then
         ncyc=nint(datarget/damax)
+!
+!       too close to the critical value
+!
         if(ncyc.eq.0)then
-          ier=1
+          icritic=1
           return
         endif
       else
@@ -172,9 +215,8 @@ c        ncyc=nint(max(datarget/damax,1.d0))
 !       no propagation
 !
         icritic=-1
+        ncyc=1
       endif
-!
-      if(icritic.ne.0) ncyc=1
 !     
       return
       end

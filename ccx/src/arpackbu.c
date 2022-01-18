@@ -123,19 +123,6 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
      order calculation if iperturb != 0 */
 
   *nmethod=1;
-  
-  /* assigning the body forces to the elements */ 
-
-  /*  if(*nbody>0){
-    ifreebody=*ne+1;
-    NNEW(ipobody,ITG,2*ifreebody**nbody);
-    for(k=1;k<=*nbody;k++){
-      FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
-			 iendset,ialset,&inewton,nset,&ifreebody,&k));
-      RENEW(ipobody,ITG,2*(*ne+ifreebody));
-    }
-    RENEW(ipobody,ITG,2*(ifreebody-1));
-  }
 
   /* determining the internal forces and the stiffness coefficients */
 
@@ -145,7 +132,6 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
   NNEW(xstiff,double,(long long)27*mi[0]**ne);
 
-  //  iout=-1;
   NNEW(v,double,mt**nk);
   NNEW(fn,double,mt**nk);
   NNEW(stx,double,6*mi[0]**ne);

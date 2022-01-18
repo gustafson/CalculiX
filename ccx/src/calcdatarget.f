@@ -30,7 +30,7 @@
       integer i,j,ifront(*),nnfront,istartfront(*),nstep,m,
      &     isubsurffront(*),iendfront(*),istart,iend
 !     
-      real*8 datarget,damax,acrack(nstep,*),co(3,*),
+      real*8 datarget,damax,acrack(*),co(3,*),
      &     xp,yp,zp,xa,ya,za,xn,yn,zn,xlpa,xlan,xlnp,dd,rcur
 !
       datarget=damax
@@ -114,9 +114,7 @@
 !
 c     datarget=min(datarget,rcur/5.d0,acrack(j)/5.d0)
           datarget=min(datarget,rcur/5.d0)
-          do m=1,nstep
-            datarget=min(datarget,acrack(m,j)/5.d0)
-          enddo
+          datarget=min(datarget,acrack(j)/5.d0)
         enddo
       enddo
 !     

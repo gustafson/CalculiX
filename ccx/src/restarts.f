@@ -37,7 +37,7 @@
      &  ipoinp,inp,fmpc,tieset,ntie,tietol,ipoinpc,nslavs,t0g,t1g,nprop,
      &  ielprop,prop,mortar,nintpoint,ifacecount,islavsurf,pslavsurf,
      &  clearini,ier,vel,nef,velo,veloo,ne2boun,heading,network,
-     &  irestartread)
+     &  irestartread,nfc,ndc,coeffc,ikdc,edc)
 !
       implicit none
 !
@@ -66,7 +66,7 @@
      &  iponor(*),knor(*),iponoel(*),inoel(*),rig(*),islavsurf(*),
      &  nshcon(*),ncocon(*),ics(*),infree(*),ier,network,
      &  nener,irestartstep,irestartread,irstrt(*),istat,n,i,key,
-     &  iprestr,mcs,maxlenmpc,iline,ipol,inl,
+     &  iprestr,mcs,maxlenmpc,iline,ipol,inl,nfc,ndc,ikdc(*),
      &  ipoinp(2,*),inp(3,*),ntie,ibody(*),nbody,nslavs,nef,
      &  ne2boun(2,*)
 !
@@ -75,16 +75,15 @@
      &  trab(*),amta(*),t0(*),t1(*),prestr(*),veold(*),tietol(*),
      &  vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
      &  xnor(*),thicke(*),offset(*),t0g(*),t1g(*),clearini(*),
-     &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),prop(*),
-     &  ttime,qaold(2),cs(17,*),physcon(*),pslavsurf(*),
+     &  shcon(*),cocon(*),sti(*),ener(*),xstate(*),prop(*),edc(*),
+     &  ttime,qaold(2),cs(17,*),physcon(*),pslavsurf(*),coeffc(*),
      &  ctrl(*),fmpc(*),xbody(*),xbodyold(*),vel(*),velo(*),veloo(*)
 !
-c      irestartread=0
       irestartstep=0
 !
       do i=2,n
          if(textpart(i)(1:4).eq.'READ') then
-            irestartread=1
+            irestartread=2
          elseif(textpart(i)(1:5).eq.'STEP=') then
             read(textpart(i)(6:15),'(i10)',iostat=istat) irestartstep
             if(istat.gt.0) then
@@ -113,7 +112,8 @@ c      irestartread=0
          endif
       enddo
 !
-      if(irestartread.eq.1) then
+      if(irestartread.eq.2) then
+        irestartread=1
         call restartread(istep,nset,nload,nforc, nboun,nk,ne,
      &  nmpc,nalset,nmat,ntmat_,npmat_,norien,nam,nprint,mi,
      &  ntrans,ncs_,namtot,ncmat_,mpcfree,maxlenmpc,
@@ -134,7 +134,7 @@ c      irestartread=0
      &  output,physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,
      &  t0g,t1g,nprop,ielprop,prop,mortar,nintpoint,ifacecount,
      &  islavsurf,pslavsurf,clearini,irstrt,vel,nef,velo,veloo,
-     &  ne2boun,heading,network)
+     &  ne2boun,heading,network,nfc,ndc,coeffc,ikdc,edc)
       endif
 !
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,

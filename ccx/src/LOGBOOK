@@ -1,6 +1,6 @@
  
 ========
-LOG-BOOK Version 2.18
+LOG-BOOK Version 2.19
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -4466,7 +4466,7 @@ Dec 2002        - started to work on single crystal plasticity
                - implemented the interpolation of the temperatures for
 	         a refined mesh
 
- 5 Sept 2020   - made a change in e_c3d_v2hrs.f (got rid of the wrong
+ 5 Sept 2020   - made a change in e_c3d_v2rhs.f (got rid of the wrong
                  factor of 2)
 
  6 Sept 2020   - worked on implicit compressible finite element
@@ -4798,3 +4798,91 @@ Dec 2002        - started to work on single crystal plasticity
 		is on the CBS-FEM method for CFD.
 
  7 Sep 2021   - made some corrections for user element u1 and us3
+
+ 15 Sep 2021  - created version 2.18
+
+ 17 Sep 2021  - removed the PRINCIPAL method from the crack propagation
+                procedure
+              - changed the node numbering along the new crack fronts
+	        such that it is monotonic increasing
+              - started looking into HCF for crack propagation
+
+ 20 Sep 2021  - continued to work on HCF for crack propagation
+
+ 30 Sep 2021  - started debugging HCF for crack propagation
+              - corrected an error in turningdirection.f
+              - eei is only calculated for iout>0 (resultsmech)
+	      - created fields vini, emeini.... in arpack
+	        and arpackcs in all cases (needed e.g. in the
+		presence of materials with kode<-100)
+
+ 1 Oct 2021   - updated mesh refinement
+              - finished debugging HCF for crack propagation
+              - removed FVM-CFD-source code 
+
+ 9 Oct 2021   - removed an error in interpolextnodes.f and
+                interpolextnodesf.f
+              - removed status='delete' from the close(40) statement
+	        in cyclicsymmetrymodels.f: causes problems when splitting
+		an input deck in several ones with fewer steps for
+		parallel execution.
+
+ 10 Oct 2021  - made some corrections for C3D8I in turningdirection.f
+
+ 15 Oct 2021  - direct damping in combination with prescribed boundary
+                conditions is now allowed in a *STEADY STATE DYNAMICS
+		procedure.
+
+ 17 Oct 2021  - updated the documentation on CFD (program structure
+                section)
+
+ 22 Oct 2021  - looked into sensitivity of the equivalent plastic
+                strain
+
+ 23 Oct 2021  - sensitivity of the equivalent plastic strain works
+
+ 30 Oct 2021  - started changing *coupling in combination with
+                *distributed
+
+ 5 Nov 2021   - made a change in arpack.c and arpackcs.c: if a preload
+                contains a temperature loading the modal stress should
+		not take into account any thermal stress
+
+ 6 Nov 2021   - adapted the restart capability for coupling,distributing
+
+ 8 Nov 2021   - made a correction in cloaddistributing.f
+
+ 13 Nov 2021  - tried to generalize coupling, distributing
+
+ 15 Nov 2021  - finished generalization of coupling, distributing
+
+ 18 Nov 2021  - corrected some errors in allocation.f
+              - added iprestr to the argument list of restartshort.f
+	        (needed in CalculiX.c)
+	      - introduced the calculation of the principal axes of
+	        inertia for *coupling in combination with *distributing
+              - made a change in restarts.f (allowed for *restart,read
+	        and *restart, write in the same input deck)
+
+ 19 Nov 2021  - made an update for massless frictionless contact (start)
+
+ 23 Nov 2021  - made a change in gencontelem_n2f: moved the filling
+                of springarea(2,*)
+
+ 27 Nov 2021  - worked on massless dynamic contact
+
+ 6 Dec 2021   - made a change in gencontelem_f2f: contact overlap is
+                linearly reduced in very step (needed in case some
+		contact definitions are switched on in later steps only)
+              - made a change in adjustcontactnodes: initial clearance
+	        should be calculated in the first step for all contact
+		definitions, no matter whether removed or not
+
+ 8 Dec 2021   - introduced tietol(4,*) to get a linear reduction of the
+                contact overlap only in the first step or after
+		reactivation of a contact pair.
+
+ 10 Dec 2021  - improved an error message in cyclicsymmetrymodels.f
+
+ 11 Dec 2021  - added "9999" to the frd-file after a matrix storage
+                step.

@@ -34,7 +34,7 @@
          version(i:i)=' '
       enddo
 !
-      version='Version 2.18'
+      version='Version 2.19'
 !
       return
       end

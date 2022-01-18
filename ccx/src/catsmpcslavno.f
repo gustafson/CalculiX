@@ -421,7 +421,8 @@
         close(40)
         call exit(201)
       else
-        close(40,status='delete')
+        close(40)
+c        close(40,status='delete')
       endif
 !     
       return

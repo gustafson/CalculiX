@@ -92,7 +92,8 @@ void stress_sen_dx(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   ndim=6;
   iorienglob=0;
   force=0;
-  strcpy1(&cflag[0],&filab[2962],1);
+  //  strcpy1(&cflag[0],&filab[2962],1);
+  strcpy1(&cflag[0],&filab[178],1);
   
   FORTRAN(extrapolate_se,(dstx,dstn,ipkon,inum,kon,lakon,
 			  &nfield,nk,ne,mi,&ndim,orab,ielorien,co,&iorienglob,

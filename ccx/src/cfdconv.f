@@ -26,7 +26,7 @@
       integer iconvergence,iit,iturbulent,mi(*),nk,ithermal(*),i,j,
      &     nmethod,iexplicit
 !     
-      real*8 v(0:mi(2),*),vold(0:mi(2),*),vcon(0:mi(2),*),vmax(0:6),
+      real*8 v(nk,0:mi(2)),vold(0:mi(2),*),vcon(nk,0:mi(2)),vmax(0:6),
      &     vconmax(0:6),ratio(0:6),dtimef
 !     
 !     first subiteration: calculate the size of the conservative
@@ -39,21 +39,21 @@
       if(iexplicit.eq.1) then
 !     
 !     for incompressible fluids the density is stored
-!     in vcon(4,*), the change in density in v(4,*)
+!     in vcon(4,*), the change in density in v(*,4)
 !     
         do i=1,nk
           do j=0,4
-            vconmax(j)=vconmax(j)+vcon(j,i)**2
+            vconmax(j)=vconmax(j)+vcon(i,j)**2
           enddo
         enddo
       else
         do i=1,nk
           do j=0,3
-            vconmax(j)=vconmax(j)+vcon(j,i)**2
+            vconmax(j)=vconmax(j)+vcon(i,j)**2
           enddo
 !     
 !     for incompressible fluids the pressure is stored
-!     in vold(4,*), the change in pressure in v(4,*)
+!     in vold(4,*), the change in pressure in v(*,4)
 !     
           vconmax(4)=vconmax(4)+vold(4,i)**2
         enddo
@@ -61,7 +61,7 @@
       if(iturbulent.ne.0) then
         do i=1,nk
           do j=5,6
-            vconmax(j)=vconmax(j)+vcon(j,i)**2
+            vconmax(j)=vconmax(j)+vcon(i,j)**2
           enddo
         enddo
       endif
@@ -76,29 +76,29 @@
       if(iexplicit.eq.1) then
 !     
 !     for incompressible fluids the density is stored
-!     in vcon(4,*), the change in density in v(4,*)
+!     in vcon(*,4), the change in density in v(*,4)
 !     
         do i=1,nk
           do j=0,4
-            vmax(j)=vmax(j)+v(j,i)**2
+            vmax(j)=vmax(j)+v(i,j)**2
           enddo
         enddo
       else
         do i=1,nk
           do j=0,3
-            vmax(j)=vmax(j)+v(j,i)**2
+            vmax(j)=vmax(j)+v(i,j)**2
           enddo
 !     
 !     for incompressible fluids the pressure is stored
-!     in vold(4,*), the change in pressure in v(4,*)
+!     in vold(4,*), the change in pressure in v(*,4)
 !     
-          vmax(4)=vmax(4)+v(4,i)**2
+          vmax(4)=vmax(4)+v(i,4)**2
         enddo
       endif
       if(iturbulent.ne.0) then
         do i=1,nk
           do j=5,6
-            vmax(j)=vmax(j)+v(j,i)**2
+            vmax(j)=vmax(j)+v(i,j)**2
           enddo
         enddo
       endif

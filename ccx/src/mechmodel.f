@@ -71,7 +71,7 @@
       elseif(kode.eq.-50) then
          mattyp=3
          call defplas(elconloc,elas,emec,ithermal,icmd,beta,stre,
-     &     ckl,vj)
+     &     ckl,vj,xstate,nstate_,iel,iint,mi)
       elseif(kode.gt.-100) then
          mattyp=3
          if(iperturb(2).eq.1) then

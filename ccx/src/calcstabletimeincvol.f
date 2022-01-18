@@ -111,7 +111,7 @@
       critom=0.98d0*(-damping*(1.d0+2.d0*alpha*(1.d0-gam))+critom)
      &     /(gam+2.d0*alpha*(gam-bet)) !eq 25 miranda
 
-      write(*,*)'++CMT: Calculating Material Wave Speeds...'
+      write(*,*)'Calculating Material Wave Speeds...'
       write(*,*)
 !
       null=0
@@ -469,7 +469,8 @@ c               call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
             write(*,*)
             close(40)
           else
-            close(40,status='delete')
+            close(40)
+c            close(40,status='delete')
           endif
 !
           dtset=dtset*safefac

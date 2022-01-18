@@ -315,35 +315,6 @@ c      if(intscheme.eq.0) then
         else
           mint3d=0
         endif
-c      else
-c        if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
-c          mint3d=27
-c          if(lakonl(4:4).eq.'8') then
-c            if(lakonl(5:5).eq.'R') then
-c              mint2d=1
-c            else
-c              mint2d=4
-c            endif
-c          else
-c            if(lakonl(6:6).eq.'R') then
-c              mint2d=4
-c            else
-c              mint2d=9
-c            endif
-c          endif
-c        elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
-c          mint3d=15
-c          if(lakonl(4:5).eq.'10') then
-c            mint2d=3
-c          else
-c            mint2d=1
-c          endif
-c        elseif((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
-c          mint3d=9
-c        else
-c          mint3d=0
-c        endif
-c      endif
 !     
 !     computation of the coordinates of the local nodes
 !     
@@ -654,24 +625,6 @@ c        if(intscheme.eq.0) then
             ze=gauss3d7(3,kk)
             weight=weight3d7(kk)
           endif
-c        else
-c          if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
-c            xi=gauss3d3(1,kk)
-c            et=gauss3d3(2,kk)
-c            ze=gauss3d3(3,kk)
-c            weight=weight3d3(kk)
-c          elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
-c            xi=gauss3d6(1,kk)
-c            et=gauss3d6(2,kk)
-c            ze=gauss3d6(3,kk)
-c            weight=weight3d6(kk)
-c          else
-c            xi=gauss3d8(1,kk)
-c            et=gauss3d8(2,kk)
-c            ze=gauss3d8(3,kk)
-c            weight=weight3d8(kk)
-c          endif
-c        endif
 !     
 !     calculation of the shape functions and their derivatives
 !     in the gauss point
@@ -1937,7 +1890,7 @@ c     mortar end
         endif
       endif
 !     
-      if((mass.eq.1).and.(iexpl.gt.1)) then
+      if((mass.eq.1).and.(iexpl.gt.1).and.(mortar.ne.-1) ) then
 !     
 !     scaling the diagonal terms of the mass matrix such that the total mass
 !     is right (LUMPING; for explicit dynamic calculations)

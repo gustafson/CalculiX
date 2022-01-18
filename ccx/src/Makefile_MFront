@@ -13,7 +13,7 @@ FC=gfortran
 
 include Makefile.inc
 
-SCCXMAIN = ccx_2.18.c
+SCCXMAIN = ccx_2.19.c
 
 OCCXF = $(SCCXF:.f=.o)
 OCCXC = $(SCCXC:.c=.o)
@@ -26,9 +26,9 @@ LIBS = $(DIR)/spooles.a \
      -lblas    \
      -lpthread -lm -lc -ldl
 
-ccx_2.18_helfer: $(OCCXMAIN) libccx_2.18_helfer.so
-	./date.pl; $(CC) $(CFLAGS) -c ccx_2.18.c;
-	$(FC) -fopenmp -Wall -O3 -o $@ $(OCCXMAIN) -L. -lccx_2.18_helfer $(LIBS)
+ccx_2.19_helfer: $(OCCXMAIN) libccx_2.19_helfer.so
+	./date.pl; $(CC) $(CFLAGS) -c ccx_2.19.c;
+	$(FC) -fopenmp -Wall -O3 -o $@ $(OCCXMAIN) -L. -lccx_2.19_helfer $(LIBS)
 
-libccx_2.18_helfer.so: $(OCCXF) $(OCCXC)
+libccx_2.19_helfer.so: $(OCCXF) $(OCCXC)
 	$(FC) --shared  $(OCCXF) $(OCCXC) -o $@ 

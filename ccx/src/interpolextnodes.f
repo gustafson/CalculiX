@@ -21,12 +21,12 @@
      &     temp,nstep)
 !     
 !     interpolation of the master file stress results to the 
-!     bounal nodes of the crack shape(s)
+!     boundary nodes of the crack shape(s)
 !     
       implicit none
 !     
       integer ibounnod(*),nbounnod,integerglob(*),nktet,netet,ne,
-     &     nkon,nfaces,nfield,nselect,imastset,iselect(6),nterms,
+     &     nkon,nfaces,nfield,nselect,imastset,iselect(7),nterms,
      &     nelem,ialset(1),ifront(*),nfront,ifrontrel(*),kflag,
      &     iendset(1),istartset(1),konl(20),loopa,nstep,
      &     node,i,j,k,l,m,iconstant

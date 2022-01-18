@@ -45,7 +45,7 @@
 !
       real*8 cg(3,*),straight(16,*),co(3,*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),pl(3,9),
-     &  ratio(9),xi,et,coefmpc(*),tietol(3,*),tolloc
+     &  ratio(9),xi,et,coefmpc(*),tietol(4,*),tolloc
 !
 !     nodes per face for hex elements
 !
@@ -727,7 +727,8 @@ c     &                                tietol(1,i)
         write(*,*)
         close(40)
       else
-        close(40,status='delete')
+        close(40)
+c        close(40,status='delete')
       endif
 !     
       return

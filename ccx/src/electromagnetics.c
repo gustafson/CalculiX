@@ -744,7 +744,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
     RENEW(iendset,ITG,*nset+3);
     RENEW(ialset,ITG,*nalset+6**ne);
     RENEW(tieset,char,243*(*ntie+5));
-    RENEW(tietol,double,3*(*ntie+5));
+    RENEW(tietol,double,4*(*ntie+5));
       
     FORTRAN(createtiedsurfs,(nodface,ipoface,set,istartset,
 			     iendset,ialset,tieset,inomat,ne,ipkon,lakon,kon,ntie,
@@ -756,7 +756,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
     RENEW(iendset,ITG,*nset);
     RENEW(ialset,ITG,*nalset);
     RENEW(tieset,char,243**ntie);
-    RENEW(tietol,double,3**ntie);
+    RENEW(tietol,double,4**ntie);
       
     /* tied contact constraints: generate appropriate MPC's */
       

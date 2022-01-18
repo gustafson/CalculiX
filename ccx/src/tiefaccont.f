@@ -514,14 +514,15 @@ c     inoels(2,ifreenoels)=ifreenoelold
 !     for massless contact: marking the elements adjacent to
 !     the slave faces with the slave face number
 !
-          if(mortar.eq.-1) then
-            do j=itiefac(1,i),itiefac(2,i)
-              iface=islavsurf(1,j)
-              nelem=int(iface/10.d0)
-              jface=iface-10*nelem
-              write(lakon(nelem)(7:7),'(i1)') jface
-            enddo
-          endif
+c   TODO CMT: label SLAVE faces for contact IF mass redistribution
+c          if(mortar.eq.-1) then
+c            do j=itiefac(1,i),itiefac(2,i)
+c              iface=islavsurf(1,j)
+c              nelem=int(iface/10.d0)
+c              jface=iface-10*nelem
+c              write(lakon(nelem)(7:7),'(i1)') jface
+c            enddo
+c          endif
 !     
 !     determining the master surface
 !     

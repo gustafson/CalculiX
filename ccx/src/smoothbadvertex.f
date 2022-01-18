@@ -29,7 +29,7 @@
      &     iponn(*),neigh,inn(2,*),ier,kontet(4,*),ipoeln(*),ieln(2,*),
      &     ipoeled(*),ieled(2,*),iedgmid(*),iedtet(6,*),iedge
 !     
-      real*8 cotet(3,*),cpycotet(3),x(3),fuvertex,eps(3),fmin
+      real*8 cotet(3,*),cpycotet(3),x(3),fuvertex,eps(3),fmin,ref
 !     
       external fuvertex
 !     
@@ -56,11 +56,21 @@
      &     ipoeled,ieled,iedgmid,iedtet)
 !     
 !     calling the optimizer
-!     
-        ier=0
-        call fminsirefine(n,x,fuvertex,eps,fmin,ier,cotet,
-     &       kontet,ipoeln,ieln,neigh,iedge,
-     &       ipoeled,ieled,iedgmid,iedtet)
+!
+        ref=fmin
+        do
+          ier=0
+          call fminsirefine(n,x,fuvertex,eps,fmin,ier,cotet,
+     &         kontet,ipoeln,ieln,neigh,iedge,
+     &         ipoeled,ieled,iedgmid,iedtet)
+          if(ier.ne.0) then
+            exit
+          elseif(fmin.ge.ref) then
+            exit
+          else
+            ref=fmin
+          endif
+        enddo
 !     
 !     restoring the original coordinates in case of error
 !     

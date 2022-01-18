@@ -156,7 +156,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       imass=1;
     }else if(strcmp1(&objectset[i*405],"STRAINENERGY")==0){
       ishapeenergy=1;
-    }else if(strcmp1(&objectset[i*405],"STRESS")==0){
+    }else if((strcmp1(&objectset[i*405],"STRESS")==0)||
+	     (strcmp1(&objectset[i*405],"EQPLASTICSTRAIN")==0)){
       idisplacement=1;
     }
   }

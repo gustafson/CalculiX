@@ -28,7 +28,7 @@
       real*8 s(3,3),stress(6,nstep,*),xt(3,*),xn(3,*),xa(3,*),
      &     dk1(nstep,*),dk2(nstep,*),dk3(nstep,*),xkeq(nstep,*),
      &     phi(nstep,*),psi(nstep,*),pi,c2,c3,c4,term,
-     &     acrack(nstep,*),ratio,constant,t(3),shape(3,*),c1
+     &     acrack(*),ratio,constant,t(3),shape(3,*),c1
 !     
       pi=4.d0*datan(1.d0)
       c2=70.d0*pi/180.d0
@@ -68,7 +68,7 @@
 !     
 c          write(*,*) 'sh1 ',shape(1,i),shape(2,i),shape(3,i)
 c          write(*,*)
-          constant=dsqrt(pi*acrack(m,i))
+          constant=dsqrt(pi*acrack(i))
           dk1(m,i)=dk1(m,i)*shape(1,i)*constant
           dk2(m,i)=dk2(m,i)*shape(2,i)*constant
           dk3(m,i)=dk3(m,i)*shape(3,i)*constant

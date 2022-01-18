@@ -31,7 +31,7 @@
       integer istep,istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),ntie,ntie_,ipoinpc(0:*),nset,itype,ier,id
 !
-      real*8 tietol(3,*)
+      real*8 tietol(4,*)
 !
 !     Check of correct position in Inputdeck
 !
@@ -106,9 +106,6 @@
 !
 !        Check existence of the node set
 !
-c         do i=1,nset
-c            if(set(i).eq.tieset(2,ntie)) exit
-c         enddo
          call cident81(set,tieset(2,ntie),nset,id)
          i=nset+1
          if(id.gt.0) then

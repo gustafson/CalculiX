@@ -113,6 +113,7 @@
 !     can be changed by user: fifth entry underneath *CFD)
 !     
         dt(i)=dt(i)/tincf
+c        dt(i)=dt(i)/10.d0
 !     
         if(dt(i).lt.dtimef) then
           dtimef=dt(i)

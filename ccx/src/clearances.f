@@ -34,7 +34,7 @@
      &  inp(3,*),ntie,ipoinpc(0:*),iposslave,iposmaster,itie,istep,
      &  ier
 !
-      real*8 tietol(3,*),value
+      real*8 tietol(4,*),value
 !
       if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *CLEARANCE: *CLEARANCE should be'

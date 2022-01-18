@@ -19,7 +19,7 @@
       subroutine modelchanges(inpc,textpart,tieset,istat,n,iline,
      &           ipol,inl,ipoinp,inp,ntie,ipoinpc,istep,ipkon,nset,
      &           istartset,iendset,set,ialset,ne,mi,ielmat,iprestr,
-     &           iperturb,ier)
+     &           iperturb,ier,tietol)
 !
 !     reading the input deck: *MODEL CHANGE
 !
@@ -34,7 +34,9 @@
       integer istat,n,i,key,ipos,iline,ipol,inl,ipoinp(2,*),ipkon(*),
      &  inp(3,*),ntie,ipoinpc(0:*),iposslave,iposmaster,itie,istep,
      &  j,k,m,nset,ne,istartset(*),iendset(*),ialset(*),nelem,
-     &  mi(*),ielmat(mi(3),*),iprestr,iperturb(*),ier
+     &     mi(*),ielmat(mi(3),*),iprestr,iperturb(*),ier
+!
+      real*8 tietol(4,*)
 !
       if(istep.eq.0) then
          write(*,*) '*ERROR reading *MODEL CHANGE: *MODEL CHANGE'
@@ -154,7 +156,8 @@
          enddo
 !
          if(add) then
-            tieset(1,itie)(81:81)='C'
+           tieset(1,itie)(81:81)='C'
+           tietol(4,itie)=1.d0
          else
             tieset(1,itie)(81:81)='-'
          endif

@@ -303,12 +303,6 @@ c              enddo
               return
             endif
             if(ndir.le.6) then
-c     elseif(ndir.eq.4) then
-c     ndir=5
-c     elseif(ndir.eq.5) then
-c     ndir=6
-c     elseif(ndir.eq.6) then
-c     ndir=7
             elseif(ndir.eq.8) then
               ndir=4
             elseif(ndir.eq.11) then

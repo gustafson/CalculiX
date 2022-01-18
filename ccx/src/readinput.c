@@ -42,7 +42,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
     nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon,
     ifile,mcs,initialtemperature=0,nprop,mortar,ifacecount,
     nintpoint,infree[4],iheading=0,ichangesurfacebehavior=0,
-    nef,mpcend,nheading_,network; 
+    nef,mpcend,nheading_,network,nfc,ndc,iprestr; 
 
   /* initialization */
 
@@ -375,7 +375,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
               &ne1d,&ne2d,&nflow,set,meminset,rmeminset,jobnamec,
 	      &irestartstep,&icntrl,ithermal,&nener,&nstate,&ntie,
 	      &nslavs,&nkon,&mcs,&nprop,&mortar,&ifacecount,&nintpoint,
-	      infree,&nef,&mpcend,&nheading_,&network));
+	      infree,&nef,&mpcend,&nheading_,&network,&nfc,&ndc,&iprestr));
             FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"RESTART,READ",
                               nline,&ikey));
 	  }

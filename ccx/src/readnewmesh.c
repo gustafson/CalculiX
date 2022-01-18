@@ -51,7 +51,7 @@ void readnewmesh(char *jobnamec,ITG *nboun,ITG *nodeboun,ITG *iamboun,
 		 ITG *ikboun,ITG *ifreebody,ITG **ipobodyp,ITG *nbody,
 		 ITG **iprfnp,ITG **konrfnp,double **ratiorfnp,ITG *nodempcref,
 		 double *coefmpcref,ITG *memmpcref_,ITG *mpcfreeref,
-		 ITG *maxlenmpcref,ITG *maxlenmpc,ITG *norien)
+		 ITG *maxlenmpcref,ITG *maxlenmpc,ITG *norien,double *tietol)
 {
 
   char masterrfnfile[132]="",fnrfn[132]="",*inpc=NULL,*labmpc=NULL,*lakon=NULL,
@@ -153,7 +153,7 @@ void readnewmesh(char *jobnamec,ITG *nboun,ITG *nodeboun,ITG *iamboun,
 			  nalset,nalset_,mi,kon,ipkon,lakon,nkon,ne,ne_,
 			  iponor,xnor,istep,ipoinp,inp,iaxial,ipoinpc,
 			  network,nlabel,iuel,&nuel_,ielmat,inpc,iperturb,
-			  iprestr,nk,nk_,ntie,tieset,iparentel));
+			  iprestr,nk,nk_,ntie,tieset,iparentel,tietol));
 
     RENEW(iparentel,ITG,*ne);
 

@@ -23,15 +23,15 @@
 #include "CalculiX.h"
 
 void resultsini(ITG *nk,double *v,ITG *ithermal,char *filab,ITG *iperturb,
-		 double *f,double *fn,ITG *nactdof,ITG *iout,double *qa,
-		 double *vold,double *b,ITG *nodeboun,ITG *ndirboun,
-		 double *xboun,ITG *nboun,ITG *ipompc,ITG *nodempc,
-		 double *coefmpc,char *labmpc,ITG *nmpc,ITG *nmethod,
-		 double *cam,ITG *neq,double *veold,double *accold,
-		 double *bet,double *gam,double *dtime,ITG *mi,double *vini,
-		 ITG *nprint,char *prlab,ITG *intpointvarm,ITG *calcul_fn,
-		 ITG *calcul_f,ITG *calcul_qa,ITG *calcul_cauchy,ITG *ikin,
-		 ITG *intpointvart,char *typeboun,ITG *num_cpus){
+		double *f,double *fn,ITG *nactdof,ITG *iout,double *qa,
+		double *vold,double *b,ITG *nodeboun,ITG *ndirboun,
+		double *xboun,ITG *nboun,ITG *ipompc,ITG *nodempc,
+		double *coefmpc,char *labmpc,ITG *nmpc,ITG *nmethod,
+		double *cam,ITG *neq,double *veold,double *accold,
+		double *bet,double *gam,double *dtime,ITG *mi,double *vini,
+		ITG *nprint,char *prlab,ITG *intpointvarm,ITG *calcul_fn,
+		ITG *calcul_f,ITG *calcul_qa,ITG *calcul_cauchy,ITG *ikin,
+		ITG *intpointvart,char *typeboun,ITG *num_cpus,ITG *mortar){
 
     ITG mt,i,j,node,ndir,ist,index,incrementalmpc;
 
@@ -53,6 +53,8 @@ void resultsini(ITG *nk,double *v,ITG *ithermal,char *filab,ITG *iperturb,
 			    continue;
 			}
 			v[mt*i+j]+=bnac;
+			/* FORTRAN(addshell,(nactdof,&i,b,mi,iperturb,
+					     nmethod,cam,v));*/
 			if((iperturb[0]!=0)&&(abs(*nmethod)==1)){
 			    if(fabs(bnac)>cam[0]){
 				cam[0]=fabs(bnac);
@@ -88,7 +90,7 @@ void resultsini(ITG *nk,double *v,ITG *ithermal,char *filab,ITG *iperturb,
 
 	    if(ithermal[0]!=2){
 		iniparll(&mt,nactdof,b,v,veold,accold,bet,gam,
-			 dtime,cam,nk,num_cpus);
+			 dtime,cam,nk,num_cpus,mortar);
 	    }
 	    
 	    /* transient thermal step */
