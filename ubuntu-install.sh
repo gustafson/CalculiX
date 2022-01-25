@@ -24,5 +24,6 @@ cd ccx/src
 make -j4 -f Makefile.ubuntu
 
 echo "Install"
-sudo cp ccx/src/ccx_2.19 /usr/local/bin/
+[[ -d /usr/local/bin ]] || sudo mkdir -p /usr/local/bin
+sudo cp ccx_2.19 /usr/local/bin/
 sudo ln -s /usr/local/bin/ccx_2.19 /usr/local/bin/ccx
