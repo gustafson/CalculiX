@@ -22,3 +22,7 @@ sudo apt-get install libexodusii-dev libspooles-dev libblas3 libblas-dev \
 echo Compiling source
 cd ccx/src
 make -j4 -f Makefile.ubuntu
+
+echo "Install"
+sudo cp ccx/src/ccx_2.19 /usr/local/bin/
+sudo ln -s /usr/local/bin/ccx_2.19 /usr/local/bin/ccx
