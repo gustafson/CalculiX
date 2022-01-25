@@ -22,7 +22,7 @@
      &  ithermal,cs,ics,tieset,istartset,
      &  iendset,ialset,ipompc,nodempc,coefmpc,nmpc,nmpc_,ikmpc,
      &  ilmpc,mpcfree,mcs,set,nset,labmpc,ipoinpc,iexpl,nef,ttime,
-     &  iaxial,nelcon,nmat,tincf,ier,jobnamec,matname)
+     &  iaxial,nelcon,nmat,ier,jobnamec,matname)
 !
 !     reading the input deck: *CRACKPROPAGATION
 !
@@ -36,7 +36,7 @@
 !
       implicit none
 !
-      logical timereset
+      logical timereset,input
 !
       character*1 inpc(*)
       character*20 labmpc(*),solver
@@ -50,7 +50,7 @@
      &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*),
      &  nef,iaxial,nelcon(2,*),nmat,ier,j,k,l
 !
-      real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*),ttime,tincf
+      real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*),ttime
 !
       idrct=0
       tinc=0.d0
@@ -58,6 +58,7 @@
       tmin=0.d0
       tmax=3.5d0
       timereset=.false.
+      input=.false.
 !
       if(istep.ne.1) then
          write(*,*) '*ERROR reading *CRACK PROPAGATION:'
@@ -75,8 +76,6 @@
               tmax=1.5d0
             elseif(textpart(i)(8:19).eq.'INTERSECTION') then
               tmax=2.5d0
-            elseif(textpart(i)(8:16).eq.'PRINCIPAL') then
-              tmax=3.5d0
             else
               write(*,*)
      &             '*ERROR reading *CRACK PROPAGATION: nonexistent'
@@ -85,7 +84,8 @@
               call inputerror(inpc,ipoinpc,iline,
      &             "*CRACK PROPAGATION%",ier)
             endif
-         elseif(textpart(i)(1:6).eq.'INPUT=') then
+          elseif(textpart(i)(1:6).eq.'INPUT=') then
+            input=.true.
             jobnamec(4)(1:126)=textpart(i)(7:132)
             jobnamec(4)(127:132)='      '
             loop1: do j=1,126
@@ -111,6 +111,17 @@
      &"*CRACKPROPAGATION%")
          endif
       enddo
+!     
+!     check for the INPUT parameter
+!
+      if(.not.input) then
+        write(*,*) 
+     &     '*ERROR reading *CRACK PROPAGATION: no input file specified:'
+        write(*,*) '         ',
+     &       textpart(i)(1:index(textpart(i),' ')-1)
+        call inputerror(inpc,ipoinpc,iline,
+     &       "*CRACK PROPAGATION%")
+      endif
 !
 !     check for the existence of the material
 !

@@ -32,14 +32,12 @@
      &     nstep,m
 !     
       real*8 xp,yp,zp,costruc(3,*),distforward,distbackward,dist(*),
-     &     radius,sum,temp,acrack(nstep,*),amin(*),alpha,a(nstep,*)
+     &     radius,sum,temp,acrack(*),amin(*),alpha,a(*)
 !     
 !     copy the crack length in temporary field a
 !     
       do i=1,nfront
-        do m=1,nstep
-          a(m,i)=acrack(m,i)
-        enddo
+          a(i)=acrack(i)
       enddo
 !     
       do i=1,nnfront
@@ -162,24 +160,20 @@
 !     
 !     calculate the weighted mean
 !     
-          do m=1,nstep
             sum=0.d0
             temp=0.d0
             do k=1,n
               node=idist(k)
               alpha=1.d0-dist(node)/radius
               sum=sum+alpha
-              temp=temp+alpha*a(m,node)
+              temp=temp+alpha*a(node)
             enddo
-            acrack(m,j)=temp/sum
-          enddo
+            acrack(j)=temp/sum
         enddo
 !     
         if(isubsurffront(i).eq.0) then
-          do m=1,nstep
-            acrack(m,istartfront(i))=acrack(m,istartfront(i)+1)
-            acrack(m,iendfront(i))=acrack(m,iendfront(i)-1)
-          enddo
+            acrack(istartfront(i))=acrack(istartfront(i)+1)
+            acrack(iendfront(i))=acrack(iendfront(i)-1)
         endif
       enddo
 !     
@@ -191,10 +185,8 @@ c      write(*,*)
 c      do i=1,ncrack
 c        amin(i)=1.d30
 c        do j=istartcrackfro(i),iendcrackfro(i)
-c          do m=1,nstep
-c            amin(i)=min(amin(i),acrack(m,j))
-c            write(*,*) 'cracklength ',j,m,acrack(m,j)
-c          enddo
+c            amin(i)=min(amin(i),acrack(j))
+c            write(*,*) 'cracklength ',j,m,acrack(j)
 c        enddo
 c      enddo
 !     

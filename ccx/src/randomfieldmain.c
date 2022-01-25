@@ -402,7 +402,7 @@ void randomfieldmain(ITG *kon,ITG *ipkon,char *lakon,ITG *ne,ITG *nmpc,
     FORTRAN(stop,());
 #endif
   }
-  else if(*isolver==6){
+  /*  else if(*isolver==6){
 #ifdef MATRIXSTORAGE
     matrixstorage(ad,&au,adb,aub,&trace,icols,&irows,ndesi,&nzss,
 		  ntrans,inotr,trab,co,nk,nactdof,jobnamec,mi,ipkon,
@@ -411,7 +411,7 @@ void randomfieldmain(ITG *kon,ITG *ipkon,char *lakon,ITG *ne,ITG *nmpc,
     printf("*ERROR in randomfieldmain: the MATRIXSTORAGE library is not linked\n\n");
     FORTRAN(stop,());
 #endif
-  }
+}*/
   else if(*isolver==7){
 #ifdef PARDISO
     pardiso_factor(ad,au,adb,aub,&trace,icols,irows,ndesi,&nzss,

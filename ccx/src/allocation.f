@@ -24,7 +24,7 @@
      &     ntie_,nbody_,nprop_,ipoinpc,nevdamp_,npt_,nslavs,nkon_,mcs,
      &     mortar,ifacecount,nintpoint,infree,nheading_,nobject_,
      &     iuel,iprestr,nstam,ndamp,nef,nbounold,nforcold,nloadold,
-     &     nbodyold,mpcend,irobustdesign)
+     &     nbodyold,mpcend,irobustdesign,nfc_,ndc_)
 !     
 !     calculates a conservative estimate of the size of the 
 !     fields to be allocated
@@ -47,7 +47,7 @@
       character*8 label
       character*20 mpclabel
       character*81 set(*),noset,elset,slavset,mastset,noelset,submset,
-     &     surface,slavsets,slavsett,mastsets,mastsett,surfset,globalset
+     &     surface,slavsets,slavsett,mastsets,mastsett,surfset
       character*132 jobnamec(*),textpart(16)
 !     
       integer nload_,nforc_,nboun_,nk_,ne_,nmpc_,nset_,nalset_,
@@ -60,13 +60,13 @@
      &     neb32,nn,nflow,nradiate,irestartread,irestartstep,icntrl,
      &     irstrt(*),ithermal(*),nener,nstate_,ipoinp(2,*),inp(3,*),
      &     ntie_,nbody_,nprop_,ipoinpc(0:*),nevdamp_,npt_,nentries,
-     &     iposs,iposm,nslavs,nlayer,nkon_,nopeexp,k,iremove,mcs,
+     &     iposs,iposm,nslavs,nlayer,nkon_,nopeexp,iremove,mcs,
      &     ifacecount,nintpoint,mortar,infree(4),nheading_,icfd,
      &     multslav,multmast,nobject_,numnodes,iorientation,id,
      &     irotation,itranslation,nuel,iuel(4,*),number,four,
      &     iprestr,nstam,ier,ndamp,nef,nbounold,nforcold,nloadold,
-     &     nbodyold,mpcend,irobustdesign(3),iflag,network,memglobal,
-     &     nsubmodel
+     &     nbodyold,mpcend,irobustdesign(3),iflag,network,
+     &     nsubmodel,nfc_,ndc_
 !     
       real*8 temperature,tempact,xfreq,tpinc,tpmin,tpmax
 !     
@@ -210,8 +210,6 @@
 !     check for element set
 !     
             elset(ipos:ipos)='E'
-c            do i=1,nset_
-c              if(set(i).eq.elset) then
             call cident81(set,elset,nset_,id)
             i=nset_+1
             if(id.gt.0) then
@@ -223,7 +221,6 @@ c              if(set(i).eq.elset) then
                   memmpc_=memmpc_+4*ibound*meminset(i)
                   nk_=nk_+meminset(i)
                 endif
-c                exit
               endif
             endif
             if(i.gt.nset_) then
@@ -231,8 +228,6 @@ c                exit
 !     check for facial surface
 !     
               elset(ipos:ipos)='T'
-c              do i=1,nset_
-c                if(set(i).eq.elset) then
               call cident81(set,elset,nset_,i)
               if(i.gt.0) then
                 if(set(i).eq.elset) then
@@ -242,7 +237,6 @@ c                if(set(i).eq.elset) then
                     memmpc_=memmpc_+4*ibound*meminset(i)
                     nk_=nk_+meminset(i)
                   endif
-c                  exit
                 endif
               endif
             endif
@@ -289,8 +283,6 @@ c                  exit
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
-c            do i=1,nset_
-c              if(set(i).eq.noset) then
             call cident81(set,noset,nset_,i)
             if(i.gt.0) then
               if(set(i).eq.noset) then
@@ -300,7 +292,6 @@ c              if(set(i).eq.noset) then
                   memmpc_=memmpc_+4*ibound*meminset(i)
                   nk_=nk_+meminset(i)
                 endif
-c                exit
               endif
             endif
           endif
@@ -332,13 +323,10 @@ c                exit
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
-c            do i=1,nset_
-c              if(set(i).eq.noset) then
             call cident81(set,noset,nset_,i)
             if(i.gt.0) then
               if(set(i).eq.noset) then
                 nforc_=nforc_+meminset(i)
-c                exit
               endif
             endif
           endif
@@ -363,8 +351,6 @@ c                exit
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
-c            do i=1,nset_
-c              if(set(i).eq.noset) then
             call cident81(set,noset,nset_,i)
             if(i.gt.0) then
               if(set(i).eq.noset) then
@@ -373,7 +359,6 @@ c              if(set(i).eq.noset) then
                 else
                   nforc_=nforc_+3*meminset(i)
                 endif
-c                exit
               endif
             endif
           endif
@@ -431,18 +416,6 @@ c                exit
           endif
         enddo
         if(surface(1:1).ne.' ') then
-c          do i=1,nset_
-c            surface(ipos:ipos)='T'
-c            if(set(i).eq.surface) then
-c              numnodes=8*meminset(i)
-c              exit
-c            endif
-c            surface(ipos:ipos)='S'
-c            if(set(i).eq.surface) then
-c              numnodes=meminset(i)
-c              exit
-c            endif
-c          enddo
           surface(ipos:ipos)='T'
           call cident81(set,surface,nset_,i)
           if(i.gt.0) then
@@ -510,8 +483,6 @@ c          enddo
 !     and static pressure
 !     
         nk_=nk_+1
-c     nmpc_=nmpc_+5*ncs_
-c     memmpc_=memmpc_+125*ncs_
 !     
 !     change on 11th of Dec. 2020
 !     
@@ -593,6 +564,13 @@ c     memmpc_=memmpc_+125*ncs_
       elseif(textpart(1)(1:22).eq.'*DEFORMATIONPLASTICITY') then
         ncmat_=max(5,ncmat_)
         ntmatl=0
+!
+!     the deformation plasticity model does not have internal
+!     variables. Nevertheless, space is reserved here for an
+!     equivalent plastic strain (used in sensitivity procedures
+!     to minimize plasticity)        
+!
+        nstate_=max(1,nstate_)
         do
           call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &         ipoinp,inp,ipoinpc)
@@ -636,13 +614,10 @@ c     memmpc_=memmpc_+125*ncs_
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
-c            do i=1,nset_
-c              if(set(i).eq.noset) then
             call cident81(set,noset,nset_,i)
             if(i.gt.0) then
               if(set(i).eq.noset) then
                 memmpc_=memmpc_+3*meminset(i)
-c                exit
               endif
             endif
           endif
@@ -683,29 +658,16 @@ c                exit
 !     
             npt_=max(npt_,numnodes)
 !     
-            nmpc_=nmpc_+3*npt_+3
-            memmpc_=memmpc_+6*npt_+3*(npt_+1)
-            nk_=nk_+npt_
+            nfc_=nfc_+3*numnodes
+            nforc_=nforc_+3*numnodes
+            ndc_=ndc_+3
             itranslation=1
           endif
 !     
 !     rotational dofs
 !     
           if(ibound.gt.0) then
-            if(irotation.eq.0) then
-!     
-!     a MPC connecting the dofs 4-6 to dofs 1-3 of
-!     a rotational node; generation of a inhomogeneous
-!     node
-!     
-              nmpc_=nmpc_+3
-              memmpc_=memmpc_+6
-              nk_=nk_+4
-              irotation=1
-            endif
-            nmpc_=nmpc_+ibound
-            memmpc_=memmpc_+ibound*(3*npt_+2)
-            nboun_=nboun_+ibound
+            ndc_=ndc_+ibound
           endif
         enddo
 !     
@@ -760,8 +722,6 @@ c                exit
 !     check for element set
 !     
             elset(ipos:ipos)='E'
-c            do i=1,nset_
-c              if(set(i).eq.elset) then
             call cident81(set,elset,nset_,id)
             i=nset_+1
             if(id.gt.0) then
@@ -772,7 +732,6 @@ c              if(set(i).eq.elset) then
                   nmpc_=nmpc_+meminset(i)
                   memmpc_=memmpc_+3*meminset(i)
                 endif
-c                exit
               endif
             endif
             if(i.gt.nset_) then
@@ -780,8 +739,6 @@ c                exit
 !     check for facial surface
 !     
               elset(ipos:ipos)='T'
-c              do i=1,nset_
-c                if(set(i).eq.elset) then
               call cident81(set,elset,nset_,i)
               if(i.gt.0) then
                 if(set(i).eq.elset) then
@@ -790,7 +747,6 @@ c                if(set(i).eq.elset) then
                     nmpc_=nmpc_+meminset(i)
                     memmpc_=memmpc_+3*meminset(i)
                   endif
-c                  exit
                 endif
               endif
             endif
@@ -885,13 +841,6 @@ c                  exit
           ipos=index(elset,' ')
           elset(ipos:ipos)='E'
           ielset=1
-c     do js=1,nset_
-c     if(set(js).eq.elset) exit
-c     enddo
-c     if(js.gt.nset_) then
-c     nset_=nset_+1
-c     set(nset_)=elset
-c     endif
           call cident81(set,elset,nset_,id)
           js=nset_+1
           if(id.gt.0) then
@@ -1110,6 +1059,8 @@ c     Bernhardi end
               write(*,*) '       ',label
               call inputerror(inpc,ipoinpc,iline,
      &             "*ELEMENT%",ier)
+              call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &             ipoinp,inp,ipoinpc)
               cycle loop
             endif
           endif
@@ -1207,16 +1158,6 @@ c     !
 !     
 !     check whether new set name or old one
 !     
-c     do js=1,nset_
-c     if(set(js).eq.noelset) exit
-c     enddo
-c     if(js.gt.nset_) then
-c     nset_=nset_+1
-c     set(nset_)=noelset
-c     nn=nset_
-c     else
-c     nn=js
-c     endif
         call cident81(set,noelset,nset_,id)
         nn=nset_+1
         if(id.gt.0) then
@@ -1274,8 +1215,6 @@ c     endif
                 else
                   noelset(ipos:ipos)='E'
                 endif
-c                do j=1,nset_
-c                  if(noelset.eq.set(j)) then
                 call cident81(set,noelset,nset_,j)
                 if(j.gt.0) then
                   if(set(j).eq.noelset) then
@@ -1283,7 +1222,6 @@ c                  if(noelset.eq.set(j)) then
      &                   meminset(j)
                     rmeminset(nn)=rmeminset(nn)+
      &                   rmeminset(j)
-c                    exit
                   endif
                 endif
               else
@@ -1403,6 +1341,8 @@ c                    exit
           write(*,*) '       *HEADING card in the input deck'
           call inputerror(inpc,ipoinpc,iline,
      &         "*HEADING%",ier)
+          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &         ipoinp,inp,ipoinpc)
           cycle loop
         endif
         do
@@ -1661,8 +1601,6 @@ c                    exit
               noelset(81:81)=' '
               ipos=index(noelset,' ')
               noelset(ipos:ipos)='N'
-c              do j=1,nset_
-c                if(noelset.eq.set(j)) then
               call cident81(set,noelset,nset_,j)
               if(j.gt.0) then
                 if(set(j).eq.noelset) then
@@ -1681,7 +1619,6 @@ c                if(noelset.eq.set(j)) then
                   else
                     memmpc_=memmpc_+meminset(j)
                   endif
-c                  exit
                 endif
               endif
             else
@@ -1737,13 +1674,6 @@ c                  exit
           ipos=index(noset,' ')
           noset(ipos:ipos)='N'
           inoset=1
-c     do js=1,nset_
-c     if(set(js).eq.noset) exit
-c     enddo
-c     if(js.gt.nset_) then
-c     nset_=nset_+1
-c     set(nset_)=noset
-c     endif
           call cident81(set,noset,nset_,id)
           js=nset_+1
           if(id.gt.0) then
@@ -1842,8 +1772,6 @@ c     endif
           endif
         enddo
         if(surface(1:1).ne.' ') then
-c          do i=1,nset_
-c            if(set(i).eq.surface) then
           call cident81(set,surface,nset_,i)
           if(i.gt.0) then
             if(set(i).eq.surface) then
@@ -1872,7 +1800,6 @@ c            if(set(i).eq.surface) then
      &             +16*meminset(i)
      &             +48*meminset(i)+1
      &             +12*(8*meminset(i)-1)
-c              exit
 !     
             endif
           endif
@@ -1897,14 +1824,11 @@ c              exit
             elset(81:81)=' '
             ipos=index(elset,' ')
             elset(ipos:ipos)='E'
-c            do i=1,nset_
-c              if(set(i).eq.elset) then
             call cident81(set,elset,nset_,i)
             if(i.gt.0) then
               if(set(i).eq.elset) then
                 nload_=nload_+meminset(i)
                 nradiate=nradiate+meminset(i)
-c                exit
               endif
             endif
           endif
@@ -1934,7 +1858,7 @@ c                exit
      &         ne1d,ne2d,nflow,set,meminset,rmeminset,jobnamec,
      &         irestartstep,icntrl,ithermal,nener,nstate_,ntie_,
      &         nslavs,nkon_,mcs,nprop_,mortar,ifacecount,nintpoint,
-     &         infree,nef,mpcend,nheading_,network)
+     &         infree,nef,mpcend,nheading_,network,nfc_,ndc_,iprestr)
           irstrt(1)=-1
           nbounold=nboun_
           nforcold=nforc_
@@ -1979,13 +1903,10 @@ c                exit
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)='N'
-c            do i=1,nset_
-c              if(set(i).eq.noset) then
             call cident81(set,noset,nset_,i)
             if(i.gt.0) then
               if(set(i).eq.noset) then
                 nboun_=nboun_+ibound*meminset(i)
-c                exit
               endif
             endif
           endif
@@ -2013,8 +1934,6 @@ c                exit
           endif
         enddo
         if(noset(1:1).ne.' ') then
-c          do i=1,nset_
-c            if(set(i).eq.noset) then
           call cident81(set,noset,nset_,i)
           if(i.gt.0) then
             if(set(i).eq.noset) then
@@ -2025,8 +1944,6 @@ c            if(set(i).eq.noset) then
             endif
           endif
         elseif(elset(1:1).ne.' ') then
-c          do i=1,nset_
-c            if(set(i).eq.elset) then
           call cident81(set,elset,nset_,i)
           if(i.gt.0) then
             if(set(i).eq.elset) then
@@ -2062,9 +1979,6 @@ c            if(set(i).eq.elset) then
             elset(81:81)=' '
             ipos=index(elset,' ')
             elset(ipos:ipos)='E'
-c            do js=1,nset_
-c              if(set(js).eq.elset) exit
-c            enddo
             call cident81(set,elset,nset_,id)
             js=nset_+1
             if(id.gt.0) then
@@ -2175,9 +2089,6 @@ c            enddo
             mastset(81:81)=' '
             ipos=index(mastset,' ')
             mastset(ipos:ipos)='E'
-c            do i=1,nset_
-c              if(set(i).eq.mastset) exit
-c            enddo
             call cident81(set,mastset,nset_,id)
             i=nset_+1
             if(id.gt.0) then
@@ -2186,27 +2097,6 @@ c            enddo
               endif
             endif
             if(i.le.nset_) then
-cc              nset_=nset_+1
-cc              do k=1,81
-cc                set(nset_)(k:k)=' '
-cc     enddo
-c              globalset(1:7)=' GLOBAL'
-c              do k=8,81
-c                globalset(k:k)=' '
-c              enddo
-c              memglobal=meminset(i)
-c              call cident81(set,globalset,nset_,id)
-c              nset_=nset_+1
-c              do k=nset_,id+2,-1
-c                meminset(k)=meminset(k-1)
-c                rmeminset(k)=rmeminset(k-1)
-c                set(k)=set(k-1)
-c              enddo
-c              set(id+1)=globalset
-c              meminset(id+1)=meminset(id+1)+memglobal
-c              rmeminset(id+1)=rmeminset(id+1)+memglobal
-cc              meminset(nset_)=meminset(nset_)+meminset(i)
-cc              rmeminset(nset_)=rmeminset(nset_)+meminset(i)
               meminset(i)=meminset(i)+meminset(i)
               rmeminset(i)=rmeminset(i)+meminset(i)
             endif
@@ -2221,11 +2111,6 @@ cc              rmeminset(nset_)=rmeminset(nset_)+meminset(i)
 !     
 !     local node or element face set
 !     
-c        nset_=nset_+1
-c        submset(1:6)=' LOCAL'
-c        do k=7,81
-c          globalset(k:k)=' '
-c        enddo
         submset(1:8)='SUBMODEL'
         if(nsubmodel.lt.10) then
           submset(9:10)='00'
@@ -2267,19 +2152,14 @@ c        enddo
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)=selabel
-c            do i=1,nset_-1
-c            do i=1,nset_
-c              if(set(i).eq.noset) then
             call cident81(set,noset,nset_,i)
             if(i.gt.0) then
               if(set(i).eq.noset) then
-c                meminset(nset_)=meminset(nset_)+meminset(i)
                 meminset(js)=meminset(js)+meminset(i)
 !     
 !     surfaces are stored in expanded form 
 !     (no equivalent to generate)
 !     
-c                rmeminset(nset_)=rmeminset(nset_)+meminset(i)
                 rmeminset(js)=rmeminset(js)+meminset(i)
               endif
             endif
@@ -2289,21 +2169,16 @@ c                rmeminset(nset_)=rmeminset(nset_)+meminset(i)
           endif
         enddo
       elseif(textpart(1)(1:9).eq.'*SURFACE ') then
-c        nset_=nset_+1
         sulabel='T'
         do i=2,n
           if(textpart(i)(1:5).eq.'NAME=')
      &         then
-c            set(nset_)=textpart(i)(6:85)
-c            set(nset_)(81:81)=' '
             surfset=textpart(i)(6:85)
             surfset(81:81)=' '
           elseif(textpart(i)(1:9).eq.'TYPE=NODE') then
             sulabel='S'
           endif
         enddo
-c        ipos=index(set(nset_),' ')
-c        set(nset_)(ipos:ipos)=sulabel
         ipos=index(surfset,' ')
         surfset(ipos:ipos)=sulabel
         call cident81(set,surfset,nset_,id)
@@ -2333,8 +2208,6 @@ c        set(nset_)(ipos:ipos)=sulabel
             noset(81:81)=' '
             ipos=index(noset,' ')
             noset(ipos:ipos)=selabel
-c            do i=1,nset_-1
-c              if(set(i).eq.noset) then
             call cident81(set,noset,nset_,i)
             if(i.gt.0) then
               if(set(i).eq.noset) then
@@ -2437,21 +2310,6 @@ c              if(set(i).eq.noset) then
         islavset=0
         imastset=0
 !     
-c        do i=1,nset_
-c          if(set(i).eq.slavsets) then
-c            islavset=i
-c            multslav=1
-c          elseif(set(i).eq.slavsett) then
-c            islavset=i
-c            multslav=8
-c          elseif(set(i).eq.mastsets) then
-c            imastset=i
-c            multmast=1
-c          elseif(set(i).eq.mastsett) then
-c            imastset=i
-c            multmast=8
-c          endif
-c        enddo
         call cident81(set,slavsets,nset_,i)
         if(i.gt.0) then
           if(set(i).eq.slavsets) then
@@ -2493,6 +2351,8 @@ c        enddo
           write(*,*) '       master set:',mastset(1:iposm-1)
           call inputerror(inpc,ipoinpc,iline,
      &         "*TIE%",ier)
+          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
+     &         ipoinp,inp,ipoinpc)
           cycle loop
         endif
         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -2572,13 +2432,10 @@ c        enddo
           endif
         enddo
         if(surface(1:1).ne.' ') then
-c          do i=1,nset_
-c            if(set(i).eq.surface) then
           call cident81(set,surface,nset_,i)
           if(i.gt.0) then
             if(set(i).eq.surface) then
               nload_=nload_+meminset(i)
-c              exit
             endif
           endif
         endif

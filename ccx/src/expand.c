@@ -394,7 +394,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	/* generating the cyclic MPC's (needed for nodal diameters
 	   different from 0 */
 	
-	NNEW(eei,double,6*mi[0]**ne);
+	//	NNEW(eei,double,6*mi[0]**ne);
 
 	DMEMSET(v,0,2*mt**nk,0.);
 	
@@ -475,7 +475,7 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      &intscheme);
 	    
 	}
-	SFREE(eei);
+	//	SFREE(eei);
 
 	/* mapping the results to the other sectors */
 

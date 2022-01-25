@@ -1044,7 +1044,8 @@ c     enddo
             eme(6,jj,i)=emec(6)
           endif
 !     
-          if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
+c          if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
+          if(iout.gt.0) then
 !     
             eei(1,jj,i)=eloc(1)
             eei(2,jj,i)=eloc(2)

@@ -126,11 +126,22 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 	    }
 	}
     }
+    
     if(istep==0){
+
+      /* no global data needed */
+      
 	return;
     }else{
 
-        /* iglob=-1 if global results are from a frequency analysis
+        /* for SUBMODEL calculations the step number just read is
+           positive for global *STATIC calculations (STEP parameter
+           on the *BOUNDARY... card) and negative for global *FREQUENCY
+           calculations (DATA SET parameter on the *BOUNDARY... card).
+           The sign of the step number is now transferred to the
+           iglob parameter, which serves as return (intent out) parameter
+
+           iglob=-1 if global results are from a frequency analysis
            iglob=1  if global results are from a static analysis */
 
 	if(istep<0){

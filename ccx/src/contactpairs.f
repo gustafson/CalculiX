@@ -36,7 +36,7 @@
      &  inp(3,*),ntie,ntie_,iperturb(*),nmat,ipoinpc(0:*),nset,j,
      &  mortar,ncmat_,ntmat_,ier,id
 !
-      real*8 tietol(3,*),adjust,elcon(0:ncmat_,ntmat_,*)
+      real*8 tietol(4,*),adjust,elcon(0:ncmat_,ntmat_,*)
 !
 !     tietol contains information on:
 !            - small (tietol<0) or large (tietol>0) sliding

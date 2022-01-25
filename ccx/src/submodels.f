@@ -36,7 +36,7 @@
      &     iglobset,kincrement,nsubmodel,kflag,idummy,nalsetold,ntie,
      &     ntie_,nlength,namta(3,*),nam,nam_,namtot_,ier,id
 !     
-      real*8 tietol(3,*),amta(2,*)
+      real*8 tietol(4,*),amta(2,*)
 !     
       data kflag /1/
 !     

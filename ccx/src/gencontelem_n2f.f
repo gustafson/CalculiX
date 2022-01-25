@@ -42,19 +42,19 @@
      &  nz(*),nstart,ielmat(mi(3),*),imat,ifaceq(8,6),ifacet(6,4),
      &  ifacew1(4,5),ifacew2(8,5),nelem,jface,indexe,iit,
      &  nface,nope,nodef(9),ncmat_,ntmat_,index1,indexel,
-     &  nmethod,iteller,ifaces,jfaces,irelslavface,number(4),lenset,
+     &  nmethod,ifaces,jfaces,irelslavface,number(4),lenset,
      &  imastop(3,*), itriangle(100),ntriangle,ntriangle_,itriold,
      &  itrinew,id,nslavnode(*),islavnode(*),islavsurf(2,*),
      &  itiefac(2,*),iponoels(*),inoels(2,*),konl(26),nelems,m,
      &  mint2d,nopes,ipos,nset,istartset(*),iendset(*),m1,m2,
      &  ialset(*),length,iorder(4),imastnode(*),nmastnode(*),
-     &  jbasis,kbasis
+     &  jbasis,kbasis,filedebug
 !
       real*8 cg(3,*),straight(16,*),co(3,*),vold(0:mi(2),*),p(3),
      &  dist,xo(*),yo(*),zo(*),x(*),y(*),z(*),c0coef,auw(*),
      &  beta,c0,elcon(0:ncmat_,ntmat_,*),weight,t1(3),t2(3),dt1,
      &  areaslav(*),springarea(2,*),xl2(3,9),area,xi,et,shp2(7,9),
-     &  xs2(3,2),xsj2(3),adjust,tietol(3,*),reltime,xns(3,3),
+     &  xs2(3,2),xsj2(3),adjust,tietol(4,*),reltime,xns(3,3),
      &  clear,ratio(9),pl(3,9),
      &  pproj(3),al(3),xn(3),xm(3),dm,xnoels(*)
 !
@@ -99,10 +99,57 @@
 !
       include "gauss.f"
 !
+!     debugging file
+!
+      filedebug=0
+      if(filedebug.gt.0) then
+         do i=1,132
+            if(jobnamef(1)(i:i).eq.' ') exit
+         enddo
+         i=i-1
+         cfile=jobnamef(1)(1:i)//'.wb'
+         open(88,file=cfile,status='unknown',position='append')
+         setname(1:15)='contactelements'
+         lenset=15
+         number(1)=istep
+         number(2)=iinc
+         number(3)=icutb+1
+         number(4)=iit
+         if(number(4).le.0) number(4)=1
+         do i=1,4
+            setname(lenset+1:lenset+1)='_'
+            if(i.eq.1) then
+               setname(lenset+2:lenset+3)='st'
+            elseif(i.eq.2) then
+               setname(lenset+2:lenset+3)='in'
+            elseif(i.eq.3) then
+               setname(lenset+2:lenset+3)='at'
+            else
+               setname(lenset+2:lenset+3)='it'
+            endif
+            if(number(i).lt.10) then
+               write(setname(lenset+4:lenset+4),'(i1)') number(i)
+               lenset=lenset+4
+            elseif(number(i).lt.100) then
+               write(setname(lenset+4:lenset+5),'(i2)') number(i)
+               lenset=lenset+5
+            elseif(number(i).lt.1000) then
+               write(setname(lenset+4:lenset+6),'(i3)') number(i)
+               lenset=lenset+6
+            else
+               write(*,*) '*ERROR in gencontelem_n2f: no more than 1000'
+               write(*,*) '       steps/increments/cutbacks/iterations'
+               write(*,*) '       allowed (for output in '
+               write(*,*) '       [JOBNAME].wb)'
+               stop
+            endif
+         enddo
+      endif
+!
 !     opening a file to store the contact spring elements
 !    
       if(filab(1)(3:3).eq.'C') then
-         iteller=iteller+1
+c         iteller=iteller+1
 !
          do i=1,132
             if(jobnamef(1)(i:i).eq.' ') exit
@@ -139,7 +186,7 @@
                write(setname(lenset+4:lenset+6),'(i3)') number(i)
                lenset=lenset+6
             else
-               write(*,*) '*ERROR in gencontelem_f2f: no more than 1000'
+               write(*,*) '*ERROR in gencontelem_n2f: no more than 1000'
                write(*,*) '       steps/increments/cutbacks/iterations'
                write(*,*) '       allowed (for output in '
                write(*,*) '       contactelements.inp)'
@@ -148,7 +195,7 @@
          enddo
       endif
 !
-!     massless contact: initialization of nzsw
+!     massless contact: initialization of nzsw (contact matrix W_b)
 !
       if(mortar.eq.-1) nzsw=0
 !
@@ -312,16 +359,12 @@ c               enddo
                   weight=weight2d4(m)
                endif
 !     
-c               if(nopes.eq.9) then
-c                  call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                if(nopes.eq.8) then
                   call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                elseif(nopes.eq.4) then
                   call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
                elseif(nopes.eq.6) then
                   call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
-c               elseif(nopes.eq.7) then
-c                  call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                else
                   call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
                endif
@@ -354,7 +397,11 @@ c                  call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
          call dsort(z,nz,n,kflag)
 !
          do j=nslavnode(i)+1,nslavnode(i+1)
-            if(iit.le.0) springarea(2,j)=0.d0
+            if(mortar.eq.-1)then
+              if((istep.eq.1).and.(iit.lt.0)) springarea(2,j)=0.d0
+            else
+              if(iit.le.0) springarea(2,j)=0.d0
+            endif
             node=islavnode(j)
 !
 !                 calculating the area corresponding to the
@@ -525,6 +572,8 @@ c     write(*,*) '**regular solution'
                      pproj(l)=p(l)
                   enddo
 !
+!                 project node pproj to the face 
+!
                   call attach_2d(pl,pproj,nopes,ratio,dist,xi,et)
 !
                   do l=1,3
@@ -551,12 +600,13 @@ c     write(*,*) '**regular solution'
                   enddo
 !
 !                 massless contact: filling matrix Wb
+!                 including normal vectors on master side
 !
                   if(mortar.eq.-1) then
 !
 !                   determining a local system (cf. springforc_n2f.f)
 !
-                    if(1.d0 - dabs(xn(1)).lt.1.5231d-6) then       
+                    if(1.d0-dabs(xn(1)).lt.1.5231d-6) then       
 !     
 !     calculating the local directions on master surface
 !
@@ -568,6 +618,9 @@ c     write(*,*) '**regular solution'
                       t1(2)=-xn(1)*xn(2)
                       t1(3)=-xn(1)*xn(3)
                     endif
+!
+!                   normalize
+!
                     dt1=dsqrt(t1(1)*t1(1)+t1(2)*t1(2)+t1(3)*t1(3))
                     do m1=1,3
                       t1(m1)=t1(m1)/dt1
@@ -594,15 +647,31 @@ c     write(*,*) '**regular solution'
                     kflag=2
                     call isortii(nodef,iorder,nopes,kflag)
 !
+                    if(filedebug.gt.0)then
+                      ! Writing Wb matrix entries
+                        write(88,102) setname(1:lenset)
+ 102                    format('*DEBUGDATA,TYPE=WB_COL,ELSET=',A)
+                        write(88,*) nopes ! tot master nodes associated to slave node
+                        write(88,*) node ! slave node
+                        write(88,'(I12)')  nodef(1:nopes) ! list master nodes
+                        write(88,'(E12.6)')  -ratio(iorder)! list slave nodes
+!                       write(*,'(E12.6)')  -ratio(iorder)! list slave nodes
+                    endif
+!
                     jbasis=3*(j-1)
+c                     write(*,*) 'jbasis', jbasis
                     do m2=1,3
+c                     write(*,*)'ix@jqw',(jbasis+m2),'jqw(ix)',(nzsw+1)
+!                     Setting new column
                       jqw(jbasis+m2)=nzsw+1
+!                     Filling for DEPENDENT
                       do m1=1,3
                         nzsw=nzsw+1
                         auw(nzsw)=xns(m1,m2)
                         iroww(nzsw)=jbasis+m1
                       enddo
 !
+!                     Filling for INDEPENDENT
                       do k=1,nopes
                         call nident(imastnode(nmastnode(i)+1),
      &                       nodef(k),length,id)
@@ -615,20 +684,20 @@ c     write(*,*) '**regular solution'
                       enddo
 !                          
                     enddo
-                    cycle
+                    if(mortar.ne.-1) cycle ! ommitted to capture clearances???
                   endif
 !
 !                 distance from surface along normal (= clearance)
 !
                   clear=al(1)*xn(1)+al(2)*xn(2)+al(3)*xn(3)
-                  if((istep.eq.1).and.(iit.lt.0.d0)) then
-                     if(clear.lt.0.d0) then
-                        springarea(2,j)=clear
-                     endif
-                  endif
-                  if(nmethod.eq.1) then
-                     clear=clear-springarea(2,j)*(1.d0-reltime)
-                  endif
+c                  if((istep.eq.1).and.(iit.lt.0.d0)) then
+c                     if(clear.lt.0.d0) then
+c                        springarea(2,j)=clear
+c                     endif
+c                  endif
+c                  if(nmethod.eq.1) then
+c                     clear=clear-springarea(2,j)*(1.d0-reltime)
+c                  endif
 !     
 !                 check for an adjust parameter (only at the start
 !                 of the first step)
@@ -663,6 +732,35 @@ c     write(*,*) '**regular solution'
                            clear=0.d0
                         endif
                      endif
+                  endif
+!
+!                 storing  the clearance if penetration takes place,
+!                 i.e. clear <0 at the start of the first step
+!                
+                  if((istep.eq.1).and.(iit.lt.0.d0)) then
+                     if(clear.lt.0.d0) then
+                        springarea(2,j)=clear
+                     endif
+                   endif
+!                   
+                  if(nmethod.eq.1) then
+                     clear=clear-springarea(2,j)*(1.d0-reltime)
+                  endif
+!     
+!     Storing clearance into springareas for contact gap evaluations
+                  if(mortar.eq.-1) then
+                    if((istep.eq.1).and.(iit.lt.0)) then
+                      springarea(2,j)=clear ! working only for MASSLESS
+c     
+c     ! TODO CMT: Taking it into account for N2F contact:
+!     if(tieset(3,i).eq.0.d0) then
+!     springarea(2,j)=clear
+!     else
+!     !TODO CMT: user defined clearance as char, convert to real
+!     springarea(2,j)=tieset(3,i)
+!     endif
+                    endif
+                    cycle
                   endif
 !                           
                   if(int(elcon(3,1,imat)).eq.1) then
@@ -712,21 +810,9 @@ c     write(*,*) '**regular solution'
                      endif
                   endif
 !
-c                  nelem=int(koncont(4,itri)/10.d0)
-c                  jface=koncont(4,itri)-10*nelem
-!
 !                 storing the area corresponding to the slave node
-!                 and the clearance if penetration takes place,
-!                 i.e. clear <0 at the start of the first step
 !                
                   springarea(1,j)=area
-c                  if((istep.eq.1).and.(iit.lt.0.d0)) then
-c                     if(clear.lt.0.d0) then
-c                        springarea(2,j)=clear
-c                     else
-c                        springarea(2,j)=0.d0
-c                     endif
-c                  endif
 !
                   do k=1,nopes
                      kon(ifree+k)=nodef(k)
@@ -765,12 +851,48 @@ c                  endif
 !     
       if(filab(1)(3:3).eq.'C') then
          close(27)
-      endif
+       endif
+       if(filedebug.gt.0) close(88)
 !
 !     complete the definition of jqw for massless contact
 !      
       if(mortar.eq.-1) then
         jqw(3*nslavnode(ntie+1)+1)=nzsw+1
+      endif
+!      
+!     DEBUG PRINT WB MATRIX
+      if((filab(1)(3:3).eq.'C').and.(mortar.eq.-1))then
+!       nmastnode(ntie+1) ! QUESTION: total master nodes?
+        open(unit=31416,file='WbPre_colsort.csv')
+        do i=1,nslavnode(ntie+1)
+            write(31416,*) islavnode(i) ,',N'
+            write(31416,*) islavnode(i) ,',T1'
+            write(31416,*) islavnode(i) ,',T2'
+        enddo
+        close(31416)
+
+        open(unit=31416,file='WbPre_size.csv')
+        write(31416,*) (nmastnode(ntie+1)+nslavnode(ntie+1))*3
+        write(31416,*) nslavnode(ntie+1)*3
+        close(31416)
+
+        open(unit=31416,file='WbPre_auw.csv')
+        do i=1,nzsw
+          write(31416,*) auw(i)
+        enddo
+        close(31416)
+
+         open(unit=31416,file='WbPre_iroww.csv')
+        do i=1,nzsw
+          write(31416,*) iroww(i)
+        enddo
+        close(31416)
+
+         open(unit=31416,file='WbPre_jqw.csv')
+        do i=1,(nslavnode(ntie+1)*3)+1
+          write(31416,*) jqw(i)
+        enddo
+        close(31416)
       endif
 !      
       return

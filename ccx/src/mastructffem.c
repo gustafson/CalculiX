@@ -176,7 +176,7 @@ void mastructffem(ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
     /* defining icolv and jqv */
       
     if(*nk==0){
-      printf("\n*WARNING in mastructf: no degrees of freedom in the generic mass matrix\n\n");
+      printf("\n*WARNING in mastructffem: no degrees of freedom in the generic mass matrix\n\n");
     }
       
     nmast=ifree;

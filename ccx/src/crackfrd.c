@@ -31,7 +31,7 @@ void crackfrd(ITG *nk,ITG *ngraph,ITG *noddiam,double *cs,ITG *kode,ITG *inum,
 	      double *dkeqglob,double *wk1glob,double *wk2glob,double *wk3glob,
 	      double *phiglob,double *dadnglob,double *dnglob,
 	      double *acrackglob,double *xkeqminglob,double *xkeqmaxglob,
-	      ITG *iincglob,double *domstepglob){
+	      ITG *iincglob,double *domstepglob,double *rglob){
 
   /* stores the results in frd format
 
@@ -148,7 +148,7 @@ void crackfrd(ITG *nk,ITG *ngraph,ITG *noddiam,double *cs,ITG *kode,ITG *inum,
     xstaten[nstate_*i+5]=wk2glob[i];
     xstaten[nstate_*i+6]=wk3glob[i];
     xstaten[nstate_*i+7]=phiglob[i]*180./pi;
-    xstaten[nstate_*i+8]=nullr;
+    xstaten[nstate_*i+8]=rglob[i];
     xstaten[nstate_*i+9]=dadnglob[i];
     xstaten[nstate_*i+10]=nullr;
     xstaten[nstate_*i+11]=1.0*iincglob[i];

@@ -57,7 +57,7 @@
      &     rhcon(0:1,ntmat_,*),vold(0:mi(2),*),vcon(nk,0:mi(2)),
      &     temp,physcon(*),xtu,xkin,dvi,dhel(*),px,py,pz,
      &     xl2(3,9),xl(3,26),xs2(3,7),xi,et,ze,xsj,weight,volume,
-     &     shp(4,26),shp2(7,9),factor,area,dhelmax,hmin,dgravity,
+     &     shp(4,26),shp2(7,9),factor,area,hmin,dgravity,
      &     xg(3),xbody(7,*),depth(*),cosangle,cosanglemax,dp(3),dd
 !     
 !     nodes belonging to the element faces
@@ -154,7 +154,6 @@
 !     
 c     write(*,*) 'initialcfdfem element height'
 !     
-      dhelmax=0.d0
       do nelem=1,ne
         if((ipkon(nelem).lt.0).or.(lakon(nelem)(1:1).ne.'F')) cycle
         dhel(nelem)=1.d30
@@ -263,7 +262,6 @@ c     write(*,*) 'initialcfdfem element height'
           dhel(nelem)=min(dhel(nelem),(volume/(area*factor)))
 !     
         enddo
-        dhelmax=max(dhelmax,dhel(nelem))
 !     ENDDO over sides
 c     write(*,*) nelem,dhel(nelem)
       enddo
@@ -286,19 +284,6 @@ c     write(*,*) nelem,dhel(nelem)
         hmin=min(hmin,dh(i))
 !     
       enddo loop
-!     
-!     calculating the scaling factor beta (cf. explicit structural
-!     dynamics with selective schaling - thesis Catharina Czech) and
-!     storing this factor in field dhel
-!     
-      do nelem=1,ne
-        if((ipkon(nelem).lt.0).or.(lakon(nelem)(1:1).ne.'F')) cycle
-        if(dhel(nelem).lt.dhelmax) then
-          dhel(nelem)=(dhelmax/dhel(nelem))**2
-        else
-          dhel(nelem)=1.d0
-        endif
-      enddo
 !
 !     shallow water equations: determine the depth at all fluid nodes
 !     (element length in the direction of the gravity vector)      

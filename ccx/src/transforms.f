@@ -102,9 +102,6 @@
          return
       endif
 !         
-c      do i=1,nset
-c         if(set(i).eq.noset) exit
-c      enddo
       call cident81(set,noset,nset,id)
       i=nset+1
       if(id.gt.0) then

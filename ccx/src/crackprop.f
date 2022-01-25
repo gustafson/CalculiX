@@ -34,7 +34,7 @@
 !     
       real*8 da(*),domphi(*),co(3,*),costruc(3,*),xa(3,*),xn(3,*),
      &     doubleglob(*),coords(3),ratio(20),dist,pi,theta,ctheta,
-     &     stheta,acrack(nstep,*),c(3,3),r0(3),r(3),dadn(*),
+     &     stheta,acrack(*),c(3,3),r0(3),r(3),dadn(*),
      &     value(1),acrackglob(*),datarget,p(3),q(3),dd,al
 !     
       nktet=integerglob(1)
@@ -97,7 +97,7 @@ c     write(*,*) i,da(i)
 !     
 !     store the total crack length in the node
 !     
-          acrackglob(nk)=acrack(1,i)+da(i)
+          acrackglob(nk)=acrack(i)+da(i)
           iincglob(nk)=iinc+1
 !     
           do j=1,3

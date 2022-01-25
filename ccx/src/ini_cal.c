@@ -40,7 +40,8 @@ void ini_cal(char *jobnamec,char *output,char *fneig,char *kind1,char *kind2,
 	     double *ctrl,double *alpha,double *qaold,double *physcon,
 	     ITG *istep,ITG *istat,ITG *iprestr,ITG *kode,ITG *nload,
 	     ITG *nbody,ITG *nforc,ITG *nboun,ITG *nk,ITG *nmpc,ITG *nam,
-	     ITG *nzs_,ITG *nlabel,double *ttime,ITG *iheading){
+	     ITG *nzs_,ITG *nlabel,double *ttime,ITG *iheading,ITG *nfc,
+	     ITG *nfc_,ITG *ndc,ITG *ndc_){
 
   /* used for initialization and re-initialization */
   
@@ -101,6 +102,13 @@ void ini_cal(char *jobnamec,char *output,char *fneig,char *kind1,char *kind2,
   *mpcend=-1;
   *mpcfreeref=-1;
   *icascade=0;
+
+  /* information on *coupling combined with *distributing */
+
+  *nfc_=0;
+  *nfc=0;
+  *ndc_=0;
+  *ndc=0;
 
   /* amplitude information */
   

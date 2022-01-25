@@ -1,4 +1,4 @@
-!      
+!     
 !     CalculiX - A 3-dimensional finite element program
 !     Copyright (C) 1998-2021 Guido Dhondt
 !     
@@ -21,7 +21,7 @@
      &     kontri,isubsurffront,istartcrackfro,iendcrackfro,ncrack,
      &     angle,nstep,ier)
 !     
-!     sorting the crack boundary nodes according to adjacency
+!     creating a local coordinate system at the crack front
 !     
       implicit none
 !     
@@ -29,11 +29,11 @@
      &     node,nodenext,nodelast,noderel,n,ier,iedge,iedgerel,ielem,
      &     matz,nfront,ifrontrel(*),iedno(2,*),ibounedg(*),ieled(2,*),
      &     kontri(3,*),isubsurffront(*),istartcrackfro(*),ncrack,
-     &     iendcrackfro(*),nstep,m
+     &     iendcrackfro(*),nstep,m,n1,n2,n3
 !     
-      real*8 co(3,*),xt(3,*),xn(3,nstep,*),xa(3,nstep,*),dd,s(3,3),w(3),
+      real*8 co(3,*),xt(3,*),xn(3,*),xa(3,*),dd,s(3,3),w(3),
      &     fv1(3),fv2(3),cg(3),stress(6,nstep,*),xtj2m1(3),angle(*),
-     &     z(3,3)
+     &     z(3,3),xn1(3),xn2(3),p12(3),p23(3)
 !     
       do i=1,nnfront
         j1=istartfront(i)
@@ -121,99 +121,81 @@
           angle(i)=xt(1,j1)*xt(1,j2)+xt(2,j1)*xt(2,j2)+xt(3,j1)*xt(3,j2)
           angle(i)=dacos(angle(i))
         endif
+      enddo
 !     
-!     calculating the normal vector n to the largest principal stress
-!     plane
+!     creating a local system based on
+!     - the tangential vector t
+!     - the normal vector on the adjacent triangles of the crack mesh
+!     - a = t x n
+!     the direction of n corresponds according to the corkscrew rule
+!     with the node numbering of the crack elements      
 !     
-!     stress order in cgx: xx,yy,zz,xy,yz,xz
+      do i=1,ncrack
+        do j=istartcrackfro(i),iendcrackfro(i)
 !     
-        do j=j1,j2
+!     normal on the triangle belonging to the one adjacent edge
+!     
           noderel=ifrontrel(j)
-          do m=1,nstep
-            s(1,1)=stress(1,m,noderel)
-            s(1,2)=stress(4,m,noderel)
-            s(1,3)=stress(6,m,noderel)
-            s(2,1)=s(1,2)
-            s(2,2)=stress(2,m,noderel)
-            s(2,3)=stress(5,m,noderel)
-            s(3,1)=s(1,3)
-            s(3,2)=s(2,3)
-            s(3,3)=stress(3,m,noderel)
+          iedgerel=iedno(1,noderel)
+          iedge=ibounedg(iedgerel)
+          ielem=ieled(1,iedge)
 !     
-!     determining the eigenvalues
+          n1=kontri(1,ielem)
+          n2=kontri(2,ielem)
+          n3=kontri(3,ielem)
+          do k=1,3
+            p12(k)=co(k,n2)-co(k,n1)
+            p23(k)=co(k,n3)-co(k,n2)
+          enddo
+          xn1(1)=p12(2)*p23(3)-p12(3)*p23(2)
+          xn1(2)=p12(3)*p23(1)-p12(1)*p23(3)
+          xn1(3)=p12(1)*p23(2)-p12(2)*p23(1)
 !     
-            n=3
-            matz=1
-            ier=0
-            call rs(n,n,s,w,matz,z,fv1,fv2,ier)
-            if(ier.ne.0) then
-              write(*,*)
-     &             '*ERROR in createlocalsys while calculating the'
-              write(*,*) '       eigenvalues/eigenvectors'
-              ier=1
-c              call exit(201)
-            endif
+!     normal on the triangle belonging to the other adjacent edge
 !     
-!     normal to largest principal stress plane
+          iedgerel=iedno(2,noderel)
+          iedge=ibounedg(iedgerel)
+          ielem=ieled(1,iedge)
 !     
-            do k=1,3
-              xn(k,m,j)=z(k,3)
-            enddo
+          n1=kontri(1,ielem)
+          n2=kontri(2,ielem)
+          n3=kontri(3,ielem)
+          do k=1,3
+            p12(k)=co(k,n2)-co(k,n1)
+            p23(k)=co(k,n3)-co(k,n2)
+          enddo
+          xn2(1)=p12(2)*p23(3)-p12(3)*p23(2)
+          xn2(2)=p12(3)*p23(1)-p12(1)*p23(3)
+          xn2(3)=p12(1)*p23(2)-p12(2)*p23(1)
+!     
+!     taking the mean (factor of 2 is not important due to
+!     subsequent normalization)
+!     
+          do k=1,3
+            xn(k,j)=xn1(k)+xn2(k)
+          enddo
 !     
 !     projection on a plane orthogonal to the local tangent vector
-!     (necessary since factory roofing effect is not taken into account)
+!     xm.xt=0 must apply
 !     
-            dd=xn(1,m,j)*xt(1,j)+xn(2,m,j)*xt(2,j)+xn(3,m,j)*xt(3,j)
-            do k=1,3
-              xn(k,m,j)=xn(k,m,j)-dd*xt(k,j)
-            enddo
-!     
-!     normalizing vector xn
-!     
-            dd=dsqrt(xn(1,m,j)*xn(1,m,j)+xn(2,m,j)*xn(2,m,j)
-     &                                  +xn(3,m,j)*xn(3,m,j))
-            do k=1,3
-              xn(k,m,j)=xn(k,m,j)/dd
-            enddo
+          dd=xn(1,j)*xt(1,j)+xn(2,j)*xt(2,j)+xn(3,j)*xt(3,j)
+          do k=1,3
+            xn(k,j)=xn(k,j)-dd*xt(k,j)
           enddo
+!     
+!     normalizing vector xm
+!     
+          dd=dsqrt(xn(1,j)*xn(1,j)+xn(2,j)*xn(2,j)+xn(3,j)*xn(3,j))
+          do k=1,3
+            xn(k,j)=xn(k,j)/dd
+          enddo
+!     
+!     propagation direction a=t x n 
+!     
+          xa(1,j)=xt(2,j)*xn(3,j)-xt(3,j)*xn(2,j)
+          xa(2,j)=xt(3,j)*xn(1,j)-xt(1,j)*xn(3,j)
+          xa(3,j)=xt(1,j)*xn(2,j)-xt(2,j)*xn(1,j)
         enddo
-!     
-!     propagation direction a=+t x n or a=-t x n 
-!     
-        do j=j1,j2
-          node=ifront(j)
-          do m=1,nstep
-            xa(1,m,j)=xt(2,j)*xn(3,m,j)-xt(3,j)*xn(2,m,j)
-            xa(2,m,j)=xt(3,j)*xn(1,m,j)-xt(1,j)*xn(3,m,j)
-            xa(3,m,j)=xt(1,j)*xn(2,m,j)-xt(2,j)*xn(1,m,j)
-            dd=-xa(1,m,j)*co(1,node)-xa(2,m,j)*co(2,node)
-     &                              -xa(3,m,j)*co(3,node)
-!     
-!     the equation of the plane orthogonal to xa and through
-!     node is xa(1,j)*x+xa(2,j)*y+xa(3,j)*z+dd=0
-!     
-!     the direction of xa is away from the crack plane is the center
-!     of gravity cg of an adjacent triangle is such that
-!     xa(1,j)*cg(1)+xa(2,j)*cg(2)+xa(3,j)*cg(3)+dd<0
-!     
-            noderel=ifrontrel(j)
-            iedgerel=iedno(1,noderel)
-            iedge=ibounedg(iedgerel)
-            ielem=ieled(1,iedge)
-            do k=1,3
-              cg(k)=(co(k,kontri(1,ielem))+
-     &             co(k,kontri(2,ielem))+
-     &             co(k,kontri(3,ielem)))/3.d0
-            enddo
-!     
-            if(xa(1,m,j)*cg(1)+xa(2,m,j)*cg(2)+xa(3,m,j)*cg(3)+dd.gt.0)
-     &           then
-            do k=1,3
-              xa(k,m,j)=-xa(k,m,j)
-            enddo
-          endif
-        enddo
-      enddo
       enddo
 !     
 c     do i=1,nfront

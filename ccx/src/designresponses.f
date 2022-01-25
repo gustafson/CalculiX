@@ -33,6 +33,7 @@
 !     MODALSTRESS
 !     STRAIN ENERGY
 !     STRESS
+!     EQUIVALENT PLASTIC STRAIN
 !     
       implicit none
 !     
@@ -184,6 +185,9 @@ c        if(objectset(5,nobject)(1:1).eq.' ') then
         elseif(textpart(1)(1:6).eq.'STRESS') then
           settype='N'
           objectset(1,nobject)(1:6)='STRESS'
+        elseif(textpart(1)(1:23).eq.'EQUIVALENTPLASTICSTRAIN') then
+          settype='N'
+          objectset(1,nobject)(1:15)='EQPLASTICSTRAIN'
         elseif(textpart(1)(1:11).eq.'MODALSTRESS') then
           settype='N'
           objectset(1,nobject)(1:11)='MODALSTRESS'
@@ -230,6 +234,7 @@ c        if(objectset(5,nobject)(1:1).eq.' ') then
 !     parameters rho and the target stress
 !     
         if((objectset(1,nobject)(1:6).eq.'STRESS').or.
+     &       (objectset(1,nobject)(1:15).eq.'EQPLASTICSTRAIN').or.
      &       (objectset(1,nobject)(1:11).eq.'MODALSTRESS'))then
           rho=0.d0
           stress=0.d0

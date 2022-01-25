@@ -87,7 +87,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   ITG *inum=NULL,k,ido,ldz,iparam[11],ipntr[14],lworkl,idir,nherm=1,
     info,rvec=1,*select=NULL,lfin,j,lint,iout=1,nm,index,inode,id,i,idof,
-    ielas=0,icmd=0,kk,l,nkt,icntrl,*kont=NULL,*ipkont=NULL,*inumt=NULL,
+    ielas=1,icmd=0,kk,l,nkt,icntrl,*kont=NULL,*ipkont=NULL,*inumt=NULL,
     *ielmatt=NULL,net,imag,icomplex,kkv,kk6,iinc=1,nev,ncv,kscale=1,
     mxiter,lprev,ilength,ij,i1,i2,iel,ielset,node,indexe,nope,ml1,
     *inocs=NULL,*ielcs=NULL,jj,l1,l2,ngraph,is,jrow,
@@ -392,6 +392,14 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   NNEW(stx,double,6*mi[0]**ne);
   NNEW(eme,double,6*mi[0]**ne);
   NNEW(inum,ITG,*nk);
+
+  /* following fields are needed if *ener==1 or kode<-100 */
+    
+  NNEW(vini,double,mt**nk);
+  NNEW(stiini,double,6*mi[0]*ne0);
+  NNEW(emeini,double,6*mi[0]*ne0);
+  NNEW(enerini,double,mi[0]*ne0);
+      
   if(*iperturb==0){
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -419,7 +427,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   }else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-	    ielorien,norien,orab,ntmat_,t0,t1old,ithermal,
+	    ielorien,norien,orab,ntmat_,t1old,t1old,ithermal,
 	    prestr,iprestr,filab,eme,emn,een,iperturb,
 	    f,fn,nactdof,&iout,qa,vold,b,nodeboun,
 	    ndirboun,xboun,nboun,ipompc,
@@ -441,13 +449,16 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
 	    &intscheme);
   }
+  SFREE(stiini);SFREE(emeini);SFREE(enerini);SFREE(vini);
+  SFREE(eei);
+      
   SFREE(f);SFREE(v);SFREE(fn);SFREE(stx);SFREE(eme);SFREE(inum);
   iout=1;
   
   /* for the frequency analysis linear strain and elastic properties
      are used */
   
-  iperturb[1]=0;ielas=1;
+  iperturb[1]=0;
   
   /* determining the maximum number of sectors to be plotted */
   
@@ -664,6 +675,15 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       matrixstorage(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1],
 		    ntrans,inotr,trab,co,nk,nactdof,jobnamec,mi,ipkon,
 		    lakon,kon,ne,mei,nboun,nmpc,cs,mcs,ithermal,nmethod);
+      strcpy(fneig,jobnamec);
+      strcat(fneig,".frd");
+      if((f1=fopen(fneig,"ab"))==NULL){
+	printf("*ERROR in frd: cannot open frd file for writing...");
+	exit(0);
+      }
+      fprintf(f1," 9999\n");
+      fclose(f1);
+      FORTRAN(stopwithout201,());
 #else
       printf("*ERROR in arpack: the MATRIXSTORAGE library is not linked\n\n");
       FORTRAN(stop,());
@@ -1325,10 +1345,13 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       if(*nprint>0)FORTRAN(writehe,(&j));
 	  
       NNEW(eei,double,6*mi[0]*ne0);
-      if(*nener==1){
-	NNEW(stiini,double,6*mi[0]*ne0);
-	NNEW(emeini,double,6*mi[0]*ne0);
-	NNEW(enerini,double,mi[0]*ne0);}
+
+      /* following fields are needed if *ener==1 or kode<-100 */
+    
+      NNEW(vini,double,mt**nk);
+      NNEW(stiini,double,6*mi[0]*ne0);
+      NNEW(emeini,double,6*mi[0]*ne0);
+      NNEW(enerini,double,mi[0]*ne0);
 	  
       DMEMSET(v,0,2*mt**nk,0.);
 	  
@@ -1416,7 +1439,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
 		  &stx[kkx],elcon,
 		  nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
-		  norien,orab,ntmat_,t0,t1old,ithermal,
+		  norien,orab,ntmat_,t1old,t1old,ithermal,
 		  prestr,iprestr,filab,&eme[kkx],&emn[kk6],&een[kk6],iperturb,
 		  f,&fn[kkv],nactdof,&iout,qa,vold,&z[lint+k],
 		  nodeboun,ndirboun,xboun,nboun,ipompc,
@@ -1440,8 +1463,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	}
 	      
       }
+      SFREE(stiini);SFREE(emeini);SFREE(enerini);SFREE(vini);
       SFREE(eei);
-      if(*nener==1){SFREE(stiini);SFREE(emeini);SFREE(enerini);}
 
       /* determining the turning direction */
 	  

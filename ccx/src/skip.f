@@ -21,7 +21,8 @@
      &     mi,nmpc,mpcend,nmat,ntmat_,npmat_,ncmat_,norien,ntrans,nam,
      &     nprint,nlabel,ncs_,ne1d,ne2d,infree,nmethod,
      &     iperturb,nener,ithermal,nstate_,iprestr,mcs,ntie,
-     &     nslavs,nprop,mortar,ifacecount,nintpoint,nef,nheading_)
+     &     nslavs,nprop,mortar,ifacecount,nintpoint,nef,nheading_,
+     &     nfc,ndc)
 !     
       implicit none
 !     
@@ -30,7 +31,7 @@
      &     nprint,nlabel,ncs_,ne1d,ne2d,infree(4),i,mt,nprop,mortar,
      &     nmethod,iperturb(*),nener,ithermal(*),nstate_,iprestr,i4,
      &     maxamta,mcs,ntie,nbody,nslavs,nintpoint,ifacecount,nef,
-     &     nheading_
+     &     nheading_,nfc,ndc
 !     
       character*1 c1
       character*3 c3
@@ -91,6 +92,14 @@
       read(15)(r8,i=1,nmpc)
       read(15)(i4,i=1,3*mpcend)
       read(15)(r8,i=1,mpcend)
+!     
+!     force constraints
+!
+      if(nfc.gt.0) then
+        read(15)(r8,i=1,7*nfc)
+        read(15)(i4,i=1,ndc)
+        read(15)(r8,i=1,12*ndc)
+      endif
 !     
 !     point forces
 !     
@@ -247,7 +256,7 @@
 !     
       if(ntie.gt.0) then
         read(15)(c81,i=1,3*ntie)
-        read(15)(r8,i=1,3*ntie)
+        read(15)(r8,i=1,4*ntie)
       endif
 !     
 !     cyclic symmetry

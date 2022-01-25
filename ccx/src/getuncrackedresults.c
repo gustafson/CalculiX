@@ -29,13 +29,12 @@
 #define max(a,b) ((a) >= (b) ? (a) : (b))
 
 void getuncrackedresults (char *masterfile,ITG **integerglobp,
-			  double **doubleglobp,
-			  ITG *nboun,ITG *iamboun,double *xboun, ITG *nload,
-			  char *sideload,ITG *iamload, ITG *iglob,ITG *nforc,
-			  ITG *iamforc,double *xforc,ITG *ithermal,ITG *nk,
-			  double *t1,ITG *iamt1,double *sigma,ITG *nstep)
+			  double **doubleglobp,ITG *iglob,ITG *nstep)
 {
- 
+
+  /* reading all temperature, displacement, stress and force data from file: 
+     nstep is the number of steps read and is a return value */
+  
     char  datin[MAX_LINE_LENGTH],text[13]="            ";
     Summen    anz[1]; 
     Nodes     *node=NULL;
@@ -44,7 +43,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
     
     ITG *kontet=NULL,*ifatet=NULL,*inodfa=NULL,*ipofa=NULL,type,n1,n2,n3,n4,
       *nnx=NULL,*nny=NULL,*nnz=NULL,*kon=NULL,*ipkon=NULL,*kontyp=NULL,
-      *iparent=NULL,ifreefa=1,kflag=2,ne,netet,numnodes,nkon,istepmax,
+      *iparent=NULL,ifreefa=1,kflag=2,ne,netet,numnodes,nkon,
       indexe,istep,loadcase,nfaces,netet_,nktet=0,nfield,j,nodes[4],i,
       read_mode=0,nodenr,*integerglob=NULL,*ielemnr=NULL,istep_global,
       ioffset;
@@ -89,20 +88,6 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	    break;
 	}
     }
-    
-
-    /* iglob=-1 if global results are from a frequency analysis
-       iglob=1  if global results are from a static analysis */
-
-    if(*nstep<0){
-      *iglob=-1;
-
-      /* mode number is reverted into a positive number */
-
-    }else{
-      *iglob=1;
-    }
-    *nstep=0;
     
     /* initialization of the size of fields used in readfrd.c */
 
@@ -153,7 +138,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
     /* check for the existence of nodes and/or elements */
 
     if((anz[0].n==0)||(anz[0].e==0)){
-	printf(" *ERROR in getglobalresults: there are either no nodes or\n no elements or neither nodes nor elements in the master frd-file\n");
+	printf(" *ERROR in getuncrackedresults: there are either no nodes or\n no elements or neither nodes nor elements in the master frd-file\n");
 	FORTRAN(stop,());
     }
     
@@ -181,7 +166,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	}else if(kontyp[i]==6){
 	    numnodes=10;
 	}else{
-	    printf("*WARNING in getglobalresults.c: element in global\n");
+	    printf("*WARNING in getuncrackedresults.c: element in global\n");
 	    printf("         mesh not recognized; cgx element type=%" ITGFORMAT "\n",kontyp[i]);
 	    continue;
 	}
@@ -364,8 +349,6 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
     /* anz[0].l is the number of load cases in the frd-file */
     
     NNEW(field,double,13*nktet*anz[0].l);
-
-    istepmax=0;
     
     /* reading the temperatures */
     /* 1. determining the last temperature loadcase in the step */
@@ -384,7 +367,6 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
       }
       if(strcmp1(lcase[i].name,"NDTEMP")==0){
 	loadcase=i;
-	if(*iglob<0) *sigma=(6.283185307*(double)lcase[i].value)*(6.283185307*(double)lcase[i].value);
       }else{
 	loadcase=-1;
       }
@@ -395,7 +377,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	*nstep=max(*nstep,istep_global);
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	  {
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf("ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	  }
 	
@@ -427,7 +409,6 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
       if((strcmp1(lcase[i].name,"DISPR")!=0)&&
 	 (strcmp1(lcase[i].name,"DISP")==0)){
 	loadcase=i;
-	if(*iglob<0) *sigma=(6.283185307*(double)lcase[i].value)*(6.283185307*(double)lcase[i].value);
       }else{
 	loadcase=-1;
       }
@@ -438,7 +419,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	*nstep=max(*nstep,istep_global);
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	  {
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf("ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	  }
 	
@@ -471,7 +452,6 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
       }
       if(strcmp1(lcase[i].name,"STRESS")==0){
 	loadcase=i;
-	if(*iglob<0) *sigma=(6.283185307*(double)lcase[i].value)*(6.283185307*(double)lcase[i].value);
       }else{
 	loadcase=-1;
       }
@@ -482,7 +462,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	*nstep=max(*nstep,istep_global);
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	  {
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf("ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	  }
 	
@@ -518,7 +498,6 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
       }
       if(strcmp1(lcase[i].name,"FORC")==0){
 	loadcase=i;
-	if(*iglob<0) *sigma=(6.283185307*(double)lcase[i].value)*(6.283185307*(double)lcase[i].value);
       }else{
 	loadcase=-1;
       }
@@ -529,7 +508,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	*nstep=max(*nstep,istep_global);
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	  {
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf("ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	  }
 	
@@ -575,7 +554,6 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
     memcpy(&integerglob[nkon+2*ne+8*netet+5],&ielemnr[0],sizeof(ITG)*ne);
     
     NNEW(doubleglob,double,*nstep*13*nktet+3*nktet+4*nfaces+6*netet);
-    //    NNEW(doubleglob,double,16*nktet+4*nfaces+6*netet);
     
     memcpy(&doubleglob[0],&x[0],sizeof(double)*netet);
     memcpy(&doubleglob[netet],&y[0],sizeof(double)*netet);

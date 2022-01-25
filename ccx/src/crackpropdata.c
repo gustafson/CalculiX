@@ -52,7 +52,7 @@ void crackpropdata(char *jobnamec,ITG *nelcon,double *elcon,double **crconp,
 
 
       OUTPUT (optional; is subsequently available for further use in
-              routine crackprop.f)
+              routine crackrate.f)
 
       param(1...nparam)  parameters returned for use in the crack propagation
                          law (character*132)

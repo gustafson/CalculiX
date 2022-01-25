@@ -36,7 +36,7 @@
      &     physcon,ctrl,typeboun,fmpc,tieset,ntie,tietol,nslavs,t0g,t1g,
      &     nprop,ielprop,prop,mortar,nintpoint,ifacecount,islavsurf,
      &     pslavsurf,clearini,irstrt,vel,nef,velo,veloo,ne2boun,
-     &     memmpc_,heading,nheading_,network)
+     &     memmpc_,heading,nheading_,network,nfc,ndc,coeffc,ikdc,edc)
 !     
 !     writes all information needed for a restart to file
 !     
@@ -70,8 +70,8 @@
      &     inotr(*),nintpoint,ifacecount,islavsurf(*),ielprop(*),
      &     namta(*),iamt1(*),ielmat(*),nodebounold(*),ndirbounold(*),
      &     iponor(*),knor(*),iponoel(*),inoel(*),rig(*),iendset(*),
-     &     nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,
-     &     nener,iprestr,istepnew,maxlenmpc,mcs,ntie,
+     &     nshcon(*),ncocon(*),ics(*),infree(*),i,ipos,nfc,ndc,
+     &     nener,iprestr,istepnew,maxlenmpc,mcs,ntie,ikdc(*),
      &     ibody(*),nbody,mt,nslavs,namtot,nef,ne2boun(*),
      &     memmpc_,nheading_,network
 !     
@@ -81,8 +81,9 @@
      &     vold(*),xbounold(*),xforcold(*),xloadold(*),t1old(*),eme(*),
      &     xnor(*),thicke(*),offset(*),t0g(*),t1g(*),clearini(*),
      &     shcon(*),cocon(*),sti(*),ener(*),xstate(*),pslavsurf(*),
-     &     qaold(2),cs(*),physcon(*),ctrl(*),prop(*),
-     &     ttime,fmpc(*),xbody(*),xbodyold(*),vel(*),velo(*),veloo(*)
+     &     qaold(2),cs(*),physcon(*),ctrl(*),prop(*),coeffc(*),
+     &     ttime,fmpc(*),xbody(*),xbodyold(*),vel(*),velo(*),veloo(*),
+     &     edc(*)
 !     
       mt=mi(2)+1
 !     
@@ -118,7 +119,7 @@
      &        FORM='UNFORMATTED',err=151)
       endif
 !     
-      version='Version 2.18'
+      version='Version 2.19'
       write(15) version
 !     
       write(15)istepnew
@@ -150,6 +151,11 @@
       write(15)mpcend
       write(15)maxlenmpc
       write(15)memmpc_
+!     
+!     coupling, distributing
+!     
+      write(15)nfc
+      write(15)ndc
 !     
 !     material size
 !     
@@ -266,6 +272,14 @@
       write(15)(fmpc(i),i=1,nmpc)
       write(15)(nodempc(i),i=1,3*mpcend)
       write(15)(coefmpc(i),i=1,mpcend)
+!     
+!     force constraints
+!
+      if(nfc.gt.0) then
+        write(15)(coeffc(i),i=1,7*nfc)
+        write(15)(ikdc(i),i=1,ndc)
+        write(15)(edc(i),i=1,12*ndc)
+      endif
 !     
 !     point forces
 !     
@@ -420,7 +434,7 @@
 !     
       if(ntie.gt.0) then
          write(15)(tieset(i),i=1,3*ntie)
-         write(15)(tietol(i),i=1,3*ntie)
+         write(15)(tietol(i),i=1,4*ntie)
       endif
 !     
 !     cyclic symmetry

@@ -411,6 +411,8 @@ void frd_sen(double *co,ITG *nk,double *dstn,ITG *inum,ITG *nmethod,
 	  fprintf(f1," -4  SENDISZ     2    1\n");
       }else if(strcmp1(&objectset[*iobject*405],"STRESS")==0){
 	  fprintf(f1," -4  SENSTRE     2    1\n");
+      }else if(strcmp1(&objectset[*iobject*405],"EQPLASTICSTRAIN")==0){
+	  fprintf(f1," -4  SENSPEQ     2    1\n");
       }else if(strcmp1(&objectset[*iobject*405],"MODALSTRESS")==0){
 	  fprintf(f1," -4  SENSTRE     2    1\n");
       }else if(strcmp1(&objectset[*iobject*405],"EIGENFREQUENCY")==0){

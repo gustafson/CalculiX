@@ -83,7 +83,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     description[13]="            ",*lakon=NULL,jobnamef[396]="",*labmpc2=NULL;
 
   ITG *inum=NULL,k,ido,ldz,iparam[11],ipntr[14],lworkl,ngraph=1,im,
-    info,rvec=1,*select=NULL,lfin,j,lint,iout,ielas=0,icmd=0,mt=mi[1]+1,
+    info,rvec=1,*select=NULL,lfin,j,lint,iout,ielas=1,icmd=0,mt=mi[1]+1,
     iinc=1,nev,ncv,mxiter,jrow,ifreebody,kmax,
     mass[2]={1,1}, stiffness=1, buckling=0, rhsi=0, intscheme=0,noddiam=-1,
     coriolis=0,symmetryflag=0,inputformat=0,*ipneigh=NULL,*neigh=NULL,ne0,
@@ -122,7 +122,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   /* dummy arguments for the results call */
 
-  double *veold=NULL,*accold=NULL,bet,gam,dtime,time=1.;
+  double *veold=NULL,*accold=NULL,bet,gam,dtime=1.,time=1.;
 
 #ifdef SGI
   ITG token;
@@ -193,14 +193,6 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   /* assigning the body forces to the elements */ 
 
   if(*nbody>0){
-    /*    ifreebody=*ne+1;
-    NNEW(ipobody,ITG,2*ifreebody**nbody);
-    for(k=1;k<=*nbody;k++){
-      FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
-			 iendset,ialset,&inewton,nset,&ifreebody,&k));
-      RENEW(ipobody,ITG,2*(*ne+ifreebody));
-    }
-    RENEW(ipobody,ITG,2*(ifreebody-1));*/
     if(*inewton==1){
       printf("*ERROR in arpack: generalized gravity loading is not allowed in frequency calculations");
       FORTRAN(stop,());
@@ -389,6 +381,14 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     NNEW(qfx,double,3*mi[0]**ne);
   }
   NNEW(inum,ITG,*nk);
+
+  /* following fields are needed if *ener==1 or kode<-100 */
+    
+  NNEW(vini,double,mt**nk);
+  NNEW(stiini,double,6*mi[0]*ne0);
+  NNEW(emeini,double,6*mi[0]*ne0);
+  NNEW(enerini,double,mi[0]*ne0);
+    
   if(*iperturb==0){
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -416,7 +416,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   }else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
-	    ielorien,norien,orab,ntmat_,t0,t1old,ithermal,
+	    ielorien,norien,orab,ntmat_,t1old,t1old,ithermal,
 	    prestr,iprestr,filab,eme,emn,een,iperturb,
 	    f,fn,nactdof,&iout,qa,vold,b,nodeboun,
 	    ndirboun,xboun,nboun,ipompc,
@@ -438,6 +438,9 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
 	    &intscheme);
   }
+  
+  SFREE(stiini);SFREE(emeini);SFREE(enerini);SFREE(vini);
+    
   SFREE(f);SFREE(v);SFREE(fn);SFREE(stx);SFREE(eme);
   if(*ithermal>1)SFREE(qfx);SFREE(inum);
   iout=1;
@@ -445,7 +448,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   /* for the frequency analysis linear strain and elastic properties
      are used */
 
-  iperturb[1]=0;ielas=1;
+  iperturb[1]=0;
 
   /* filling in the matrix */
 
@@ -521,25 +524,6 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		     integerglob,doubleglob,tieset,istartset,iendset,
 		     ialset,ntie,&nasym,pslavsurf,pmastsurf,mortar,clearini,
 		     ielprop,prop,&ne0,&kscale,iponoel,inoel,&network,set,nset);
-	  
-            /*FORTRAN(mafillsmas,(co,nk,kon,ipkon,lakon,ne,nodeboun,
-			  ndirboun,xboun,nboun,
-			  ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforc,
-			  nforc,nelemload,sideload,xload,nload,xbody,ipobody,
-			  nbody,cgr,ad,au,fext,nactdof,icol,jq,irow,neq,nzl,
-			  nmethod,ikmpc,ilmpc,ikboun,ilboun,
-			  elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-			  ielmat,ielorien,norien,orab,ntmat_,
-			  t0,t1old,ithermal,prestr,iprestr,vold,iperturb,sti,
-			  nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-			  xstiff,npmat_,&dtime,matname,mi,
-			  ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
-			  physcon,shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,
-			  &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
-			  xstateini,xstate,thicke,
-			  integerglob,doubleglob,tieset,istartset,iendset,
-			  ialset,ntie,&nasym,pslavsurf,pmastsurf,mortar,clearini,
-			  ielprop,prop,&ne0,&kscale,iponoel,inoel,&network));*/
     }
   }
 
@@ -609,6 +593,16 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     matrixstorage(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1],
 		  ntrans,inotr,trab,co,nk,nactdof,jobnamec,mi,ipkon,
                   lakon,kon,ne,mei,nboun,nmpc,cs,mcs,ithermal,nmethod);
+
+    strcpy(fneig,jobnamec);
+    strcat(fneig,".frd");
+    if((f1=fopen(fneig,"ab"))==NULL){
+      printf("*ERROR in frd: cannot open frd file for writing...");
+      exit(0);
+    }
+    fprintf(f1," 9999\n");
+    fclose(f1);
+    FORTRAN(stopwithout201,());
 #else
     printf("*ERROR in arpack: the MATRIXSTORAGE library is not linked\n\n");
     FORTRAN(stop,());
@@ -1061,12 +1055,14 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     if(*nprint>0) FORTRAN(writehe,(&j));
 
     NNEW(eei,double,6*mi[0]*ne0);
-    if(*nener==1){
-      NNEW(stiini,double,6*mi[0]*ne0);
-      NNEW(emeini,double,6*mi[0]*ne0);
-      NNEW(enerini,double,mi[0]*ne0);}
 
-    //    memset(&v[0],0.,sizeof(double)*mt**nk);
+    /* following fields are needed if *ener==1 or kode<-100 */
+    
+    NNEW(vini,double,mt**nk);
+    NNEW(stiini,double,6*mi[0]*ne0);
+    NNEW(emeini,double,6*mi[0]*ne0);
+    NNEW(enerini,double,mi[0]*ne0);
+
     DMEMSET(v,0,mt**nk,0.);
     if(*iperturb==0){
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
@@ -1098,7 +1094,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	      stx,elcon,
 	      nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,ielorien,
-	      norien,orab,ntmat_,t0,t1old,ithermal,
+	      norien,orab,ntmat_,t1old,t1old,ithermal,
 	      prestr,iprestr,filab,eme,emn,een,iperturb,
 	      f,fn,nactdof,&iout,qa,vold,&z[lint],
 	      nodeboun,ndirboun,xboun,nboun,ipompc,
@@ -1121,8 +1117,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      &intscheme);
     }
     SFREE(eei);
-    if(*nener==1){
-      SFREE(stiini);SFREE(emeini);SFREE(enerini);}
+    SFREE(stiini);SFREE(emeini);SFREE(enerini);SFREE(vini);
 
     ++*kode;
     if(igreen==0){
