@@ -24,6 +24,7 @@
 
 CC=gcc
 FC=gfortran
+UBUNTU := $(shell lsb_release -d)
 
 ## CFLAGS=-march=native -g -O0 ## debugging  -pg
 ## FFLAGS=-march=native -g -O0 ## debugging  -pg
@@ -74,7 +75,7 @@ LDFLAGS += -lspooles -lpthread
 ## LDFLAGS += -larpack
 CFLAGS  += `pkg-config --cflags arpack$(INTEXT)` -DARPACK
 LDFLAGS += `pkg-config --libs arpack$(INTEXT)`
-
+## 
 ## TAUCS
 ## CFLAGS  += -DTAUCS
 ## LDFLAGS += -ltaucs -lmetis
@@ -92,13 +93,16 @@ CFLAGS  += `pkg-config --cflags blas$(INTEXT)`
 LDFLAGS += `pkg-config --libs blas$(INTEXT)`
 
 ## PARDISO (this is included in the intel-mkl library or installed separately)
-## Uncomment the LDFLAGS below if installing directly from https://www.pardiso-project.org/
-CFLAGS  += -DPARDISO
-## LDFLAGS += -lpardiso -lgfortran -lpthread -lm -fopenmp
-## Ubuntu doesn't package a pardiso.pc file
-## CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
-## LDFLAGS += `pkg-config --libs pardiso`
-
+## CFLAGS  += -DPARDISO
+## LDFLAGS += -L/home/pete/local/lib64/ -lpardiso -lgfortran -lpthread -lm -fopenmp
+CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
+LDFLAGS += `pkg-config --libs pardiso`
+## ## Modern Ubuntu with intel-mkl installed doesn't package a pardiso.pc file but pardiso links with mkl.
+## In 18.04 an explicit call to mkl is required
+ifeq ($(findstring Description:	Ubuntu 18, $(UBUNTU)), Description:	Ubuntu 18)
+      CFLAGS  += -DPARDISO -I/opt/intel/include
+      LDFLAGS += -L/opt/intel/lib/intel64_lin -L/opt/intel/compilers_and_libraries_2020.0.166/linux/mkl/lib/intel64_lin -lmkl_rt -liomp5 -lpthread -lm -ldl -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_core -lmkl_gf_lp64
+endif
 
 
 ################################################################################
