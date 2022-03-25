@@ -110,6 +110,8 @@
             nopeexp=2
          elseif(lakon(i)(1:7).eq.'SPRINGA') then
             nopeexp=2
+         elseif(lakon(i)(1:8).eq.'ESPRNG21') then
+            nopeexp=2
          else
             write(*,*) '*ERROR in changekon: element type unknown:',
      &                 ' element: ',i,' type: ',lakon(i)
