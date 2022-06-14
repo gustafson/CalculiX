@@ -324,6 +324,11 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     nemax=*ne0;
 
     for(i=0;i<*ne0;i++){
+      /* For debugging element types
+	 char mystr[9];
+	 strncpy(mystr, &lakon[8*i], 8);
+	 printf("%s\n", mystr);
+      */
       if(ipkon[i]<=-1){
 
 	if(ipkon[i]==-1){
