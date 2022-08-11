@@ -60,6 +60,8 @@
                   nkondiff=nkondiff+20
                elseif(lakon(i)(2:2).eq.'6') then
                   nkondiff=nkondiff+15
+!     S3 and S4 not needed here.  These are never run because 
+!     they don't have the 'C' in position 8 (line 56)                  
                endif
             endif
          enddo
@@ -110,6 +112,17 @@
             nopeexp=2
          elseif(lakon(i)(1:7).eq.'SPRINGA') then
             nopeexp=2
+!     AQ ** No expanding these. Just added so they can
+!     be used in models with composite materials
+         elseif(lakon(i)(1:8).eq.'ESPRNG21') then
+            nopeexp=2
+!     According to gen3dfrom2d.f, S4 will expand to C3D8I
+!     So, original 4 nodes + 11 for the C3D8I
+         elseif(lakon(i)(1:2).eq.'S4') then
+            nopeexp=15
+         elseif(lakon(i)(1:2).eq.'S3') then
+            nopeexp=9
+
          else
             write(*,*) '*ERROR in changekon: element type unknown:',
      &                 ' element: ',i,' type: ',lakon(i)
@@ -134,6 +147,11 @@
             nexp=20
          elseif(lakon(i)(2:2).eq.'6') then
             nexp=15
+         elseif(lakon(i)(2:2).eq.'3') then
+            nexp=6
+         elseif(lakon(i)(2:2).eq.'4') then
+            nexp=8
+!     Expansions for 3 and 4 added by AQ
          endif
 !
          ipointer=ipointer-nopeexp-nlayer*nexp

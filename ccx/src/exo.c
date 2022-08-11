@@ -519,6 +519,12 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
       // Now connectivity
       for(i=0;i<*ne0;i++){
+	/* For debugging element types
+	   char mystr[9];
+	   strncpy(mystr, &lakon[8*i], 8);
+	   printf("%s\n", mystr);
+	*/
+
 	// There should now be one block assignment per element.
 	// Skipped elements would be assigned -1 above.
 	// Skip any elements not in this block (l)
@@ -594,7 +600,13 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    case 4: // 8 Node 2D elements CAX8 S8 S8R etc
 	      m=20;
 	      break;
-	    case 5: // C3D8 or C3D8R or S4
+	    case 7: // S4 unexpanded.  Note S4R and S4 unexpanded
+		    // differ by m+=3, because S4 are incompatible
+		    // mode elements
+	      m=8;
+	      if (strcmp1(&lakon[8*i+4],"I")==0){m+=3;}
+	      break;
+	    case 5: // C3D8 or C3D8R
 	    case 8: // C3D10
 	    case 9: // C3D4
 	    case 12: // C3D6
@@ -603,16 +615,24 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    case 11: // 6-node 2D element (S6)
 	      m=15;
 	      break;
-	    case 13: // 2D triangle or 3-node shell
+	    case 13: // 2D triangle or 3-node unexpanded shell
 	      m=6;
 	      break;
-	    default: // Not sure it ever gets here
+	    default: // Unknown
 	      m=8;
 	      break;
 	    }
 	  for (j=0; j <node_per_e[l]; j++){
 	    connect[k++] = node_map_inv[kon[indexe+m+j]-1];
 	  }
+
+	  /* For debugging
+	  printf ("Debug connectivity %i, %i, ",blkassign[i], m);
+	  for (j=-node_per_e[l]; j<3; j++){
+	    printf("%i, ", connect[k+j]);
+	  }
+	  printf ("\n");
+	  */
 	  o++;
 	}
       } // This ends the loop over the element numbers
