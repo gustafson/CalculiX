@@ -44,8 +44,26 @@ CalculiX Extras builds on the [CalculiX](https://www.calculix.de/) code base
         [Makefile](https://github.com/gustafson/CalculiX/blob/exodus/ccx/src/Makefile)
         which can be modified for the local environment.
 	-   The distribution specific branches contain automated scripts
-        for building in that distribution's environment.
+        and Makefiles for building in that distribution's environment.
+        For openSUSE, it is
+        [Makefile.opensuse]((https://github.com/gustafson/CalculiX/blob/opensuse/ccx/src/Makefile.opensuse)
 4.  Send bug reports to peter.gustafson@wmich.edu
+
+## OpenSUSE Specific Build Instructions
+
+In openSUSE, you may have success using the automated [superbuild
+script](https://github.com/gustafson/CalculiX/blob/opensuse/opensuse_superbuild.sh)
+in this repository.  The following commands should install the Intel
+oneAPI library (which include intel MKL) and CalculiX.  (CalculiX can
+also be installed without oneAPI.)
+
+```console
+sudo zypper addrepo https://yum.repos.intel.com/oneapi oneAPI
+zypper install intel-basekit intel-hpckit 
+wget https://github.com/gustafson/CalculiX/blob/opensuse/opensuse_superbuild.sh
+chmod 755 ./opensuse_superbuild.sh
+./opensuse_superbuild.sh
+```
 
 # Usage
 
