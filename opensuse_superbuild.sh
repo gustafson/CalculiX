@@ -17,7 +17,7 @@ BIN=${PREFIX}/bin
 [[ -d ${BIN} ]] || mkdir -p ${BIN}
 
 ## Download CalculiX with custom mods
-[[ -d CalculiX ]] || git clone gustafson.github.io:gustafson/CalculiX.git
+[[ -d CalculiX ]] || git clone https://github.com/gustafson/CalculiX.git
 pushd CalculiX
 git checkout opensuse
 
@@ -52,7 +52,7 @@ popd
 
 ## Build Arpack-ng (Next generation maintened arpack)
 if [[ ! -f ${LIB}/libarpack.so ]]; then
-    [[ -d arpack-ng ]] || git clone git@github.com:opencollab/arpack-ng.git
+    [[ -d arpack-ng ]] || git clone https://github.com/opencollab/arpack-ng.git
     [[ -d arpack-ng/build ]] || mkdir arpack-ng/build
     pushd arpack-ng/build
     cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} ..
