@@ -1,0 +1,142 @@
+## This file is heavily modified from the Makefile distributed by with
+## ccx.
+
+## pkg-config is used to pull all flags from local enviroment.  You
+## must set this up.  Typically this would be defining
+## PKG_CONFIG_PATH=$PKG_CONFIG_PATH:~/local/lib64/pkgconfig or
+## similar.  You will also have to add .pc file for each library you
+## use.  I did this because I have several machines with different
+## library enviroments.  You could alternatively use compiler flags
+## such as -L/path/to/lib -I/path/to/include -llib.  Examples of this
+## on my distribution are in the comments below
+
+
+
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Flags related to CPU, optimizations, etc                                   ##
+## GPU based optimization later in the make file                              ##
+##                                                                            ##
+################################################################################
+################################################################################
+
+## CC=gcc
+## FC=gfortran
+
+CFLAGS=-march=native -O3 -Wall ## -flto ## aggressive -fprofile-generate -fprofile-use
+FFLAGS=-march=native -O3 -Wall ## -flto ## aggressive -fprofile-generate -fprofile-use
+
+## Other CCX Options
+CFLAGS  += -DARCH="Linux" -DMATRIXSTORAGE
+
+## Multi Threaded and MPI
+CFLAGS += -DUSE_MT
+
+## This is now default for calculix and relates to CFD
+CFLAGS += -DNETWORKOUT
+
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Flags related to CPU based solvers                                         ##
+##                                                                            ##
+################################################################################
+################################################################################
+
+## SPOOLES
+CFLAGS  += -I../../spooles -I../../spooles/MT -DSPOOLES
+LDFLAGS += -L$(LIB) -lspoolesMT -lspooles -lpthread
+
+## ARPACK
+CFLAGS  += -DARPACK
+LDFLAGS += -larpack
+
+## LAPACK
+LDFLAGS += -llapack
+
+## BLAS
+LDFLAGS += -lopenblas
+LDFLAGS += -lblas
+
+## PARDISO based on MKL
+CFLAGS  += -DPARDISO  `pkg-config --cflags mkl-dynamic-lp64-iomp`
+LDFLAGS += `pkg-config --libs mkl-dynamic-lp64-iomp` -lmkl_core -lmkl_gf_lp64 -lmkl_rt -lmkl_gnu_thread
+
+
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Flags related to GPU based solvers                                         ##
+##                                                                            ##
+################################################################################
+################################################################################
+
+## Flags for the gpu compiler
+## NVCCCFLAGS = -arch=sm_35
+## NVCCLDFLAGS = -lstdc++
+##
+## NVCC=nvcc -O3 $(LONGLONG) `pkg-config --cflags cusp` `pkg-config --libs cusp` $(NVCCCFLAGS) # -Xcompiler -fopenmp
+
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Flags related to ExodusII output                                           ##
+##                                                                            ##
+################################################################################
+################################################################################
+
+
+## EXODUSII
+CFLAGS += -DEXODUSII -I../../seacas/packages/seacas/libraries/exodus/include
+LDFLAGS += -lexodus -lnetcdf
+
+
+################################################################################
+################################################################################
+##                                                                            ##
+## Recipes                                                                    ##
+##                                                                            ##
+################################################################################
+################################################################################
+
+## .cu file so not have a default implicit rule.  Define all implicit rules used.
+.SUFFIXES: .o .c .cu
+
+.c.o :
+	$(CC) $(CFLAGS) -c $<
+.f.o :
+	$(FC) $(FFLAGS) -c $<
+.cu.o:
+	$(NVCC) -DCUDACUSP -c $<
+
+include Makefile.inc
+
+SCCXMAIN = ccx_2.19.c
+
+## Define all the object file rules to identify dependencies
+OCCXCU = $(SCCXCU:.cu=.o)
+OCCXF = $(SCCXF:.f=.o)
+OCCXC = $(SCCXC:.c=.o)
+OCCXMAIN = $(SCCXMAIN:.c=.o)
+
+## Link to math and standard c
+CFLAGS += -lm -lc
+
+ccx_2.19: $(OCCXMAIN) ccx_2.19.a
+	./date.pl;
+	$(CC) $(CFLAGS) -c ccx_2.19.c $(LDFLAGS)
+	$(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.19.a $(LDFLAGS)
+
+ccx_2.19.a: $(OCCXF) $(OCCXC)
+	ar vr $@ $?
+
+clean:
+	rm *.a *.o
+
+install:
+	cp ccx_2.19 ~/local/bin

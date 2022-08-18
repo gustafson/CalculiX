@@ -13,7 +13,6 @@ echo Calculix will be installed into ${PREFIX} using MKL located at ${MKLROOT}
 LIB=${PREFIX}/lib64
 BIN=${PREFIX}/bin
 
-
 [[ -d ${LIB} ]] || mkdir -p ${LIB}
 [[ -d ${BIN} ]] || mkdir -p ${BIN}
 
@@ -45,51 +44,25 @@ if [[ ! -f ${LIB}/libspoolesMT.a ]]; then
 
     ## Build
     make -j8 lib
-    rsync -avP spooles.a ${LIB}/libspooles.a
-    rsync -avP MT/src/spoolesMT.a ${LIB}/libspoolesMT.a
+    rsync -avP spooles.a ${LIB}/libspooles.a || exit
+    rsync -avP MT/src/spoolesMT.a ${LIB}/libspoolesMT.a || exit
 fi
 popd
 
 
-## Build Arpack
-if [[ ! -f ${LIB}/libarpack.a ]]; then
-   [[ -d arpack ]] || mkdir arpack
-   pushd arpack
-   [[ -f arpack96.tar.gz ]] || wget https://www.caam.rice.edu/software/ARPACK/SRC/arpack96.tar.gz
-   [[ -f patch.tar.gz ]] || wget https://www.caam.rice.edu/software/ARPACK/SRC/patch.tar.gz
-   tar xavf arpack96.tar.gz
-   tar xavf patch.tar.gz
-   cd ARPACK
-   sed -i -e s./bin/make./usr/bin/make. \
-       -e s/"#DIRS         = \$(UTILdir) \$(SRCdir)"/"DIRS         = \$(UTILdir) \$(SRCdir)"/ \
-       -e s/FC.*/FC=gfortran/ \
-       -e "s/home =.*/home=./" \
-       -e "s/libarpack_.*/libarpack.a/" \
-       -e "s/FFLAGS.*/FFLAGS=-O3/" -i ARmake.inc
-   sed -i -e s/"      EXTERNAL           ETIME"/"*      EXTERNAL           ETIME"/ UTIL/second.f
-
-   patch << 'EOF'
---- Makefile~	1996-09-24 10:55:31.000000000 -0400
-+++ Makefile	2021-12-14 17:27:59.964489948 -0500
-@@ -62,7 +62,8 @@
- 		$(MAKE) $(PRECISIONS); \
- 		$(CD) ..; \
- 	done );
--	$(RANLIB) $(ARPACKLIB)
-+	ar rv libarpack.a */*.o
-+	ranlib libarpack.a
- 
- cleantest:
- 
-EOF
-   make lib
-   rsync -avP libarpack.a ${LIB}/.
-   popd
+## Build Arpack-ng (Next generation maintened arpack)
+if [[ ! -f ${LIB}/libarpack.so ]]; then
+    [[ -d arpack-ng ]] || git clone git@github.com:opencollab/arpack-ng.git
+    [[ -d arpack-ng/build ]] || mkdir arpack-ng/build
+    pushd arpack-ng/build
+    cmake -DCMAKE_INSTALL_PREFIX=${PREFIX} ..
+    make -j8 install
+    popd
 fi
 
 
 ## Build Exodus (library, not ccx extension)
-if [[ ! -f ${LIB}/libexodus.a ]]; then
+if [[ ! -f ${LIB}/libexodus.so ]]; then
     git clone https://github.com/gsjaardema/seacas.git
     cd seacas/ && export ACCESS=`pwd`
     ## INSTALL_PATH=${PREFIX}
@@ -102,8 +75,8 @@ if [[ ! -f ${LIB}/libexodus.a ]]; then
     rsync -avP packages/seacas/libraries/exodus/libexodus* ${LIB}/.
     ## make install
     cd ..
-    rsync -avP lib/* ${LIB}/.
-    rsync -avP lib64/* ${LIB}/.
+    rsync -avP lib/* ${LIB}/. || exit
+    rsync -avP lib64/* ${LIB}/. || exit
 fi
 
 ## Build OpenBLAS
@@ -115,18 +88,46 @@ if [[ ! -f ${LIB}/libopenblas.a ]]; then
     pushd build
     cmake -D BUILD_RELAPACK=OFF -D BUILD_STATIC_LIBS=OFF -D CMAKE_BUILD_TYPE=Release ..
     make -j8
-    cp lib/libopenblas.a ${LIB}/.
+    cp lib/libopenblas.a ${LIB}/. || exit
     popd
     popd
 fi
 
-## Build CalculiX
+## Determine active gcc.  Get the variable if it exists, or get it
+## Use should override this with a specific version if necessary
+if [[ ! $CC ]]; then
+    CC=`which gcc`
+    FC=`echo ${CC} |sed s/gcc/gfortran/`
+fi
+## export CC=gcc-9.4.0
+## export FC=gfortran-9.4.0
+
+## Build CalculiX.
+### First set variables
+GCCMV=`${CC} -v 2>&1 | grep "gcc version"|cut -f1 -d.|rev |cut -f1 -d" "|rev`
+if [[ ${GCCMV} -gt 9 ]]; then
+    echo "CalculiX currently builds only with gcc <= 9."
+    echo "Identified version is ${GCCMV}."
+    echo "Please set the CC and FC variables if another version is available."
+    echo "An example command is: export CC=gcc-9.4.0; export FC=gfortran-9.4.0"
+    exit
+fi
+
+### Then build
 cd ccx/src
-make -f Makefile.opensuse -j8
-rsync -avP ccx_2.19 ~/local/bin/.
+LD_LIBRARY_PATH=${LIB}:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH
+export LIB
+export PREFIX
+make -f Makefile.superbuild -j8 || exit
+rsync -avP ccx_2.19 ${BIN}/. || exit
 
 ## Add the library path
-[[ `grep LD_LIBRARY_PATH ~/.bashrc | grep local/lib64` ]] || echo "export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:~/local/lib64:${MKLROOT}/mkl/latest/lib/intel64:${MKLROOT}/compiler/latest/linux/compiler/lib/intel64/" >> ~/.bashrc
-[[ `grep PATH ~/.bashrc | grep local/bin` ]] || echo "export PATH=\${PATH}:~/local/bin" >> ~/.bashrc
+[[ `grep LD_LIBRARY_PATH ~/.bashrc | grep ${LIB}` ]] || echo "export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:\${LIB}:${MKLROOT}/mkl/latest/lib/intel64:${MKLROOT}/compiler/latest/linux/compiler/lib/intel64/" >> ~/.bashrc
+[[ `grep PATH ~/.bashrc | grep ${BIN}` ]] || echo "export PATH=\${PATH}:\${BIN}" >> ~/.bashrc
 
-
+## Inform
+echo Install appears to be successful
+echo An attempt has been made to include the local prefix in the path
+echo You need to activate the new path by sourcing the ~/.bashrc configuration file: source  ~/.bashrc
+echo If libraries are still not found, manually add the library path using a command like: LD_LIBRARY_PATH+=:${PREFIX}/lib64\; export LD_LIBRARY_PATH
