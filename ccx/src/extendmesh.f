@@ -1,6 +1,6 @@
       
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine extendmesh(nnfront,istartfront,iendfront,ifront,
-     &     nkold,ne,nkon,lakon,ipkon,kon,isubsurffront,co,ifronteq,
+     &     ne,nkon,lakon,ipkon,kon,isubsurffront,co,ifronteq,
      &     istartfronteq,iendfronteq,nfront,nfronteq)
 !     
 !     calculate the extension of the mesh
@@ -27,7 +27,7 @@
       character*8 lakon(*)
 !     
       integer i,j,nnfront,istartfront(*),iendfront(*),ifront(*),
-     &     node1,node2,nkold,node1e,node2e,ne,nkon,ipkon(*),kon(*),
+     &     node1,node2,node1e,node2e,ne,nkon,ipkon(*),kon(*),
      &     isubsurffront(*),k,nx(nfront),ny(nfront),
      &     nz(nfront),kflag,ifronteq(nfronteq),istartfronteq(*),
      &     iendfronteq(*),neigh(1),kneigh,neighbor(nfronteq),

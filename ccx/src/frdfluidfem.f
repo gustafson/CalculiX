@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1014,8 +1014,8 @@ c     write(13,100) m1,nkold(i),vcon(i,0)
               call materialdata_dvifem(imat,ntmat_,temp,shcon,nshcon,
      &             dvi)
 !     
-              utau=dsqrt(tau*rho)
-              yplus=utau*yy(i)/dvi
+              utau=dsqrt(tau/rho)
+              yplus=rho*utau*yy(i)/dvi
               uplus=ddt/utau
 !     
 c     write(*,*) 'frdfluidfem ',nkold(i),k,tau,yy(i),yplus

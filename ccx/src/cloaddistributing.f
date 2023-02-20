@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine cloaddistributing(noderef,iref,val,nodeforc,ndirforc,
      &     xforc,nforc,nforc_,iamforc,iamplitude,nam,ntrans,trab,inotr,
      &     co,ikforc,ilforc,isector,add,user,idefforc,ipompc,nodempc,
-     &     nmpc,ikmpc,ilmpc,labmpc,edc,id,orab,coeffc)
+     &     nmpc,ikmpc,ilmpc,labmpc,edc,id,orab,coeffc,ier)
 !     
 !     distributed a distributing load among the nodes belonging to
 !     the distributing surface
@@ -31,7 +31,7 @@
       character*20 labmpc(*)
 !     
       integer nodeforc(2,*),ndirforc(*),noderef,iref,nforc,nforc_,j,
-     &     iamforc(*),iamplitude,nam,ntrans,inotr(2,*),irefm3,
+     &     iamforc(*),iamplitude,nam,ntrans,inotr(2,*),irefm3,ier,
      &     ikforc(*),ilforc(*),idof,id,isector,idefforc(*),ipompc(*),
      &     nodempc(3,*),nmpc,ikmpc(*),ilmpc(*),istart,
      &     iend,iorien,node,idir
@@ -68,7 +68,9 @@
           write(*,*) '       is not allowed in the reference node'
           write(*,*) '       of a *distributing definition;'
           write(*,*) '       reference node: ',noderef
-          call exit(201)
+          write(*,*)
+          ier=1
+          return
         endif
       endif
 !
@@ -79,6 +81,18 @@
         do j=istart,iend
           idof=int(coeffc(0,j))
           node=int(idof/10.d0)
+          if(ntrans.gt.0) then
+            if(inotr(1,node).gt.0) then
+              write(*,*)
+     &'*ERROR in cloaddistributing: no transformation'
+              write(*,*) '       is allowed in a node belonging to a'
+              write(*,*) '       distributing coupling surface;'
+              write(*,*) '       node at fault:',node
+              write(*,*)
+              ier=1
+              cycle
+            endif
+          endif
           idir=int(idof)-10*node
           if(iref.le.3) then
 !
@@ -134,6 +148,18 @@ c          xfor(3)=val*skl(3,iref)
           do j=istart,iend
             idof=int(coeffc(0,j))
             node=int(idof/10.d0)
+            if(ntrans.gt.0) then
+              if(inotr(1,node).gt.0) then
+                write(*,*)
+     &'*ERROR in cloaddistributing: no transformation'
+                write(*,*) '       is allowed in a node belonging to a'
+                write(*,*) '       distributing coupling surface;'
+                write(*,*) '       node at fault:',node
+                write(*,*)
+                ier=1
+                cycle
+              endif
+            endif
             idir=int(idof)-10*node
             forcval=xfor(1)*coeffc(1,j)
      &             +xfor(2)*coeffc(2,j)
@@ -163,6 +189,18 @@ c          xfor(3)=val*skl(3,iref)
           do j=istart,iend
             idof=int(coeffc(0,j))
             node=int(idof/10.d0)
+            if(ntrans.gt.0) then
+              if(inotr(1,node).gt.0) then
+                write(*,*)
+     &'*ERROR in cloaddistributing: no transformation'
+                write(*,*) '       is allowed in a node belonging to a'
+                write(*,*) '       distributing coupling surface;'
+                write(*,*) '       node at fault:',node
+                write(*,*)
+                ier=1
+                cycle
+              endif
+            endif
             idir=int(idof)-10*node
             forcval=xfor(4)*coeffc(4,j)
      &             +xfor(5)*coeffc(5,j)

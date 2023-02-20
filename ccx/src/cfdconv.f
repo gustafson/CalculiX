@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,92 +16,16 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine cfdconv(vold,vcon,v,nk,nmethod,iconvergence,ithermal,
-     &     iit,iturbulent,mi,dtimef,vconmax,iexplicit)
+      subroutine cfdconv(nmethod,iconvergence,ithermal,
+     &     iit,iturbulent,dtimef,vconmax,vmax)
 !     
 !     calculates the change in solution
 !     
       implicit none
 !     
-      integer iconvergence,iit,iturbulent,mi(*),nk,ithermal(*),i,j,
-     &     nmethod,iexplicit
+      integer iconvergence,iit,iturbulent,ithermal(*),i,nmethod
 !     
-      real*8 v(nk,0:mi(2)),vold(0:mi(2),*),vcon(nk,0:mi(2)),vmax(0:6),
-     &     vconmax(0:6),ratio(0:6),dtimef
-!     
-!     first subiteration: calculate the size of the conservative
-!     fields
-!     
-      do j=0,6
-        vconmax(j)=0.d0
-      enddo
-!     
-      if(iexplicit.eq.1) then
-!     
-!     for incompressible fluids the density is stored
-!     in vcon(4,*), the change in density in v(*,4)
-!     
-        do i=1,nk
-          do j=0,4
-            vconmax(j)=vconmax(j)+vcon(i,j)**2
-          enddo
-        enddo
-      else
-        do i=1,nk
-          do j=0,3
-            vconmax(j)=vconmax(j)+vcon(i,j)**2
-          enddo
-!     
-!     for incompressible fluids the pressure is stored
-!     in vold(4,*), the change in pressure in v(*,4)
-!     
-          vconmax(4)=vconmax(4)+vold(4,i)**2
-        enddo
-      endif
-      if(iturbulent.ne.0) then
-        do i=1,nk
-          do j=5,6
-            vconmax(j)=vconmax(j)+vcon(i,j)**2
-          enddo
-        enddo
-      endif
-!     
-!     all subiterations: calculate the size of the change of
-!     the conservative variables
-!     
-      do j=0,6
-        vmax(j)=0.d0
-      enddo
-!     
-      if(iexplicit.eq.1) then
-!     
-!     for incompressible fluids the density is stored
-!     in vcon(*,4), the change in density in v(*,4)
-!     
-        do i=1,nk
-          do j=0,4
-            vmax(j)=vmax(j)+v(i,j)**2
-          enddo
-        enddo
-      else
-        do i=1,nk
-          do j=0,3
-            vmax(j)=vmax(j)+v(i,j)**2
-          enddo
-!     
-!     for incompressible fluids the pressure is stored
-!     in vold(4,*), the change in pressure in v(*,4)
-!     
-          vmax(4)=vmax(4)+v(i,4)**2
-        enddo
-      endif
-      if(iturbulent.ne.0) then
-        do i=1,nk
-          do j=5,6
-            vmax(j)=vmax(j)+v(i,j)**2
-          enddo
-        enddo
-      endif
+      real*8 vmax(0:6),vconmax(0:6),ratio(0:6),dtimef
 !     
 !     check convergence
 !     

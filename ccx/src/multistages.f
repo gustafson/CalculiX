@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,12 +16,12 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine multistages (nkon,set,istartset,iendset,
+      subroutine multistages(nkon,set,istartset,iendset,
      &     ialset,nset,tieset,tietol,co,nk,ipompc,nodempc,
      &     coefmpc,nmpc,nmpc_,ikmpc,ilmpc,mpcfree,xind,yind,ics,nx,ny,
      &     xind0,yind0,ncs_,cs,labmpc,ntie,mcs,rcscg,rcs0cg,zcscg,
      &     zcs0cg,nrcg,nzcg,jcs,kontri,straight,ne,ipkon,kon,
-     &     lakon,lcs,ifacetet,inodface)
+     &     lakon,lcs,ifacetet,inodface,jobnamec)
 !     
       implicit none
 !     
@@ -36,12 +36,14 @@
       character*20 labmpc(*)
       character*81 set(*),leftset,rightset,tieset(3,*),temp,indepties,
      &     indeptiet
+      character*132 jobnamec(*)
+      character*256 fn
 !     
       integer istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &     nset,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),l,ikmpc(*),ilmpc(*),
      &     lcs(*),kflag,ncsnodes,ncs_,mcs,ntie,nrcg(*),nzcg(*),jcs(*),
      &     kontri(3,*),ne,ipkon(*),kon(*),ifacetet(*),inodface(*),
-     &     nodel(5),noder(5),nkon,indexe,nope,ipos,nelem,
+     &     nodel(5),noder(5),nkon,indexe,nope,ipos,nelem,ilen,
      &     indcs,node_cycle,itemp(5),nx(*),ny(*),netri,noder0,
      &     nodef(8),nterms,kseg,k2,ndir,idof,number,id,mpcfreeold,
      &     lathyp(3,6),inum,ier,icount
@@ -60,7 +62,9 @@
 !     
 !     opening a file to store the nodes which are not connected
 !     
-      open(40,file='WarnNodeMissMultiStage.nam',status='unknown')
+      ilen=index(jobnamec(1),char(0))-1
+      fn=jobnamec(1)(1:ilen)//'_WarnNodeMissMultiStage.nam'
+      open(40,file=fn,status='unknown')
       write(40,*) '*NSET,NSET=WarnNodeMultiStage'
       icount=0
 !     
@@ -612,16 +616,15 @@ c
       if(icount.gt.0) then
         write(*,*) '*INFO multistages:'
         write(*,*) '      failed nodes are stored in file'
-        write(*,*) '      WarnNodeMissMultiStage.nam'
+        write(*,*) '      ',fn(1:ilen+27)
         write(*,*) '      This file can be loaded into'
         write(*,*) '      an active cgx-session by typing'
         write(*,*) 
-     &       '      read WarnNodeMultiStage.nam inp'
+     &       '      read ',fn(1:ilen+27),' inp'
         write(*,*)
         close(40)
       else
-        close(40)
-c        close(40,status='delete')
+        close(40,status='delete')
       endif
 !     
 !     *********Ending the main loop over all multistage ties***********

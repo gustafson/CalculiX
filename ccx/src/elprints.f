@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2021 Guido Dhondt
+!              Copyright (C) 1998-2022 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
 !
       if(istep.lt.1) then
          write(*,*) '*ERROR reading *EL PRINT: *EL PRINT should only be'
-         write(*,*) '  used within a *STEP definition'
+         write(*,*) '       used within a *STEP definition'
          ier=1
          return
       endif
@@ -96,7 +96,8 @@ c          enddo
           endif
           if(i.gt.nset) then
              write(*,*) '*WARNING reading *EL PRINT: elementset ',
-     &            elset(1:ipos-1),' does not exist'
+     &           elset(1:ipos-1),' does not exist'
+             write(*,*)
              call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &            ipoinp,inp,ipoinpc)
              return
@@ -183,6 +184,7 @@ c          enddo
 !
       if(elset.eq.'                     ') then
          write(*,*) '*WARNING reading *EL PRINT: no set was defined'
+         write(*,*)
          call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &        ipoinp,inp,ipoinpc)
          return
@@ -199,6 +201,7 @@ c          enddo
      &               '*WARNING reading *EL PRINT: selection of PEEQ'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
+                  write(*,*)
                   cycle
                endif
             elseif((textpart(ii)(1:4).eq.'CEEQ').or.
@@ -210,6 +213,7 @@ c          enddo
      &       '*WARNING reading *EL PRINT: selection of CEEQ or CE or PE'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
+                  write(*,*)
                   cycle
                endif
                textpart(ii)(1:4)='PEEQ'
@@ -219,12 +223,14 @@ c          enddo
      &            '         is converted into PEEQ; no distinction'
                write(*,*) 
      &          '        is made between PEEQ, CEEQ, CE and PE'
+               write(*,*)
             elseif(textpart(ii)(1:3).eq.'SDV') then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then
                   write(*,*) 
      &              '*WARNING reading *EL PRINT: selection of SDV'
                   write(*,*) '         does not make sense for a'
                   write(*,*) '         frequency or bucking calculation'
+                  write(*,*)
                   cycle
                endif
             elseif((textpart(ii)(1:4).eq.'ENER').or.
@@ -237,6 +243,7 @@ c          enddo
      &               '*WARNING reading *EL PRINT: HFL only makes '
                   write(*,*) '         sense for heat transfer '
                   write(*,*) '         calculations'
+                  write(*,*)
                   cycle
                endif
             elseif((textpart(ii)(1:4).eq.'SVF ').or.
@@ -244,9 +251,9 @@ c          enddo
      &             (textpart(ii)(1:4).eq.'HFLF')) then
                if(nef.eq.0) then
                   write(*,*) 
-     &               '*WARNING reading *EL PRINT: SVF or HFLF only'
-                  write(*,*) '         make sense for 3D fluid'
-                  write(*,*) '         calculations; '
+     &               '*ERROR reading *EL PRINT: SVF or HFLF only'
+                  write(*,*) '       make sense for 3D fluid'
+                  write(*,*) '       calculations; '
                   call inputerror(inpc,ipoinpc,iline,
      &                 "*EL PRINT%",ier)
                   return
@@ -260,8 +267,8 @@ c          enddo
      &             (textpart(ii)(1:4).ne.'CENT').and.
      &             (textpart(ii)(1:4).ne.'EBHE')) then
                write(*,*) 
-     &             '*WARNING reading *EL PRINT: label not applicable'
-               write(*,*) '         or unknown; '
+     &             '*ERROR reading *EL PRINT: label not applicable'
+               write(*,*) '       or unknown; '
                call inputerror(inpc,ipoinpc,iline,
      &              "*EL PRINT%",ier)
                return

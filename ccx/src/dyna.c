@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -136,7 +136,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
     *shcon=NULL,*xmr=NULL,*xmi=NULL,*xnoels=NULL,*pslavsurf=NULL,
     *pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,*tmin,*tmax,
     *energyini=NULL,*energy=NULL,alea,*fext=NULL,*smscale=NULL,
-    *autloc=NULL,*xboun2=NULL,*coefmpc2=NULL;
+    *autloc=NULL,*xboun2=NULL,*coefmpc2=NULL,*fnext=NULL;
 
   FILE *f1;
 
@@ -269,7 +269,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
   if(iperturb[0]==1){
     NNEW(vold,double,mt**nk);
     if(fread(vold,sizeof(double),mt**nk,f1)!=mt**nk){
-      printf("*ERROR in dyna reading the reference displacements in the eigenvalue file...");
+      printf(" *ERROR in dyna reading the reference displacements in the eigenvalue file...");
       printf(" *INFO  in dyna: if there are problems reading the .eig file this may be due to:\n");
       printf("        1) the nonexistence of the .eig file\n");
       printf("        2) other boundary conditions than in the input deck\n");
@@ -858,7 +858,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
 	zeta[i]=(alpham+betam*d[i]*d[i])/(2.*d[i]);
       }
       else {
-	printf("*WARNING in dyna: one of the frequencies is zero\n");
+	printf(" *WARNING in dyna: one of the frequencies is zero\n");
 	printf("         no Rayleigh mass damping allowed\n");
 	zeta[i]=0.;
       }
@@ -878,7 +878,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
 
     if(nev<(ITG)xmodal[10]){
       imax=nev;
-      printf("*WARNING in dyna: too many modal damping coefficients applied\n");
+      printf(" *WARNING in dyna: too many modal damping coefficients applied\n");
       printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
     }
     else{
@@ -1082,7 +1082,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
 	  nplicon,plkcon,nplkcon,npmat_,ttime,&time0,istep,&iinc,&dtime,
 	  physcon,ibody,xbodyold,&reltime,veold,matname,mi,ikactmech,
 	  &nactmech,ielprop,prop,sti,xstateini,xstate,nstate_,ntrans,
-	  inotr,trab);
+	  inotr,trab,fnext);
   
   /*  correction for nonzero SPC's */
   
@@ -1131,7 +1131,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
       pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 		     &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-      printf("*ERROR in dyna: the PARDISO library is not linked\n\n");
+      printf(" *ERROR in dyna: the PARDISO library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -1140,7 +1140,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
       pastix_factor_main(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 		    &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-      printf("*ERROR in arpack: the PASTIX library is not linked\n\n");
+      printf(" *ERROR in arpack: the PASTIX library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -1329,7 +1329,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
 	      npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 	      xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
 	      ielprop,prop,sti,xstateini,xstate,nstate_,ntrans,inotr,
-	      trab);
+	      trab,fnext);
     }else{
       rhsmain(co,nk,kon,ipkon,lakon,ne,
 	      ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
@@ -1342,7 +1342,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
 	      npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 	      xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
 	      ielprop,prop,sti,xstateini,xstate,nstate_,ntrans,inotr,
-	      trab);
+	      trab,fnext);
     }
 	      
     /* correction for nonzero SPC's */
@@ -1448,7 +1448,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
 		  npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		  xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
 		  ielprop,prop,sti,xstateini,xstate,nstate_,ntrans,inotr,
-		  trab);
+		  trab,fnext);
 	}else{
 	  rhsmain(co,nk,kon,ipkon,lakon,ne,
 		  ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
@@ -1461,7 +1461,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
 		  npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		  xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
 		  ielprop,prop,sti,xstateini,xstate,nstate_,ntrans,inotr,
-		  trab);
+		  trab,fnext);
 	}
 	      
 	/* correction for nonzero SPC's */

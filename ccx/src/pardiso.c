@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -23,12 +23,16 @@
 #include "CalculiX.h"
 #include "pardiso.h"
 
+/* next line is for the simultaneous use of PARDISO and PaStiX */
+
+#include <mkl_service.h>
+
 ITG *icolpardiso=NULL,*pointers=NULL,iparm[64];
 long long pt[64];
 double *aupardiso=NULL;
 /* double dparm[64];  not used */
 ITG mthread_mkl=0;
-/* char envMKL[32];   moved to pardiso.h */
+char envMKL[32];
 
 void pardiso_factor(double *ad, double *au, double *adb, double *aub, 
 		    double *sigma,ITG *icol, ITG *irow, 
@@ -293,6 +297,10 @@ void pardiso_factor(double *ad, double *au, double *adb, double *aub,
     }
   }
 
+/* next line is for the simulateous use of PARDISO and PaStiX */
+
+  mkl_domain_set_num_threads(mthread_mkl,MKL_DOMAIN_PARDISO);
+  
   FORTRAN(pardiso,(pt,&maxfct,&mnum,&mtype,&phase,neq,aupardiso,
 		   pointers,icolpardiso,perm,&nrhs,iparm,&msglvl,
                    b,x,&error));
@@ -307,11 +315,11 @@ void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag,ITG *inputformat,
     msglvl=0,i,error=0;
   double *x=NULL;
 
-  if(*symmetryflag==0){
+  /*  if(*symmetryflag==0){
     printf(" Solving the system of equations using the symmetric pardiso solver\n");
   }else{
     printf(" Solving the system of equations using the unsymmetric pardiso solver\n");
-  }
+    }*/
 
   if(*symmetryflag==0){
     mtype=-2;
@@ -326,7 +334,7 @@ void pardiso_solve(double *b, ITG *neq,ITG *symmetryflag,ITG *inputformat,
   
   /* pardiso_factor has been called befor, MKL_NUM_THREADS=mthread_mkl is set*/
 
-  printf(" number of threads =% d\n\n",mthread_mkl);
+  //  printf(" number of threads =% d\n\n",mthread_mkl);
 
   NNEW(x,double,*nrhs**neq);
 

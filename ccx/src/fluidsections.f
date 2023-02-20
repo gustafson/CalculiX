@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -184,40 +184,28 @@
       elseif(typename(1:7).eq.'CHANNEL') then
         if(typename(8:17).eq.'SLUICEGATE') then
           elname='LICHSG '
-          ndprop=7
-        elseif(typename(8:20).eq.'SLUICEOPENING') then
-          elname='LICHSO '
           ndprop=6
-        elseif(typename(8:16).eq.'WEIRCREST') then
+        elseif(typename(8:12).eq.'WEIR') then
           elname='LICHWE '
           ndprop=7
-        elseif(typename(8:16).eq.'WEIRSLOPE') then
-          elname='LICHWO '
-          ndprop=6
         elseif(typename(8:17).eq.'STRAIGHT') then
           elname='LICH   '
-          ndprop=7
+          ndprop=5
         elseif(typename(8:16).eq.'RESERVOIR') then
           elname='LICHRE '
-          ndprop=6
-        elseif(typename(8:25).eq.'DISCONTINUOUSSLOPE') then
-          elname='LICHDS '
-          ndprop=9
-        elseif(typename(8:27).eq.'DISCONTINUOUSOPENING') then
-          elname='LICHDO '
-          ndprop=6
+          ndprop=5
         elseif(typename(8:18).eq.'CONTRACTION') then
           elname='LICHCO '
-          ndprop=6
+          ndprop=7
         elseif(typename(8:18).eq.'ENLARGEMENT') then
           elname='LICHEL '
-          ndprop=6
+          ndprop=7
         elseif(typename(8:11).eq.'STEP') then
           elname='LICHST '
-          ndprop=6
+          ndprop=7
         elseif(typename(8:11).eq.'DROP') then
           elname='LICHDR '
-          ndprop=6
+          ndprop=7
         else
           write(*,*) '*ERROR reading *FLUID SECTION:'
           write(*,*) '       unknown channel section'
@@ -815,8 +803,8 @@ c     enddo
 !     if Manning: change sign of 5th entry as marker
 !     
         if(manning) then
-          if((elname(5:6).eq.'SO').or.
-     &         (elname(5:6).eq.'WO').or.
+          if((elname(5:6).eq.'SG').or.
+     &         (elname(5:6).eq.'WE').or.
      &         (elname(5:6).eq.'  ').or.
      &         (elname(5:6).eq.'RE').or.
      &         (elname(5:6).eq.'DS').or.

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,6 +28,8 @@
 !     *KINEMATIC or *DISTRIBUTING
 !     
       implicit none
+!
+      logical cyclicsymmetry
 !     
       character*1 inpc(*),surfkind,typeboun(*)
       character*8 lakon(*)
@@ -51,7 +53,7 @@
      &     shp2(7,8),xsj2(3),xsj,xi,et,weight,xs2(3,2),area,sum1,sum2,
      &     pcg(3),cg(3),sum3,coeffc(0:6,*),dd,r(3),e1(3),e2(3),s(3,3),
      &     e3(3),rp1(3),rp2(3),rp3(3),edc(12,*),w(3),z(3,3),fv1(3),
-     &     fv2(3)
+     &     fv2(3),pcl(3)
 !     
       include "gauss.f"
 !     
@@ -482,6 +484,22 @@
           return
         endif
 !     
+!     check whether cyclic symmetric
+!
+        cyclicsymmetry=.false.
+        do i=2,n
+          if(textpart(i)(1:14).eq.'CYCLICSYMMETRY') then
+            cyclicsymmetry=.true.
+          else
+            write(*,*) 
+     &       '*WARNING reading *DISTRIBUTING: parameter not recognized:'
+            write(*,*) '         ',
+     &           textpart(i)(1:index(textpart(i),' ')-1)
+            call inputwarning(inpc,ipoinpc,iline,
+     &           "*DISTRIBUTING%")
+          endif
+        enddo
+!     
         npt=0
         area=0.d0
 !     
@@ -681,14 +699,21 @@
           dcs(i)=dcs(i)/area
         enddo
 !     
-!     determining the weighted center of gravity
-!     
-        do j=1,3
-          cg(j)=0.d0
-          do i=1,npt
-            cg(j)=cg(j)+co(j,ics(1,i))*dcs(i)
+!     determining the weighted center of gravity (only if not
+!     cyclic symmetric)
+!
+        if(.not.cyclicsymmetry) then
+          do j=1,3
+            cg(j)=0.d0
+            do i=1,npt
+              cg(j)=cg(j)+co(j,ics(1,i))*dcs(i)
+            enddo
           enddo
-        enddo
+        else
+          do j=1,3
+            cg(j)=co(j,irefnode)
+          enddo
+        endif
 !
 !     determine unit vectors along the principal axes of inertia
 !
@@ -776,11 +801,18 @@ c        write(*,*) e1(1)*e2(1)+e1(2)*e2(2)+e1(3)*e2(3)
           sum3=sum3+(rp3(1)**2+rp3(2)**2+rp3(3)**2)*dcs(i)
         enddo
 !     
-!     determine the distance vector between irefnode and cg
+!       determine the distance vector between irefnode and cg
 !     
         do i=1,3
           pcg(i)=co(i,irefnode)-cg(i)
         enddo
+!
+!       pcl contains the components of the distance vector in
+!       the local coupling surface coordinate system
+!
+        pcl(1)=pcg(1)*e1(1)+pcg(2)*e1(2)+pcg(3)*e1(3)
+        pcl(2)=pcg(1)*e2(1)+pcg(2)*e2(2)+pcg(3)*e2(3)
+        pcl(3)=pcg(1)*e3(1)+pcg(2)*e3(2)+pcg(3)*e3(3)
 !
 !     start of the force constraints for this coupling+distributed
 !     definition
@@ -837,12 +869,12 @@ c        write(*,*) e1(1)*e2(1)+e1(2)*e2(2)+e1(3)*e2(3)
 !
 !         correction for force not in center of gravity
 !
-          coeffc(1,nfc)=coeffc(1,nfc)+coeffc(5,nfc)*pcg(3)
-     &                               -coeffc(6,nfc)*pcg(2)
-          coeffc(2,nfc)=coeffc(2,nfc)+coeffc(6,nfc)*pcg(1)
-     &                               -coeffc(4,nfc)*pcg(3)
-          coeffc(3,nfc)=coeffc(3,nfc)+coeffc(4,nfc)*pcg(2)
-     &                               -coeffc(5,nfc)*pcg(1)
+          coeffc(1,nfc)=coeffc(1,nfc)+coeffc(5,nfc)*pcl(3)
+     &                               -coeffc(6,nfc)*pcl(2)
+          coeffc(2,nfc)=coeffc(2,nfc)+coeffc(6,nfc)*pcl(1)
+     &                               -coeffc(4,nfc)*pcl(3)
+          coeffc(3,nfc)=coeffc(3,nfc)+coeffc(4,nfc)*pcl(2)
+     &                               -coeffc(5,nfc)*pcl(1)
 !
 !         equation in global y
 !
@@ -862,12 +894,12 @@ c        write(*,*) e1(1)*e2(1)+e1(2)*e2(2)+e1(3)*e2(3)
 !
 !         correction for force not in center of gravity
 !
-          coeffc(1,nfc)=coeffc(1,nfc)+coeffc(5,nfc)*pcg(3)
-     &                               -coeffc(6,nfc)*pcg(2)
-          coeffc(2,nfc)=coeffc(2,nfc)+coeffc(6,nfc)*pcg(1)
-     &                               -coeffc(4,nfc)*pcg(3)
-          coeffc(3,nfc)=coeffc(3,nfc)+coeffc(4,nfc)*pcg(2)
-     &                               -coeffc(5,nfc)*pcg(1)
+          coeffc(1,nfc)=coeffc(1,nfc)+coeffc(5,nfc)*pcl(3)
+     &                               -coeffc(6,nfc)*pcl(2)
+          coeffc(2,nfc)=coeffc(2,nfc)+coeffc(6,nfc)*pcl(1)
+     &                               -coeffc(4,nfc)*pcl(3)
+          coeffc(3,nfc)=coeffc(3,nfc)+coeffc(4,nfc)*pcl(2)
+     &                               -coeffc(5,nfc)*pcl(1)
 !
 !         equation in global z
 !
@@ -887,12 +919,12 @@ c        write(*,*) e1(1)*e2(1)+e1(2)*e2(2)+e1(3)*e2(3)
 !
 !         correction for force not in center of gravity
 !
-          coeffc(1,nfc)=coeffc(1,nfc)+coeffc(5,nfc)*pcg(3)
-     &                               -coeffc(6,nfc)*pcg(2)
-          coeffc(2,nfc)=coeffc(2,nfc)+coeffc(6,nfc)*pcg(1)
-     &                               -coeffc(4,nfc)*pcg(3)
-          coeffc(3,nfc)=coeffc(3,nfc)+coeffc(4,nfc)*pcg(2)
-     &                               -coeffc(5,nfc)*pcg(1)
+          coeffc(1,nfc)=coeffc(1,nfc)+coeffc(5,nfc)*pcl(3)
+     &                               -coeffc(6,nfc)*pcl(2)
+          coeffc(2,nfc)=coeffc(2,nfc)+coeffc(6,nfc)*pcl(1)
+     &                               -coeffc(4,nfc)*pcl(3)
+          coeffc(3,nfc)=coeffc(3,nfc)+coeffc(4,nfc)*pcl(2)
+     &                               -coeffc(5,nfc)*pcl(1)
         enddo
 !
 !       treating the translational degrees of freedom (default)
@@ -1019,6 +1051,7 @@ c        write(*,*) e1(1)*e2(1)+e1(2)*e2(2)+e1(3)*e2(3)
         write(*,*) '  '
         call inputerror(inpc,ipoinpc,iline,
      &       "*COUPLING%",ier)
+        ier=2
         return
       endif
 !     

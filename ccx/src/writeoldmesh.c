@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -53,7 +53,7 @@ void writeoldmesh(ITG *nk,ITG *ne,double *co,ITG *ipkon,
   strcat(fneig,".frd");
 
   if((f1=fopen(fneig,"wb"))==NULL){
-    printf("*EOR in frd: cannot open frd file for writing...");
+    printf(" *ERROR in frd: cannot open frd file for writing...");
     exit(0);
   }
   
@@ -74,7 +74,7 @@ void writeoldmesh(ITG *nk,ITG *ne,double *co,ITG *ipkon,
   
   strcat(foldmesh,".frd");
   if((f1=fopen(foldmesh,"ab"))==NULL){
-    printf("*ERROR in frd: cannot open frd file for writing...");
+    printf(" *ERROR in frd: cannot open frd file for writing...");
     exit(0);
   }
   fprintf(f1," 9999\n");

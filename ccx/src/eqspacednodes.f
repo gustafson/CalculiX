@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -22,15 +22,23 @@
 !     
 !     determine the mesh characteristic length for each front
 !     
+!     acrackglob, iincglob and dnglob are the crack length, the
+!     increment number and the total number of cycles at the END
+!     of the present increment and are therefore attached to the
+!     propagated front, therefore they get values assigned in the
+!     present routine; 
+!      
       implicit none
 !     
       integer i,k,m,n1,n2,istartfront(*),iendfront(*),iendcrackfro(*),
      &     nnfront,ifrontprop(*),nodesnum,ier,icrack,id,nk,nfront,
      &     ifronteq(*),kend,istartfronteq(*),iendfronteq(*),nfronteq,
-     &     iincglob(*),iinc,ncyctot
+     &     iincglob(*),iinc,ncyctot,nklim
 !     
       real*8 co(3,*),dist,charlen(*),x(nfront),px,delta,x1,x2,
      &     acrackglob(*),dnglob(*)
+!
+      nklim=nk+2*nfront
 !     
 !     loop over all front(s) 
 !     
@@ -38,7 +46,6 @@
       nfronteq=0
       do i=1,nnfront
         istartfronteq(i)=nfronteq+1
-c        ifronteq(istartfronteq(i))=ifrontprop(istartfront(i))
 !     
 !     loop over all nodes belonging to the propagated front
 !     
@@ -48,9 +55,6 @@ c        ifronteq(istartfronteq(i))=ifrontprop(istartfront(i))
         if(iendcrackfro(icrack).lt.istartfront(i)) then
           icrack=icrack+1
         endif
-!     
-c        dnglob(ifrontprop(istartfront(i)))=1.d0*ncyctot
-c        dnglob(ifrontprop(iendfront(i)))=1.d0*ncyctot
 !        
         do m=istartfront(i),iendfront(i)-1
 !     
@@ -70,6 +74,11 @@ c        dnglob(ifrontprop(iendfront(i)))=1.d0*ncyctot
 !     for consistency in the node numbering along the crack front        
 !
         nk=nk+1
+        if(nk.gt.nklim) then
+          write(*,*) '*ERROR in eqspacednodes: nfronteq > 2*nfront'
+          ier=1
+          return
+        endif
         do k=1,3
           co(k,nk)=co(k,ifrontprop(istartfront(i)))
         enddo
@@ -81,6 +90,11 @@ c        dnglob(ifrontprop(iendfront(i)))=1.d0*ncyctot
 !     nodesnum is the new number of new nodes on the propagated front
 !     
         nodesnum=nint(x(kend)/charlen(icrack))+1
+        if(nk+nodesnum-1.gt.nklim) then
+          write(*,*) '*ERROR in eqspacednodes: nfronteq > 2*nfront'
+          ier=1
+          return
+        endif
         delta=x(kend)/(nodesnum-1)
 !     
 !     treating the nodes in between start and end
@@ -118,12 +132,11 @@ c        dnglob(ifrontprop(iendfront(i)))=1.d0*ncyctot
         iincglob(nk)=iinc+1
         dnglob(nk)=1.d0*ncyctot
         ifronteq(iendfronteq(i))=nk
-c     ifronteq(iendfronteq(i))=ifrontprop(iendfront(i))
 !        
-        if(nfronteq.gt.(2*nfront)) then
-          write(*,*) '*ERROR in calccharlength: nfronteq.gt.2*nfront'
-          ier=1
-        endif
+c        if(nfronteq.gt.(2*nfront)) then
+c          write(*,*) '*ERROR in calccharlength: nfronteq.gt.2*nfront'
+c          ier=1
+c        endif
 !
       enddo
       return

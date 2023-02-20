@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
       subroutine getdesiinfo3d(set,istartset,iendset,ialset,nset,
      &     mi,nactdof,ndesi,nodedesi,ntie,tieset,itmp,nmpc,nodempc,
      &     ipompc,nodedesiinv,iponoel,inoel,lakon,ipkon,kon,iregion,
-     &     ipoface,nodface,nk)    
+     &     ipoface,nodface,nk,jobnamef)    
 !     
 !     storing the design variables in nodedesi
 !     marking which nodes are design variables in nodedesiinv
@@ -38,14 +38,17 @@
       character*81 setname
       character*81 set(*)
       character*81 tieset(3,*)
+      character*132 jobnamef
+      character*256 fn
 !     
       integer mi(*),istartset(*),iendset(*),ialset(*),ndesi,
      &     node,nodedesi(*),nset,ntie,i,j,k,l,m,nmpc,nodempc(3,*),
-     &     nactdof(0:mi(2),*),itmp(*),ntmp,index,id,ipompc(*),
+     &     nactdof(0:mi(2),*),itmp(*),ntmp,index1,id,ipompc(*),
      &     nodedesiinv(*),iponoel(*),inoel(2,*),nelem,nope,nopedesi,
      &     ipkon(*),nnodes,kon(*),iregion,konl(26),iaux,kflag,
      &     ipoface(*),nodface(5,*),jfacem,nopesurf(9),ifaceq(8,6),
-     &     ifacet(6,4),ifacew1(4,5),ifacew2(8,5),nopem,nk,iwrite
+     &     ifacet(6,4),ifacew1(4,5),ifacew2(8,5),nopem,nk,iwrite,
+     &     ilen
 !     
       setname(1:1)=' '
       ndesi=0
@@ -103,14 +106,14 @@
 !     
       ntmp=0
       do i=1,nmpc
-        index=ipompc(i)
+        index1=ipompc(i)
         do
-          if(index.eq.0) exit
-          node=nodempc(1,index)
+          if(index1.eq.0) exit
+          node=nodempc(1,index1)
           call nident(itmp,node,ntmp,id)
           if(id.gt.0) then
             if(itmp(id).eq.node) then
-              index=nodempc(3,index)
+              index1=nodempc(3,index1)
               cycle
             endif
           endif
@@ -119,7 +122,7 @@
             itmp(j)=itmp(j-1)
           enddo
           itmp(id+1)=node
-          index=nodempc(3,index)
+          index1=nodempc(3,index1)
         enddo
       enddo
 !     
@@ -127,7 +130,9 @@
 !     design variables
 !
       iwrite=0
-      open(40,file='WarnNodeDesignReject.nam',status='unknown')
+      ilen=index(jobnamef,' ')-1
+      fn=jobnamef(1:ilen)//'_WarnNodeDesignReject.nam'
+      open(40,file=fn,status='unknown')
       write(40,*) '*NSET,NSET=WarnNodeDesignReject'
 !     
 !     Search the name of the node set in "set(i)" and
@@ -230,8 +235,8 @@ c      enddo
 !     it is a design variable or not
 !     
       do i=1,ndesi
-        index=nodedesi(i)
-        nodedesiinv(index)=-1
+        index1=nodedesi(i)
+        nodedesiinv(index1)=-1
       enddo
 !     
       kflag=1
@@ -244,10 +249,10 @@ c      enddo
       do i=1,nk  
         node=i
         if(ipoface(node).eq.0) cycle
-        index=ipoface(node)
+        index1=ipoface(node)
         do
-          nelem=nodface(3,index)
-          jfacem=nodface(4,index)
+          nelem=nodface(3,index1)
+          jfacem=nodface(4,index1)
 !     
           if(lakon(nelem)(4:4).eq.'8') then
             nope=8
@@ -327,8 +332,8 @@ c      enddo
               endif
             enddo
           endif
-          index=nodface(5,index)
-          if(index.eq.0) exit      
+          index1=nodface(5,index1)
+          if(index1.eq.0) exit      
         enddo
       enddo
 !     
@@ -359,16 +364,15 @@ c      enddo
       if(iwrite.eq.1) then
         write(*,*) '*INFO in getdesiinfo:'
         write(*,*) '      rejected design nodes are stored in'
-        write(*,*) '      file WarnNodeDesignReject.nam'
+        write(*,*) '      file ',fn(1:ilen+25)
         write(*,*) '      This file can be loaded into'
         write(*,*) '      an active cgx-session by typing'
         write(*,*) 
-     &       '      read WarnNodeDesignReject.nam inp'
+     &       '      read ',fn(1:ilen+25),' inp'
         write(*,*)
         close(40)
       else
-        close(40)
-c        close(40,status='delete')
+        close(40,status='delete')
       endif
 !     
       return

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -83,10 +83,10 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     if(id>0){
       if(ikboun[id-1]==ikmpc[i]){
 	if(strcmp1(&labmpc[20*i],"FLUID")!=0){
-	  printf("*ERROR in cascade: the DOF corresponding to \n node %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n\n",
+	  printf(" *ERROR in cascade: the DOF corresponding to \n node %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n\n",
 		 (ikmpc[i])/8+1,ikmpc[i]-8*((ikmpc[i])/8));
 	}else{
-	  printf("*ERROR in cascade: the DOF corresponding to \n face %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n\n",
+	  printf(" *ERROR in cascade: the DOF corresponding to \n face %" ITGFORMAT " in direction %" ITGFORMAT " is detected on the \n dependent side of a MPC and a SPC\n\n",
 		 (-ikmpc[i])/8+1,-ikmpc[i]-8*((-ikmpc[i])/8));
 	}
 	FORTRAN(stop,());
@@ -186,7 +186,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	  if((jmpc[mpc-1]==1)||(nl==1)){
 	    *icascade=2;
 	    if(idepend==0){
-	      printf("*INFO in cascade: linear MPCs and\n");
+	      printf(" *INFO in cascade: linear MPCs and\n");
 	      printf("       nonlinear MPCs depend on each other\n");
 	      printf("       common node: %" ITGFORMAT " in direction %" ITGFORMAT "\n\n",nodempc[3*index-3],nodempc[3*index-2]);
 	      idepend=1;}
@@ -195,9 +195,6 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	      if(index!=0) continue;
 	      else break;}
 	  }
-
-	  /*		    printf("*INFO in cascade: DOF %" ITGFORMAT " of node %" ITGFORMAT " is expanded\n",
-			    nodempc[3*index-2],nodempc[3*index-3]);*/
 
 	  /* collecting terms corresponding to the same DOF */
 		    
@@ -230,10 +227,10 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 		    
 	  index1=ipompc[i];
 	  if(fabs(coefmpc[index1-1])<1.e-10){
-	    printf("*ERROR in cascade: zero coefficient on the\n");
-	    printf("       dependent side of an equation\n");
-	    printf("       dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
-	    printf("       direction: %" ITGFORMAT "\n\n",nodempc[3*index1-2]);
+	    printf(" *ERROR in cascade: zero coefficient on the\n");
+	    printf("        dependent side of an equation\n");
+	    printf("        dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
+	    printf("        direction: %" ITGFORMAT "\n\n",nodempc[3*index1-2]);
 	    FORTRAN(stop,());
 	  }
 
@@ -265,7 +262,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 		  *mpcfree=*memmpc_+1;
 		  nodempc[3*index-1]=*mpcfree;
 		  *memmpc_=(ITG)(1.1**memmpc_);
-		  printf("*INFO in cascade: reallocating nodempc; new size = %" ITGFORMAT "\n\n",*memmpc_);
+		  printf(" *INFO in cascade: reallocating nodempc; new size = %" ITGFORMAT "\n\n",*memmpc_);
 		  RENEW(nodempc,ITG,3**memmpc_);
 		  RENEW(coefmpc,double,*memmpc_);
 		  for(j=*mpcfree;j<*memmpc_;j++){
@@ -332,10 +329,10 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 
 	if(fabs(coefmpc[index1-1])<1.e-10){
 	  if(index1old==0){
-	    printf("*ERROR in cascade: zero coefficient on the\n");
-	    printf("       dependent side of an equation\n");
-	    printf("       dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
-	    printf("       direction: %" ITGFORMAT "\n\n",nodempc[3*index1-2]);
+	    printf(" *ERROR in cascade: zero coefficient on the\n");
+	    printf("        dependent side of an equation\n");
+	    printf("        dependent node: %" ITGFORMAT "",nodempc[3*index1-3]);
+	    printf("        direction: %" ITGFORMAT "\n\n",nodempc[3*index1-2]);
 	    FORTRAN(stop,());
 	  }
 	  else{

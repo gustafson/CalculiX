@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -25,7 +25,7 @@
 #include <pthread.h>
 #include "CalculiX.h"
 
-static ITG *neapar=NULL,*nebpar=NULL,*mt1,*nactdof1;
+static ITG *nkapar=NULL,*nkbpar=NULL,*mt1,*nactdof1;
 
 static double *b1,*v1,*veold1,*accold1,*scal11,*scal21,*cam01,*cam31,
   *dtime1; 
@@ -48,26 +48,26 @@ void iniparll(ITG *mt,ITG *nactdof,double *b,double *v,
     
   pthread_t tid[*num_cpus];
 
-  /* determining the element bounds in each thread */
+  /* determining the node bounds in each thread */
 
-  NNEW(neapar,ITG,*num_cpus);
-  NNEW(nebpar,ITG,*num_cpus);
+  NNEW(nkapar,ITG,*num_cpus);
+  NNEW(nkbpar,ITG,*num_cpus);
   NNEW(cam01,double,*num_cpus);
   NNEW(cam31,double,*num_cpus);
 
-  /* dividing the element number range into num_cpus equal numbers of 
+  /* dividing the node number range into num_cpus equal numbers of 
      active entries.  */
 
   idelta=(ITG)floor(*nk/(double)(*num_cpus));
   isum=0;
   for(i=0;i<*num_cpus;i++){
-    neapar[i]=isum;
+    nkapar[i]=isum;
     if(i!=*num_cpus-1){
       isum+=idelta;
     }else{
       isum=*nk;
     }
-    nebpar[i]=isum;
+    nkbpar[i]=isum;
   }
 
   /* create threads and wait */
@@ -114,7 +114,7 @@ void iniparll(ITG *mt,ITG *nactdof,double *b,double *v,
     }
   }
 
-  SFREE(ithread);SFREE(neapar);SFREE(nebpar);SFREE(cam01);SFREE(cam31);
+  SFREE(ithread);SFREE(nkapar);SFREE(nkbpar);SFREE(cam01);SFREE(cam31);
 
 }
 
@@ -122,14 +122,14 @@ void iniparll(ITG *mt,ITG *nactdof,double *b,double *v,
 
 void *iniparllmt(ITG *i){
 
-  ITG nea,neb,k,j;
+  ITG nka,nkb,k,j;
 
   double bnac;
 
-  nea=neapar[*i];
-  neb=nebpar[*i];
+  nka=nkapar[*i];
+  nkb=nkbpar[*i];
     
-  for(k=nea;k<neb;++k){
+  for(k=nka;k<nkb;++k){
     for(j=1;j<*mt1;j++){
       if(nactdof1[*mt1*k+j]>0){
 	bnac=b1[nactdof1[*mt1*k+j]-1];
@@ -160,14 +160,14 @@ void *iniparllmt(ITG *i){
 
 void *iniparllmt_massless(ITG *i){
 
-  ITG nea,neb,k,j;
+  ITG nka,nkb,k,j;
 
   double bnac;
 
-  nea=neapar[*i];
-  neb=nebpar[*i];
+  nka=nkapar[*i];
+  nkb=nkbpar[*i];
 
-  for(k=nea;k<neb;++k){
+  for(k=nka;k<nkb;++k){
     for(j=1;j<*mt1;j++){
       if(nactdof1[*mt1*k+j]>0){
         bnac=b1[nactdof1[*mt1*k+j]-1];
@@ -187,7 +187,7 @@ void *iniparllmt_massless(ITG *i){
       /*  (bnac-veold1[*mt1*k+j])/(*dtime1) is the acceleration
           at time (k) */
       
-      accold1[*mt1*k+j]=(bnac-veold1[*mt1*k+j])/(*dtime1);
+      //accold1[*mt1*k+j]=(bnac-veold1[*mt1*k+j])/(*dtime1);
 
       /* bnac is the velocity at time (k+1/2) */
       

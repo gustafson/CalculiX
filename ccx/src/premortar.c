@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -239,7 +239,7 @@ void premortar(ITG *iflagact,ITG *ismallsliding,ITG *nzs,ITG *nzsc2,
 	       double *energy,ITG *kscale,ITG *iponoel,ITG *inoel,ITG *nener,
 	       char *orname,ITG *network,
 	       char *typeboun,ITG *num_cpus,double *t0g,double *t1g,
-	       double *smscale,ITG *mscalmethod){
+	       double *smscale,ITG *mscalmethod,char *jobnamef){
   
   ITG im,i,ii,j,jj,k,l,mt=mi[1]+1,node,jfaces,nelems,ifaces,nope,nopes,idummy,
     *ndirboun2=NULL,*nodeboun2=NULL,*ipompc2=NULL,*nodempc2=NULL,nodes[8],
@@ -415,7 +415,7 @@ void premortar(ITG *iflagact,ITG *ismallsliding,ITG *nzs,ITG *nzsc2,
 			 islavspc2,nsspc2,nslavmpc2,islavmpc2,
 			 nsmpc2,nmastspc,imastspc,nmspc,nmastmpc,
 			 imastmpc,nmmpc,nmastmpc2,imastmpc2,
-			 nmmpc2));
+			 nmmpc2,jobnamef));
   
   RENEW(islavspc,ITG,2**nsspc+1);
   RENEW(islavmpc,ITG,2**nsmpc+1);

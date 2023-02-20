@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -212,96 +212,6 @@ c     write(*,*) 'mass flow in node 5: ',v(1,5)
             endif
           endif
           if(dabs(v(3,node)).gt.vama) vama=dabs(v(3,node))
-!     
-!     update location of hydraulic jump
-!     
-        elseif(lakon(ieg(i))(2:5).eq.'LICH') then
-          if((lakon(ieg(i))(6:7).eq.'SG').or.
-     &         (lakon(ieg(i))(6:7).eq.'WE').or.
-     &         (lakon(ieg(i))(6:7).eq.'DS')) then
-            index=ipkon(ieg(i))
-            node=kon(index+2)
-            if(nactdog(3,node).eq.0) cycle
-            index=ielprop(ieg(i))
-            if(lakon(ieg(i))(6:7).eq.'SG') then
-              eta=prop(index+4)+bc(nactdog(3,node))*dtheta
-              prop(index+4)=eta
-              nelem=nint(prop(index+7))      
-            elseif(lakon(ieg(i))(6:7).eq.'WE') then
-              eta=prop(index+4)+bc(nactdog(3,node))*dtheta
-              prop(index+4)=eta
-              nelem=nint(prop(index+7))      
-            elseif(lakon(ieg(i))(6:7).eq.'DS') then
-              eta=prop(index+7)+bc(nactdog(3,node))*dtheta
-              prop(index+7)=eta
-              nelem=nint(prop(index+9))      
-            endif
-            v(3,node)=eta
-            vama=eta
-!     
-!     check whether 0<=eta<=1. If not, the hydraulic jump
-!     does not take place in the element itself and has to
-!     be forced out of the element by adjusting the
-!     water depth of one of the end nodes
-!     
-            if((eta.lt.0.d0).or.(eta.gt.1.d0)) then
-              index=ipkon(nelem)
-              node1=kon(index+1)
-              nodem=kon(index+2)
-              node2=kon(index+3)
-              xflow=v(1,nodem)
-!     
-!     determining the temperature for the
-!     material properties
-!     
-              if(xflow.gt.0) then
-                if(node1.eq.0) then
-                  gastemp=v(0,node2)
-                else
-                  gastemp=v(0,node1)
-                endif
-              else
-                if(node2.eq.0) then
-                  gastemp=v(0,node1)
-                else
-                  gastemp=v(0,node2)
-                endif
-              endif
-!     
-              imat=ielmat(1,nelem)
-!     
-              call materialdata_tg(imat,ntmat_,gastemp,shcon,nshcon,
-     &             cp,r,dvi,rhcon,nrhcon,rho)
-!     
-              do j=1,3
-                g(j)=0.d0
-              enddo
-              if(nbody.gt.0) then
-                index=nelem
-                do
-                  j=ipobody(1,index)
-                  if(j.eq.0) exit
-                  if(ibody(1,j).eq.2) then
-                    g(1)=g(1)+xbodyact(1,j)*xbodyact(2,j)
-                    g(2)=g(2)+xbodyact(1,j)*xbodyact(3,j)
-                    g(3)=g(3)+xbodyact(1,j)*xbodyact(4,j)
-                  endif
-                  index=ipobody(2,index)
-                  if(index.eq.0) exit
-                enddo
-              endif
-!     
-              kflag=3
-              call flux(node1,node2,nodem,nelem,lakon,kon,ipkon,
-     &             nactdog,identity,
-     &             ielprop,prop,kflag,v,xflow,f,nodef,idirf,df,
-     &             cp,r,rho,physcon,g,co,dvi,numf,vold,set,shcon,
-     &             nshcon,rhcon,nrhcon,ntmat_,mi,ider,ttime,time,
-     &             iaxial,iplausi)
-              kflag=2
-!     
-            endif
-          endif
         endif
       enddo
 !     
@@ -316,7 +226,8 @@ c     enddo
       do i=1,ntg
         node=itg(i)
         if(v(2,node).lt.0) then
-          write(*,*) 'wrong pressure; node ',node,v(2,node)
+          write(*,*) '*WARNING in resultnet:'
+          write(*,*) '         negative pressure; node ',node,v(2,node)
           iin=0
           return
         endif
@@ -327,7 +238,9 @@ c     enddo
       do i=1,ntg
         node=itg(i)
         if(v(0,node).lt.0) then
-          write(*,*) 'wrong temperature; node ',node,v(0,node)
+          write(*,*) '*WARNING in resultnet:'
+          write(*,*)
+     &         '         negative temperature; node ',node,v(0,node)
           iin=0
           return
         endif
@@ -344,11 +257,12 @@ c     enddo
      &       (lakon(nelem)(4:5).eq.'RTA')) then
           xflow=v(1,kon(ipkon(nelem)+2))
           if(xflow.lt.0d0)then
-            Write(*,*)'*WARNING in resultnet.f'
-            write(*,*)'Element',nelem,'of TYPE ABSOLUTE TO RELATIVE'
-            write(*,*)'The flow direction is no more conform '
-            write(*,*)'to element definition'
-            write(*,*)'Check the pertinence of the results'
+            Write(*,*) '*WARNING in resultnet.f'
+            write(*,*) '         Element',nelem,
+     &           ' of TYPE ABSOLUTE TO RELATIVE'
+            write(*,*) '         The flow direction is no more conform '
+            write(*,*) '         to element definition'
+            write(*,*) '         Check the pertinence of the results'
           endif
         elseif(lakon(nelem)(2:3).eq.'RE') then
 !     
@@ -356,11 +270,12 @@ c     enddo
             nodem=kon(ipkon(nelem)+2)
             xflow=v(1,nodem)
             if (xflow.lt.0) then
-              Write(*,*)'*WARNING in resultnet.f'
-              write(*,*)'Element',nelem,'of TYPE RESTRICTOR'
-              write(*,*)'The flow direction is no more conform '
-              write(*,*)'to element definition'
-              write(*,*)'Check the pertinence of the results'
+              Write(*,*) '*WARNING in resultnet.f'
+              write(*,*) '         Element',nelem,'of TYPE RESTRICTOR'
+              write(*,*)
+     &             '         The flow direction is no more conform '
+              write(*,*) '         to element definition'
+              write(*,*) '         Check the pertinence of the results'
             endif
 !     
           elseif(lakon(nelem)(4:5).eq.'BR') then
@@ -379,11 +294,12 @@ c     enddo
             xflow2=v(1,nodem2)
 !     
             if((xflow0.lt.0).or.(xflow1.lt.0).or.(xflow2.lt.0)) then
-              Write(*,*)'*WARNING in resultnet.f'
-              write(*,*)'Element',nelem,'of TYPE BRANCH'
-              write(*,*)'The flow direction is no more conform '
-              write(*,*)'to element definition'
-              write(*,*)'Check the pertinence of the results'
+              Write(*,*) '*WARNING in resultnet.f'
+              write(*,*) '         Element',nelem,'of TYPE BRANCH'
+              write(*,*)
+     &             '         The flow direction is no more conform '
+              write(*,*) '         to element definition'
+              write(*,*) '         Check the pertinence of the results'
             endif
           endif
         endif
@@ -570,7 +486,6 @@ c     A=prop(index+1)
 !     testing if the flow direction is conform to the pressure
 !     gradient
 !     
-c      iplausi=1
       do i=1,nflow
         nelem=ieg(i)
         indexe=ipkon(nelem)
@@ -606,10 +521,6 @@ c      iplausi=1
      &             (v(2,node1)/v(2,node2).lt.(1.d0-1.d-10))).or.
      &             ((v(1,nodem).lt.0.d0).and.
      &             (v(2,node2)/v(2,node1).lt.(1.d0-1.d-10)))) then
-c              if(((v(1,nodem).gt.0.d0).and.
-c     &             (v(2,node1).lt.v(2,node2))).or.
-c     &             ((v(1,nodem).lt.0.d0).and.
-c     &             (v(2,node1).gt.v(2,node2)))) then
                 iplausi=0
                 write(*,*) '*WARNING in resultnet: the flow'
                 write(*,*) '         direction is not conform'
@@ -726,6 +637,27 @@ c     &             (v(2,node1).gt.v(2,node2)))) then
      &               **(0.5d0*(kappa+1.d0)/(kappa-1.d0))
 !     
               endif
+!
+!              Guido 17.06.2022 Option 2 (cf. initialnet.f)
+!
+c              Tt1=v(0,node1)-physcon(1)
+c              call nident(itg,node1,ntg,id1)
+c              if(ineighe(id1).eq.-1) then
+c                T1=Tt1
+c              else
+c                call ts_calc(xflow360,Tt1,pt1,kappa,r,A,T1,icase)
+c              endif
+c              v(3,node1)=T1
+!     
+c              Tt2=v(0,node2)-physcon(1)
+c              call nident(itg,node2,ntg,id2)
+c              if(ineighe(id2).eq.-1) then
+c                T2=Tt2
+c              else
+c                call ts_calc(xflow360,Tt2,pt2,kappa,r,A,T2,icase)
+c              endif
+c              v(3,node2)=T2
+!                
               Tt1=v(0,node1)-physcon(1)
               Tt2=v(0,node2)-physcon(1)
               T1=v(3,node1)
@@ -740,6 +672,9 @@ c     &             (v(2,node1).gt.v(2,node2)))) then
                 pt2=v(2,nodem)*pt1
               endif
 !     
+!             Option 2 ????  T not stored?
+!     
+!
               Tt1=v(0,node2)-physcon(1)
               call ts_calc(xflow360,Tt1,pt1,kappa,r,A,T1,icase)
               Tt2=v(0,node1)-physcon(1)

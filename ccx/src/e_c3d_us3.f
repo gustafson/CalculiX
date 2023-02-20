@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2021 Guido Dhondt
+!              Copyright (C) 1998-2022 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -373,16 +373,22 @@
             s(i,j)  = Kshell(i,j)
         enddo
       enddo 
-      !
-      ! pressure loads defined y/n
-      !
+!
+! pressure loads defined y/n
+!
+      if(rhsi.eq.1) then
+        if(idist.ne.0) then
+          ff(:)=0.d0
+        endif
+      endif
+!      
       if(nload.gt.0) then ! idlist=1 distributed loads defined
         !
         call nident2(nelemload,nelem,nload,id)
         ! 
         ! *SURFACE arg (sideload 1 NEG, 2 POS):
         !
-        ff(:) = 0.d0
+c        ff(:) = 0.d0
         if(sideload(id)(1:2).eq.'P2') then
           pres = -xload(1,id)
         elseif(sideload(id)(1:2).eq.'P1') then

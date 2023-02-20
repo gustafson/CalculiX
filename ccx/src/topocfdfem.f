@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &     nsolidsurf,ifreestream,nfreestream,neighsolidsurf,iponoel,
      &     inoel,inoelfree,co,set,
      &     istartset,iendset,ialset,nset,iturbulent,inomat,ielmat,
-     &     ipface)
+     &     ipface,nknew)
 !     
 !     preliminary calculations for cfd applicatons:
 !     - determining the external faces of the mesh and storing
@@ -42,7 +42,7 @@
       integer nelemface(*),nface,ipoface(*),nodface(5,*),nodes(4),
      &     ne,ipkon(*),kon(*),indexe,ifaceq(8,6),ifacet(7,4),index,
      &     ifacew(8,5),ithree,ifour,iaux,kflag,nnodes,ierror,
-     &     isolidsurf(*),nsolidsurf,ifreestream(*),
+     &     isolidsurf(*),nsolidsurf,ifreestream(*),nknew(*),
      &     nfreestream,id,nk,node,i,j,k,l,m,neighsolidsurf(*),
      &     iponoel(*),noden,idn,nope,nodemin,ifree,indexold,
      &     inoel(2,*),ifreenew,inoelfree,ipface(*),
@@ -271,14 +271,14 @@
         do j=istartset(i),iendset(i)
           if(ialset(j).gt.0) then
             nsolidsurf=nsolidsurf+1
-            isolidsurf(nsolidsurf)=ialset(j)
+            isolidsurf(nsolidsurf)=nknew(ialset(j))
           else
             k=ialset(j-2)
             do
               k=k-ialset(j)
               if(k.ge.ialset(j-1)) exit
               nsolidsurf=nsolidsurf+1
-              isolidsurf(nsolidsurf)=k
+              isolidsurf(nsolidsurf)=nknew(k)
             enddo
           endif
         enddo
@@ -310,14 +310,14 @@
         do j=istartset(i),iendset(i)
           if(ialset(j).gt.0) then
             nfreestream=nfreestream+1
-            ifreestream(nfreestream)=ialset(j)
+            ifreestream(nfreestream)=nknew(ialset(j))
           else
             k=ialset(j-2)
             do
               k=k-ialset(j)
               if(k.ge.ialset(j-1)) exit
               nfreestream=nfreestream+1
-              ifreestream(nfreestream)=k
+              ifreestream(nfreestream)=nknew(k)
             enddo
           endif
         enddo

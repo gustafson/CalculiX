@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -314,7 +314,7 @@
      &             ndirforc,xforc,nforc,nforc_,iamforc,iamplitude,nam,
      &             ntrans,trab,inotr,co,ikforc,ilforc,jsector,add,user,
      &             idefforc,ipompc,nodempc,nmpc,ikmpc,ilmpc,labmpc,
-     &             edc,id,orab,coeffc)
+     &             edc,id,orab,coeffc,ier)
               cycle
             endif
           endif
@@ -377,7 +377,7 @@
      &                 nodeforc,ndirforc,xforc,nforc,nforc_,iamforc,
      &                 iamplitude,nam,ntrans,trab,inotr,co,ikforc,
      &                 ilforc,jsector,add,user,idefforc,ipompc,nodempc,
-     &                 nmpc,ikmpc,ilmpc,labmpc,edc,id,orab,coeffc)
+     &                 nmpc,ikmpc,ilmpc,labmpc,edc,id,orab,coeffc,ier)
                   cycle
                 endif
               endif
@@ -424,7 +424,7 @@
      &                   iamforc,iamplitude,nam,ntrans,trab,inotr,co,
      &                   ikforc,ilforc,jsector,add,user,idefforc,
      &                   ipompc,nodempc,nmpc,ikmpc,ilmpc,labmpc,
-     &                   edc,id,orab,coeffc)
+     &                   edc,id,orab,coeffc,ier)
                     cycle
                   endif
                 endif

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                     */
+/*              Copyright (C) 1998-2022 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -379,7 +379,7 @@ void multimortar(double **aup,double *ad,ITG **irowp,ITG *jq,ITG *nzs,
       break;
     }          
     default :    {
-      printf("*ERROR in multimortar: error l_flag\n");                        
+      printf(" *ERROR in multimortar: error l_flag\n");                        
       break;
     } 	         
     }		
