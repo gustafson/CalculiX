@@ -37,7 +37,7 @@ CalculiX Extras builds on the [CalculiX](https://www.calculix.de/) code base
 		[exodus](https://github.com/gustafson/CalculiX/tree/exodus) branch
 		or one of the distribution specific branches
 		([opensuse](https://github.com/gustafson/CalculiX/tree/opensuse),
-		[ubuntu](https://github.com/gustafson/CalculiX/tree/opensuse))
+		[ubuntu](https://github.com/gustafson/CalculiX/tree/ubuntu))
 3.  These instructions are limited. They assume you are able to build
 	CalculiX from source. 
 	-   The code contains a detailed
@@ -79,15 +79,12 @@ contact me.
 ## Exodus
 
 -   There are known limitations for output requests with ExodusII
-	-   Several output requests to ExodusII format are untested.
-	-   It is not currently possible to change output requests
+    -   Several output requests to ExodusII format are untested.
+    -   It is not currently possible to change output requests
         *between steps*.  This is due to a limitation in the exodus
         format.
     -   Node sets are partially implemented but element sets are not
         implemented
-	-   Data written by
-        [frdgeneralvector.c](ccx/src/frdgeneralvector.c) is not
-        currently implemented.
 
 ## Solvers (Obsolete)
 
@@ -112,4 +109,4 @@ contact me.
     finite element contribution.
 -   The National Science Foundation (for hardware grants which
     supported this work)
--   [Western Michigan University](https://wmich.edu) and my students
+-   Western Michigan University and my students
