@@ -79,12 +79,15 @@ contact me.
 ## Exodus
 
 -   There are known limitations for output requests with ExodusII
-    -   Several output requests to ExodusII format are untested.
-    -   It is not currently possible to change output requests
+	-   Several output requests to ExodusII format are untested.
+	-   It is not currently possible to change output requests
         *between steps*.  This is due to a limitation in the exodus
         format.
     -   Node sets are partially implemented but element sets are not
         implemented
+	-   Data written by
+        [frdgeneralvector.c](ccx/src/frdgeneralvector.c) is not
+        currently implemented.
 
 ## Solvers (Obsolete)
 
@@ -109,4 +112,4 @@ contact me.
     finite element contribution.
 -   The National Science Foundation (for hardware grants which
     supported this work)
--   Western Michigan University and my students
+-   [Western Michigan University](https://wmich.edu) and my students
