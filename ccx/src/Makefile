@@ -97,11 +97,10 @@ LDFLAGS += `pkg-config --libs blas$(INTEXT)`
 ## LDFLAGS += -L/home/pete/local/lib64/ -lpardiso -lgfortran -lpthread -lm -fopenmp
 ## CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
 ## LDFLAGS += `pkg-config --libs pardiso`
-MKLROOT=/usr/include/mkl
-CFLAGS += -m64 -I$(MKLROOT)/include
-FFLAGS += -m64 -I$(MKLROOT)/include
-## 64bit ints gfortran openmp libgomp
-LDFLAGS += -L$(MKLROOT)/lib/intel64 -Wl,--no-as-needed -lmkl_gf_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+CFLAGS += -m64 -I/usr/include/mkl -DPARDISO
+FFLAGS += -m64 -I/usr/include/mkl 
+## 64bit ints gfortran openmp libgomp on gentoo
+LDFLAGS += -Wl,--no-as-needed -lmkl_gf_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
 ## 32bit ints gfortran openmp libgomp
 ## LDFLAGS += -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
 
