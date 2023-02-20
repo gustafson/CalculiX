@@ -1,5 +1,28 @@
+!     CalculiX - A 3-dimensional finite element program
+!              Copyright (C) 1998-2022 Guido Dhondt
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation(version 2);
+!     
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of 
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program; if not, write to the Free Software
+!     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+!   
       SUBROUTINE us4_csys(xg,tm,tmg)
+!
       IMPLICIT NONE                      
+!
+!     determines the material data for element iel
+!     4-node shell element
+!     author: Gil Rama
+!
       REAL*8, INTENT(IN)  :: xg(4,3)         ! element coordinates in global csys
       REAL*8, INTENT(OUT) :: tm(3,3),tmg(24,24)         ! transformation matrix (e1,e2,e3)T
       REAL*8 :: e1(3),e2(3),e3(3),dl,dd,xno(3)
@@ -454,7 +477,7 @@
       REAL*8, INTENT(IN)  :: X(4,3),rho,h             
       REAL*8, INTENT(OUT) :: M(24,24) 
       REAL*8 :: ri,si,Nrs(4),dNr(4),dNs(4),Jm(2,2)
-      REAL*8 :: invJm,detJm,detinvJm,dNx(4),dNy(4),q1
+      REAL*8 :: invJm(2,2),detJm,detinvJm,dNx(4),dNy(4),q1
       REAL*8 :: m_3t(6,6), N_u(6,24),g_p(4,3)
       INTEGER :: k,j
       !

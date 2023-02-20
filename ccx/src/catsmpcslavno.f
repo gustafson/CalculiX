@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -52,7 +52,7 @@
      &     nslavspc,islavspc,nsspc,nslavmpc,islavmpc,nsmpc,
      &     nslavspc2,islavspc2,nsspc2,nslavmpc2,islavmpc2,nsmpc2,
      &     nmastspc,imastspc,nmspc,nmastmpc,imastmpc,nmmpc,
-     &     nmastmpc2,imastmpc2,nmmpc2)
+     &     nmastmpc2,imastmpc2,nmmpc2,jobnamef)
 !     
 !     subroutine to catalogue SPC'S and MPC'S for master and slave node    
 !     needed for mortar contact
@@ -66,10 +66,13 @@
 !     
       logical debug,testm,isslavenode,ismastnode,
      &     test1to1
+!
+      character*132 jobnamef(*)
+      character*256 fn
 !     
-      integer ntie,i,j,k,l,iwrite,
+      integer ntie,i,j,k,l,iwrite,ilen,
      &     id,node,islavnode(*),imastnode(*),nslavnode(ntie+1),
-     &     nmastnode(ntie+1),nmmpc2,index,nboun,ndirboun(*),nodeboun(*),
+     &     nmastnode(ntie+1),nmmpc2,index1,nboun,ndirboun(*),
      &     nmpc,ipompc(*),nodempc(3,*),idof,nboun2,nmpc2,ipompc2(*),
      &     nodempc2(3,*),ikboun(*),ilboun(*),ikmpc(*),ilmpc(*),
      &     ikboun2(*),ilboun2(*),ikmpc2(*),ilmpc2(*),nslavspc(2,*),
@@ -77,7 +80,8 @@
      &     nslavspc2(2,*),islavspc2(2,*),nsspc2,nslavmpc2(2,*),
      &     islavmpc2(2,*),nsmpc2,nmastspc(2,*),imastspc(2,*),nmspc,
      &     nmastmpc(2,*),imastmpc(2,*),nmmpc,isspc,imspc,ismpc,immpc,
-     &     ist,nmastmpc2(2,*),imastmpc2(2,*),secondnode,node2,itie
+     &     ist,nmastmpc2(2,*),imastmpc2(2,*),secondnode,node2,itie,
+     &     nodeboun(*)
 !     
       debug=.false.
 !     
@@ -254,7 +258,9 @@
 !     opening a file to store the nodes which are not connected
 !
       iwrite=0
-      open(40,file='WarnSlaveNodeUnallowedMpc.nam',status='unknown')
+      ilen=index(jobnamef(1),' ')-1
+      fn=jobnamef(1)(1:ilen)//'_WarnSlaveNodeUnallowedMpc.nam'
+      open(40,file=fn,status='unknown')
       write(40,*) '*NSET,NSET=WarnSlaveNodeUnallowedMpc'
 !
       do i=1,nmpc
@@ -282,10 +288,10 @@
           secondnode=node
           test1to1=.true.
           testm=.false.
-          index=nodempc(3,ist)
+          index1=nodempc(3,ist)
           do
-            if(index.eq.0) exit
-            node2=nodempc(1,index)
+            if(index1.eq.0) exit
+            node2=nodempc(1,index1)
             if((node.eq.secondnode).and.(node2.ne.secondnode)) then
               secondnode=node2
             endif
@@ -311,7 +317,7 @@
             if((node2.ne.node).and.(node2.ne.secondnode)) then
               test1to1=.false.
             endif
-            index=nodempc(3,index)
+            index1=nodempc(3,index1)
           enddo
           if(.not.test1to1) then
             write(*,*) '*ERROR in catsmpcslavno: slave node',
@@ -324,10 +330,10 @@
 !
 !         test if one of the independent nodes is a slave node
 !
-          index=nodempc(3,ist)
+          index1=nodempc(3,ist)
           loop: do
-            if(index.eq.0) exit
-            node2=nodempc(1,index)
+            if(index1.eq.0) exit
+            node2=nodempc(1,index1)
 !     
 !           is node2 slavenode?
 !
@@ -349,7 +355,7 @@
                 endif
               enddo
             endif
-            index=nodempc(3,index)
+            index1=nodempc(3,index1)
           enddo loop
         endif
       enddo
@@ -367,14 +373,14 @@
             write(*,*) 'nodes-mpc',node,nslavmpc(1,l),nslavmpc(2,l)
             do j=nslavmpc(1,l)+1,nslavmpc(2,l)
               ist=islavmpc(1,j)
-              index=nodempc(3,ist)
-              write(*,*)' mpc',ist,nodempc(2,ist),nodempc(1,index)
+              index1=nodempc(3,ist)
+              write(*,*)' mpc',ist,nodempc(2,ist),nodempc(1,index1)
             enddo
             write(*,*)'nodes-mpc2',node,nslavmpc2(1,l),nslavmpc2(2,l)
             do j=nslavmpc2(1,l)+1,nslavmpc2(2,l)
               ist=islavmpc2(1,j)
-              index=nodempc2(3,ist)
-              write(*,*)' mpc',ist,nodempc2(2,ist),nodempc2(1,index)
+              index1=nodempc2(3,ist)
+              write(*,*)' mpc',ist,nodempc2(2,ist),nodempc2(1,index1)
             enddo
           enddo
         enddo
@@ -390,16 +396,16 @@
             write(*,*) 'nodem-mpc',node,nmastmpc(1,l),nmastmpc(2,l)
             do j=nmastmpc(1,l)+1,nmastmpc(2,l)
               ist=imastmpc(1,j)
-              index=nodempc(3,ist)
-              write(*,*)'mpc',ist,nodempc(2,ist),nodempc(1,index)
+              index1=nodempc(3,ist)
+              write(*,*)'mpc',ist,nodempc(2,ist),nodempc(1,index1)
             enddo
             write(*,*) 'nodem-mpc2',node,nmastmpc2(1,l),
      &           nmastmpc2(2,l)
             do j=nmastmpc2(1,l)+1,nmastmpc2(2,l)
               ist=imastmpc2(1,j)
-              index=nodempc2(3,ist)
+              index1=nodempc2(3,ist)
               write(*,*)'mpc',ist,nodempc2(2,ist),
-     &             nodempc2(1,index)
+     &             nodempc2(1,index1)
             enddo
           enddo
         enddo
@@ -409,11 +415,11 @@
         write(*,*) '*ERROR in catsmpcslavno:'
         write(*,*) '       slavenodes belonging to unallowed MPCs'
         write(*,*) '       are stored in file'
-        write(*,*) '       WarnSlaveNodeUnallowedMpc.nam'
+        write(*,*) '       ',fn(1:ilen+30)
         write(*,*) '       This file can be loaded into'
         write(*,*) '       an active cgx-session by typing'
         write(*,*) 
-     &       '       read WarnSlaveNodeUnallowedMpc.nam inp'
+     &       '       read ',fn(1:ilen+30),' inp'
         write(*,*) '       Remove the faces to which these'
         write(*,*) '       nodes belong from the slave face'
         write(*,*) '       definition'
@@ -421,8 +427,7 @@
         close(40)
         call exit(201)
       else
-        close(40)
-c        close(40,status='delete')
+        close(40,status='delete')
       endif
 !     
       return

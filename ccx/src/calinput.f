@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -612,7 +612,7 @@ c
         call dynamics(inpc,textpart,nmethod,iperturb,tinc,tper,
      &       tmin,tmax,idrct,alpha,iexpl,isolver,istep,
      &       istat,n,iline,ipol,inl,ipoinp,inp,ithermal,ipoinpc,nef,
-     &       ctrl,tincf,nener,ier)
+     &       ctrl,tincf,nener,ier,mortar)
 !     
       elseif(textpart(1)(1:8).eq.'*ELASTIC') then
         call elastics(inpc,textpart,elcon,nelcon,
@@ -1307,7 +1307,7 @@ c
      &     dcs(4*ncs_+1),dcs(6*ncs_+1),dcs(8*ncs_+1),dcs(10*ncs_+1),
      &     ics(3*ncs_+1),ics(5*ncs_+1),ics(7*ncs_+1),ics(8*ncs_+1),
      &     dcs(12*ncs_+1),ne,ipkon,kon,lakon,ics(14*ncs_+1),
-     &     ics(16*ncs_+1),ics(18*ncs_+1))
+     &     ics(16*ncs_+1),ics(18*ncs_+1),jobnamec)
 !     
       infree(1)=ixfree
       infree(2)=ikfree

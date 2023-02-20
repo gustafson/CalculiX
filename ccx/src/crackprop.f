@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,10 +19,17 @@
       subroutine crackprop(ifrontrel,ibounnod,domphi,da,co,costruc,nk,
      &     xa,xn,nnfront,istartfront,iendfront,doubleglob,integerglob,
      &     isubsurffront,dadn,ncyc,ifrontprop,nstep,acrack,acrackglob,
-     &     datarget,ieqspace,iincglob,iinc)
+     &     datarget,ieqspace,iincglob,iinc,dnglob,ncyctot)
 !     
 !     calculate the crack propagation increment
-!     
+!
+!     acrackglob, iincglob and dnglob are the crack length, the
+!     increment number and the total number of cycles at the END
+!     of the present increment and are therefore attached to the
+!     propagated front, therefore they get values assigned in the
+!     present routine; notice that the propagated front MAY be
+!     changed in eqspacednodes.f
+!      
       implicit none
 !     
       integer i,j,k,node,ifrontrel(*),nk,nnfront,istartfront(*),
@@ -30,11 +37,12 @@
      &     nfield,nselect,imastset,iselect(6),nterms,nelem,
      &     ialset(1),iendset(1),istartset(1),konl(20),loopa,
      &     noderel,ibounnod(*),isubsurffront(*),ifrontprop(*),
-     &     ncyc,nstep,ieqspace,nodep,nodeq,iincglob(*),iinc
+     &     ncyc,nstep,ieqspace,nodep,nodeq,iincglob(*),iinc,
+     &     ncyctot
 !     
       real*8 da(*),domphi(*),co(3,*),costruc(3,*),xa(3,*),xn(3,*),
      &     doubleglob(*),coords(3),ratio(20),dist,pi,theta,ctheta,
-     &     stheta,acrack(*),c(3,3),r0(3),r(3),dadn(*),
+     &     stheta,acrack(*),c(3,3),r0(3),r(3),dadn(*),dnglob(*),
      &     value(1),acrackglob(*),datarget,p(3),q(3),dd,al
 !     
       nktet=integerglob(1)
@@ -90,7 +98,6 @@ c     write(*,*) 'start end ',istartfront(k),iendfront(k)
 !     to the crack front is da(i)
 !     
           da(i)=dsqrt((1.2d-6)**2+da(i)**2)*dsign(1.d0,da(i))
-c     write(*,*) i,da(i)
 !     
           nk=nk+1
           ifrontprop(i)=nk
@@ -99,6 +106,7 @@ c     write(*,*) i,da(i)
 !     
           acrackglob(nk)=acrack(i)+da(i)
           iincglob(nk)=iinc+1
+          dnglob(nk)=1.d0*ncyctot
 !     
           do j=1,3
             co(j,nk)=co(j,node)+(xa(j,i)*dcos(domphi(i))+

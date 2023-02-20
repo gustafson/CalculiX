@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -239,8 +239,13 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
   mortartrafoflag1=mortartrafoflag; 
 
   /* calculating the stiffness/mass */
-    
-  printf(" Using up to %" ITGFORMAT " cpu(s) for the symmetric stiffness/mass contributions.\n\n", num_cpus);
+
+  /* the following message is suppressed for explicit (massless) dynamic
+     calculations to improve the performance */
+  
+  if(*iexpl<=1){
+    printf(" Using up to %" ITGFORMAT " cpu(s) for the symmetric stiffness/mass contributions.\n\n", num_cpus);
+  }
     
   /* create threads and wait */
     

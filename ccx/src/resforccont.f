@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
       real*8 vold(0:mi(2),*),fext(*),qik_kbi(*),
      &     auib(*),aubi(*),gapdisp(*),volddof(*)
 !     
-!     create field volddof, from vold
+!     create field volddof, from vold (displacements)
 !     from sorting nodes to DOF
 !     
       do i=1,nk
@@ -38,7 +38,7 @@
         enddo
       enddo
 !     
-!     We compute g as volddof=(Kbi*volddof)+(Kib*volddof)
+!     We compute g as volddof=(Kbi*volddof)+(Kib*volddof) in qik_kbi
 !     to account for the missing terms due to the low triangle structure
 !     of the matrices
 !     

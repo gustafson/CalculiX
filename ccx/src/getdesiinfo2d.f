@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -19,7 +19,8 @@
       subroutine getdesiinfo2d(set,istartset,iendset,ialset,nset,
      &     mi,nactdof,ndesi,nodedesi,ntie,tieset,nodedesiinv,lakon,
      &     ipkon,kon,iponoelfa,iponod2dto3d,iponor2d,knor2d,
-     &     iponoel2d,inoel2d,nobject,objectset,iponk2dto3d,ne)    
+     &     iponoel2d,inoel2d,nobject,objectset,iponk2dto3d,ne,
+     &     jobnamef)    
 !     
 !     storing the design variables in nodedesi
 !     marking which nodes are design variables in nodedesiinv
@@ -31,13 +32,15 @@
       character*81 set(*)
       character*81 tieset(3,*)
       character*81 objectset(5,*)
+      character*132 jobnamef
+      character*256 fn
 !     
-      integer mi(*),istartset(*),iendset(*),ialset(*),ndesi,
-     &     node,nodedesi(*),nset,ntie,i,j,k,l,nactdof(0:mi(2),*),index,
+      integer mi(*),istartset(*),iendset(*),ialset(*),ndesi,ilen,
+     &     node,nodedesi(*),nset,ntie,i,j,k,l,nactdof(0:mi(2),*),index1,
      &     nodedesiinv(*),ipkon(*),kon(*),iaux,kflag,iponod2dto3d(2,*),
      &     iponoelfa(*),inoel2d(3,*),iset,iponoel2d(*),nodeold,ipos1,
      &     ipos2,ielem,iponor2d(2,*),num,knor2d(*),inode,nodenew,nope2d,
-     &     ishift,nobject,iobject,numtest,iponk2dto3d(*),ne,id
+     &     ishift,nobject,iobject,numtest,iponk2dto3d(*),ne,id,iwrite
 !     
       setname(1:1)=' '
       ndesi=0
@@ -196,8 +199,6 @@ c     if(objectset(4,iobject).eq.set(i)) then
               endif
             endif
           endif
-c     endif
-c     enddo   
         endif 
       enddo     
 !     
@@ -259,6 +260,7 @@ c     enddo
                 write(*,*) '       is removed from the set'
                 write(*,*) '       of design variables'
                 write(40,*) node
+                iwrite=1
                 cycle loop1
               endif
             enddo
@@ -274,6 +276,7 @@ c     enddo
                 write(*,*) '       is removed from the set'
                 write(*,*) '       of design variables'
                 write(40,*) node
+                iwrite=1
                 cycle loop1
               endif
             enddo
@@ -290,28 +293,23 @@ c     enddo
 !     
 !     opening a file to store the nodes which are rejected as
 !     design variables
-!     
-      open(40,file='WarnNodeDesignReject.nam',status='unknown')
+!
+      iwrite=0
+      ilen=index(jobnamef,' ')-1
+      fn=jobnamef(1:ilen)//'_WarnNodeDesignReject.nam'
+      open(40,file=fn,status='unknown')
       write(40,*) '*NSET,NSET=WarnNodeDesignReject'
-      write(*,*) '*INFO in getdesiinfo2d:'
-      write(*,*) '      rejected design nodes (if any) are stored in'
-      write(*,*) '      file WarnNodeDesignReject.nam'
-      write(*,*) '      This file can be loaded into'
-      write(*,*) '      an active cgx-session by typing'
-      write(*,*) 
-     &     '      read WarnNodeDesignReject.nam inp'
-      write(*,*)
 !     
 !     creating field nodedesiinv indicating for each node whether
 !     it is a design variable or not
 !     
       do i=1,ndesi
-        index=nodedesi(i)
-        nodedesiinv(index)=1
-        index=iponod2dto3d(1,nodedesi(i))
-        nodedesiinv(index)=1
-        index=iponod2dto3d(2,nodedesi(i))
-        nodedesiinv(index)=1
+        index1=nodedesi(i)
+        nodedesiinv(index1)=1
+        index1=iponod2dto3d(1,nodedesi(i))
+        nodedesiinv(index1)=1
+        index1=iponod2dto3d(2,nodedesi(i))
+        nodedesiinv(index1)=1
       enddo
 !     
       kflag=1
@@ -370,7 +368,19 @@ c     enddo
         endif
       enddo
 !     
-      close(40)
+      if(iwrite.eq.1) then
+        write(*,*) '*INFO in getdesiinfo2d:'
+        write(*,*) '      rejected design nodes (if any) are stored in'
+        write(*,*) '      file ',fn(1:ilen+25)
+        write(*,*) '      This file can be loaded into'
+        write(*,*) '      an active cgx-session by typing'
+        write(*,*) 
+     &       '      read ',fn(1:ilen+25),' inp'
+        write(*,*)
+        close(40)
+      else
+        close(40,status='delete')
+      endif
 !     
       return
       end

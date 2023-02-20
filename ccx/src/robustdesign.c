@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                     */
+/*              Copyright (C) 1998-2022 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -183,17 +183,18 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 			   mi,nactdof,&ndesi,nodedesi,ntie,tieset,
 			   nodedesiinv,lakon,ipkon,kon,iponoelfa,
 			   iponod2dto3d,iponor2d,knor2d,iponoel2d,
-			   inoel2d,nobject,objectset,iponk2dto3d,ne));
+			   inoel2d,nobject,objectset,iponk2dto3d,ne,
+			   jobnamef));
     						 
   
   }else{
   
     FORTRAN(getdesiinfo3d_robust,(set,istartset,iendset,ialset,nset,
-			        mi,nactdof,&ndesi,nodedesi,ntie,tieset,
-			        itmp,nmpc,nodempc,ipompc,nodedesiinv,
-			        iponoel,inoel,lakon,ipkon,
-			        kon,&iregion,ipoface,nodface,nk,
-				irandomtype));  
+				  mi,nactdof,&ndesi,nodedesi,ntie,tieset,
+				  itmp,nmpc,nodempc,ipompc,nodedesiinv,
+				  iponoel,inoel,lakon,ipkon,
+				  kon,&iregion,ipoface,nodface,nk,
+				  irandomtype,jobnamef));  
   }
   
   SFREE(itmp);

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -37,7 +37,7 @@ static double *co1,*coefmpc1,*xforcact1,*xloadact1,
   *xbodyact1,*xbodyact1,*cgr1,*elcon1,*rhcon1,*alcon1,
   *alzero1,*orab1,*t01,*t1act1,*vold1,*plicon1,*plkcon1,
   *ttime1,*time1,*dtime1,*physcon1,*xbodyold1,*reltime1,*veold1,
-  *prop1,*sti1,*xstateini1,*xstate1,*trab1,*fext1=NULL;
+  *prop1,*sti1,*xstateini1,*xstate1,*trab1,*fext1=NULL,*fnext1=NULL;
 
 void rhsmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	     ITG *ipompc,ITG *nodempc,double *coefmpc,ITG *nmpc,
@@ -54,9 +54,10 @@ void rhsmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	     double *physcon,ITG *ibody,double *xbodyold,double *reltime,
 	     double *veold,char *matname,ITG *mi,ITG *ikactmech,ITG *nactmech,
 	     ITG *ielprop,double *prop,double *sti,double *xstateini,
-	     double *xstate,ITG *nstate_,ITG *ntrans,ITG *inotr,double *trab){
+	     double *xstate,ITG *nstate_,ITG *ntrans,ITG *inotr,double *trab,
+	     double *fnext){
 
-  ITG sys_cpus,*ithread=NULL,i,j,isum,idelta;
+  ITG sys_cpus,*ithread=NULL,i,j,isum,idelta,mt=mi[1]+1;
   char *env,*envloc,*envsys;
 
   num_cpus = 0;
@@ -117,6 +118,13 @@ void rhsmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   NNEW(nebpar,ITG,num_cpus);
   elementcpuload(neapar,nebpar,ne,ipkon,&num_cpus);
 
+  /* allocating memory for the nodal external forces (only for explicit
+     dynamic calculations) */
+
+  if((*nmethod==4)&&(iperturb[0]>1)){
+    NNEW(fnext1,double,num_cpus*mt**nk);
+  }
+
   /* allocating memory for nmethod; if the Jacobian determinant
      in any of the elements is nonpositive, nmethod is set to
      zero */
@@ -174,6 +182,21 @@ void rhsmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
     }
   }
 
+  /* collecting the contributions of fnext; only for explicit
+     dynamic calculations */
+  
+  if((*nmethod==4)&&(iperturb[0]>1)){
+    for(i=0;i<mt**nk;i++){
+      fnext[i]=fnext1[i];
+    }
+    for(i=0;i<mt**nk;i++){
+      for(j=1;j<num_cpus;j++){
+	fnext[i]+=fnext1[i+j*mt**nk];
+      }
+    }
+    SFREE(fnext1);
+  }
+
   for(j=0;j<num_cpus;j++){
     if(nmethod1[j]==0){
       *nmethod=0;
@@ -194,7 +217,7 @@ void rhsmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   FORTRAN(rhsnodef,(co,kon,ne,
 		    ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
 		    nforc,fext,nactdof,nmethod,ikmpc,ntmat_,iperturb,
-		    mi,ikactmech,nactmech,ntrans,inotr,trab));
+		    mi,ikactmech,nactmech,ntrans,inotr,trab,fnext));
 	
 }
 
@@ -204,9 +227,13 @@ void rhsmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 
 void *rhsmt(ITG *i){
 
-  ITG indexf,nea,neb;
+  ITG indexf,indexfnext,nea,neb;
 
   indexf=*i**neq1;
+  indexfnext=0;
+  if((nmethod1[0]==4)&&(iperturb1[0]>1)){
+    indexfnext=*i*(mi1[1]+1)**nk1;
+  }
 
   nea=neapar[*i]+1;
   neb=nebpar[*i]+1;
@@ -223,7 +250,7 @@ void *rhsmt(ITG *i){
 	       npmat_1,ttime1,time1,istep1,iinc1,dtime1,physcon1,ibody1,
 	       xbodyold1,reltime1,veold1,matname1,mi1,&ikactmech1[indexf],
 	       &nactmech1[*i],ielprop1,prop1,sti1,xstateini1,xstate1,nstate_1,
-	       ntrans1,inotr1,trab1,&nea,&neb));
+	       ntrans1,inotr1,trab1,&fnext1[indexfnext],&nea,&neb));
 
   return NULL;
 }

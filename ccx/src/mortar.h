@@ -1,5 +1,5 @@
 /*     CALCULIX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                     */
+/*              Copyright (C) 1998-2022 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -179,7 +179,8 @@ void FORTRAN(catsmpcslavno,(ITG *ntie,ITG *islavnode,ITG *imastnode,
 			    ITG *nslavmpc2,ITG *islavmpc2,ITG *nsmpc2,
 			    ITG *nmastspc,ITG *imastspc,ITG *nmspc,
 			    ITG *nmastmpc,ITG *imastmpc,ITG *nmmpc,
-			    ITG *nmastmpc2,ITG *imastmpc2,ITG *nmmpc2));      
+			    ITG *nmastmpc2,ITG *imastmpc2,ITG *nmmpc2,
+			    char *jobnamef));      
        
 void FORTRAN(createbd,(ITG *ict,ITG *l,ITG *ipkon,ITG *kon,char *lakon,
 		       double *co,double *vold,double* gapmints,ITG *islavsurf,
@@ -456,22 +457,26 @@ void premortar(ITG *iflagact,ITG *ismallsliding,ITG *nzs,ITG *nzsc2,
 	       double *energy,ITG *kscale,ITG *iponoel,ITG *inoel,ITG *nener,
 	       char *orname,ITG *network,
 	       char *typeboun,ITG *num_cpus,double *t0g,double *t1g,
-	       double *smscale,ITG *mscalmethod);
+	       double *smscale,ITG *mscalmethod,char *jobnamef);
        
 void FORTRAN(regularization_gn_c,(double *lambdap,ITG *divmode,ITG *regmode,
 				  double *gnc,double *aninvloc,double *p0,
-				  double *beta,double *elcon,ITG *nelcon,ITG *itie,ITG *ntmat_,
-				  double *plicon,ITG *nplicon,ITG *npmat_,ITG *ncmat_,
+				  double *beta,double *elcon,ITG *nelcon,
+				  ITG *itie,ITG *ntmat_,double *plicon,
+				  ITG *nplicon,ITG *npmat_,ITG *ncmat_,
 				  double *tietol,double *scal));
      
 void FORTRAN(regularization_gt_c,(double *lambdatt,ITG *divmode,ITG *regmode,
 				  double *gtc,double *atauinvloc));
      
-void FORTRAN(regularization_slip_iwan,(double *lambdan,double *ut,
-				       double *bp,double *atau2,double *resreg,
-				       ITG *divmode,ITG *regmode,double *lambdaiwan,double *lambdaiwanini,
-				       ITG *inode,double *n,double *t,double *mu,double *rslip,double *ltslip,
-				       double *ltu,ITG *yielded,ITG *iit,ITG *debug,ITG *niwan,double *dut));
+void FORTRAN(regularization_slip_iwan,(double *lambdan,double *ut,double *bp,
+				       double *atau2,double *resreg,
+				       ITG *divmode,ITG *regmode,
+				       double *lambdaiwan,double *lambdaiwanini,
+				       ITG *inode,double *n,double *t,
+				       double *mu,double *rslip,double *ltslip,
+				       double *ltu,ITG *yielded,ITG *iit,
+				       ITG *debug,ITG *niwan,double *dut));
  
 void FORTRAN(regularization_slip_lin,(double *utilt,double *bp,double *atauinv,
 				      double *resreg,ITG *divmode,
@@ -482,13 +487,13 @@ void FORTRAN(regularization_slip_lin,(double *utilt,double *bp,double *atauinv,
 				      double *rslip,double *ltslip,
 				      double *ltu));
      
-void FORTRAN(resultsini_mortar,(int *nk,double *v,int *ithermal,
-				int *iperturb,int *nactdof,int *iout,
-				double *vold,double *b,int *nodeboun,int *ndirboun,
-				double *xboun,int *nboun,int *ipompc,int *nodempc,double *coefmpc,
-				char *labmpc,int *nmpc,int *nmethod,double *cam,
-				double *bet,double *gam,double *dtime,
-				int *mi));     
+void FORTRAN(resultsini_mortar,(int *nk,double *v,int *ithermal,int *iperturb,
+				int *nactdof,int *iout,double *vold,double *b,
+				int *nodeboun,int *ndirboun,double *xboun,
+				int *nboun,int *ipompc,int *nodempc,
+				double *coefmpc,char *labmpc,int *nmpc,
+				int *nmethod,double *cam,double *bet,
+				double *gam,double *dtime,int *mi));     
 
 void FORTRAN(slavintmortar,(ITG *ntie,ITG *itietri,ITG *ipkon,ITG *kon,
 			    char *lakon,double *straight,ITG *nintpoint,

@@ -259,7 +259,7 @@ void readnewmesh(char *jobnamec,ITG *nboun,ITG *nodeboun,ITG *iamboun,
 	 the new mesh based on the values in the old mesh */
 
       strcpy(masterurffile,jobnamec);
-      strcat(masterurffile,"urf.frd");
+      strcat(masterurffile,".urf.frd");
 
       /* reading the old mesh */
 

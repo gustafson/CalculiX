@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,46 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-!     MASSLESS DYNAMIC CONTACT
-
-C     >    *MASSLESS DYNAMIC CONTACT*: Extracting the submatrices (i/b) from the global stiffness matrix
-
-C     > Submatrices:
-C     > + the bb matrix (neqtot x neqtot)
-C     > + the bi matrix (neqtot x neq(1))
-C     > + the ib matrix (neq(1) x neqtot)
-C     > + the ii matrix (neq(1) x neq(1))
-C     >    - this matrix has the same
-C     >     size of the global matrix, in which the bi-entries,
-C     >     ib-entries, bb-entries (off-diagonal) are set to zero
-C     >     the diagonal bb-entries are set to one
-
-C     >     @param au        LOWER triangle of STIFFNESS matrix of size: neq[0]
-C     >     @param ad        DIAGONAL       of STIFFNESS matrix of size: neq[0]
-C     >     @param jq        Location in field **irow** of the first subdiagonal nonzero in column i (only for symmetric matrices)
-C     >     @param irow      Row of element i in field au (i.e. au(i)) 
-C     >     @param  neq        NTOT of equations: 
-C     >                            + neq[0]: mechanical TOTDOF, 
-C     >                            + neq[1]: TOTDOF_mech + TOTDOF_thermal
-C     >                            + neq[2]: neq[1] + # of single point constraints (only for modal calculations)
-C     >     @param aubb      the param
-C     >     @param adbb      the param
-C     >     @param jqbb      the param
-C     >     @param irowbb    the param
-C     >     @param neqtot    the param
-C     >     @param nzsbb     the param
-C     >     @param aubi      the param
-C     >     @param jqbi      the param
-C     >     @param irowbi    the param
-C     >     @param nzsbi     the param
-C     >     @param auib      the param
-C     >     @param jqib      the param
-C     >     @param irowib    the param
-C     >     @param nzsib     the param
-C     >     @param ktot       slave and master dofs list
-
-C     >    @see massless.c
-C     >    @author Guido Dhondt
+!     Authors: Carlo Monjaraz and Guido Dhondt  
 !
 !     extract matrices bb, bi and ib from the stiffness matrix
 !     setting those entries to zero (off-diagonal terms) and one
@@ -63,7 +24,7 @@ C     >    @author Guido Dhondt
 !
 !     all matrices only contain the subdiagonal terms
 !
-!     to obtain the complete bi-matrix it has to be complement by
+!     to obtain the complete bi-matrix it has to be complemented by
 !     the transpose of the ib-matrix
 !
       subroutine extract_matrices(au,ad,jq,irow,neq,aubb,adbb,jqbb,

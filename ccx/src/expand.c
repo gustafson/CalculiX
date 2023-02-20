@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-Dimensional finite element program                   */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -584,9 +584,9 @@ void expand(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	if(fabs(summass)>1.e-20){
 	  sum=sqrt(sum/summass);
 	}else{
-	  printf("*ERROR in expand.c: total mass of structure is zero\n");
-	  printf("       maybe no element sets were specified for the\n");
-	  printf("       cyclic symmetry ties\n");
+	  printf(" *ERROR in expand.c: total mass of structure is zero\n");
+	  printf("        maybe no element sets were specified for the\n");
+	  printf("        cyclic symmetry ties\n");
 	  FORTRAN(stop,());
 	}
 

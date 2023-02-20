@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,13 +39,35 @@ C     >    @see massless.c
 C     >    @author Guido Dhondt
 C     
       subroutine create_contactdofs(kslav,lslav,ktot,ltot,nslavs,
-     &     islavnode,nmasts,imastnode,nactdof,mi,neqslav,neqtot)
+     &     islavnode,nmasts,imastnode,nactdof,mi,neqtot,
+     &     nslavnode,fric,tieset,tietol,ntie,elcon,ncmat_,ntmat_)
 !     
       implicit none
+!
+      character*81 tieset(3,*)
 !     
       integer kslav(*),lslav(*),ktot(*),ltot(*),i,j,k,nslavs,node,
      &     islavnode(*),nmasts,imastnode(*),mi(*),nactdof(0:mi(2),*),
-     &     idof,neqslav,neqtot,kflag
+     &     idof,neqslav,neqtot,kflag,nslavnode(*),ntie,imat,ncmat_,
+     &     ntmat_
+!
+      real*8 fric(*),tietol(4,*),elcon(0:ncmat_,ntmat_,*)
+!
+!     assigning the appropriate friction coefficient to each slave node
+!
+      do i=1,ntie
+        if(tieset(1,i)(81:81).ne.'C') cycle
+        imat=int(tietol(2,i))
+        if(ncmat_.ge.7) then
+          do j=nslavnode(i)+1,nslavnode(i+1)
+            fric(j)=elcon(6,1,imat)
+          enddo
+        else
+          do j=nslavnode(i)+1,nslavnode(i+1)
+            fric(j)=0.d0
+          enddo
+        endif
+      enddo
 !     
 !     collecting the slave degrees of freedom in kslav
 !     lslav contains the corresponding node and direction in the
@@ -60,7 +82,8 @@ C
           if(idof.le.0) then
             write(*,*) '*ERROR in create_contactdofs'
             write(*,*) '       a SPC and/or MPC was defined'
-            write(*,*) '       in a node belonging to a massless'
+            write(*,*) '       in slave node: ',node,
+     &           ' belonging to a massless'
             write(*,*) '       contact pair definition; this is'
             write(*,*) '       not allowed'
             call exit(201)
@@ -73,6 +96,12 @@ C
         enddo
       enddo
       neqslav=k
+!     
+      if(neqslav.ne.3*nslavs) then
+        write(*,*) '*ERROR in create_contactdofs'
+        write(*,*) '       neqslav.ne.3*nslavs'
+        call exit(201)
+      endif
 !     
 !     sorting kslav in ascending order and lslav along
 !     
@@ -90,7 +119,8 @@ C
           if(idof.le.0) then
             write(*,*) '*ERROR in create_contactdofs'
             write(*,*) '       a SPC and/or MPC was defined'
-            write(*,*) '       in a node belonging to a massless'
+            write(*,*) '       in master node: ',node,
+     &           ' belonging to a massless'
             write(*,*) '       contact pair definition; this is'
             write(*,*) '       not allowed'
             call exit(201)
@@ -101,6 +131,13 @@ C
         enddo
       enddo
       neqtot=k
+!     
+      if((neqslav.ne.3*nslavs).or.(neqtot.ne.3*(nslavs+nmasts))) then
+        write(*,*) '*ERROR in create_contactdofs'
+        write(*,*) '       neqslav.ne.3*nslavs or'
+        write(*,*) '       neqtot.ne.3*(nslavs+nmasts)'
+        call exit(201)
+      endif
 !     
 !     sorting ktot in ascending order and ltot along
 !     

@@ -1,6 +1,6 @@
       
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -36,7 +36,7 @@
 !
       do i=1,nfront
 !
-!     loop over all nodes belonging to the crack front(s)
+!     loop over all nodes belonging to the non-propagated crack front(s);
 !     the crack length is the one corresponding to step 1;
 !     although acrackglob(node) already has values from the previous
 !     increment (except in the first increment), the value of
@@ -52,8 +52,10 @@
         rglob(node)=r(i)
         phiglob(node)=domphi(i)
         dadnglob(node)=dadn(i)
-c        dnglob(node)=1.d0*ncyc
         acrackglob(node)=acrack(i)
+!
+!       the following line is needed for the first increment
+!
         iincglob(node)=iinc
         domstepglob(node)=domstep(i)
       enddo

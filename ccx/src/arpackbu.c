@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -74,7 +74,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     description[13]="            ",*tieset=NULL,*labmpc2=NULL;
 
   ITG *inum=NULL,k,ido,dz,iparam[11],ipntr[11],lworkl,im,nasym=0,
-    info,rvec=1,*select=NULL,lfin,j,lint,iout,iconverged=0,ielas,icmd=0,
+    info,rvec=1,*select=NULL,lfin,j,lint,iout,iconverged=0,ielas=1,icmd=0,
     iinc=1,istep=1,*ncocon=NULL,*nshcon=NULL,nev,ncv,mxiter,jrow,
     coriolis=0,ifreebody,symmetryflag=0,
     inputformat=0,ngraph=1,mt=mi[1]+1,mass[2]={0,0}, stiffness=1, buckling=0, 
@@ -136,6 +136,14 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
   NNEW(fn,double,mt**nk);
   NNEW(stx,double,6*mi[0]**ne);
 
+  /* following fields are needed if *ener==1 or kode<-100 */
+    
+  NNEW(vini,double,mt**nk);
+  NNEW(eei,double,6*mi[0]**ne);
+  NNEW(stiini,double,6*mi[0]*ne0);
+  NNEW(emeini,double,6*mi[0]*ne0);
+  if(*nener==1) NNEW(enerini,double,mi[0]*ne0);
+
   iout=-1;
   NNEW(inum,ITG,*nk);
   if(*iperturb==0){
@@ -187,6 +195,9 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
 	    &intscheme);
   }
+  
+  SFREE(eei);SFREE(stiini);SFREE(emeini);SFREE(vini);
+  if(*nener==1) SFREE(enerini);
 
   SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
   iout=1;
@@ -280,7 +291,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     spooles(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0],&symmetryflag,
             &inputformat,&nzs[2]);
 #else
-    printf("*ERROR in arpackbu: the SPOOLES library is not linked\n\n");
+    printf(" *ERROR in arpackbu: the SPOOLES library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -289,7 +300,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     token=1;
     sgi_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0],token);
 #else
-    printf("*ERROR in arpackbu: the SGI library is not linked\n\n");
+    printf(" *ERROR in arpackbu: the SGI library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -297,7 +308,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 #ifdef TAUCS
     tau(ad,&au,adb,aub,&sigma,b,icol,&irow,&neq[0],&nzs[0]);
 #else
-    printf("*ERROR in arpackbu: the TAUCS library is not linked\n\n");
+    printf(" *ERROR in arpackbu: the TAUCS library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -306,7 +317,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0],
 		 &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
-    printf("*ERROR in arpackbu: the PARDISO library is not linked\n\n");
+    printf(" *ERROR in arpackbu: the PARDISO library is not linked\n\n");
     FORTRAN(stop,());
 #endif    
   }
@@ -315,7 +326,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     pastix_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[0],&nzs[0],
 		&symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
-    printf("*ERROR in arpackbu: the PASTIX library is not linked\n\n");
+    printf(" *ERROR in arpackbu: the PASTIX library is not linked\n\n");
     FORTRAN(stop,());
 #endif    
   }
@@ -333,11 +344,11 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
   if(strcmp1(&filab[2697],"ME  ")==0) NNEW(emn,double,6**nk);
   if(strcmp1(&filab[522],"ENER")==0) NNEW(enern,double,*nk);
 
+  NNEW(vini,double,mt**nk);
   NNEW(eei,double,6*mi[0]**ne);
-  if(*nener==1){
-    NNEW(stiini,double,6*mi[0]**ne);
-    NNEW(emeini,double,6*mi[0]**ne);
-    NNEW(enerini,double,mi[0]**ne);}
+  NNEW(stiini,double,6*mi[0]**ne);
+  NNEW(emeini,double,6*mi[0]**ne);
+  if(*nener==1) NNEW(enerini,double,mi[0]**ne);
 
   if(*iperturb==0){
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
@@ -510,16 +521,21 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
       pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[0],&nzs[0],
 		     &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-      printf("*ERROR in arpack: the PARDISO library is not linked\n\n");
+      printf(" *ERROR in arpack: the PARDISO library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
     else if(*isolver==8){
 #ifdef PASTIX
+#ifdef PARDISO
+      pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[0],&nzs[0],
+		     &symmetryflag,&inputformat,jq,&nzs[2]);
+#else
       pastix_factor_main(ad,au,adb,aub,&sigma,icol,irow,&neq[0],&nzs[0],
 		    &symmetryflag,&inputformat,jq,&nzs[2]);
+#endif
 #else
-      printf("*ERROR in arpack: the PASTIX library is not linked\n\n");
+      printf(" *ERROR in arpack: the PASTIX library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -581,8 +597,12 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	  }
 	  else if(*isolver==8){
 #ifdef PASTIX
+#ifdef PARDISO
+	    pardiso_solve(temp_array,&neq[0],&symmetryflag,&inputformat,&nrhs);
+#else
 	    if( pastix_solve(temp_array,&neq[0],&symmetryflag,&nrhs)==-1 )
-          printf("*WARNING in arpackbu: solving step didn't converge! Continuing anyway\n");
+          printf(" *WARNING in arpackbu: solving step didn't converge! Continuing anyway\n");
+#endif
 #endif
 	  }
 	  for(jrow=0;jrow<neq[0];jrow++){
@@ -614,8 +634,13 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	  }
 	  else if(*isolver==8){
 #ifdef PASTIX
+#ifdef PARDISO
+	    pardiso_solve(&workd[ipntr[2]-1],&neq[0],
+			  &symmetryflag,&inputformat,&nrhs);
+#else
 	    if( pastix_solve(&workd[ipntr[2]-1],&neq[0],&symmetryflag,&nrhs)==-1 )
-           printf("*WARNING in arpackbu: solving step didn't converge! Continuing anyway\n");
+           printf(" *WARNING in arpackbu: solving step didn't converge! Continuing anyway\n");
+#endif
 #endif
 	  }
 	  for(jrow=0;jrow<neq[0];jrow++){
@@ -662,11 +687,14 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     }
     else if(*isolver==8){
 #ifdef PASTIX
+#ifdef PARDISO
+      pardiso_cleanup(&neq[0],&symmetryflag,&inputformat);
+#endif
 #endif
     }
 
     if(info!=0){
-      printf("*ERROR in arpackbu: info=%" ITGFORMAT "\n",info);
+      printf(" *ERROR in arpackbu: info=%" ITGFORMAT "\n",info);
       printf("       # of converged eigenvalues=%" ITGFORMAT "\n\n",iparam[4]);
     }         
 
@@ -794,9 +822,8 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
   }
 
   SFREE(v);SFREE(fn);SFREE(stn);SFREE(inum);SFREE(stx);SFREE(z);SFREE(d);
-  SFREE(eei);SFREE(xstiff);
-  if(*nener==1){
-    SFREE(stiini);SFREE(emeini);SFREE(enerini);}
+  SFREE(eei);SFREE(xstiff);SFREE(stiini);SFREE(emeini);SFREE(vini);
+  if(*nener==1)SFREE(enerini);
 
   if(strcmp1(&filab[261],"E   ")==0) SFREE(een);
   if(strcmp1(&filab[2697],"ME  ")==0) SFREE(emn);

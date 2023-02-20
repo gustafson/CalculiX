@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -288,7 +288,8 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 		     nodeboun,nacteq,nboun,ielprop,prop,&nteq,
 		     v,network,physcon,shcon,ntmat_,co,
 		     vold,set,nshcon,rhcon,nrhcon,mi,nmpc,nodempc,
-		     ipompc,labmpc,ikboun,&nasym,ttime,&time,iaxial));
+		     ipompc,labmpc,ikboun,&nasym,ttime,&time,
+		     iaxial));
     SFREE(v);
       
     if((*mcs>0)&&(ntr>0)){
@@ -562,7 +563,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
     spooles(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],
 	    &symmetryflag,&inputformat,&nzs[2]);
 #else
-    printf("*ERROR in electromagnetics: the SPOOLES library is not linked\n\n");
+    printf(" *ERROR in electromagnetics: the SPOOLES library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -574,7 +575,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
     token=1;
     sgi_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],token);
 #else
-    printf("*ERROR in electromagnetics: the SGI library is not linked\n\n");
+    printf(" *ERROR in electromagnetics: the SGI library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -582,7 +583,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 #ifdef TAUCS
     tau(ad,&au,adb,aub,&sigma,b,icol,&irow,&neq[1],&nzs[1]);
 #else
-    printf("*ERROR in electromagnetics: the TAUCS library is not linked\n\n");
+    printf(" *ERROR in electromagnetics: the TAUCS library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -591,7 +592,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
     pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],
 		 &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
-    printf("*ERROR in electromagnetics: the PARDISO library is not linked\n\n");
+    printf(" *ERROR in electromagnetics: the PARDISO library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -600,7 +601,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
     pastix_main(ad,au,adb,aub,&sigma,b,icol,irow,&neq[1],&nzs[1],
 		&symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
-    printf("*ERROR in electromagnetics: the PASTIX library is not linked\n\n");
+    printf(" *ERROR in electromagnetics: the PASTIX library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -747,8 +748,8 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
     RENEW(tietol,double,4*(*ntie+5));
       
     FORTRAN(createtiedsurfs,(nodface,ipoface,set,istartset,
-			     iendset,ialset,tieset,inomat,ne,ipkon,lakon,kon,ntie,
-			     tietol,nalset,nk,nset,iactive));
+			     iendset,ialset,tieset,inomat,ne,ipkon,lakon,kon,
+			     ntie,tietol,nalset,nk,nset,iactive));
       
     SFREE(nodface);SFREE(ipoface);
     RENEW(set,char,81**nset);
@@ -764,7 +765,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 		lakon,ipkon,kon,tietol,nmpc, &mpcfree,&memmpc_,
 		&ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
 		ithermal,co,vold,&icfd,nmpc_,mi,nk,istep,ikboun,nboun,
-		kind1,kind2);
+		kind1,kind2,jobnamef);
 
     /* mapping h0ref from the phi domain onto the border of
        the A and A-V domains */
@@ -986,7 +987,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 		  iamload,
 		  jqrad,irowrad,&nzsrad,icolrad,ne,iaxial,qa,cocon,ncocon,
 		  iponoel,
-		  inoel,nprop,amname,namta,amta);
+		  inoel,nprop,amname,namta,amta,iexpl);
     }
       
     /* prediction of the next solution (only for temperature)
@@ -1121,7 +1122,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 		      nset,ineighe,nmpc,nodempc,ipompc,coefmpc,labmpc,
 		      &iemchange,nam,
 		      iamload,jqrad,irowrad,&nzsrad,icolrad,ne,iaxial,qa,cocon,
-		      ncocon,iponoel,inoel,nprop,amname,namta,amta);
+		      ncocon,iponoel,inoel,nprop,amname,namta,amta,iexpl);
 	}
 	      
       }

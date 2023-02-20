@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !     
       subroutine con2phys(vold,vcon,nk,ntmat_,shcon,nshcon,rhcon,nrhcon,
      &     physcon,ithermal,compressible,iturbulent,inomat,mi,
-     &     ierr,ifreesurface,dgravity,depth)
+     &     ierr,ifreesurface,dgravity,depth,nka,nkb)
 !     
 !     calculates the physical variable from the conservative
 !     variables:
@@ -29,7 +29,8 @@
       implicit none
 !     
       integer compressible,ifreesurface,nrhcon(*),ntmat_,iturbulent,
-     &     mi(*),nshcon(*),nk,ithermal(*),i,j,k,imat,ierr,inomat(*)
+     &     mi(*),nshcon(*),nk,ithermal(*),i,j,k,imat,ierr,inomat(*),
+     &     nka,nkb
 !     
       real*8 vold(0:mi(2),*),vcon(nk,0:mi(2)),rhcon(0:1,ntmat_,*),rho,
      &     c1,cp,r,temp,temp0,c2,shcon(0:3,ntmat_,*),physcon(*),
@@ -37,7 +38,7 @@
 !     
       if(ithermal(1).gt.1) then
 !     
-        do i=1,nk
+        do i=nka,nkb
           imat=inomat(i)
           temp=vold(0,i)
 !     
@@ -166,7 +167,7 @@
 !     
 !     athermal calculations
 !     
-        do i=1,nk
+        do i=nka,nkb
 !     
 !     calculating the fictitious pressure for shallow water
 !     calculations

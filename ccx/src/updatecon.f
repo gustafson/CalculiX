@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,20 +17,20 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine updatecon(vold,vcon,v,nk,ithermal,iturbulent,
-     &     mi,compressible)
+     &     mi,compressible,nka,nkb)
 !     
 !     updating the conservative variables
 !     
       implicit none
 !     
-      integer iturbulent,mi(*),nk,ithermal(*),i,j,compressible
+      integer iturbulent,mi(*),nk,ithermal(*),i,j,compressible,nka,nkb
 !     
       real*8 v(nk,0:mi(2)),vold(0:mi(2),*),vcon(nk,0:mi(2))
 !     
 !     volumetric energy density
 !     
       if(ithermal(1).gt.1) then
-        do i=1,nk
+        do i=nka,nkb
           vcon(i,0)=vcon(i,0)+v(i,0)
         enddo
       endif
@@ -38,7 +38,7 @@
 !     volumetric momentum density
 !     pressure (liquid) or density (gas)
 !     
-      do i=1,nk
+      do i=nka,nkb
 !     
         do j=1,3
           vcon(i,j)=vcon(i,j)+v(i,j)
@@ -58,7 +58,7 @@
 !     volumetric turbulent density
 !     
       if(iturbulent.ne.0) then
-        do i=1,nk
+        do i=nka,nkb
           if(vcon(i,5)+v(i,5).gt.1.d-10) then
             vcon(i,5)=vcon(i,5)+v(i,5)
           else

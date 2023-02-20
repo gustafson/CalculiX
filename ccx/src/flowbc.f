@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine flowresult(ntg,itg,cam,vold,v,nload,sideload,
+      subroutine flowbc(ntg,itg,cam,vold,v,nload,sideload,
      &     nelemload,xloadact,nactdog,network,mi,ne,ipkon,lakon,kon)
 !     
       implicit none
@@ -29,8 +29,6 @@
      &     node1,node2,node3
 !     
       real*8 cam(5),vold(0:mi(2),*),v(0:mi(2),*),xloadact(2,*)
-!
-!
 !     
 !     calculating the change of gas temperature: is taken
 !     into account in the global convergence for purely
@@ -91,15 +89,11 @@
          node2=kon(indexe+2)
          if(kon(indexe+1).ne.0)  then
             node1=kon(indexe+1)
-c            if(vold(1,node2).gt.0.d0) 
-c     &         vold(1,node1)=vold(1,node1)+vold(1,node2)
             if(vold(1,node2).lt.0.d0) 
      &         vold(1,node1)=vold(1,node1)-vold(1,node2)
          endif
          if(kon(indexe+3).ne.0) then
             node3=kon(indexe+3)
-c            if(vold(1,node2).lt.0.d0) 
-c     &         vold(1,node3)=vold(1,node3)-vold(1,node2)
             if(vold(1,node2).gt.0.d0) 
      &         vold(1,node3)=vold(1,node3)+vold(1,node2)
          endif

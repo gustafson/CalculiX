@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -92,7 +92,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   strcat(fneig,".frd");
 
   if((f1=fopen(fneig,"ab"))==NULL){
-    printf("*EOR in frd: cannot open frd file for writing...");
+    printf(" *ERROR in frd: cannot open frd file for writing...");
     exit(0);
   }
 
@@ -125,8 +125,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     }else{
       for(i=0;i<*nk;i++){
 	nout++;
-	if(inum[i]>0) noutplus++;
-	if(inum[i]<0) noutmin++;
+	if(inum[i]>=0) noutplus++;
+	if(inum[i]<=0) noutmin++;
       }
     }
   }else{
@@ -199,8 +199,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1,"%5sUTIME              %8s                                        \n",p1,newclock);
     fprintf(f1,"%5sUHOST                                                              \n",p1);
     fprintf(f1,"%5sUPGM               CalculiX                                        \n",p1);
-    fprintf(f1,"%5sUVERSION           Version 2.19                             \n",p1);
-    fprintf(f1,"%5sUCOMPILETIME       Fri Dec 17 13:15:26 CET 2021                    \n",p1);
+    fprintf(f1,"%5sUVERSION           Version 2.20                             \n",p1);
+    fprintf(f1,"%5sUCOMPILETIME       Sun Jul 31 18:08:37 CEST 2022                    \n",p1);
     fprintf(f1,"%5sUDIR                                                               \n",p1);
     fprintf(f1,"%5sUDBN                                                               \n",p1);
     
@@ -853,12 +853,12 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	frdgeneralvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
 			 trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
       }else{
-	printf("*WARNING in frd:\n");
-	printf("         for output purposes only 4, 5 or 6\n");
-	printf("         degrees of freedom are allowed\n");
-	printf("         for generalized vectors;\n");
-	printf("         actual degrees of freedom = %" ITGFORMAT "\n",mi[1]);
-	printf("         output request ist not performed;\n");
+	printf(" *WARNING in frd:\n");
+	printf("          for output purposes only 4, 5 or 6\n");
+	printf("          degrees of freedom are allowed\n");
+	printf("          for generalized vectors;\n");
+	printf("          actual degrees of freedom = %" ITGFORMAT "\n",mi[1]);
+	printf("          output request ist not performed;\n");
       }
     }
   }
@@ -1475,12 +1475,12 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	frdgeneralvector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
 			 trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
       }else{
-	printf("*WARNING in frd:\n");
-	printf("         for output purposes only 4, 5 or 6\n");
-	printf("         degrees of freedom are allowed\n");
-	printf("         for generalized vectors;\n");
-	printf("         actual degrees of freedom = %" ITGFORMAT "\n",mi[1]);
-	printf("         output request ist not performed;\n");
+	printf(" *WARNING in frd:\n");
+	printf("          for output purposes only 4, 5 or 6\n");
+	printf("          degrees of freedom are allowed\n");
+	printf("          for generalized vectors;\n");
+	printf("          actual degrees of freedom = %" ITGFORMAT "\n",mi[1]);
+	printf("          output request ist not performed;\n");
       }
     }
   }

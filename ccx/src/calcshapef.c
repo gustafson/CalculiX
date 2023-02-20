@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -260,8 +260,8 @@ void calcshapef(ITG *nvar_,ITG *ipvar,double **varp,ITG *ne,
 	    /* check the Jacobian determinant */
 
 	    if(xsj<1.e-20){
-		printf("*ERROR in calcshapef: nonpositive Jacobian\n");
-		printf("       determinant in element %d\n\n",i);
+		printf(" *ERROR in calcshapef: nonpositive Jacobian\n");
+		printf("        determinant in element %d\n\n",i);
 		xsj=fabs(xsj);
 		nmethod=0;
 	    }

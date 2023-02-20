@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -272,8 +272,8 @@ void checkconvergence(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	maxdecay=*enetoll/2*(1+sqrt(*theta));
 	
 	FORTRAN(checkimpacts,(ne,neini,temax,sizemaxinc,energyref,
-			      tmin,tper,&idivergence,
-			      &iforceincsize,istab,dtheta,r_abs,energy,energyini,
+			      tmin,tmax,tper,&idivergence,&iforceincsize,
+			      istab,dtheta,r_abs,energy,energyini,
 			      allwk,allwkini,dampwk,dampwkini,emax,mortar,
 			      &maxdecay,enetoll));
 

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -172,7 +172,6 @@
 !     as soon as the first contact element is discovered ne0 is
 !     determined and saved
 !     
-c     if(ne0.eq.0) ne0=i-1
           if(mortar.eq.0) then
             call springdamp_n2f(xl,elas,voldl,s,imat,elcon,
      &           ncmat_,ntmat_,nope,iperturb,

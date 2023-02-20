@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -65,7 +65,8 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		 double *ttime,char *set,ITG *nset,ITG *istartset,
 		 ITG *iendset,ITG *ialset,ITG *nprint,char *prlab,
 		 char *prset,ITG *nener,double *trab,
-		 ITG **inotrp,ITG *ntrans,double **fmpcp,ITG *ipobody,ITG *ibody,
+		 ITG **inotrp,ITG *ntrans,double **fmpcp,ITG *ipobody,
+		 ITG *ibody,
 		 double *xbody,ITG *nbody,double *xbodyold,ITG *istep,
 		 ITG *isolver,ITG *jq,char *output,ITG *mcs,ITG *nkon,
 		 ITG *ics,double *cs,ITG *mpcend,double *ctrl,
@@ -125,7 +126,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     *ax=NULL,*bx=NULL,*pslavsurf=NULL,*pmastsurf=NULL,xnull=0.,
     *cdnr=NULL,*cdni=NULL,*energyini=NULL,*energy=NULL,*v=NULL,*b=NULL,
     *cco=NULL,*smscale=NULL,*autloc=NULL,*xboun2=NULL,*coefmpc2=NULL,
-    *umubr=NULL,*umubi=NULL;
+    *umubr=NULL,*umubi=NULL,*fnext=NULL;
 
   /* dummy arguments for the call of expand*/
 
@@ -229,7 +230,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 
   if(iperturb[0]==1){
     if(fread(vold,sizeof(double),mt**nk,f1)!=mt**nk){
-      printf("*ERROR in steadystate reading the reference displacements in the eigenvalue file...");
+      printf(" *ERROR in steadystate reading the reference displacements in the eigenvalue file...");
       printf(" *INFO  in steadystate: if there are problems reading the .eig file this may be due to:\n");
       printf("        1) the nonexistence of the .eig file\n");
       printf("        2) other boundary conditions than in the input deck\n");
@@ -485,8 +486,8 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
       }else{
 	if(nherm!=1){
 	  printf(" *ERROR in steadystate: non-Hermitian systems cannot\n");
-	  printf("       be combined with multiple modal diameters\n");
-	  printf("       in cyclic symmetry calculations\n\n");
+	  printf("        be combined with multiple modal diameters\n");
+	  printf("        in cyclic symmetry calculations\n\n");
 	  FORTRAN(stop,());
 	}
 	RENEW(d,double,nev+nevd);
@@ -983,7 +984,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	    fric[i]=(alpham+betam*d[i]);
 	  }
 	  else {
-	    printf("*WARNING in steadystate: one of the frequencies is zero\n");
+	    printf(" *WARNING in steadystate: one of the frequencies is zero\n");
 	    printf("         no Rayleigh mass damping allowed\n");
 	    fric[i]=0.;
 	  }
@@ -1010,7 +1011,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
       /*copy the damping coefficients for every eigenfrequencie from xmodal[11....] */
       if(nev<(ITG)xmodal[10]){
 	imax=nev;
-	printf("*WARNING in steadystate: too many modal damping coefficients applied\n");
+	printf(" *WARNING in steadystate: too many modal damping coefficients applied\n");
 	printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
       }
       else{
@@ -1391,7 +1392,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	      npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 	      xbodyold,&reltime,veold,matname,mi,ikactmechr,
 	      &nactmechr,ielprop,prop,sti,xstateini,xstate,nstate_,
-	      ntrans,inotr,trab);
+	      ntrans,inotr,trab,fnext);
 	  
       /* real modal coefficients */
 	  
@@ -1563,7 +1564,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	      npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 	      xbodyold,&reltime,veold,matname,mi,ikactmechi,
 	      &nactmechi,ielprop,prop,sti,xstateini,xstate,nstate_,
-	      ntrans,inotr,trab);
+	      ntrans,inotr,trab,fnext);
 	  
       /* imaginary modal coefficients */
 	  
@@ -2468,7 +2469,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	  fric[i]=(alpham+betam*d[i]);
 	}
 	else {
-	  printf("*WARNING in steadystate: one of the frequencies is zero\n");
+	  printf(" *WARNING in steadystate: one of the frequencies is zero\n");
 	  printf("         no Rayleigh mass damping allowed\n");
 	  fric[i]=0.;
 	}
@@ -2483,7 +2484,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
       /*copy the damping coefficients for every eigenfrequencie from xmodal[11....] */
       if(nev<(ITG)xmodal[10]){
 	imax=nev;
-	printf("*WARNING in steadystate: too many modal damping coefficients applied\n");
+	printf(" *WARNING in steadystate: too many modal damping coefficients applied\n");
 	printf("         damping coefficients corresponding to nonexisting eigenvalues are ignored\n");
       }
       else{
@@ -2918,7 +2919,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		npmat_,ttime,&time,istep,&iinc,&dtime,physcon,ibody,
 		xbodyold,&reltime,veold,matname,mi,ikactmech,&nactmech,
                 ielprop,prop,sti,xstateini,xstate,nstate_,ntrans,inotr,
-                trab);
+                trab,fnext);
 	  
 	/* real modal coefficients */
 	  

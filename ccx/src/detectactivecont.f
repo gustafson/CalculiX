@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2021 Guido Dhondt
+!              Copyright (C) 1998-2022 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,30 +31,37 @@
 !     into account, i.e. nslav entries)
 !
       do i=1,nslavs
-        inorm=3*(i-1)+1
+        inorm=3*(i-1)+1 ! only normal node DOF
         do j=jqw(inorm),jqw(inorm+1)-1
           value=auw(j)
           icol=iroww(j)
-          gapnorm(i)=gapnorm(i)+value*gapdisp(icol)
+          gapnorm(i)=gapnorm(i)+value*gapdisp(icol) ! TODOCMT friction check!
         enddo
       enddo
 !     
       nacti=0
       do i=1,nslavs
-!     
-!     add initial clearance at time step 0
-!     
-        gapnorm(i)=gapnorm(i)+springarea(2,i)
+!
+      j = 3*(i-1)
 !     
 !     contact evaluation: active degrees of freedom are those for
-!     which there is overlap
+!     which there is overlap (with added initial clearance at time 0)
+!     and for the NON-zero columns (this are nodes which have no master face).
 !     
-        if(gapnorm(i).le.0.d0)then
+      if((gapnorm(i)+springarea(2,i).le.0.d0).and.
+     &     (jqw(j+1).ne.jqw(j+2)) )then
+!
+        if(jqw(j+1).eq.jqw(j+2))then
+          write(*,*) 'Zero column detected!!! Singular contact matrix'
+          stop
+        endif
 !
 !     identifying the indices only of the active normals.
 !
-          nacti=nacti+1
-          iacti(i)=nacti
+            iacti(j+1)=nacti+1
+            iacti(j+2)=nacti+2
+            iacti(j+3)=nacti+3
+            nacti=nacti+3
         endif
       enddo
 !     
