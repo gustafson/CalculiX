@@ -67,5 +67,5 @@ make -j4 -f Makefile.ubuntu
 
 echo "Attempting install"
 [[ -d /usr/local/bin ]] || sudo mkdir -p /usr/local/bin
-sudo cp ccx_2.19 /usr/local/bin/
-sudo sh -c "rm -f /usr/local/bin/ccx; ln -s /usr/local/bin/ccx_2.19 /usr/local/bin/ccx && echo Install completed successfully"
+sudo cp ccx_2.20 /usr/local/bin/
+sudo sh -c "rm -f /usr/local/bin/ccx; ln -s /usr/local/bin/ccx_2.20 /usr/local/bin/ccx && echo Install completed successfully"
