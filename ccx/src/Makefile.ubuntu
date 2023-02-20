@@ -32,7 +32,7 @@ UBUNTU := $(shell lsb_release -d)
 ## CFLAGS=-march=native -O2 -Wall ## conservative
 ## FFLAGS=-march=native -O2 -Wall ## conservative
 CFLAGS=-march=native -O3 -Wall ## -flto ## aggressive -fprofile-generate -fprofile-use
-FFLAGS=-march=native -O3 -Wall ## -flto ## aggressive -fprofile-generate -fprofile-use
+FFLAGS=-march=native -O3 -Wall -fallow-argument-mismatch ## -flto ## aggressive -fprofile-generate -fprofile-use
 
 ## Integer8.  Note at least Arpack and Pardiso need to be compiled for
 ## Integer8 as well.  Spooles does not appear to be int8 according to Guido
@@ -95,8 +95,8 @@ LDFLAGS += `pkg-config --libs blas$(INTEXT)`
 ## PARDISO (this is included in the intel-mkl library or installed separately)
 ## CFLAGS  += -DPARDISO
 ## LDFLAGS += -L/home/pete/local/lib64/ -lpardiso -lgfortran -lpthread -lm -fopenmp
-CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
-LDFLAGS += `pkg-config --libs pardiso`
+CFLAGS  += -DPARDISO
+## LDFLAGS += 
 ## ## Modern Ubuntu with intel-mkl installed doesn't package a pardiso.pc file but pardiso links with mkl.
 ## In 18.04 an explicit call to mkl is required
 ifeq ($(findstring Description:	Ubuntu 18, $(UBUNTU)), Description:	Ubuntu 18)
