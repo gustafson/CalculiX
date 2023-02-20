@@ -183,7 +183,7 @@ LDFLAGS += -lexoIIv2c -lnetcdf
 
 include Makefile.inc
 
-SCCXMAIN = ccx_2.19.c
+SCCXMAIN = ccx_2.20.c
 
 ## Define all the object file rules to identify dependencies
 OCCXCU = $(SCCXCU:.cu=.o)
@@ -194,14 +194,14 @@ OCCXMAIN = $(SCCXMAIN:.c=.o)
 ## Link to math and standard c
 CFLAGS += -lm -lc
 
-all: ccx_2.19
-	@echo Successfully compiled ccx_2.19
+all: ccx_2.20
+	@echo Successfully compiled ccx_2.20
 
-ccx_2.19: $(OCCXMAIN) ccx_2.19.a
+ccx_2.20: $(OCCXMAIN) ccx_2.20.a
 	./date.pl;
-	$(CC) $(CFLAGS) -c ccx_2.19.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.19.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -c ccx_2.20.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.20.a $(LDFLAGS)
 
-ccx_2.19.a: $(OCCXF) $(OCCXC)
+ccx_2.20.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
 
 clean:
