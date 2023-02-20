@@ -37,7 +37,7 @@ CalculiX Extras builds on the [CalculiX](https://www.calculix.de/) code base
 		[exodus](https://github.com/gustafson/CalculiX/tree/exodus) branch
 		or one of the distribution specific branches
 		([opensuse](https://github.com/gustafson/CalculiX/tree/opensuse),
-		[ubuntu](https://github.com/gustafson/CalculiX/tree/opensuse))
+		[ubuntu](https://github.com/gustafson/CalculiX/tree/ubuntu))
 3.  These instructions are limited. They assume you are able to build
 	CalculiX from source. 
 	-   The code contains a detailed
