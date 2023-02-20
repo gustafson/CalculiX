@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -283,7 +283,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       contact(&ncont,ntie,tieset,nset,set,istartset,iendset,
 	      ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,straight,nkon,
 	      co,vold,ielmat,cs,elcon,istep,&iinc,&iit,ncmat_,ntmat_,
-	      &ne0,vini,nmethod,
+	      &ne0,nmethod,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
 	      itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
@@ -498,25 +498,6 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 		   integerglob,doubleglob,tieset,istartset,iendset,
 		   ialset,ntie,&nasym,pslavsurf,pmastsurf,mortar,clearini,
 		   ielprop,prop,&ne0,&kscale,iponoel,inoel,&network,set,nset);
-      
-    /*      FORTRAN(mafillsmas,(co,nk,kon,ipkon,lakon,ne,nodeboun,
-	    ndirboun,xbounact,nboun,
-	    ipompc,nodempc,coefmpc,nmpc,nodeforc,ndirforc,xforcact,
-	    nforc,nelemload,sideload,xloadact,nload,xbodyact,ipobody,
-	    nbody,cgr,ad,au,fext,nactdof,icol,jq,irow,neq,nzl,
-	    nmethod,ikmpc,ilmpc,ikboun,ilboun,
-	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,
-	    ielmat,ielorien,norien,orab,ntmat_,
-	    t0,t1act,ithermal,prestr,iprestr,vold,iperturb,sti,
-	    nzs,stx,adb,aub,iexpl,plicon,nplicon,plkcon,nplkcon,
-	    xstiff,npmat_,&dtime,matname,mi,
-	    ncmat_,mass,&stiffness,&buckling,&rhsi,&intscheme,
-	    physcon,shcon,nshcon,cocon,ncocon,ttime,&time,istep,&iinc,
-	    &coriolis,ibody,xloadold,&reltime,veold,springarea,nstate_,
-	    xstateini,xstate,thicke,
-	    integerglob,doubleglob,tieset,istartset,iendset,
-	    ialset,ntie,&nasym,pslavsurf,pmastsurf,mortar,clearini,
-	    ielprop,prop,&ne0,&kscale,iponoel,inoel,&network));*/
   }
 
   /* determining the right hand side */
@@ -546,7 +527,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	spooles_factor(ad,au,adb,aub,&sigma,icol,irow,neq,nzs,&symmetryflag,
 		       &inputformat,&nzs[2]);
 #else
-	printf("*ERROR in linstatic: the SPOOLES library is not linked\n\n");
+	printf(" *ERROR in linstatic: the SPOOLES library is not linked\n\n");
 	FORTRAN(stop,());
 #endif
       }
@@ -555,7 +536,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,neq,nzs,
 		       &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-	printf("*ERROR in linstatic: the PARDISO library is not linked\n\n");
+	printf(" *ERROR in linstatic: the PARDISO library is not linked\n\n");
 	FORTRAN(stop,());
 #endif
       }
@@ -564,7 +545,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	pastix_factor_main(ad,au,adb,aub,&sigma,icol,irow,neq,nzs,
 		      &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-	printf("*ERROR in linstatic: the PASTIX library is not linked\n\n");
+	printf(" *ERROR in linstatic: the PASTIX library is not linked\n\n");
 	FORTRAN(stop,());
 #endif
       }
@@ -712,7 +693,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       strcat(fneig,".eig");
       
       if((f2=fopen(fneig,"wb"))==NULL){
-	printf("*ERROR in linstatic: cannot open eigenvalue file for writing...");
+	printf(" *ERROR in linstatic: cannot open eigenvalue file for writing...");
 	      
 	exit(0);
       }
@@ -721,21 +702,21 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	 cyclic symmetry calculation */
 	  
       if(fwrite(&zero,sizeof(ITG),1,f2)!=1){
-	printf("*ERROR saving the cyclic symmetry flag to the eigenvalue file...");
+	printf(" *ERROR saving the cyclic symmetry flag to the eigenvalue file...");
 	exit(0);
       }
 	  
       /* Hermitian */
 	  
       if(fwrite(&nherm,sizeof(ITG),1,f2)!=1){
-	printf("*ERROR saving the Hermitian flag to the eigenvalue file...");
+	printf(" *ERROR saving the Hermitian flag to the eigenvalue file...");
 	exit(0);
       }
 
       /* perturbation parameter iperturb[0] */
 	  
       if(fwrite(&iperturb[0],sizeof(ITG),1,f2)!=1){
-	printf("*ERROR saving the perturbation flag to the eigenvalue file...");
+	printf(" *ERROR saving the perturbation flag to the eigenvalue file...");
 	exit(0);
       }
 	      
@@ -743,7 +724,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 
       if(iperturb[0]==1){
 	if(fwrite(vold,sizeof(double),mt**nk,f2)!=mt**nk){
-	  printf("*ERROR saving the reference displacements to the eigenvalue file...");
+	  printf(" *ERROR saving the reference displacements to the eigenvalue file...");
 	  exit(0);
 	}
       }
@@ -751,36 +732,36 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       /* storing the number of eigenvalues */
 	  
       if(fwrite(&nev,sizeof(ITG),1,f2)!=1){
-	printf("*ERROR saving the number of eigenvalues to the eigenvalue file...");
+	printf(" *ERROR saving the number of eigenvalues to the eigenvalue file...");
 	exit(0);
       }
 	  
       /* the eigenfrequencies are stored as radians/time */
 	  
       if(fwrite(d,sizeof(double),nev,f2)!=nev){
-	printf("*ERROR saving the eigenfrequencies to the eigenvalue file...");
+	printf(" *ERROR saving the eigenfrequencies to the eigenvalue file...");
 	exit(0);
       }
 	  
       /* storing the stiffness matrix */
 	  
       if(fwrite(ad,sizeof(double),neq[1],f2)!=neq[1]){
-	printf("*ERROR saving the diagonal of the stiffness matrix to the eigenvalue file...");
+	printf(" *ERROR saving the diagonal of the stiffness matrix to the eigenvalue file...");
 	exit(0);
       }
       if(fwrite(au,sizeof(double),nzs[2],f2)!=nzs[2]){
-	printf("*ERROR saving the off-diagonal terms of the stiffness matrix to the eigenvalue file...");
+	printf(" *ERROR saving the off-diagonal terms of the stiffness matrix to the eigenvalue file...");
 	exit(0);
       }
 	  
       /* storing the mass matrix */
 	  
       if(fwrite(adb,sizeof(double),neq[1],f2)!=neq[1]){
-	printf("*ERROR saving the diagonal of the mass matrix to the eigenvalue file...");
+	printf(" *ERROR saving the diagonal of the mass matrix to the eigenvalue file...");
 	exit(0);
       }
       if(fwrite(aub,sizeof(double),nzs[1],f2)!=nzs[1]){
-	printf("*ERROR saving the off-diagonal terms of the mass matrix to the eigenvalue file...");
+	printf(" *ERROR saving the off-diagonal terms of the mass matrix to the eigenvalue file...");
 	exit(0);
       }
 
@@ -795,7 +776,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	/* check whether degree of freedom is active */
 
 	if(nactdof[mt*(node-1)+idir]==0){
-	  printf("*ERROR in linstatic: degree of freedom corresponding to node %d \n and direction %d is not active: no unit force can be applied\n",node,idir);
+	  printf(" *ERROR in linstatic: degree of freedom corresponding to node %d \n and direction %d is not active: no unit force can be applied\n",node,idir);
 	  FORTRAN(stop,());
 	}
 
@@ -829,7 +810,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	/* storing the Green function */
 
 	if(fwrite(b,sizeof(double),*neq,f2)!=*neq){
-	  printf("*ERROR saving data to the eigenvalue file...");
+	  printf(" *ERROR saving data to the eigenvalue file...");
 	  exit(0);
 	}
 
@@ -954,7 +935,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       spooles(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,&symmetryflag,
               &inputformat,&nzs[2]);
 #else
-      printf("*ERROR in linstatic: the SPOOLES library is not linked\n\n");
+      printf(" *ERROR in linstatic: the SPOOLES library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -974,7 +955,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       token=1;
       sgi_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,token);
 #else
-      printf("*ERROR in linstatic: the SGI library is not linked\n\n");
+      printf(" *ERROR in linstatic: the SGI library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -986,7 +967,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       }
       tau(ad,&au,adb,aub,&sigma,b,icol,&irow,neq,nzs);
 #else
-      printf("*ERROR in linstatic: the TAUCS library is not linked\n\n");
+      printf(" *ERROR in linstatic: the TAUCS library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -995,7 +976,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       pardiso_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,
 		   &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
-      printf("*ERROR in linstatic: the PARDISO library is not linked\n\n");
+      printf(" *ERROR in linstatic: the PARDISO library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -1004,7 +985,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       pastix_main(ad,au,adb,aub,&sigma,b,icol,irow,neq,nzs,
 		  &symmetryflag,&inputformat,jq,&nzs[2],&nrhs);
 #else
-      printf("*ERROR in linstatic: the PASTIX library is not linked\n\n");
+      printf(" *ERROR in linstatic: the PASTIX library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -1018,7 +999,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	strcat(stiffmatrix,".stm");
 	    
 	if((f1=fopen(stiffmatrix,"wb"))==NULL){
-	  printf("*ERROR in linstatic: cannot open stiffness matrix file for writing...");
+	  printf(" *ERROR in linstatic: cannot open stiffness matrix file for writing...");
 	  exit(0);
 	}
 	    
@@ -1031,31 +1012,31 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	*/
 	    
 	if(fwrite(&nasym,sizeof(ITG),1,f1)!=1){
-	  printf("*ERROR saving the symmetry flag to the stiffness matrix file...");
+	  printf(" *ERROR saving the symmetry flag to the stiffness matrix file...");
 	  exit(0);
 	}
 	if(fwrite(nzs,sizeof(ITG),3,f1)!=3){
-	  printf("*ERROR saving the number of subdiagonal nonzeros to the stiffness matrix file...");
+	  printf(" *ERROR saving the number of subdiagonal nonzeros to the stiffness matrix file...");
 	  exit(0);
 	}
 	if(fwrite(irow,sizeof(ITG),nzs[2],f1)!=nzs[2]){
-	  printf("*ERROR saving irow to the stiffness matrix file...");
+	  printf(" *ERROR saving irow to the stiffness matrix file...");
 	  exit(0);
 	}
 	if(fwrite(jq,sizeof(ITG),neq[1]+1,f1)!=neq[1]+1){
-	  printf("*ERROR saving jq to the stiffness matrix file...");
+	  printf(" *ERROR saving jq to the stiffness matrix file...");
 	  exit(0);
 	}
 	if(fwrite(icol,sizeof(ITG),neq[1],f1)!=neq[1]){
-	  printf("*ERROR saving icol to the stiffness matrix file...");
+	  printf(" *ERROR saving icol to the stiffness matrix file...");
 	  exit(0);
 	}
 	if(fwrite(ad,sizeof(double),neq[1],f1)!=neq[1]){
-	  printf("*ERROR saving the diagonal of the stiffness matrix to the stiffness matrix file...");
+	  printf(" *ERROR saving the diagonal of the stiffness matrix to the stiffness matrix file...");
 	  exit(0);
 	}
 	if(fwrite(au,sizeof(double),nzs[2],f1)!=nzs[2]){
-	  printf("*ERROR saving the off-diagonal terms of the stiffness matrix to the tiffness matrix file...");
+	  printf(" *ERROR saving the off-diagonal terms of the stiffness matrix to the tiffness matrix file...");
 	  exit(0);
 	}
 	fclose(f1);

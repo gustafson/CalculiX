@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                     */
+/*              Copyright (C) 1998-2022 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -167,7 +167,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 
   if(((idisplacement==1)||(imass==1)||(ishapeenergy==1))&&
      (ieigenfrequency==1)){
-    printf(" *ERROR in sensitivity: the objective EIGENFREQUENCY\n");
+    printf(" *ERROR in sensi_coor: the objective EIGENFREQUENCY\n");
     printf("        cannot be used with any other objective within\n");
     printf("        the same step\n");
     exit(0);
@@ -191,8 +191,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     strcat(fneig,".eig");
       
     if((f1=fopen(fneig,"rb"))==NULL){
-      printf(" *ERROR in sensitivity: cannot open eigenvalue file for reading");
-      printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+      printf(" *ERROR in sensi_coor: cannot open eigenvalue file for reading");
+      printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
       printf("        1) the nonexistence of the .eig file\n");
       printf("        2) other boundary conditions than in the input deck\n");
       printf("           which created the .eig file\n\n");
@@ -200,8 +200,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     }
       
     if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
-      printf(" *ERROR in sensitivity reading the cyclic symmetry flag in the eigenvalue file");
-      printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+      printf(" *ERROR in sensi_coor reading the cyclic symmetry flag in the eigenvalue file");
+      printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
       printf("        1) the nonexistence of the .eig file\n");
       printf("        2) other boundary conditions than in the input deck\n");
       printf("           which created the .eig file\n\n");
@@ -209,8 +209,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     }
       
     if(fread(&nherm,sizeof(ITG),1,f1)!=1){
-      printf(" *ERROR in sensitivity reading the Hermitian flag in the eigenvalue file");
-      printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+      printf(" *ERROR in sensi_coor reading the Hermitian flag in the eigenvalue file");
+      printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
       printf("        1) the nonexistence of the .eig file\n");
       printf("        2) other boundary conditions than in the input deck\n");
       printf("           which created the .eig file\n\n");
@@ -218,15 +218,15 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     }
       
     if(nherm!=1){
-      printf(" *ERROR in sensitivity: the eigenvectors in the .eig-file result\n");
+      printf(" *ERROR in sensi_coor: the eigenvectors in the .eig-file result\n");
       printf("       from a non-Hermitian eigenvalue problem. The \n");
       printf("       sensitivity procedure cannot handle that yet\n\n");
       FORTRAN(stop,());
     }
 
     if(fread(&iperturb[0],sizeof(ITG),1,f1)!=1){
-      printf(" *ERROR in sensitivity reading the perturbation flag in the eigenvalue file");
-      printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+      printf(" *ERROR in sensi_coor reading the perturbation flag in the eigenvalue file");
+      printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
       printf("        1) the nonexistence of the .eig file\n");
       printf("        2) other boundary conditions than in the input deck\n");
       printf("           which created the .eig file\n\n");
@@ -235,7 +235,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 
     if(iperturb[0]==1){
       if(fread(vold,sizeof(double),mt**nk,f1)!=mt**nk){
-	printf("*ERROR in sensitivity reading the reference displacements in the eigenvalue file...");
+	printf(" *ERROR in sensi_coor reading the reference displacements in the eigenvalue file...");
 	exit(0);
       }
     }
@@ -286,7 +286,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 			   mi,nactdof,ndesi,nodedesi,ntie,tieset,
 			   nodedesiinv,lakon,ipkon,kon,iponoelfa,
 			   iponod2dto3d,iponor2d,knor2d,iponoel2d,
-			   inoel2d,nobject,objectset,iponk2dto3d,ne));
+			   inoel2d,nobject,objectset,iponk2dto3d,ne,
+			   jobnamef));
 			   			     
       
   }else{
@@ -295,7 +296,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 			   mi,nactdof,ndesi,nodedesi,ntie,tieset,
 			   itmp,nmpc,nodempc,ipompc,nodedesiinv,
 			   iponoel,inoel,lakon,ipkon,
-			   kon,&iregion,ipoface,nodface,nk));  
+			   kon,&iregion,ipoface,nodface,nk,jobnamef));  
   }
       
   SFREE(itmp);
@@ -494,8 +495,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     if(!cyclicsymmetry){
 	  
       if(fread(&nev,sizeof(ITG),1,f1)!=1){
-	printf(" *ERROR in sensitivity reading the number of eigenvalues in the eigenvalue file");
-	printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	printf(" *ERROR in sensi_coor reading the number of eigenvalues in the eigenvalue file");
+	printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	printf("        1) the nonexistence of the .eig file\n");
 	printf("        2) other boundary conditions than in the input deck\n");
 	printf("           which created the .eig file\n\n");
@@ -505,8 +506,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       NNEW(d,double,nev);
 	  
       if(fread(d,sizeof(double),nev,f1)!=nev){
-	printf(" *ERROR in sensitivity reading the eigenvalues in the eigenvalue file");
-	printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	printf(" *ERROR in sensi_coor reading the eigenvalues in the eigenvalue file");
+	printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	printf("        1) the nonexistence of the .eig file\n");
 	printf("        2) other boundary conditions than in the input deck\n");
 	printf("           which created the .eig file\n\n");
@@ -523,8 +524,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       NNEW(aub,double,nzs[1]);
 	  
       if(fread(ad,sizeof(double),neq[1],f1)!=neq[1]){
-	printf(" *ERROR in sensitivity reading the diagonal of the stiffness matrix in the eigenvalue file");
-	printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	printf(" *ERROR in sensi_coor reading the diagonal of the stiffness matrix in the eigenvalue file");
+	printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	printf("        1) the nonexistence of the .eig file\n");
 	printf("        2) other boundary conditions than in the input deck\n");
 	printf("           which created the .eig file\n\n");
@@ -532,8 +533,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       }
 	  
       if(fread(au,sizeof(double),nzsprevstep[2],f1)!=nzsprevstep[2]){
-	printf(" *ERROR in sensitivity reading the off-diagonals of the stiffness matrix in the eigenvalue file");
-	printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	printf(" *ERROR in sensi_coor reading the off-diagonals of the stiffness matrix in the eigenvalue file");
+	printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	printf("        1) the nonexistence of the .eig file\n");
 	printf("        2) other boundary conditions than in the input deck\n");
 	printf("           which created the .eig file\n\n");
@@ -541,8 +542,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       }
 	  
       if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
-	printf(" *ERROR in sensitivity reading the diagonal of the mass matrix in the eigenvalue file");
-	printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	printf(" *ERROR in sensi_coor reading the diagonal of the mass matrix in the eigenvalue file");
+	printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	printf("        1) the nonexistence of the .eig file\n");
 	printf("        2) other boundary conditions than in the input deck\n");
 	printf("           which created the .eig file\n\n");
@@ -550,8 +551,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       }
 	  
       if(fread(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
-	printf(" *ERROR in sensitivity reading the off-diagonals of the mass matrix in the  eigenvalue file");
-	printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	printf(" *ERROR in sensi_coor reading the off-diagonals of the mass matrix in the  eigenvalue file");
+	printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	printf("        1) the nonexistence of the .eig file\n");
 	printf("        2) other boundary conditions than in the input deck\n");
 	printf("           which created the .eig file\n\n");
@@ -561,8 +562,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       NNEW(z,double,neq[1]*nev);
 	  
       if(fread(z,sizeof(double),neq[1]*nev,f1)!=neq[1]*nev){
-	printf(" *ERROR in sensitivity reading the eigenvectors in the eigenvalue file");
-	printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	printf(" *ERROR in sensi_coor reading the eigenvectors in the eigenvalue file");
+	printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	printf("        1) the nonexistence of the .eig file\n");
 	printf("        2) other boundary conditions than in the input deck\n");
 	printf("           which created the .eig file\n\n");
@@ -576,8 +577,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	  break;
 	}
 	if(fread(&nevd,sizeof(ITG),1,f1)!=1){
-	  printf(" *ERROR in sensitivity reading the number of eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
-	  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	  printf(" *ERROR in sensi_coor reading the number of eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	  printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	  printf("        1) the nonexistence of the .eig file\n");
 	  printf("        2) other boundary conditions than in the input deck\n");
 	  printf("           which created the .eig file\n\n");
@@ -592,8 +593,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	}
 	      
 	if(fread(&d[nev],sizeof(double),nevd,f1)!=nevd){
-	  printf(" *ERROR in sensitivity reading the eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
-	  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	  printf(" *ERROR in sensi_coor reading the eigenvalues for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	  printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	  printf("        1) the nonexistence of the .eig file\n");
 	  printf("        2) other boundary conditions than in the input deck\n");
 	  printf("           which created the .eig file\n\n");
@@ -610,8 +611,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	  NNEW(au,double,nzs[1]);
 		  
 	  if(fread(ad,sizeof(double),neq[1],f1)!=neq[1]){
-	    printf(" *ERROR in sensitivity reading the diagonal of the stiffness matrix in the eigenvalue file");
-	    printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	    printf(" *ERROR in sensi_coor reading the diagonal of the stiffness matrix in the eigenvalue file");
+	    printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	    printf("        1) the nonexistence of the .eig file\n");
 	    printf("        2) other boundary conditions than in the input deck\n");
 	    printf("           which created the .eig file\n\n");
@@ -619,8 +620,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	  }
 		  
 	  if(fread(au,sizeof(double),nzs[1],f1)!=nzs[1]){
-	    printf(" *ERROR in sensitivity reading the off-diagonals of the stiffness matrix in the eigenvalue file");
-	    printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	    printf(" *ERROR in sensi_coor reading the off-diagonals of the stiffness matrix in the eigenvalue file");
+	    printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	    printf("        1) the nonexistence of the .eig file\n");
 	    printf("        2) other boundary conditions than in the input deck\n");
 	    printf("           which created the .eig file\n\n");
@@ -631,8 +632,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	  NNEW(aub,double,nzs[1]);
 		  
 	  if(fread(adb,sizeof(double),neq[1],f1)!=neq[1]){
-	    printf(" *ERROR in sensitivity reading the diagonal of the mass matrix in the eigenvalue file");
-	    printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	    printf(" *ERROR in sensi_coor reading the diagonal of the mass matrix in the eigenvalue file");
+	    printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	    printf("        1) the nonexistence of the .eig file\n");
 	    printf("        2) other boundary conditions than in the input deck\n");
 	    printf("           which created the .eig file\n\n");
@@ -640,8 +641,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	  }
 		  
 	  if(fread(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
-	    printf(" *ERROR in sensitivity reading the off-diagonals of the mass matrix in the eigenvalue file");
-	    printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	    printf(" *ERROR in sensi_coor reading the off-diagonals of the mass matrix in the eigenvalue file");
+	    printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	    printf("        1) the nonexistence of the .eig file\n");
 	    printf("        2) other boundary conditions than in the input deck\n");
 	    printf("           which created the .eig file\n\n");
@@ -658,8 +659,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	}
 	      
 	if(fread(&z[(long long)neq[1]*nev],sizeof(double),neq[1]*nevd,f1)!=neq[1]*nevd){
-	  printf(" *ERROR in sensitivity reading the eigenvectors for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
-	  printf(" *INFO  in sensitivity: if there are problems reading the .eig file this may be due to:\n");
+	  printf(" *ERROR in sensi_coor reading the eigenvectors for nodal diameter %" ITGFORMAT " in the eigenvalue file",nmd);
+	  printf(" *INFO  in sensi_coor: if there are problems reading the .eig file this may be due to:\n");
 	  printf("        1) the nonexistence of the .eig file\n");
 	  printf("        2) other boundary conditions than in the input deck\n");
 	  printf("           which created the .eig file\n\n");
@@ -688,33 +689,33 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       strcat(stiffmatrix,".stm");
 	
       if((f1=fopen(stiffmatrix,"rb"))==NULL){
-	printf("*ERROR in sensitivity: cannot open stiffness-matrix file for reading");
+	printf(" *ERROR in sensi_coor: cannot open stiffness-matrix file for reading");
 	exit(0);
       }
 	
       if(fread(&nasym,sizeof(ITG),1,f1)!=1){
-	printf("*ERROR in sensitivity reading the symmetry flag of the stiffness matrix file...");
+	printf(" *ERROR in sensi_coor reading the symmetry flag of the stiffness matrix file...");
 	exit(0);
       }
 	
       if(fread(nzs,sizeof(ITG),3,f1)!=3){
-	printf("*ERROR in sensitivity reading the number of subdiagonal nonzeros in the stiffness matrix file...");
+	printf(" *ERROR in sensi_coor reading the number of subdiagonal nonzeros in the stiffness matrix file...");
 	exit(0);
       }
       RENEW(irow,ITG,nzs[2]);
 
       if(fread(irow,sizeof(ITG),nzs[2],f1)!=nzs[2]){
-	printf("*ERROR in sensitivity reading irow in the stiffness matrix file...");
+	printf(" *ERROR in sensi_coor reading irow in the stiffness matrix file...");
 	exit(0);
       }
 
       if(fread(jq,sizeof(ITG),neq[1]+1,f1)!=neq[1]+1){
-	printf("*ERROR in sensitivity reading jq in the stiffness matrix file...");
+	printf(" *ERROR in sensi_coor reading jq in the stiffness matrix file...");
 	exit(0);
       }
 
       if(fread(icol,sizeof(ITG),neq[1],f1)!=neq[1]){
-	printf("*ERROR in sensitivity reading icol in the stiffness matrix file...");
+	printf(" *ERROR in sensi_coor reading icol in the stiffness matrix file...");
 	exit(0);
       }
 	
@@ -722,12 +723,12 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       NNEW(au,double,(nasym+1)*nzs[2]);
 
       if(fread(ad,sizeof(double),neq[1],f1)!=neq[1]){
-	printf("*ERROR in sensitivity reading the diagonal of the stiffness matrix in the .stm-file");
+	printf(" *ERROR in sensi_coor reading the diagonal of the stiffness matrix in the .stm-file");
 	exit(0);
       }
 	
       if(fread(au,sizeof(double),(nasym+1)*nzs[2],f1)!=(nasym+1)*nzs[2]){
-	printf("*ERROR in sensitivity reading the off-diagonals of the stiffness matrix in the .stm-file");
+	printf(" *ERROR in sensi_coor reading the off-diagonals of the stiffness matrix in the .stm-file");
 	exit(0);
       }  
 	

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -86,8 +86,8 @@
 !     
           write(5,*)
           write(5,120) faset(1:ipos-2),ttime
- 120      format(' surface stress vector (tx,ty,tz), normal stress, sh
-     &ear stress and coordinates for set ',A,' and time ',e14.7)
+ 120      format(' surface stress vector (tx,ty,tz), normal stress, shea
+     &r stress and coordinates for set ',A,' and time ',e14.7)
           write(5,*)
 !     
 !     printing the data

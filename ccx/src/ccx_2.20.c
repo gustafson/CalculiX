@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                     */
+/*              Copyright (C) 1998-2022 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -120,7 +120,7 @@ int main(int argc,char *argv[])
       if(strcmp1(argv[i],"-i")==0){
 	strcpy(jobnamec,argv[i+1]);strcpy1(jobnamef,argv[i+1],132);jin++;break;}
       if(strcmp1(argv[i],"-v")==0){
-	printf("\nThis is Version 2.19\n\n");
+	printf("\nThis is Version 2.20\n\n");
 	FORTRAN(stop,());
       }
     }
@@ -146,13 +146,13 @@ int main(int argc,char *argv[])
   FORTRAN(openfile,(jobnamef));
 
   printf("\n************************************************************\n\n");
-  printf("CalculiX Version 2.19, Copyright(C) 1998-2021 Guido Dhondt\n");
-  printf("CalculiX Extras version 2.19, Copyright(C) 2013-2022 Peter A. Gustafson\n");
+  printf("CalculiX Version 2.20, Copyright(C) 1998-2022 Guido Dhondt\n");
+  printf("CalculiX Extras version 2.20, Copyright(C) 2013-2023 Peter A. Gustafson\n");
   printf("CalculiX comes with ABSOLUTELY NO WARRANTY. This is free\n");
   printf("software, and you are welcome to redistribute it under\n");
   printf("certain conditions, see gpl.htm\n\n");
   printf("************************************************************\n\n");
-  printf("You are using an executable made on Fri Dec 17 13:15:26 CET 2021\n");
+  printf("You are using an executable made on Mon Feb 20 12:59:29 PM EST 2023\n");
   fflush(stdout);
 
   NNEW(ipoinp,ITG,2*nentries);
@@ -592,7 +592,7 @@ int main(int argc,char *argv[])
     cyclicsymmetry=0;
     if((f1=fopen(fneig,"rb"))!=NULL){
       if(fread(&cyclicsymmetry,sizeof(ITG),1,f1)!=1){
-	printf("*ERROR reading the information whether cyclic symmetry is involved in the eigenvalue file");
+	printf(" *ERROR reading the information whether cyclic symmetry is involved in the eigenvalue file");
 	exit(0);
       }
       fclose(f1);
@@ -701,11 +701,11 @@ int main(int argc,char *argv[])
 
       /* tied contact constraints: generate appropriate MPC's */
 
-      tiedcontact(&ntie, tieset, &nset, set,istartset, iendset, ialset,
-		  lakon, ipkon, kon,tietol,&nmpc, &mpcfree, &memmpc_,
-		  &ipompc, &labmpc, &ikmpc, &ilmpc,&fmpc, &nodempc, &coefmpc,
-		  ithermal, co, vold,&nef,&nmpc_,mi,&nk,&istep,ikboun,&nboun,
-		  kind1,kind2);
+      tiedcontact(&ntie,tieset,&nset,set,istartset,iendset,ialset,
+		  lakon,ipkon,kon,tietol,&nmpc,&mpcfree,&memmpc_,
+		  &ipompc,&labmpc,&ikmpc,&ilmpc,&fmpc,&nodempc,&coefmpc,
+		  ithermal,co,vold,&nef,&nmpc_,mi,&nk,&istep,ikboun,&nboun,
+		  kind1,kind2,jobnamef);
 
       /* reallocating space in the first step */
 
@@ -1310,7 +1310,7 @@ int main(int argc,char *argv[])
 	for(i=0;i<3;i++){nzsprevstep[i]=nzs[i];}
 
 #else
-	printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
+	printf(" *ERROR in CalculiX: the ARPACK library is not linked\n\n");
 	FORTRAN(stop,());
 #endif
 
@@ -1346,7 +1346,7 @@ int main(int argc,char *argv[])
 	for(i=0;i<3;i++){nzsprevstep[i]=nzs[i];}
 
 #else
-	printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
+	printf(" *ERROR in CalculiX: the ARPACK library is not linked\n\n");
 	FORTRAN(stop,());
 #endif
 
@@ -1370,7 +1370,7 @@ int main(int argc,char *argv[])
 	       ibody,xbody,&nbody,thicke,jobnamec,&nmat,ielprop,prop,
 	       orname,typeboun,t0g,t1g);
 #else
-      printf("*ERROR in CalculiX: the ARPACK library is not linked\n\n");
+      printf(" *ERROR in CalculiX: the ARPACK library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -1584,10 +1584,14 @@ int main(int argc,char *argv[])
     else if(nmethod==15){
       
       crackpropagation(&ipkon,&kon,&lakon,&ne,&nk,jobnamec,&nboun,iamboun,xboun,
-		       &nload,sideload,iamload,&nforc,iamforc,xforc,ithermal,t1,
-		       iamt1,&co,&nkon,mi,&ielmat,matname,output,&nmat,set,
+		       &nload,sideload,iamload,&nforc,iamforc,xforc,ithermal,
+		       &t1,&iamt1,&co,&nkon,mi,&ielmat,matname,output,&nmat,set,
 		       &nset,istartset,iendset,ialset,jmax,timepar,nelcon,
-		       elcon,&ncmat_,&ntmat_,&istep,filab,&nmethod,mei);
+		       elcon,&ncmat_,&ntmat_,&istep,filab,&nmethod,mei,&ntrans,
+		       &inotr,&t0,&ne1d,&ne2d,&t0g,&t1g,&nam,&t1old,&vold,
+		       iperturb,&iprestr,&prestr,&norien,&ielorien,&nprop,
+		       &ielprop,&offset,&sti,&eme,&nener,&ener,&nstate_,
+		       &mortar,&nslavs,&nintpoint,&xstate,&iponor,&thicke);
     }
 
     else if(nmethod==16){
@@ -1828,7 +1832,7 @@ int main(int argc,char *argv[])
   strcpy(fneig,jobnamec);
   strcat(fneig,".frd");
   if((f1=fopen(fneig,"ab"))==NULL){
-    printf("*ERROR in frd: cannot open frd file for writing...");
+    printf(" *ERROR in frd: cannot open frd file for writing...");
     exit(0);
   }
 #ifdef EXODUSII

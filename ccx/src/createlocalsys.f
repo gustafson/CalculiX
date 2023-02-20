@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -119,6 +119,7 @@
 !     in shapefactor.f
 !     
           angle(i)=xt(1,j1)*xt(1,j2)+xt(2,j1)*xt(2,j2)+xt(3,j1)*xt(3,j2)
+          angle(i)=min(max(angle(i),-1.d0),1.d0)
           angle(i)=dacos(angle(i))
         endif
       enddo

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                     */
+/*              Copyright (C) 1998-2022 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -26,8 +26,7 @@ void contact(ITG *ncont, ITG *ntie, char *tieset,ITG *nset,char *set,
 	     double *cg, double *straight, ITG *ifree, double *co,
 	     double *vold, ITG *ielmat, double *cs, double *elcon,
              ITG *istep,ITG *iinc,ITG *iit,ITG *ncmat_,ITG *ntmat_,
-             ITG *ne0, double *vini,
-             ITG *nmethod,
+             ITG *ne0,ITG *nmethod,
              ITG *iperturb, ITG *ikboun, ITG *nboun, ITG *mi,
              ITG *imastop,ITG *nslavnode,ITG *islavnode,ITG *islavsurf,
              ITG *itiefac,double *areaslav,ITG *iponoels,ITG *inoels,

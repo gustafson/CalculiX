@@ -166,8 +166,8 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	}else if(kontyp[i]==6){
 	    numnodes=10;
 	}else{
-	    printf("*WARNING in getuncrackedresults.c: element in global\n");
-	    printf("         mesh not recognized; cgx element type=%" ITGFORMAT "\n",kontyp[i]);
+	    printf(" *WARNING in getuncrackedresults.c: element in global\n");
+	    printf("          mesh not recognized; cgx element type=%" ITGFORMAT "\n",kontyp[i]);
 	    continue;
 	}
 	for(j=0;j<numnodes;j++){
@@ -377,7 +377,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	*nstep=max(*nstep,istep_global);
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	  {
-	    printf("ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf(" *ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	  }
 	
@@ -419,7 +419,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	*nstep=max(*nstep,istep_global);
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	  {
-	    printf("ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf(" *ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	  }
 	
@@ -462,7 +462,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	*nstep=max(*nstep,istep_global);
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	  {
-	    printf("ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf(" *ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	  }
 	
@@ -508,7 +508,7 @@ void getuncrackedresults (char *masterfile,ITG **integerglobp,
 	*nstep=max(*nstep,istep_global);
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	  {
-	    printf("ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf(" *ERROR in getuncrackedresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	  }
 	

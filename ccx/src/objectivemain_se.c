@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -190,7 +190,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
       spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 		     &symmetryflag,&inputformat,&nzs[2]);
 #else
-      printf("*ERROR in objectivemain_se: the SPOOLES library is not linked\n\n");
+      printf(" *ERROR in objectivemain_se: the SPOOLES library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -199,7 +199,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
       token=1;
       sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-      printf("*ERROR in objectivemain_se: the SGI library is not linked\n\n");
+      printf(" *ERROR in objectivemain_se: the SGI library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -207,7 +207,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 #ifdef TAUCS
       tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-      printf("*ERROR in objectivemain_se: the TAUCS library is not linked\n\n");
+      printf(" *ERROR in objectivemain_se: the TAUCS library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -216,7 +216,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
       pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 		     &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-      printf("*ERROR in objectivemain_se: the PARDISO library is not linked\n\n");
+      printf(" *ERROR in objectivemain_se: the PARDISO library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -225,7 +225,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
       pastix_factor_main(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 			 &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-      printf("*ERROR in objectivemain_se: the PASTIX library is not linked\n\n");
+      printf(" *ERROR in objectivemain_se: the PASTIX library is not linked\n\n");
       FORTRAN(stop,());
 #endif
     }
@@ -550,7 +550,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	    spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 			   &symmetryflag,&inputformat,&nzs[2]);
 #else
-	    printf("*ERROR in objectivemain_se: the SPOOLES library is not linked\n\n");
+	    printf(" *ERROR in objectivemain_se: the SPOOLES library is not linked\n\n");
 	    FORTRAN(stop,());
 #endif
 	  }
@@ -559,7 +559,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	    token=1;
 	    sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-	    printf("*ERROR in objectivemain_se: the SGI library is not linked\n\n");
+	    printf(" *ERROR in objectivemain_se: the SGI library is not linked\n\n");
 	    FORTRAN(stop,());
 #endif
 	  }
@@ -567,7 +567,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 #ifdef TAUCS
 	    tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-	    printf("*ERROR in objectivemain_se: the TAUCS library is not linked\n\n");
+	    printf(" *ERROR in objectivemain_se: the TAUCS library is not linked\n\n");
 	    FORTRAN(stop,());
 #endif
 	  }
@@ -576,7 +576,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	    pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 			   &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-	    printf("*ERROR in objectivemain_se: the PARDISO library is not linked\n\n");
+	    printf(" *ERROR in objectivemain_se: the PARDISO library is not linked\n\n");
 	    FORTRAN(stop,());
 #endif
 	  }
@@ -585,7 +585,7 @@ void objectivemain_se(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 	    pastix_factor_main(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 			       &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-	    printf("*ERROR in objectivemain_se: the PASTIX library is not linked\n\n");
+	    printf(" *ERROR in objectivemain_se: the PASTIX library is not linked\n\n");
 	    FORTRAN(stop,());
 #endif
 	  }

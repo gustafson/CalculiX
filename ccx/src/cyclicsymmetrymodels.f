@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -63,17 +63,19 @@
       character*80 tie
       character*81 set(*),depset,indepset,tieset(3,*),elset
       character*132 textpart(16),jobnamec(*)
+      character*256 fn
 !     
       integer istartset(*),iendset(*),ialset(*),ipompc(*),ifaces,
      &     nodempc(3,*),itiecyc,ntiecyc,iaxial,nopes,nelems,m,indexe,
      &     nset,istep,istat,n,key,i,j,k,nk,nmpc,nmpc_,mpcfree,ics(*),
      &     nr(*),nz(*),jdep,jindep,l,noded,ikmpc(*),ilmpc(*),lcs(*),
      &     kflag,node,ncsnodes,ncs_,iline,ipol,inl,ipoinp(2,*),nneigh,
-     &     inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal(*),ncounter,
+     &     inp(3,*),itie,iset,ipos,mcs,lprev,ntie,ithermal(*),
      &     nrcg(*),nzcg(*),jcs(*),kontri(3,*),ne,ipkon(*),kon(*),nodei,
      &     ifacetet(*),inodface(*),ipoinpc(0:*),maxsectors,id,jfaces,
      &     noden(2),ntrans,ntrans_,nef,mi(*),ifaceq(8,6),ifacet(6,4),
-     &     ifacew1(4,5),ifacew2(8,5),idof,ier,icount,nodeaxd,nodeaxi
+     &     ifacew1(4,5),ifacew2(8,5),idof,ier,icount,nodeaxd,nodeaxi,
+     &     ilen
 !     
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &     csab(7),xn,yn,zn,dd,xap,yap,zap,tietol(4,*),cs(17,*),
@@ -632,7 +634,7 @@
       call dsort(zcs,nz,ncsnodes,kflag)
 !     
 !     check whether a tolerance was defined. If not, a tolerance
-!     is calculated as 0.5 % of the mean of the distance of every
+!     is calculated as 1.e-10 times the mean of the distance of every
 !     independent node to its nearest neighbour
 !     
       if(tolloc.lt.0.d0) then
@@ -943,12 +945,16 @@
 !     
 !     allocating a node of the depset to each node of the indepset 
 !     
-      ncounter=0
       triangulation=.false.
 !     
 !     opening a file to store the nodes which are not connected
-!     
-      open(40,file='WarnNodeMissCyclicSymmetry.nam',status='unknown')
+!
+      do ilen=1,132
+        if(ichar(jobnamec(1)(ilen:ilen)).eq.0) exit
+      enddo
+      ilen=ilen-1
+      fn=jobnamec(1)(1:ilen)//'_WarnNodeMissCyclicSymmetry.nam'
+      open(40,file=fn,status='unknown')
       write(40,*) '*NSET,NSET=WarnNodeCyclicSymmetry'
       icount=0
 !     
@@ -1054,7 +1060,7 @@
      &         mcs,triangulation,csab,xn,yn,zn,phi,noded,
      &         ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &         nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &         ifacetet,inodface,ncounter,jobnamec,vold,nef,mi,
+     &         ifacetet,inodface,vold,nef,mi,
      &         indepset,ithermal,icount)
         enddo
 !     
@@ -1083,7 +1089,7 @@
      &         mcs,triangulation,csab,xn,yn,zn,phi,noded,
      &         ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,
      &         nzcg,jcs,lcs,kontri,straight,ne,ipkon,kon,lakon,
-     &         ifacetet,inodface,ncounter,jobnamec,vold,nef,mi,
+     &         ifacetet,inodface,vold,nef,mi,
      &         indepset,ithermal,icount)
         enddo
       endif
@@ -1091,32 +1097,20 @@
       enddo loop2
 !
       if(icount.gt.0) then
-        write(*,*) '*INFO in cyclicsymmetrymodels:'
-        write(*,*) '      failed nodes are stored in file'
-        write(*,*) '      WarnNodeMissCyclicSymmetry.nam'
-        write(*,*) '      This file can be loaded into'
-        write(*,*) '      an active cgx-session by typing'
-        write(*,*) 
-     &       '      read WarnNodeMissCyclicSymmetry.nam inp'
-        write(*,*)
-        close(40)
-      else
-        close(40)
-c
-c     the following statement causes problems when splitting
-c     an input deck in several decks for parallel treatment
-c     (splitcycsym..)        
-c        close(40,status='delete')
-      endif
-!     
-      if(ncounter.ne.0) then
         write(*,*) '*WARNING reading *CYCLIC SYMMETRY MODEL:'
         write(*,*) '        for at least one dependent'
         write(*,*) '        node in a cyclic symmetry definition no '
         write(*,*) '        independent counterpart was found.'
         write(*,*) '        Failed nodes are stored in file '
-        write(*,*) '        WarnNodeMissCyclicSymmetry.nam'
+        write(*,*) '        ',fn(1:ilen+31)
+        write(*,*) '        This file can be loaded into'
+        write(*,*) '        an active cgx-session by typing'
+        write(*,*) 
+     &       '      read ',fn(1:ilen+31),' inp'
         write(*,*)
+        close(40)
+      else
+        close(40,status='delete')
       endif
 !     
 !     sorting ics

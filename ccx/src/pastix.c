@@ -1,5 +1,5 @@
 /* CalculiX - A 3-dimensional finite element program */
-/*Copyright (C) 1998-2021 Guido Dhondt*/
+/*Copyright (C) 1998-2022 Guido Dhondt*/
 
 /* This program is free software; you can redistribute it and/or */
 /* modify it under the terms of the GNU General Public License as*/
@@ -28,6 +28,12 @@
 #include <stdlib.h>
 #include "CalculiX.h"
 #include "pastix.h"
+
+/* next 3 lines are for the simulateous use of PARDISO and PaStiX */
+
+#ifdef PARDISO
+#include <mkl_service.h>
+#endif
 
 // Time structs for benchmarking
 extern struct timespec totalCalculixTimeStart, totalCalculixTimeEnd;
@@ -59,6 +65,7 @@ char redo = 1;
 // Global variable which data set was previously used (basic/radiation) and now
 #define BASIC 1
 #define AS 2
+#define CP 3
 char modePrev = BASIC;
 char mode = BASIC;
 
@@ -67,12 +74,14 @@ char mode = BASIC;
 char usage = SINGLE_SOLVE;
 
 // PaStiX configuration
-spm_int_t iparm_basic[IPARM_SIZE];
-spm_int_t iparm_as[IPARM_SIZE];
-double dparm_basic[DPARM_SIZE];
-double dparm_as[DPARM_SIZE];
-spm_int_t *iparm = iparm_basic;
-double *dparm = dparm_basic;
+spm_int_t piparm_basic[IPARM_SIZE];
+spm_int_t piparm_as[IPARM_SIZE];
+spm_int_t piparm_cp[IPARM_SIZE];
+double pdparm_basic[DPARM_SIZE];
+double pdparm_as[DPARM_SIZE];
+double pdparm_cp[DPARM_SIZE];
+spm_int_t *piparm = piparm_basic;
+double *pdparm = pdparm_basic;
 pastix_data_t* pastix_data = NULL;
 spmatrix_t *spm = NULL;
 
@@ -136,8 +145,8 @@ struct pastix_data_s {
     char stickToDouble;
     ITG *irowacc;
     ITG *irowPrediction;
-    spm_int_t *iparm;
-    double *dparm;
+    spm_int_t *piparm;
+    double *pdparm;
     char gpu;
     char mixed;
     pastix_data_t* pastix_data;
@@ -148,13 +157,19 @@ typedef struct pastix_data_s pastix_data_object;
 
 pastix_data_object pastix_mode_basic = {
     0,0,NULL,NULL,0,0,NULL,NULL,NULL,-1,0,NULL,
-    NULL,NULL,NULL,1,0,0,0,1,0,0,0,NULL,NULL,iparm_basic,dparm_basic,
+    NULL,NULL,NULL,1,0,0,0,1,0,0,0,NULL,NULL,piparm_basic,pdparm_basic,
     0,1,NULL,NULL
     };
 
 pastix_data_object pastix_mode_as = {
     0,0,NULL,NULL,0,0,NULL,NULL,NULL,-1,0,NULL,
-    NULL,NULL,NULL,1,0,0,0,1,0,0,0,NULL,NULL,iparm_as,dparm_as,
+    NULL,NULL,NULL,1,0,0,0,1,0,0,0,NULL,NULL,piparm_as,pdparm_as,
+    0,1,NULL,NULL
+    };
+
+pastix_data_object pastix_mode_cp = {
+    0,0,NULL,NULL,0,0,NULL,NULL,NULL,-1,0,NULL,
+    NULL,NULL,NULL,1,0,0,0,1,0,0,0,NULL,NULL,piparm_cp,pdparm_cp,
     0,1,NULL,NULL
     };
 
@@ -199,45 +214,51 @@ void pastix_init(double *ad, double *au, double *adb, double *aub,
 	if (nthread < 1) {nthread=1;}
 	nthread_mkl=nthread;
 	}
+
+	/* next 3 lines are for the simulateous use of PARDISO and PaStiX */
+	
+#ifdef PARDISO
+	mkl_domain_set_num_threads(1,MKL_DOMAIN_BLAS);
+#endif
 	
 	// Init integer and double parameters with default values
-	pastixInitParam( iparm, dparm );
+	pastixInitParam( piparm, pdparm );
 	
 	// Set best PaStiX parameters for CalculiX usage
-    iparm[IPARM_ORDERING]  				= PastixOrderScotch;
-    if( mode == AS ){
-        iparm[IPARM_SCHEDULER] 			= PastixSchedStatic;
+    piparm[IPARM_ORDERING]  				= PastixOrderScotch;
+    if( mode == AS || mode == CP ){
+        piparm[IPARM_SCHEDULER] 			= PastixSchedStatic;
     }
     else{
-        iparm[IPARM_SCHEDULER] 			= PastixSchedParsec;
+        piparm[IPARM_SCHEDULER] 			= PastixSchedParsec;
     }
-	iparm[IPARM_THREAD_NBR]				= nthread_mkl;
-	iparm[IPARM_GPU_NBR]   				= (int) gpu;
-	iparm[IPARM_FLOAT]			 		= globDoublePrecision ? 3 : 2;
-	iparm[IPARM_MIN_BLOCKSIZE] 			= 1024;
-	iparm[IPARM_MAX_BLOCKSIZE] 			= 2048;
-	iparm[IPARM_FACTORIZATION] 			= PastixFactLU;
-	iparm[IPARM_TASKS2D_WIDTH] 			= globDoublePrecision ? 256 : 128;
-    iparm[IPARM_REFINEMENT]             = PastixRefineGMRES;
+	piparm[IPARM_THREAD_NBR]				= nthread_mkl;
+	piparm[IPARM_GPU_NBR]   				= (int) gpu;
+	piparm[IPARM_FLOAT]			 		= globDoublePrecision ? 3 : 2;
+	piparm[IPARM_MIN_BLOCKSIZE] 			= 1024;
+	piparm[IPARM_MAX_BLOCKSIZE] 			= 2048;
+	piparm[IPARM_FACTORIZATION] 			= PastixFactLU;
+	piparm[IPARM_TASKS2D_WIDTH] 			= globDoublePrecision ? 256 : 128;
+    piparm[IPARM_REFINEMENT]             = PastixRefineGMRES;
 
 
-	iparm[IPARM_REUSE_LU] 				= firstIter ? 0 : 1;
-	iparm[IPARM_REUSE_LU] 				= forceRedo ? 2 : 1;
+	piparm[IPARM_REUSE_LU] 				= firstIter ? 0 : 1;
+	piparm[IPARM_REUSE_LU] 				= forceRedo ? 2 : 1;
 	
-    iparm[IPARM_GPU_MEMORY_PERCENTAGE] 	= 95;
-    iparm[IPARM_GPU_MEMORY_BLOCK_SIZE] 	= 64 * 1024;
+    piparm[IPARM_GPU_MEMORY_PERCENTAGE] 	= 95;
+    piparm[IPARM_GPU_MEMORY_BLOCK_SIZE] 	= 64 * 1024;
 
 
     char usage_call = MULTI_SOLVE
     if( usage == usage_call ){
-        dparm[DPARM_EPSILON_REFINEMENT] 	= 1e-7;
-        iparm[IPARM_ITERMAX]            	= 50;
-        iparm[IPARM_GMRES_IM]            	= 50;
+        pdparm[DPARM_EPSILON_REFINEMENT] 	= 1e-12;
+        piparm[IPARM_ITERMAX]            	= 50;
+        piparm[IPARM_GMRES_IM]            	= 50;
     } else{
-    dparm[DPARM_EPSILON_REFINEMENT] 	= 1e-12;
-    dparm[DPARM_EPSILON_MAGN_CTRL]  	= 0.;
-    iparm[IPARM_ITERMAX]            	= 70;
-    iparm[IPARM_GMRES_IM]            	= 70;
+    pdparm[DPARM_EPSILON_REFINEMENT] 	= 1e-12;
+    pdparm[DPARM_EPSILON_MAGN_CTRL]  	= 0.;
+    piparm[IPARM_ITERMAX]            	= 70;
+    piparm[IPARM_GMRES_IM]            	= 70;
     }
 
 	// Initialize sparse matrix
@@ -259,7 +280,7 @@ void pastix_init(double *ad, double *au, double *adb, double *aub,
 
 
 	// initialize pastix
-	pastixInit( &pastix_data, MPI_COMM_WORLD, iparm, dparm );
+	pastixInit( &pastix_data, MPI_COMM_WORLD, piparm, pdparm );
 
 	printf("\n");
 	spmPrintInfo( spm, stdout );
@@ -744,7 +765,7 @@ void pastix_factor_main_generic(double *ad, double *au, double *adb, double *aub
 	// Set GPU flag from environment
 	const char* pastix_gpu = getenv("PASTIX_GPU");
 	if(pastix_gpu)
-		gpu = ( mode == AS ) ? 0 : (*pastix_gpu == '1') ? 1 : 0;
+		gpu = ( mode == AS || mode == CP ) ? 0 : (*pastix_gpu == '1') ? 1 : 0;
 	
 	// Perform individual invocations always in double precision. If previous iterations were in single precision, do not reuse.
 	forceRedo=1;
@@ -755,8 +776,8 @@ void pastix_factor_main_generic(double *ad, double *au, double *adb, double *aub
 	pastix_cleanup(neq,symmetryflag);
 	pastix_init(ad, au, adb, aub, sigma, icol, irow, neq, nzs, symmetryflag, inputformat, jq, nzs3);
     gpu = 0;
-    iparm[IPARM_GPU_NBR]=0;
-    pastix_data->iparm[IPARM_GPU_NBR]=0;
+    piparm[IPARM_GPU_NBR]=0;
+    pastix_data->piparm[IPARM_GPU_NBR]=0;
 	pastix_factor(ad, au, adb, aub, sigma, icol, irow, neq, nzs, symmetryflag, inputformat, jq, nzs3);
 }
 
@@ -839,25 +860,25 @@ ITG pastix_solve_generic(double *x, ITG *neq,ITG *symmetryflag,ITG *nrhs){
     }
 	
 	// invoke iterative refinement in double precision
-    //dparm[DPARM_EPSILON_MAGN_CTRL] = 1e-4;
-    //iparm[IPARM_ITERMAX]           = 3;
+    //pdparm[DPARM_EPSILON_MAGN_CTRL] = 1e-4;
+    //piparm[IPARM_ITERMAX]           = 3;
 
     char usage_call = SINGLE_SOLVE
     if( usage == usage_call || rc != 0 ){
         // invoke iterative refinement in double precision
         rc = pastix_task_refine( pastix_data, spm->n, *nrhs, (void*)b, spm->n, (void*)x, spm->n );
 
-    	iparm[IPARM_GPU_NBR] 		   = 0;
-        dparm[DPARM_EPSILON_MAGN_CTRL] = 1e-14;
-        iparm[IPARM_ITERMAX]           = 50;
+    	piparm[IPARM_GPU_NBR] 		   = 0;
+        pdparm[DPARM_EPSILON_MAGN_CTRL] = 1e-14;
+        piparm[IPARM_ITERMAX]           = 50;
   	    rc = pastix_task_refine( pastix_data, spm->n, *nrhs, (void*)b, spm->n, (void*)x, spm->n );
-    	iparm[IPARM_GPU_NBR] 		   = (int) gpu;
-        iparm[IPARM_ITERMAX]           = 70;
+    	piparm[IPARM_GPU_NBR] 		   = (int) gpu;
+        piparm[IPARM_ITERMAX]           = 70;
     } else{
         rc = pastix_task_refine( pastix_data, spm->n, *nrhs, (void*)b, spm->n, (void*)x, spm->n );
     }
-    //    dparm[DPARM_EPSILON_MAGN_CTRL] = 1e-14;
-    //    iparm[IPARM_ITERMAX]           = 70;
+    //    pdparm[DPARM_EPSILON_MAGN_CTRL] = 1e-14;
+    //    piparm[IPARM_ITERMAX]           = 70;
 //    FILE *f=fopen("spm.out","a");
 //    fprintf(f,"\n\nMatrix\n");
 //    spmConvert(SpmCSR, spm);
@@ -904,6 +925,14 @@ ITG pastix_solve_as(double *x, ITG *neq,ITG *symmetryflag,ITG *nrhs){
     return rc;
 }
 
+ITG pastix_solve_cp(double *x, ITG *neq,ITG *symmetryflag,ITG *nrhs){
+    mode = CP;
+    usage = MULTI_SOLVE;
+    if( modePrev != mode ) pastix_set_globals(mode);	
+    ITG rc = pastix_solve_generic(x,neq,symmetryflag,nrhs);
+    return rc;
+}
+
 // Invokes pastixFinalize and spmExit which frees everything but the dense LU array and parsec pointer
 void pastix_cleanup(ITG *neq,ITG *symmetryflag){
 	if( redo && !firstIter ){
@@ -924,6 +953,11 @@ void pastix_cleanup(ITG *neq,ITG *symmetryflag){
 }
 
 void pastix_cleanup_as(ITG *neq,ITG *symmetryflag){
+    pastix_cleanup(neq,symmetryflag);
+    return;
+}
+
+void pastix_cleanup_cp(ITG *neq,ITG *symmetryflag){
     pastix_cleanup(neq,symmetryflag);
     return;
 }
@@ -1080,10 +1114,10 @@ void pastix_main_generic(double *ad, double *au, double *adb, double *aub,
         }
         
         // make sure that we switch to double and do not reuse in the next iteration
-        dparm[DPARM_EPSILON_REFINEMENT] 	= 1e-12;
-        dparm[DPARM_EPSILON_MAGN_CTRL]  	= .0;
-        iparm[IPARM_ITERMAX]            	= 70;
-        iparm[IPARM_GMRES_IM]            	= 70;
+        pdparm[DPARM_EPSILON_REFINEMENT] 	= 1e-12;
+        pdparm[DPARM_EPSILON_MAGN_CTRL]  	= .0;
+        piparm[IPARM_ITERMAX]            	= 70;
+        piparm[IPARM_GMRES_IM]            	= 70;
 
 		// if we do not converge with mixed precision for the third time, permanently switch to double precision
 		if(mixedFailed <= 2){
@@ -1199,6 +1233,19 @@ void pastix_factor_main_as(double *ad, double *au, double *adb, double *aub,
         return;
 }
 
+void pastix_factor_main_cp(double *ad, double *au, double *adb, double *aub, 
+        double *sigma,ITG *icol, ITG *irow, 
+		ITG *neq, ITG *nzs, ITG *symmetryflag, ITG *inputformat,
+		ITG *jq, ITG *nzs3){
+
+        mode = CP;
+        usage = MULTI_SOLVE;
+        pastix_factor_main_generic(ad, au, adb, aub, sigma, icol, irow, neq,
+                                    nzs, symmetryflag, inputformat, jq, nzs3);
+
+        return;
+}
+
 void pastix_main(double *ad, double *au, double *adb, double *aub, 
      double *sigma,double *b, ITG *icol, ITG *irow, 
 	 ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,
@@ -1223,19 +1270,47 @@ void pastix_main_as(double *ad, double *au, double *adb, double *aub,
      return;
 }
 
+void pastix_main_cp(double *ad, double *au, double *adb, double *aub, 
+     double *sigma,double *b, ITG *icol, ITG *irow, 
+	 ITG *neq, ITG *nzs,ITG *symmetryflag,ITG *inputformat,
+	 ITG *jq, ITG *nzs3,ITG *nrhs){
+	 
+     mode = CP;
+     pastix_main_generic(ad, au, adb, aub, sigma, b, icol, irow, neq,
+                          nzs, symmetryflag, inputformat, jq, nzs3, nrhs);
+
+     return;
+}
+
 void pastix_set_globals(char mode){
 
     if( modePrev != mode ){
         pastix_data_object *temp,*temp2;
+        switch(modePrev){
+            case BASIC:
+                temp2 = &pastix_mode_basic;
+                break;
+
+            case AS:
+                temp2 = &pastix_mode_as;
+                break;
+
+            case CP:
+                temp2 = &pastix_mode_cp;
+                break;
+        }
+
         switch(mode){
             case BASIC:
                 temp = &pastix_mode_basic;
-                temp2 = &pastix_mode_as;
                 break;
 
             case AS:
                 temp = &pastix_mode_as;
-                temp2 = &pastix_mode_basic;
+                break;
+
+            case CP:
+                temp = &pastix_mode_cp;
                 break;
         }
 
@@ -1266,8 +1341,8 @@ void pastix_set_globals(char mode){
         temp2->redo = redo;
         
         // PaStiX configuration
-        temp2->iparm = iparm;
-        temp2->dparm = dparm;
+        temp2->piparm = piparm;
+        temp2->pdparm = pdparm;
         temp2->pastix_data = pastix_data;
         temp2->spm = spm;
         
@@ -1331,8 +1406,8 @@ void pastix_set_globals(char mode){
         redo = temp->redo;
         
         // PaStiX configuration
-        iparm = temp->iparm;
-        dparm = temp->dparm;
+        piparm = temp->piparm;
+        pdparm = temp->pdparm;
         pastix_data = temp->pastix_data;
         spm = temp->spm;
         

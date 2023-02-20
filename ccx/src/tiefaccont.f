@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -141,7 +141,8 @@ c          enddo
 !     
           islav=j
 !     
-          if((mortar.eq.0).and.(nodeslavsurf)) then
+          if((mortar.le.0).and.(nodeslavsurf)) then
+c          if((mortar.eq.0).and.(nodeslavsurf)) then
 !     
 !     nodal slave surface and node-to-surface contact
 !     
@@ -468,10 +469,9 @@ c          enddo
 !     
 !     filling fields iponoels and inoels
 !     
-                  if(mortar.eq.0) then
-c     ifreenoelold=iponoels(node)
+                  if(mortar.le.0) then
+c                  if(mortar.eq.0) then
                     ifreenoels=ifreenoels+1
-c     iponoels(node)=ifreenoels
                     inoels(1,ifreenoels)=ifacecount
                     inoels(2,ifreenoels)=iponoels(node)
                     iponoels(node)=ifreenoels

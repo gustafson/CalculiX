@@ -232,7 +232,7 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 	}else if(kontyp[i]==6){
 	    numnodes=10;
 	}else{
-	    printf("*WARNING in getglobalresults.c: element in global\n");
+	    printf(" *WARNING in getglobalresults.c: element in global\n");
 	    printf("         mesh not recognized; cgx element type=%" ITGFORMAT "\n",kontyp[i]);
 	    continue;
 	}
@@ -451,7 +451,7 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 //	if( readfrdblock(loadcase, anz, node, lcase )==-1) 
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	{
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf(" *ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	}
 	
@@ -462,7 +462,7 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 	    field[13*(nodenr-1)]=lcase[loadcase].dat[0][nodenr];
 	}
     }else{
-	printf("INFO in getglobalresults: no temperature data\n was found for step %d in the global model\n\n",istep);
+	printf(" *INFO in getglobalresults: no temperature data\n was found for step %d in the global model\n\n",istep);
     }
     
     /* reading the displacements */
@@ -497,7 +497,7 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 //	if( readfrdblock(loadcase, anz, node, lcase )==-1) 
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	{
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf(" *ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	}
 	
@@ -510,7 +510,7 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 	    field[13*(nodenr-1)+3]=lcase[loadcase].dat[2][nodenr];
 	}
     }else{
-	printf("INFO in getglobalresults: no displacement data\n was found for step %d in the global model\n\n",istep);
+	printf(" *INFO in getglobalresults: no displacement data\n was found for step %d in the global model\n\n",istep);
     }
     
     /* reading the stresses */
@@ -544,7 +544,7 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 //	if( readfrdblock(loadcase, anz, node, lcase )==-1) 
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	{
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf(" *ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	}
 	
@@ -560,7 +560,7 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 	    field[13*(nodenr-1)+9]=lcase[loadcase].dat[5][nodenr];
 	}
     }else{
-	printf("INFO in getglobalresults: no stress data\n was found for step %d in the global model\n\n",istep);
+	printf(" *INFO in getglobalresults: no stress data\n was found for step %d in the global model\n\n",istep);
     }
     
     /* reading the forces */
@@ -593,7 +593,7 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
     if(loadcase>-1){
 	if(!read_mode && readfrdblock(loadcase, anz, node, lcase )==-1) 
 	{
-	    printf("ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
+	    printf(" *ERROR in getglobalresults: Could not read data for Dataset:%" ITGFORMAT "\n", i+1); 
 	    FORTRAN(stop,());
 	}
 	
@@ -606,7 +606,7 @@ void getglobalresults (char *masterfile,ITG **integerglobp,double **doubleglobp,
 	    field[13*(nodenr-1)+12]=lcase[loadcase].dat[2][nodenr];
 	}
     }else{
-	printf("INFO in getglobalresults: no force data\n was found for step %d in the global model\n\n",istep);
+	printf(" *INFO in getglobalresults: no force data\n was found for step %d in the global model\n\n",istep);
     }
     
     SFREE(kontet);SFREE(inodfa);

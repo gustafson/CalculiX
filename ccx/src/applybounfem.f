@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -15,14 +15,14 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-!     
-      subroutine applybounfem(nodeboun,ndirboun,nboun,xbounact,
-     &     ithermal,nk,vold,isolidsurf,
-     &     nsolidsurf,xsolidsurf,nfreestream,ifreestream,iturbulent,
-     &     vcon,shcon,nshcon,rhcon,nrhcon,ntmat_,physcon,v,
-     &     compressible,nmpc,nodempc,ipompc,coefmpc,inomat,
-     &     mi,ilboun,ilmpc,labmpc,coefmodmpc,
-     &     ifreesurface,ierr,dgravity,depth,iexplicit)
+!                          !     
+      subroutine applybounfem(nodeboun,ndirboun,xbounact,
+     &     nk,vold,isolidsurf,xsolidsurf,ifreestream,iturbulent,
+     &     vcon,shcon,nshcon,ntmat_,physcon,v,
+     &     compressible,nodempc,ipompc,coefmpc,inomat,
+     &     mi,ilboun,ilmpc,labmpc,coefmodmpc,iexplicit,nbouna,
+     &     nbounb,nmpca,nmpcb,nfreestreama,nfreestreamb,
+     &     nsolidsurfa,nsolidsurfb)
 !     
 !     1) applies temperature and velocity SPC's for
 !     incompressible fluids (liquids)
@@ -35,19 +35,18 @@
 !     
       character*20 labmpc(*)
 !     
-      integer iturbulent,compressible,ifreesurface,ierr,
-     &     nrhcon(*),mi(*),ntmat_,nodeboun(*),
-     &     isolidsurf(*),j,ilboun(*),ilmpc(*),
-     &     ndirboun(*),nshcon(*),nk,i,nboun,node,imat,ithermal(*),
-     &     iexplicit,
-     &     nsolidsurf,ifreestream(*),nfreestream,
-     &     index,nodei,nmpc,nodempc(3,*),ipompc(*),
-     &     ist,ndir,ndiri,inomat(*),nref
+      integer iturbulent,compressible,mi(*),ntmat_,
+     &     nodeboun(*),isolidsurf(*),j,ilboun(*),ilmpc(*),
+     &     ndirboun(*),nshcon(*),nk,i,node,imat,
+     &     iexplicit,ifreestream(*),
+     &     index,nodei,nodempc(3,*),ipompc(*),
+     &     ist,ndir,ndiri,inomat(*),nref,nbouna,nbounb,
+     &     nmpca,nmpcb,nfreestreama,nfreestreamb,nsolidsurfa,
+     &     nsolidsurfb
 !     
-      real*8 rhcon(0:1,ntmat_,*),rho,vold(0:mi(2),*),xbounact(*),
-     &     shcon(0:3,ntmat_,*),xnorm,coefmodmpc(*),dgravity,
-     &     temp,xsolidsurf(*),sum,depth(*),
-     &     vcon(nk,0:mi(2)),physcon(*),
+      real*8 rho,vold(0:mi(2),*),xbounact(*),
+     &     shcon(0:3,ntmat_,*),xnorm,coefmodmpc(*),
+     &     temp,xsolidsurf(*),sum,vcon(nk,0:mi(2)),physcon(*),
      &     coefmpc(*),residu,correction,xkin,xtu,sumk,sumt,
      &     dvi,v(nk,0:mi(2))
 !     
@@ -56,7 +55,7 @@
 !     SPC's: temperature, velocity and pressure (latter only for
 !     compressible fluids)
 !     
-      do j=1,nboun
+      do j=nbouna,nbounb
 !     
 !     monotonically increasing DOF-order
 !     
@@ -72,33 +71,11 @@
 !     
         node=nodeboun(i)
 !     
-!     calculating the conservative variables for the previously
-!     treated node, if any
-!
-        if(nref.le.nk) then
-          if(node.ne.nref) then
-            if(nref.ne.0) then
-              call phys2con(inomat,nref,vold,ntmat_,shcon,nshcon,
-     &             physcon,compressible,vcon,rhcon,nrhcon,ithermal,mi,
-     &             ifreesurface,ierr,dgravity,depth,nk)
-            endif
-            nref=node
-          endif
-        endif
-!     
 !     calculating the physical variables for the node at stake
 !     
         vold(ndir,node)=xbounact(i)
         if(node.le.nk) v(node,ndir)=0.d0
       enddo
-!     
-!     treating the remaining node
-!     
-      if((nref.ne.0).and.(nref.le.nk)) then
-        call phys2con(inomat,nref,vold,ntmat_,shcon,nshcon,
-     &       physcon,compressible,vcon,rhcon,nrhcon,ithermal,mi,
-     &       ifreesurface,ierr,dgravity,depth,nk)
-      endif
 !     
 !     MPC's: temperature, velocity and pressure
 !     
@@ -108,7 +85,7 @@
 !
         nref=0
 !     
-        do j=1,nmpc
+        do j=nmpca,nmpcb
 !     
 !     monotonically increasing DOF-order
 !     
@@ -137,33 +114,11 @@
             if(index.eq.0) exit
           enddo
 !     
-!     calculating the conservative variables for the previously
-!     treated node, if any
-!
-          if(nref.le.nk) then
-            if(node.ne.nref) then
-              if(nref.ne.0) then
-                call phys2con(inomat,nref,vold,ntmat_,shcon,nshcon,
-     &               physcon,compressible,vcon,rhcon,nrhcon,ithermal,mi,
-     &               ifreesurface,ierr,dgravity,depth,nk)
-              endif
-              nref=node
-            endif
-          endif
-!     
 !     calculating the physical variables for the node at stake
 !     
           vold(ndir,node)=-sum/coefmpc(ist)
           if(node.le.nk) v(node,ndir)=0.d0
         enddo
-!     
-!     treating the remaining node
-!     
-        if((nref.ne.0).and.(nref.le.nk)) then
-          call phys2con(inomat,nref,vold,ntmat_,shcon,nshcon,
-     &         physcon,compressible,vcon,rhcon,nrhcon,ithermal,mi,
-     &         ifreesurface,ierr,dgravity,depth,nk)
-        endif
       else
 !
 !     compressible fluids
@@ -177,7 +132,7 @@
 !
         nref=0
 !        
-        do j=1,nmpc
+        do j=nmpca,nmpcb
           i=ilmpc(j)
           index=ipompc(i)
 !     
@@ -212,12 +167,7 @@
 !     
             correction=-residu*coefmodmpc(index)
             vold(ndiri,nodei)=vold(ndiri,nodei)+correction
-            if(nodei.le.nk) then
-              call phys2con(inomat,nodei,vold,ntmat_,shcon,nshcon,
-     &             physcon,compressible,vcon,rhcon,nrhcon,ithermal,mi,
-     &             ifreesurface,ierr,dgravity,depth,nk)
-              v(nodei,ndiri)=0.d0
-            endif
+            if(nodei.le.nk) v(nodei,ndiri)=0.d0
             index=nodempc(3,index)
             if(index.eq.0) exit
           enddo
@@ -231,7 +181,7 @@
 !     
         xtu=10.d0*physcon(5)/physcon(8)
         xkin=10.d0**(-3.5d0)*xtu
-        do j=1,nfreestream
+        do j=nfreestreama,nfreestreamb
           node=ifreestream(j)
           imat=inomat(node)
           if(imat.eq.0) cycle
@@ -254,7 +204,7 @@
 !     
 !     solid boundary conditions for the turbulent variables 
 !     
-        do j=1,nsolidsurf
+        do j=nsolidsurfa,nsolidsurfb
 !
 !         turbulent kinetic energy is applied at the wall
 !
@@ -278,7 +228,8 @@
 !     that cyclic fluid pressure MPC's also apply to the iturbulent
 !     conservative variables
 !     
-        do i=1,nmpc
+        do j=nmpca,nmpcb
+          i=ilmpc(j)
           if(labmpc(i)(1:6).ne.'CYCLIC') cycle
           ist=ipompc(i)
           ndir=nodempc(2,ist)

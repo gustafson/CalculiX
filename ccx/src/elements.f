@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -125,9 +125,6 @@ cc        call cident81(set,elset,nset,id)
           set(j)=set(j-1)
         enddo
         js=js+1
-ccc   to remove start        
-c     js=nset
-ccc   to remove end        
         istartset(js)=nalset+1
         iendset(js)=nalset
         set(js)=elset
@@ -136,8 +133,10 @@ ccc   to remove end
         read(textpart(i)(6:13),'(a8)') label
 !     
 !     removing the ABAQUS label for heat transfer elements
+!     note: DS are shell heat transfer elements        
 !     
-        if((label(1:2).eq.'DC').and.(label(1:7).ne.'DCOUP3D')) then
+        if(((label(1:2).eq.'DC').and.(label(1:7).ne.'DCOUP3D')).or.
+     &       (label(1:2).eq.'DS')) then
           label(1:7)=label(2:8)
           label(8:8)=' '
 !     

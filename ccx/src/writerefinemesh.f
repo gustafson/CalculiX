@@ -22,10 +22,11 @@
       implicit none
 !
       character*10 elestr
-      character*132 fnrfn,jobnamec,el_header
+      character*132 fnrfn,jobnamec(*),el_header
+      character*256 fn
 !
       integer kontet(4,*),netet_,i,j,k,nktet,node,iquad,iedtet(6,*),
-     &     iedgmid(*),number(*),nk,jfix(*),iparentel(*),iwrite
+     &     iedgmid(*),number(*),nk,jfix(*),iparentel(*),iwrite,ilen
 !
       real*8 cotet(3,*)
 !
@@ -56,14 +57,14 @@
 !     stores the refined mesh in input format
 !
       do i=1,132
-         if(ichar(jobnamec(i:i)).eq.0) exit
+         if(ichar(jobnamec(1)(i:i)).eq.0) exit
       enddo
       if(i.gt.125) then
          write(*,*) '*ERROR in writerefinemesh'
          write(*,*) '       jobname has more than 124 characters'
          call exit(201)
       endif
-      fnrfn(1:i+7)=jobnamec(1:i-1)//'.rfn.inp'
+      fnrfn(1:i+7)=jobnamec(1)(1:i-1)//'.rfn.inp'
 !
 !     storing the mesh in input format
 !
@@ -133,19 +134,20 @@
  101  format(11(i10,','))
 !
       if(iwrite.eq.1) then
+        ilen=index(jobnamec(1),char(0))-1
+        fn=jobnamec(1)(1:ilen)//'_WarnNodeNotProjected.nam'
         write(*,*) '*INFO in writerefinemesh:'
         write(*,*) '      not (completely) projected nodes'
         write(*,*) '      are stored in file'
-        write(*,*) '      WarnNodeNotProjected.nam'
+        write(*,*) '      ',fn(1:ilen+25)
         write(*,*) '      This file can be loaded into'
         write(*,*) '      an active cgx-session by typing'
         write(*,*) 
-     &       '      read WarnNodeNotProjected.nam inp'
+     &       '      read ',fn(1:ilen+25),' inp'
         write(*,*)
         close(40)
       else
-        close(40)
-c        close(40,status='delete')
+        close(40,status='delete')
       endif
 !     
       return

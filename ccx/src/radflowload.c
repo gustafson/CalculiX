@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                     */
+/*              Copyright (C) 1998-2022 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -73,21 +73,24 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
                  ITG *iamload,ITG *jqrad,ITG *irowrad,ITG *nzsrad,
                  ITG *icolrad,ITG *ne,ITG *iaxial,double *qa,
                  double *cocon,ITG *ncocon,ITG *iponoel,ITG *inoel,
-                 ITG *nprop,char *amname,ITG *namta,double *amta){
+                 ITG *nprop,char *amname,ITG *namta,double *amta,ITG *iexpl){
   
   /* network=0: no network
-     network=1: purely thermal (presence of "Dx"- and/or of "D " network elements; declared
-     by the user to be purely thermal (on the *STEP card); simultaneous solution)
-     network=2: purely thermal (alternating solution; this becomes a simultaneous solution in
-     the absence of "Dx"-elements)
+     network=1: purely thermal (presence of "Dx"- and/or of "D " network 
+                elements; declared by the user to be purely thermal 
+                (on the *STEP card); simultaneous solution)
+     network=2: purely thermal (alternating solution; this becomes a 
+                simultaneous solution in the absence of "Dx"-elements)
      network=3: general case (temperatures, fluxes and pressures unknown)
      network=4: purely aerodynamic, i.e. only fluxes and pressures unknown
 
-     "D "-elements (D followed by a blank) alone do not trigger the alternating solution 
-     (are not counted in envtemp.f as true network elements) */
+     "D "-elements (D followed by a blank) alone do not trigger the 
+     alternating solution (are not counted in envtemp.f as true network 
+     elements) */
 
   ITG nhrs=1,info=0,i,j,iin=0,icntrl,icutb=0,iin_abs=0,mt=mi[1]+1,im,
-    symmetryflag=2,inputformat=1,node,ichannel,*ithread=NULL,iplausi;
+    symmetryflag=2,inputformat=1,node,ichannel,*ithread=NULL,iplausi,
+    *itreated=NULL,*istack=NULL,ndata,*jumpup=NULL,*jumpdo=NULL;
 
   static ITG ifactorization=0;
 
@@ -97,7 +100,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
     cam2a=0.,vamt=0.,vamf=0.,vamp=0.,vama=0.,cam0t=0.,cam0f=0.,
     cam0p=0.,cam0a=0.,sigma=0.,*adbrad=NULL,*aubrad=NULL,*q=NULL,
     *area=NULL,*pmid=NULL,*e1=NULL,*e2=NULL,*e3=NULL,
-    qamt,qamf,qamtold,qamfold;
+    qamt,qamf,qamtold,qamfold,*sfr=NULL,*hfr=NULL,*sba=NULL,*hba=NULL;
   
   adview=*adviewp;auview=*auviewp;
 
@@ -160,13 +163,25 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 	/* initialization for channels with free surface */
 
 	if(ichannel==1){
-	  FORTRAN(initialchannel,(itg,ieg,ntg,ac,bc,lakon,v,
-				  ipkon,kon,nflow,
-				  ikboun,nboun,prop,ielprop,nactdog,ndirboun,
+	  ndata=100;
+	  NNEW(itreated,ITG,*nflow);
+	  NNEW(istack,ITG,2**ntg);
+	  NNEW(sfr,double,ndata**nflow);
+	  NNEW(hfr,double,ndata**nflow);
+	  NNEW(sba,double,ndata**nflow);
+	  NNEW(hba,double,ndata**nflow);
+	  NNEW(jumpup,ITG,*nflow);
+	  NNEW(jumpdo,ITG,*nflow);
+	  FORTRAN(initialchannel,(itg,ieg,ntg,lakon,v,ipkon,kon,nflow,
+				  ikboun,nboun,prop,ielprop,ndirboun,
 				  nodeboun,xbounact,ielmat,ntmat_,shcon,nshcon,
-				  physcon,ipiv,nteq,rhcon,nrhcon,ipobody,ibody,
-				  xbodyact,co,nbody,network,&iin_abs,vold,set,
-				  istep,iit,mi,ineighe,ilboun,ttime,time,iaxial));
+				  physcon,rhcon,nrhcon,ipobody,ibody,
+				  xbodyact,co,nbody,network,vold,set,
+				  istep,iit,mi,ineighe,ilboun,ttime,time,
+				  itreated,iponoel,inoel,istack,sfr,hfr,
+				  sba,hba,&ndata,jumpup,jumpdo));
+	  SFREE(itreated);SFREE(istack);SFREE(hfr);SFREE(hba);
+	  break;
 	}
 
 	/* storing the residual in the rhs vector */
@@ -353,17 +368,18 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 		     &cam1t,&cam1f,&cam1p,&cam2t,&cam2f,&cam2p,&cam0t,&cam0f,
 		     &cam0p,&icntrl,&dtheta,ctrl,&cam1a,&cam2a,&cam0a,
 		     &vamt,&vamf,&vamp,&vama,qa,&qamt,&qamf,&ramt,&ramf,&ramp,
-		     &iplausi,&ichannel,iaxial);
+		     &iplausi,iaxial);
       }
     }
 
     /* storing network output as boundary conditions for
        the structure */
 
-    FORTRAN(flowresult,(ntg,itg,cam,vold,v,nload,sideload,
+    FORTRAN(flowbc,(ntg,itg,cam,vold,v,nload,sideload,
 			nelemload,xloadact,nactdog,network,mi,ne,ipkon,lakon,kon));
 
-    /* extra output for hydraulic jump (fluid channels) */
+    /* extra output in file jobname.net (only for gas networks and 
+       liquid channels) */
 
 #ifdef NETWORKOUT
     if(*network>2){
@@ -372,7 +388,12 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			  ielmat,prop,ielprop,nactdog,nacteq,&iin,physcon,
 			  camt,camf,camp,rhcon,nrhcon,
 			  vold,jobnamef,set,istartset,iendset,ialset,nset,
-			  mi,iaxial,istep,iit));
+			  mi,iaxial,istep,iit,ipobody,ibody,xbodyact,nbody,
+			  &ndata,sfr,sba,jumpup,jumpdo));
+      if(ichannel==1){
+	SFREE(sfr);SFREE(sba);SFREE(jumpup);SFREE(jumpdo);
+      }
+      
     }
 #endif
 #ifdef COMPANY
@@ -598,25 +619,26 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
        ((*iit==0)&&(abs(*nmethod)==1))){
 
 #if defined(PASTIX)
+      // not symmetric
       ITG symmetry = 1;
-      ITG inputformat = 1;
-      pastix_factor_main_as(adrad,aurad,adbrad,aubrad,&sigma,icolrad,
+      pastix_factor_main_cp(adrad,aurad,adbrad,aubrad,&sigma,icolrad,
 			    irowrad,ntr,nzsrad,&symmetry,&inputformat,jqrad,
 			    nzsrad);
       ifactorization=1;
 #elif defined(PARDISO)
-      if(ifactorization==1) pardiso_cleanup_as(ntr,&symmetryflag);
-      pardiso_factor_as(adrad,aurad,adbrad,aubrad,&sigma,icolrad,
-			irowrad,ntr,nzsrad,jqrad);
+      if(ifactorization==1) pardiso_cleanup_cp(ntr,&symmetryflag,&inputformat);
+      pardiso_factor_cp(adrad,aurad,adbrad,aubrad,&sigma,icolrad,
+			irowrad,ntr,nzsrad,&symmetryflag,&inputformat,jqrad,
+			nzsrad,iexpl);
       ifactorization=1;
 #elif defined(SPOOLES)
       if(ifactorization==1) spooles_cleanup_rad();
       spooles_factor_rad(adrad,aurad,adbrad,aubrad,&sigma,
 			 icolrad,irowrad,ntr,nzsrad,
-			 &symmetryflag,&inputformat);
+			 &symmetryflag,&inputformat,iexpl);
       ifactorization=1;
 #else
-      printf("*ERROR in radflowload: the SPOOLES library is not linked\n\n");
+      printf(" *ERROR in radflowload: the SPOOLES library is not linked\n\n");
       FORTRAN(stop,());
 #endif
 
@@ -627,16 +649,17 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 #if defined(PASTIX)
     ITG symmetry = 1;
     ITG nrhs = 1;
-    pastix_solve_as(bcr,ntr,&symmetry,&nrhs);
+    pastix_solve_cp(bcr,ntr,&symmetry,&nrhs);
 #elif defined(PARDISO)
-    pardiso_solve_as(bcr,ntr);
+    ITG nrhs = 1;
+    pardiso_solve_cp(bcr,ntr,&symmetryflag,&inputformat,&nrhs);
 
 #elif defined(SPOOLES)
     spooles_solve_rad(bcr,ntr);
 #endif
 	
     if (info!=0){
-      printf("*ERROR IN RADFLOWLOAD: SINGULAR MATRIX*\n");}   
+      printf(" *ERROR IN RADFLOWLOAD: SINGULAR MATRIX*\n");}   
       
     else{ 
       NNEW(q,double,*ntr);

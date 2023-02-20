@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2021 Guido Dhondt
+!              Copyright (C) 1998-2022 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -353,8 +353,8 @@
      &           xstiff,ncmat_)     
         !
         if(mattyp.eq.1) then
-          e   = elas(1)
-          un  = elas(2)
+          e   = elconloc(1)
+          un  = elconloc(2)
           rho = rhcon(1,1,imat)
           alp(1) = eth(1) !alcon(1,1,imat)    
           alp(2) = eth(1) !alcon(1,1,imat)    
@@ -462,9 +462,9 @@
      &     ihyper,istiff,elconloc,eth,kode,plicon,
      &     nplicon,plkcon,nplkcon,npmat_,
      &     plconloc,mi(1),dtime,k,
-     &     xstiff,alcon)
-          e     = elas(1)
-          un    = elas(2)
+     &     xstiff,ncmat_)
+          e     = elconloc(1)
+          un    = elconloc(2)
           rho   = rhcon(1,1,imat)        
           alp(1) = eth(1)!alcon(1,1,imat)    
           alp(2) = eth(2)!alcon(1,1,imat)    

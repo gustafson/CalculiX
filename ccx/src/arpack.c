@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -163,7 +163,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
      (strcmp1(&filab[1479],"PHS ")==0)||
      (strcmp1(&filab[1566],"MAXU")==0)||
      (strcmp1(&filab[1653],"MAXS")==0)){
-    printf("*WARNING in arpack: PU, PHS, MAXU or MAX was selected in a frequency calculation without cyclic symmetry;\n this is not correct; output request is removed;\n");
+    printf(" *WARNING in arpack: PU, PHS, MAXU or MAX was selected in a frequency calculation without cyclic symmetry;\n this is not correct; output request is removed;\n");
     strcpy1(&filab[870],"    ",4);
     strcpy1(&filab[1479],"    ",4);
     strcpy1(&filab[1566],"    ",4);
@@ -194,7 +194,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
   if(*nbody>0){
     if(*inewton==1){
-      printf("*ERROR in arpack: generalized gravity loading is not allowed in frequency calculations");
+      printf(" *ERROR in arpack: generalized gravity loading is not allowed in frequency calculations");
       FORTRAN(stop,());
     }
   }
@@ -332,7 +332,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       contact(&ncont,ntie,tieset,nset,set,istartset,iendset,
 	      ialset,itietri,lakon,ipkon,kon,koncont,ne,cg,straight,nkon,
 	      co,vold,ielmat,cs,elcon,istep,&iinc,&iit,ncmat_,ntmat_,
-	      &ne0,vini,nmethod,
+	      &ne0,nmethod,
 	      iperturb,ikboun,nboun,mi,imastop,nslavnode,islavnode,islavsurf,
 	      itiefac,areaslav,iponoels,inoels,springarea,tietol,&reltime,
 	      imastnode,nmastnode,xmastnor,filab,mcs,ics,&nasym,
@@ -385,9 +385,10 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   /* following fields are needed if *ener==1 or kode<-100 */
     
   NNEW(vini,double,mt**nk);
+  NNEW(eei,double,6*mi[0]**ne);
   NNEW(stiini,double,6*mi[0]*ne0);
   NNEW(emeini,double,6*mi[0]*ne0);
-  NNEW(enerini,double,mi[0]*ne0);
+  if(*nener==1) NNEW(enerini,double,mi[0]*ne0);
     
   if(*iperturb==0){
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
@@ -439,7 +440,8 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    &intscheme);
   }
   
-  SFREE(stiini);SFREE(emeini);SFREE(enerini);SFREE(vini);
+  SFREE(eei);SFREE(stiini);SFREE(emeini);SFREE(vini);
+  if(*nener==1) SFREE(enerini);
     
   SFREE(f);SFREE(v);SFREE(fn);SFREE(stx);SFREE(eme);
   if(*ithermal>1)SFREE(qfx);SFREE(inum);
@@ -567,7 +569,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     spooles_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
                    &symmetryflag,&inputformat,&nzs[2]);
 #else
-    printf("*ERROR in arpack: the SPOOLES library is not linked\n\n");
+    printf(" *ERROR in arpack: the SPOOLES library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -576,7 +578,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     token=1;
     sgi_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],token);
 #else
-    printf("*ERROR in arpack: the SGI library is not linked\n\n");
+    printf(" *ERROR in arpack: the SGI library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -584,7 +586,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 #ifdef TAUCS
     tau_factor(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1]);
 #else
-    printf("*ERROR in arpack: the TAUCS library is not linked\n\n");
+    printf(" *ERROR in arpack: the TAUCS library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -597,14 +599,14 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     strcpy(fneig,jobnamec);
     strcat(fneig,".frd");
     if((f1=fopen(fneig,"ab"))==NULL){
-      printf("*ERROR in frd: cannot open frd file for writing...");
+      printf(" *ERROR in frd: cannot open frd file for writing...");
       exit(0);
     }
     fprintf(f1," 9999\n");
     fclose(f1);
     FORTRAN(stopwithout201,());
 #else
-    printf("*ERROR in arpack: the MATRIXSTORAGE library is not linked\n\n");
+    printf(" *ERROR in arpack: the MATRIXSTORAGE library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -613,16 +615,21 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
 		   &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-    printf("*ERROR in arpack: the PARDISO library is not linked\n\n");
+    printf(" *ERROR in arpack: the PARDISO library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
   else if(*isolver==8){
 #ifdef PASTIX
-    pastix_factor_main(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
-			  &symmetryflag,&inputformat,jq,&nzs[2]);
+#ifdef PARDISO
+    pardiso_factor(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
+		   &symmetryflag,&inputformat,jq,&nzs[2]);
 #else
-    printf("*ERROR in arpack: the PASTIX library is not linked\n\n");
+    pastix_factor_main(ad,au,adb,aub,&sigma,icol,irow,&neq[1],&nzs[1],
+		       &symmetryflag,&inputformat,jq,&nzs[2]);
+#endif
+#else
+    printf(" *ERROR in arpack: the PASTIX library is not linked\n\n");
     FORTRAN(stop,());
 #endif
   }
@@ -695,8 +702,12 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  }
 	  else if(*isolver==8){
 #ifdef PASTIX
+#ifdef PARDISO
+	    pardiso_solve(temp_array,&neq[1],&symmetryflag,&inputformat,&nrhs);
+#else	    
 	    if( pastix_solve(temp_array,&neq[1],&symmetryflag,&nrhs)==-1 )
-          printf("*WARNING in arpack: solving step didn't converge! Continuing anyway\n");
+	      printf(" *WARNING in arpack: solving step didn't converge! Continuing anyway\n");
+#endif	    
 #endif
 	  }
 	  for(jrow=0;jrow<neq[1];jrow++){
@@ -726,8 +737,12 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  }
 	  else if(*isolver==8){
 #ifdef PASTIX
-	      if( pastix_solve(&workd[ipntr[2]-1],&neq[1],&symmetryflag,&nrhs)==-1 )
-            printf("*WARNING in arpack: solving step didn't converge! Continuing anyway\n");
+#ifdef PARDISO
+	    pardiso_solve(&workd[ipntr[2]-1],&neq[1],&symmetryflag,&inputformat,&nrhs);
+#else
+	    if( pastix_solve(&workd[ipntr[2]-1],&neq[1],&symmetryflag,&nrhs)==-1 )
+	      printf(" *WARNING in arpack: solving step didn't converge! Continuing anyway\n");
+#endif
 #endif
 	  }
 	  for(jrow=0;jrow<neq[1];jrow++){
@@ -757,7 +772,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     }
     
     if(info!=0){
-      printf("*ERROR in d[n,s]aupd: info=%" ITGFORMAT "\n",info);
+      printf(" *ERROR in d[n,s]aupd: info=%" ITGFORMAT "\n",info);
       printf("       # of converged eigenvalues=%" ITGFORMAT "\n\n",iparam[4]);
     }         
     
@@ -791,7 +806,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     SFREE(select);SFREE(workd);SFREE(workl);SFREE(resid);
 	
     if(info!=0){
-      printf("*ERROR in d[n,s]eupd: info=%" ITGFORMAT "\n",info);
+      printf(" *ERROR in d[n,s]eupd: info=%" ITGFORMAT "\n",info);
     }         
 
     /* check the normalization of the eigenmodes */
@@ -865,7 +880,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     strcat(fneig,".eig");
       
     if((f1=fopen(fneig,"wb"))==NULL){
-      printf("*ERROR in arpack: cannot open eigenvalue file for writing...");
+      printf(" *ERROR in arpack: cannot open eigenvalue file for writing...");
 
       exit(0);
     }
@@ -874,21 +889,21 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
        cyclic symmetry calculation */
 
     if(fwrite(&zero,sizeof(ITG),1,f1)!=1){
-      printf("*ERROR saving the cyclic symmetry flag to the eigenvalue file...");
+      printf(" *ERROR saving the cyclic symmetry flag to the eigenvalue file...");
       exit(0);
     }
 
     /* Hermitian */
 
     if(fwrite(&nherm,sizeof(ITG),1,f1)!=1){
-      printf("*ERROR saving the Hermitian flag to the eigenvalue file...");
+      printf(" *ERROR saving the Hermitian flag to the eigenvalue file...");
       exit(0);
     }
 
     /* perturbation parameter iperturb[0] */
 
     if(fwrite(&iperturb[0],sizeof(ITG),1,f1)!=1){
-      printf("*ERROR saving the perturbation flag to the eigenvalue file...");
+      printf(" *ERROR saving the perturbation flag to the eigenvalue file...");
       exit(0);
     }
 
@@ -896,7 +911,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
     if(iperturb[0]==1){
       if(fwrite(vold,sizeof(double),mt**nk,f1)!=mt**nk){
-	printf("*ERROR saving the reference displacements to the eigenvalue file...");
+	printf(" *ERROR saving the reference displacements to the eigenvalue file...");
 	exit(0);
       }
     }
@@ -904,36 +919,36 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     /* storing the number of eigenvalues */
 
     if(fwrite(&nev,sizeof(ITG),1,f1)!=1){
-      printf("*ERROR saving the number of eigenvalues to the eigenvalue file...");
+      printf(" *ERROR saving the number of eigenvalues to the eigenvalue file...");
       exit(0);
     }
 
     /* the eigenfrequencies are stored as radians/time */
 
     if(fwrite(d,sizeof(double),nev,f1)!=nev){
-      printf("*ERROR saving the eigenfrequencies to the eigenvalue file...");
+      printf(" *ERROR saving the eigenfrequencies to the eigenvalue file...");
       exit(0);
     }
 
     /* storing the stiffness matrix */
 
     if(fwrite(ad,sizeof(double),neq[1],f1)!=neq[1]){
-      printf("*ERROR saving the diagonal of the stiffness matrix to the eigenvalue file...");
+      printf(" *ERROR saving the diagonal of the stiffness matrix to the eigenvalue file...");
       exit(0);
     }
     if(fwrite(au,sizeof(double),nzs[2],f1)!=nzs[2]){
-      printf("*ERROR saving the off-diagonal terms of the stiffness matrix to the eigenvalue file...");
+      printf(" *ERROR saving the off-diagonal terms of the stiffness matrix to the eigenvalue file...");
       exit(0);
     }
 
     /* storing the mass matrix */
 
     if(fwrite(adb,sizeof(double),neq[1],f1)!=neq[1]){
-      printf("*ERROR saving the diagonal of the mass matrix to the eigenvalue file...");
+      printf(" *ERROR saving the diagonal of the mass matrix to the eigenvalue file...");
       exit(0);
     }
     if(fwrite(aub,sizeof(double),nzs[1],f1)!=nzs[1]){
-      printf("*ERROR saving the off-diagonal terms of the mass matrix to the eigenvalue file...");
+      printf(" *ERROR saving the off-diagonal terms of the mass matrix to the eigenvalue file...");
       exit(0);
     }
   }
@@ -1000,7 +1015,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       /* check whether degree of freedom is active */
       
       if(nactdof[mt*(node-1)+idir]==0){
-	printf("*ERROR in linstatic: degree of freedom corresponding to node %d \n and direction %d is not active: no unit force can be applied\n",node,idir);
+	printf(" *ERROR in linstatic: degree of freedom corresponding to node %d \n and direction %d is not active: no unit force can be applied\n",node,idir);
 	FORTRAN(stop,());
       }
       
@@ -1024,8 +1039,12 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	}
 	else if(*isolver==8){
 #ifdef PASTIX
-	    if( pastix_solve(z,&neq[1],&symmetryflag,&nrhs)==-1 )
-          printf("*WARNING in arpack: solving step didn't converge! Continuing anyway\n");
+#ifdef PARDISO
+	  pardiso_solve(z,&neq[1],&symmetryflag,&inputformat,&nrhs);
+#else
+	  if( pastix_solve(z,&neq[1],&symmetryflag,&nrhs)==-1 )
+          printf(" *WARNING in arpack: solving step didn't converge! Continuing anyway\n");
+#endif
 #endif
 	  
 	}
@@ -1034,7 +1053,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 
     if(mei[3]==1){
       if(fwrite(&z[lint],sizeof(double),neq[1],f1)!=neq[1]){
-	printf("*ERROR saving data to the eigenvalue file...");
+	printf(" *ERROR saving data to the eigenvalue file...");
 	exit(0);
       }
     }
@@ -1061,7 +1080,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     NNEW(vini,double,mt**nk);
     NNEW(stiini,double,6*mi[0]*ne0);
     NNEW(emeini,double,6*mi[0]*ne0);
-    NNEW(enerini,double,mi[0]*ne0);
+    if(*nener==1) NNEW(enerini,double,mi[0]*ne0);
 
     DMEMSET(v,0,mt**nk,0.);
     if(*iperturb==0){
@@ -1116,8 +1135,8 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
 	      &intscheme);
     }
-    SFREE(eei);
-    SFREE(stiini);SFREE(emeini);SFREE(enerini);SFREE(vini);
+    SFREE(eei);SFREE(stiini);SFREE(emeini);SFREE(vini);
+    if(*nener==1) SFREE(enerini);
 
     ++*kode;
     if(igreen==0){
@@ -1192,6 +1211,9 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   }
   else if(*isolver==8){
 #ifdef PASTIX
+#ifdef PARDISO
+    pardiso_cleanup(&neq[1],&symmetryflag,&inputformat);
+#endif
 #endif
   }
 

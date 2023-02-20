@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -15,32 +15,36 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+!
+!     Solve the Bresse equation for the turbulent stationary flow
+!     in channels with a non-erosive bottom
 !     
-      subroutine solveeqpar(aub,adl,b,sol,aux,irow,jq,neqa,neqb)
-!     
-!     solving a system of equations by iteratively solving the
-!     lumped version
-!     Ref: The Finite Element Method for Fluid Dynamics,
-!     O.C. Zienkiewicz, R.L. Taylor & P. Nithiarasu
-!     6th edition (2006) ISBN 0 7506 6322 7
-!     p. 61
-!     
+      subroutine calcdhds(xflow,b,tth,cthi,s0,sqrts0,friction,xks,h,
+     &     dg,rho,dhds)
+!
       implicit none
+!
+      real*8 xflow,b,tth,cthi,s0,sqrts0,friction,xks,h,dg,area,bb,p,sf,
+     &     rho,dhds
 !     
-      integer irow(*),jq(*),i,j,neqa,neqb
-!     
-      real*8 aub(*),adl(*),b(*),sol(*),aux(*)
-!     
-!     multiplying the difference of the original matrix
-!     with the lumped matrix with the actual solution 
-!     
-      do i=neqa,neqb
-        aux(i)=0.d0
-        do j=jq(i),jq(i+1)-1
-          aux(i)=aux(i)+aub(j)*sol(irow(j))
-        enddo
-        sol(i)=(b(i)-aux(i))*adl(i)
-      enddo
-!     
+      area=h*(b+h*tth)
+      bb=b+2.d0*h*tth
+      p=b+2.d0*h*cthi
+!
+      if(xks.gt.0.d0) then
+!
+!       White-Colebrook
+!
+        sf=friction*p*(xflow/rho)**2/(8.d0*dg*area**3)
+      else
+!
+!       Manning
+!
+        sf=(xks*xflow/rho)**2*p**(4.d0/3.d0)/(area**(10.d0/3.d0))
+      endif
+!
+      dhds=(s0-sf)/(sqrts0-(xflow/rho)**2*bb/(dg*area**3))
+!
       return
       end
+      

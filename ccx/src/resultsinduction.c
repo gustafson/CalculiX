@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -327,11 +327,6 @@ void resultsinduction(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 void *resultsemmt(ITG *i){
 
     ITG nea,neb;
-
-/*    nedelta=(ITG)floor(*ne1/(double)num_cpus);
-    nea=*i*nedelta+1;
-    neb=(*i+1)*nedelta;
-    if((*i==num_cpus-1)&&(neb<*ne1)) neb=*ne1;*/
 
     nea=neapar[*i]+1;
     neb=nebpar[*i]+1;

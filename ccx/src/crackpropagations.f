@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2021 Guido Dhondt
+!              Copyright (C) 1998-2022 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,13 +42,13 @@
       character*20 labmpc(*),solver
       character*80 material,matname(*)
       character*81 set(*),tieset(3,*)
-      character*132 textpart(16),jobnamec(*)
+      character*132 textpart(16),jobnamec(*),fnfrd
 !
       integer nmethod,iperturb(*),isolver,istep,istat,n,key,i,idrct,
      &  iline,ipol,inl,ipoinp(2,*),inp(3,*),ithermal(*),ics(*),iexpl,
      &  istartset(*),iendset(*),ialset(*),ipompc(*),nodempc(3,*),
      &  nmpc,nmpc_,ikmpc(*),ilmpc(*),mpcfree,nset,mcs,ipoinpc(0:*),
-     &  nef,iaxial,nelcon(2,*),nmat,ier,j,k,l
+     &  nef,iaxial,nelcon(2,*),nmat,ier,j,k,l,ilen
 !
       real*8 tinc,tper,tmin,tmax,cs(17,*),coefmpc(*),ttime
 !
@@ -61,11 +61,24 @@
       input=.false.
 !
       if(istep.ne.1) then
-         write(*,*) '*ERROR reading *CRACK PROPAGATION:'
-         write(*,*) '       *CRACK PROPAGATION can only be used'
-         write(*,*) '       within the first STEP'
-         ier=1
-         return
+        write(*,*) '*WARNING reading *CRACK PROPAGATION:'
+        write(*,*) '         this is step ',istep,'.'
+        write(*,*) '         The frd-file of previous steps'
+        write(*,*) '         will be deleted.'
+!     
+!       delete the .frd file (it is reopened in frd.c)
+!
+        ilen=index(jobnamec(1),char(0))-1
+        fnfrd=jobnamec(1)(1:ilen)//'.frd'
+        ilen=ilen+4
+        open(7,file=fnfrd(1:ilen),status='unknown',err=71)
+        close(7,status='delete',err=72)
+!        
+c         write(*,*) '*ERROR reading *CRACK PROPAGATION:'
+c         write(*,*) '       *CRACK PROPAGATION can only be used'
+c         write(*,*) '       within the first STEP'
+c         ier=1
+c         return
       endif
 !
       do i=2,n
@@ -120,7 +133,7 @@
         write(*,*) '         ',
      &       textpart(i)(1:index(textpart(i),' ')-1)
         call inputerror(inpc,ipoinpc,iline,
-     &       "*CRACK PROPAGATION%")
+     &       "*CRACK PROPAGATION%",ier)
       endif
 !
 !     check for the existence of the material
@@ -193,5 +206,10 @@
      &     ipoinp,inp,ipoinpc)
 !
       return
+ 71   write(*,*) '*ERROR in openfile: could not open file ',fnfrd(1:i+4)
+      call exit(201)
+ 72   write(*,*) '*ERROR in openfile: could not delete file ',
+     &  fnfrd(1:i+4)
+      call exit(201)
       end
 

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -62,7 +62,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
   strcpy(fninp,jobnamec);
   strcat(fninp,".inp");
   if((f1[in]=fopen(fninp,"r"))==NULL){
-      printf("*ERROR in readinput: cannot open file %s\n",fninp);
+      printf(" *ERROR in readinput: cannot open file %s\n",fninp);
       exit(0);
   }
 
@@ -172,10 +172,10 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
           includefn[lincludefn]='\0';
 	  in++;
 	  if(in>9){
-	      printf("*ERROR in readinput: include statements can \n not be cascaded over more than 9 levels\n");
+	      printf(" *ERROR in readinput: include statements can \n not be cascaded over more than 9 levels\n");
 	  }
 	  if((f1[in]=fopen(includefn,"r"))==NULL){
-	      printf("*ERROR in readinput: cannot open file %s\n",includefn);
+	      printf(" *ERROR in readinput: cannot open file %s\n",includefn);
 	      exit(0);
 	  }
           continue;

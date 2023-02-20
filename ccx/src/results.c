@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                          */
+/*              Copyright (C) 1998-2022 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -174,14 +174,14 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	       labmpc2,nmpc2,nmethod,cam,neq,
 	       veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
 	       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
-	       &ikin,&intpointvart,typeboun,&num_cpus,mortar);
+	       &ikin,&intpointvart,typeboun,&num_cpus,mortar,nener);
   }else{
     resultsini(nk,v,ithermal,filab,iperturb,f,fn,
 	       nactdof,iout,qa,vold,b,nodeboun,ndirboun,
 	       xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
 	       veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
 	       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
-	       &ikin,&intpointvart,typeboun,&num_cpus,mortar);
+	       &ikin,&intpointvart,typeboun,&num_cpus,mortar,nener);
   }
 
   /* next statement allows for storing the displacements in each
@@ -418,7 +418,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
      - mi[1]!=5 (no electromagnetic calculation) */
 
   if((*iout<=0)&&(*nmethod==4)&&(iperturb[0]>1)&&(ithermal[0]<=1)&&
-     (mi[1]!=5)&&(*mortartrafoflag!=1)){
+     (mi[1]!=5)&&(*mortartrafoflag!=1)&&(*nener==1)){
     
     /* determining the element bounds in each thread */
 

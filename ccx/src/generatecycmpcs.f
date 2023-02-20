@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@
      &     rcs0,zcs0,labmpc,mcs,triangulation,csab,xn,yn,zn,phi,
      &     noded,ncsnodes,rcscg,rcs0cg,zcscg,zcs0cg,nrcg,nzcg,jcs,lcs,
      &     kontri,straight,ne,ipkon,kon,lakon,ifacetet,inodface,
-     &     ncounter,jobnamec,vold,nef,mi,indepset,ithermal,icount)
+     &     vold,nef,mi,indepset,ithermal,icount)
 !     
 !     generate cyclic mpc's
 !     
@@ -35,7 +35,7 @@
       character*8 lakon(*)
       character*20 labmpc(*),label
       character*81 indepset
-      character*132 jobnamec(*),fntria
+      character*132 fntria
 !     
       integer ipompc(*),nodempc(3,*),nneigh,ne,ipkon(*),kon(*),
      &     j,k,nk,nmpc,mpcfree,ics(*),nterms,ncyclicsymmetrymodel,
@@ -43,7 +43,7 @@
      &     number,idof,ndir,node,ncsnodes,id,mpcfreeold,icount,
      &     mcs,nrcg(*),nzcg(*),jcs(*),lcs(*),nodef(8),
      &     netri,ifacetet(*),inodface(*),lathyp(3,6),inum,one,i,
-     &     noden(10),ncounter,ier,ipos,nef,mi(*),ilen,ithermal(2)
+     &     noden(10),ier,ipos,nef,mi(*),ilen,ithermal(2)
 !     
       real*8 tolloc,co(3,*),coefmpc(*),rcs(*),zcs(*),rcs0(*),zcs0(*),
      &     csab(7),xn,yn,zn,xap,yap,zap,rp,zp,al(3,3),ar(3,3),phi,
@@ -198,7 +198,6 @@ c     close(70)
      &       zn,ier,multistage,icount)
 !     
         if(ier.ne.0) then
-          ncounter=ncounter+1
           return
         endif
 !     

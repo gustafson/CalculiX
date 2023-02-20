@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2021 Guido Dhondt
+!     Copyright (C) 1998-2022 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -63,7 +63,7 @@
      &     iposs,iposm,nslavs,nlayer,nkon_,nopeexp,iremove,mcs,
      &     ifacecount,nintpoint,mortar,infree(4),nheading_,icfd,
      &     multslav,multmast,nobject_,numnodes,iorientation,id,
-     &     irotation,itranslation,nuel,iuel(4,*),number,four,
+     &     nuel,iuel(4,*),number,four,
      &     iprestr,nstam,ier,ndamp,nef,nbounold,nforcold,nloadold,
      &     nbodyold,mpcend,irobustdesign(3),iflag,network,
      &     nsubmodel,nfc_,ndc_
@@ -623,8 +623,20 @@
           endif
         enddo
       elseif(textpart(1)(2:13).eq.'DISTRIBUTING') then
-        irotation=0
-        itranslation=0
+c        irotation=0
+c        itranslation=0
+!     
+!     translational dofs are always active
+!     
+        npt_=max(npt_,numnodes)
+!
+!       number of force prescriptions nfc_
+!       number of forces nforc_
+!
+        nfc_=nfc_+3*numnodes
+        nforc_=nforc_+3*numnodes
+        ndc_=ndc_+3
+!            
         do
           call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &         ipoinp,inp,ipoinpc)
@@ -651,18 +663,18 @@
           ibounend=min(6,ibounend)
           ibound=max(0,ibounend-ibounstart+1)
 !     
-          if(itranslation.eq.0) then
-!     
-!     translational dofs 3 MPC's + a two-term MPC for each
-!     participating node
-!     
-            npt_=max(npt_,numnodes)
-!     
-            nfc_=nfc_+3*numnodes
-            nforc_=nforc_+3*numnodes
-            ndc_=ndc_+3
-            itranslation=1
-          endif
+c          if(itranslation.eq.0) then
+c!     
+c!     translational dofs 3 MPC's + a two-term MPC for each
+c!     participating node
+c!     
+c            npt_=max(npt_,numnodes)
+c!     
+c            nfc_=nfc_+3*numnodes
+c            nforc_=nforc_+3*numnodes
+c            ndc_=ndc_+3
+c            itranslation=1
+c          endif
 !     
 !     rotational dofs
 !     

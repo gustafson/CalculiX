@@ -46,7 +46,8 @@ LDFLAGS +=
 
 ## Multi Threaded and MPI
 CFLAGS += -DUSE_MT
-#CFLAGS += -DCALCULIX_MPI -fopenmp
+#CFLAGS += -DCALCULIX_MPI 
+FFLAGS += -fopenmp
 
 ## This is now default for calculix and relates to CFD
 CFLAGS += -DNETWORKOUT
@@ -90,13 +91,19 @@ LDFLAGS += `pkg-config --libs lapack$(INTEXT)`
 CFLAGS  += `pkg-config --cflags blas$(INTEXT)`
 LDFLAGS += `pkg-config --libs blas$(INTEXT)`
 
-## PARDISO
+## Assuming MKL pardiso since pardiso not generally distributed anymore https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html#gs.qklzaa
+## PARDISO 
 ## CFLAGS  += -DPARDISO
 ## LDFLAGS += -L/home/pete/local/lib64/ -lpardiso -lgfortran -lpthread -lm -fopenmp
-CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
-LDFLAGS += `pkg-config --libs pardiso`
-
-
+## CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
+## LDFLAGS += `pkg-config --libs pardiso`
+MKLROOT=/usr/include/mkl
+CFLAGS += -m64 -I$(MKLROOT)/include
+FFLAGS += -m64 -I$(MKLROOT)/include
+## 64bit ints gfortran openmp libgomp
+LDFLAGS += -L$(MKLROOT)/lib/intel64 -Wl,--no-as-needed -lmkl_gf_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+## 32bit ints gfortran openmp libgomp
+## LDFLAGS += -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
 
 ################################################################################
 ################################################################################
@@ -176,7 +183,7 @@ LDFLAGS += `pkg-config --libs exodusii`
 
 include Makefile.inc
 
-SCCXMAIN = ccx_2.19.c
+SCCXMAIN = ccx_2.20.c
 
 ## Define all the object file rules to identify dependencies
 OCCXCU = $(SCCXCU:.cu=.o)
@@ -187,11 +194,11 @@ OCCXMAIN = $(SCCXMAIN:.c=.o)
 ## Link to math and standard c
 CFLAGS += -lm -lc
 
-ccx_2.19: $(OCCXMAIN) ccx_2.19.a
-	./date.pl;
-	$(CC) $(CFLAGS) -c ccx_2.19.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.19.a $(LDFLAGS)
+ccx_2.20: $(OCCXMAIN) ccx_2.20.a
+	#./date.pl;
+	$(CC) $(CFLAGS) -c ccx_2.20.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.20.a $(LDFLAGS)
 
-ccx_2.19.a: $(OCCXF) $(OCCXC)
+ccx_2.20.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
 
 clean:

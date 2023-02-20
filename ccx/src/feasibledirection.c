@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2021 Guido Dhondt                     */
+/*              Copyright (C) 1998-2022 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -233,7 +233,7 @@ void feasibledirection(ITG *nobject,char **objectsetp,double **dgdxglobp,
         spooles_factor(ad,au,adb,aub,&sigma,icols,irows,&nactive,&nzss,
                        &symmetryflag,&inputformat,&nzss);
 #else
-        printf("*ERROR in projectgrad: the SPOOLES library is not linked\n\n");
+        printf(" *ERROR in projectgrad: the SPOOLES library is not linked\n\n");
         FORTRAN(stop,());
 #endif
       }
@@ -242,7 +242,7 @@ void feasibledirection(ITG *nobject,char **objectsetp,double **dgdxglobp,
         token=1;
         sgi_factor(ad,au,adb,aub,&sigma,icols,irows,&nactive,&nzss,token);
 #else
-        printf("*ERROR in projectgrad: the SGI library is not linked\n\n");
+        printf(" *ERROR in projectgrad: the SGI library is not linked\n\n");
         FORTRAN(stop,());
 #endif
       }
@@ -250,7 +250,7 @@ void feasibledirection(ITG *nobject,char **objectsetp,double **dgdxglobp,
 #ifdef TAUCS
         tau_factor(ad,&au,adb,aub,&sigma,icols,&irows,&nactive,&nzss);
 #else
-        printf("*ERROR in projectgrad: the TAUCS library is not linked\n\n");
+        printf(" *ERROR in projectgrad: the TAUCS library is not linked\n\n");
         FORTRAN(stop,());
 #endif
       }
@@ -259,7 +259,7 @@ void feasibledirection(ITG *nobject,char **objectsetp,double **dgdxglobp,
         pardiso_factor(ad,au,adb,aub,&sigma,icols,irows,&nactive,&nzss,
                        &symmetryflag,&inputformat,jqs,&nzss);
 #else
-        printf("*ERROR in projectgrad: the PARDISO library is not linked\n\n");
+        printf(" *ERROR in projectgrad: the PARDISO library is not linked\n\n");
         FORTRAN(stop,());
 #endif
       }
@@ -268,7 +268,7 @@ void feasibledirection(ITG *nobject,char **objectsetp,double **dgdxglobp,
         pastix_factor_main(ad,au,adb,aub,&sigma,icols,irows,&nactive,&nzss,
                       &symmetryflag,&inputformat,jqs,&nzss);
 #else
-        printf("*ERROR in projectgrad: the PASTIX library is not linked\n\n");
+        printf(" *ERROR in projectgrad: the PASTIX library is not linked\n\n");
         FORTRAN(stop,());
 #endif
       }
