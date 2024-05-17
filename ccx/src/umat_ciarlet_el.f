@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,8 +42,8 @@
 !                        under *USER MATERIAL): can be used for materials
 !                        with varying number of constants
 !
-!     elconloc(21)       user defined constants defined by the keyword
-!                        card *USER MATERIAL (max. 21, actual # =
+!     elconloc(*)        user defined constants defined by the keyword
+!                        card *USER MATERIAL (actual # =
 !                        -kode-100), interpolated for the
 !                        actual temperature t1l
 !

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                     */
+/*              Copyright (C) 1998-2023 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -22,37 +22,46 @@
 #include <pthread.h>
 #include "CalculiX.h"
 
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#define abs(a) (((a) < (0)) ? (-a) : (a))
+
 static char *objectset1;
 
-static ITG *nobject1,*nk1,*nodedesi1,*ndesi1,*nx1,*ny1,*nz1,*neighbor1=NULL,
-  num_cpus;
+static ITG *nk1,*nodedesi1,*ndesi1,*nx1,*ny1,*nz1,*neighbor1=NULL,num_cpus;
 
 /* y1 had to be replaced by yy1, else the following compiler error
    popped up: 
 
-   filtermain.c:42: error: ‘y1’ redeclared as different kind of symbol */
+   filtermain_forward.c:42: error: ‘y1’ redeclared as different kind of symbol */
 
 
-static double *dgdxglob1,*xo1,*yo1,*zo1,*x1,*yy1,*z1,*r1=NULL,*xdesi1,
-  *distmin1;
+static double *gradproj1,*xo1,*yo1,*zo1,*x1,*yy1,*z1,*r1=NULL,*xdesi1,
+  *distmin1,*feasdir1,*filterval1=NULL;
 
-void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
-                ITG *nodedesi, ITG *ndesi, char *objectset,double *xdesi,
-		double *distmin){
+void filtermain_forward(double *co,double *gradproj,ITG *nk,
+                ITG *nodedesi,ITG *ndesi,char *objectset,double *xdesi,
+		double *distmin,double *feasdir){
 
   /* filtering the sensitivities */
 
-  ITG *nx=NULL,*ny=NULL,*nz=NULL,i,*ithread=NULL;
+  ITG *nx=NULL,*ny=NULL,*nz=NULL,i,*ithread=NULL,inode;
     
-  double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL;
-    
+  double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL,dd=.0,
+    filterrad=0;
+
+  /* copying gradproj(3,*) into feasdir(1,*) */
+
+  for(i=0;i<*nk;i++){
+    feasdir[2*i]=gradproj[3*i+2];
+  }
+
   /* if no radius is defined no filtering is performed
      the radius applies to all objective functions */
     
-  if(*nobject==0){return;}
   if(strcmp1(&objectset[81],"     ")==0){
-    for(i=1;i<2**nk**nobject;i=i+2){
-      dgdxglob[i]=dgdxglob[i-1];
+    for(i=1;i<2**nk;i=i+2){
+      feasdir[i]=feasdir[i-1];
     }
     return;
   }
@@ -69,7 +78,8 @@ void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
   NNEW(ny,ITG,*ndesi);
   NNEW(nz,ITG,*ndesi);
     
-  FORTRAN(prefilter,(co,nodedesi,ndesi,xo,yo,zo,x,y,z,nx,ny,nz));
+  FORTRAN(prefilter,(co,nodedesi,ndesi,xo,yo,zo,x,y,z,nx,ny,nz,
+                     objectset,&filterrad));
     
   /* variables for multithreading procedure */
     
@@ -129,28 +139,29 @@ void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
     
   NNEW(neighbor1,ITG,num_cpus*(*ndesi+6));
   NNEW(r1,double,num_cpus*(*ndesi+6));
+  NNEW(filterval1,double,num_cpus*(*ndesi+6));
     
-  dgdxglob1=dgdxglob;nobject1=nobject;nk1=nk;nodedesi1=nodedesi;
+  gradproj1=gradproj;nk1=nk;nodedesi1=nodedesi;
   ndesi1=ndesi;objectset1=objectset;xo1=xo;yo1=yo;zo1=zo;
   x1=x;yy1=y;z1=z;nx1=nx;ny1=ny;nz1=nz;xdesi1=xdesi;
-  distmin1=distmin;
+  distmin1=distmin;feasdir1=feasdir;
     
   /* filtering */
     
-  printf(" Using up to %" ITGFORMAT " cpu(s) for filtering the sensitivities.\n\n", num_cpus);
+  printf("Using up to %" ITGFORMAT " cpu(s) for filtering the sensitivities.\n\n", num_cpus);
     
   /* create threads and wait */
   
   NNEW(ithread,ITG,num_cpus);
   for(i=0; i<num_cpus; i++)  {
     ithread[i]=i;
-    pthread_create(&tid[i], NULL, (void *)filtermt, (void *)&ithread[i]);
+    pthread_create(&tid[i], NULL, (void *)filter_forwardmt, (void *)&ithread[i]);
   }
   for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
-    
+ 
   SFREE(neighbor1);SFREE(r1);SFREE(xo);SFREE(yo);SFREE(zo);
   SFREE(x);SFREE(y);SFREE(z);SFREE(nx);SFREE(ny);SFREE(nz);
-  SFREE(ithread);
+  SFREE(ithread);SFREE(filterval1);
     
   return;
     
@@ -158,7 +169,7 @@ void filtermain(double *co, double *dgdxglob, ITG *nobject, ITG *nk,
 
 /* subroutine for multithreading of filter */
 
-void *filtermt(ITG *i){
+void *filter_forwardmt(ITG *i){
 
   ITG indexr,ndesia,ndesib,ndesidelta;
 
@@ -172,9 +183,10 @@ void *filtermt(ITG *i){
   //    printf("i=%" ITGFORMAT ",ntria=%" ITGFORMAT ",ntrib=%" ITGFORMAT "\n",i,ntria,ntrib);
   //    printf("indexad=%" ITGFORMAT ",indexau=%" ITGFORMAT ",indexdi=%" ITGFORMAT "\n",indexad,indexau,indexdi);
 
-  FORTRAN(filter,(dgdxglob1,nobject1,nk1,nodedesi1,ndesi1,objectset1,
+  FORTRAN(filter_forward,(gradproj1,nk1,nodedesi1,ndesi1,objectset1,
 		  xo1,yo1,zo1,x1,yy1,z1,nx1,ny1,nz1,&neighbor1[indexr],
-		  &r1[indexr],&ndesia,&ndesib,xdesi1,distmin1));
+		  &r1[indexr],&ndesia,&ndesib,xdesi1,distmin1,feasdir1,
+		  &filterval1[indexr]));
 
   return NULL;
 }

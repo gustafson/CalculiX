@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,8 +35,6 @@
       real*8 shp(4,20),xs(3,3),xsi(3,3),xl(3,20),sh(3)
 !
       real*8 xi,et,ze,xsj,omg,omh,omr,opg,oph,opr
-!
-!
 !
 !     shape functions and their glocal derivatives
 !

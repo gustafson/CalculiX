@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine objective_shapeener_tot(ne,kon,ipkon,lakon,
      &   fint,vold,iperturb,mi,nactdof,dgdx,df,ndesi,iobject,
-     &   jqs,irows,vec,iponk2dto3d)
+     &   jqs,irows,vec,nod1st)
 !
       implicit none
 !
@@ -26,11 +26,9 @@
 !
       integer ndesi,iobject,idesvar,i,j,l,jqs(*),irows(*),idof,
      &   ne,ipkon(*),ielem,iperturb(*),indexe,konl(26),kon(*),mi(*),
-     &   nope,nactdof(0:mi(2),*),node,iponk2dto3d(*)
+     &   nope,nactdof(0:mi(2),*),node,nod1st(*)
 !      
       real*8 dgdx(ndesi,*),df(*),vec(*),vold(0:mi(2),*),fint(*)
-!
-!
 !
 !     ----------------------------------------------------------------
 !     Calculation of the total differential:
@@ -67,20 +65,20 @@
             konl(l)=kon(indexe+l)
          enddo
 !
-!        field iponk2dto3d points for each expanded 3d-node
+!        field nod1st points for each expanded 3d-node
 !        to the node in the mid surface; this is the only node
 !        with degrees of freedom (for plane stress/strain/axi)         
 !         
          if(iperturb(2).eq.1) then
             do i=1,nope
+c              if((lakon(ielem)(7:7).eq.'A').or.
+c     &             (lakon(ielem)(7:7).eq.'S').or.       
+c     &             (lakon(ielem)(7:7).eq.'E')) then
+c                node=nod1st(konl(i))+1     
+c              else
+                node=konl(i)
+c              endif
                do j=1,3
-                  if((lakon(ielem)(7:7).eq.'A').or.
-     &               (lakon(ielem)(7:7).eq.'S').or.       
-     &               (lakon(ielem)(7:7).eq.'E')) then
-                     node=iponk2dto3d(konl(i))     
-                  else
-                     node=konl(i)
-                  endif
                   idof=nactdof(j,node)
                   if(idof.gt.0) then
                      vec(idof)=fint(idof)
@@ -89,22 +87,17 @@
             enddo
          else
             do i=1,nope
+c              if((lakon(ielem)(7:7).eq.'A').or.
+c     &             (lakon(ielem)(7:7).eq.'S').or.       
+c     &             (lakon(ielem)(7:7).eq.'E')) then
+c                node=nod1st(konl(i))+1
+c              else
+                node=konl(i)
+c              endif
                do j=1,3
-                  if((lakon(ielem)(7:7).eq.'A').or.
-     &               (lakon(ielem)(7:7).eq.'S').or.       
-     &               (lakon(ielem)(7:7).eq.'E')) then
-                     node=iponk2dto3d(konl(i))
-c                write(*,*) 'objective_shapeener_tot node',ielem,i,node
-                  else
-                     node=konl(i)
-                  endif
-c                     write(*,*) 'objective_shapeener_tot',j,node,idof,
-c     &vold(j,node),nactdof(j,node)
                   idof=nactdof(j,node)
                   if(idof.gt.0) then      
                      vec(idof)=vold(j,node)
-c                     write(*,*) 'objective_shapeener_tot',j,node,idof,
-c     &vold(j,node)
                   endif              
                enddo
             enddo
@@ -113,16 +106,11 @@ c     &vold(j,node)
 !
 !     Calculation of the total differential:    
 !
-c      do idesvar=1,ndesi
-c         dgdx(idesvar,iobject)=0.d0
-c      enddo
       do idesvar=1,ndesi
          do j=jqs(idesvar),jqs(idesvar+1)-1
             idof=irows(j)
             dgdx(idesvar,iobject)=dgdx(idesvar,iobject) 
      &            +vec(idof)*df(j) 
-c     &           +vec(idof)
-c            write(*,*) idesvar,j,idof,vec(idof),dgdx(idesvar,iobject)
          enddo
       enddo     
 !      

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -104,7 +104,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     fmin=0.,fmax=1.e30,*xmr=NULL,*xmi=NULL,*zi=NULL,*eigx=NULL,
     *pslavsurf=NULL,*pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,
     *tmin,*tmax,*energyini=NULL,*energy=NULL,e1[3],e2[3],xn[3],*smscale=NULL,
-    *autloc=NULL,*xboun2=NULL,*coefmpc2=NULL;
+    *autloc=NULL,*xboun2=NULL,*coefmpc2=NULL,*physcon=NULL;
 
   FILE *f1;
 
@@ -157,7 +157,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 
   /* opening the eigenvalue file and checking for cyclic symmetry */
 
-  strcpy(fneig,jobnamec);
+  strcpy2(fneig,jobnamec,132);
   strcat(fneig,".eig");
 
   if((f1=fopen(fneig,"rb"))==NULL){
@@ -426,6 +426,11 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     NNEW(inocs,ITG,*nk);
     NNEW(ielcs,ITG,*ne);
     ielset=cs[12];
+    if(ielset<0){
+      printf(" *ERROR in complexfreq.c:\n");
+      printf("        matrix input is not allowed\n\n");
+      FORTRAN(stop,());
+    }
     if((*mcs!=1)||(ielset!=0)){
       for(i=0;i<*nk;i++) inocs[i]=-1;
       for(i=0;i<*ne;i++) ielcs[i]=-1;
@@ -533,7 +538,11 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     /* converting centrifugal force in Coriolis force */
 
     for(k=0;k<*nbody;k++){
-      if(ibody[3*k]==1) ibody[3*k]=4;
+      if(ibody[3*k]==1){
+	ibody[3*k]=4;
+      }else if(ibody[3*k]==-1){
+	ibody[3*k]=-4;
+      }
     }
 
     /* assigning the body forces to the elements */ 
@@ -1386,7 +1395,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     if(*nener==1){
       NNEW(stiini,double,6*mi[0]**ne);
       NNEW(emeini,double,6*mi[0]**ne);
-      NNEW(enerini,double,mi[0]**ne);}
+      NNEW(enerini,double,2*mi[0]**ne);}
 
     DMEMSET(v,0,2*mt**nk,0.);
 
@@ -1468,7 +1477,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-		&intscheme);}
+		&intscheme,physcon);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
 		&stx[kkx],elcon,
@@ -1493,7 +1502,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-		&intscheme);
+		&intscheme,physcon);
       }
 
     }
@@ -1935,7 +1944,11 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     /* reconverting Coriolis force into centrifugal force */
       
     for(k=0;k<*nbody;k++){
-      if(ibody[3*k]==4) ibody[3*k]=1;
+      if(ibody[3*k]==4){
+	ibody[3*k]=1;
+      }else if(ibody[3*k]==-4){
+	ibody[3*k]=-1;
+      }
     }
   }
 

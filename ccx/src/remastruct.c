@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -35,7 +35,7 @@ void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 		char *typeboun,double **cvp,double **cvinip,ITG *iit,
 		ITG *network,ITG *itiefac,ITG *ne0,ITG *nkon0,ITG *nintpoint,
 		ITG *islavsurf,double *pmastsurf,char*tieset,ITG *ntie,
-		ITG *num_cpus){
+		ITG *num_cpus,ITG *ielmat,char *matname){
 
   /* reconstructs the nonzero locations in the stiffness and mass
      matrix after a change in MPC's */
@@ -70,7 +70,7 @@ void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 
   /* determining the matrix structure */
     
-  if(*iexpl<=1) printf(" Determining the structure of the matrix:\n");
+  if(*iexpl<=1) printf(" Determining the structure of the matrix:\n\n");
  
   if(nzs[1]<10) nzs[1]=10;   
   NNEW(mast1,ITG,nzs[1]);
@@ -95,13 +95,13 @@ void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
     FORTRAN(totalcontact,(tieset,ntie,&netot,ipkontot,kontot,lakontot,
 			  islavsurf,itiefac,pmastsurf,ne0,nkon0));
 
-    printf("maximal possible contact elements = \n%d\n\n",netot-*ne0);
+    //   printf(" Maximal possible contact elements = %d\n\n",netot-*ne0);
     
     mastruct(nk,kontot,ipkontot,lakontot,&netot,nodeboun,ndirboun,nboun,
 	     ipompc,nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
 	     ikmpc,ilmpc,ipointer,nzs,nmethod,ithermal,
 	     ikboun,ilboun,iperturb,mi,mortar,typeboun,labmpc,
-	     iit,icascade,network,iexpl);
+	     iit,icascade,network,iexpl,ielmat,matname);
     
     SFREE(ipkontot);SFREE(kontot);SFREE(lakontot);
     
@@ -113,7 +113,7 @@ void remastruct(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
 	     nodempc,nmpc,nactdof,icol,jq,&mast1,&irow,isolver,neq,
 	     ikmpc,ilmpc,ipointer,nzs,nmethod,ithermal,
 	     ikboun,ilboun,iperturb,mi,mortar,typeboun,labmpc,
-	     iit,icascade,network,iexpl);
+	     iit,icascade,network,iexpl,ielmat,matname);
   }
 
   SFREE(ipointer);SFREE(mast1);

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,14 +29,12 @@
 !
       implicit none
 !
-      logical force
-!
       character*1 cflag
       character*8 lakon(*),lakonl
 !
       integer ipkon(*),kon(*),mi(*),ne,indexe,null,nonei20(3,12),
      &  nonei10(3,6),nk,i,j,k,node,nonei15(3,9),nopev,nterms,
-     &  mint3d,ielmat(mi(3),*),inum(*),ielprop(*)
+     &  mint3d,ielmat(mi(3),*),inum(*),ielprop(*),iforce
 !
       real*8 yi(nterms,mi(1),*),yn(nterms,*),size,wpsmin,wpsmax,
      &  absdiff,reldiff,sizemax,al(3),sizemin,c(3,3),prop(*),
@@ -567,9 +565,9 @@ c            enddo
 !     mapping 3D on 1D/2D
 !
       if(cflag.eq.'I') then
-         force=.false.
+         iforce=0
          call map3dto1d2d(yn,ipkon,inum,kon,lakon,nterms,nk,
-     &  ne,cflag,co,vold,force,mi,ielprop,prop)
+     &  ne,cflag,co,vold,iforce,mi,ielprop,prop)
       endif
 !     
       return

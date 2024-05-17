@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -68,12 +68,12 @@
      &  istartelem(*),ialelem(*),ieigenfrequency,idesloc,
      &  node1,node2,ifaceqexp(2,20),ifacewexp(2,15),nset 
 !
-      real*8 co(3,*),xl(3,26),shp(4,26),xs2(3,7),veold(0:mi(2),*),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),veold(0:mi(2),*),
      &  s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),sigma,
-     &  ff(60),bf(3),q(3),shpj(4,26),elcon(0:ncmat_,ntmat_,*),t(3),
+     &  ff(60),bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),t(3),
      &  rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,prop(*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
-     &  anisox(3,3,3,3),voldl(0:mi(2),26),vo(3,3),xloadold(2,*),
+     &  anisox(3,3,3,3),voldl(0:mi(2),20),vo(3,3),xloadold(2,*),
      &  xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),xload(2,*),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &  vv(3,3,3,3),springarea(2,*),thickness,tlayer(4),dlayer(4),
@@ -81,14 +81,14 @@
      &  sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &  s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),xlayer(mi(3),4),
      &  senergy,senergyb,rho,elas(21),summass,summ,thicke(mi(3),*),
-     &  sume,factorm,factore,alp,elconloc(21),eth(6),doubleglob(*),
+     &  sume,factorm,factore,alp,elconloc(ncmat_),eth(6),doubleglob(*),
      &  weight,coords(3),dmass,xl1(3,9),term,clearini(3,9,*),
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
      &  sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3),
      &  pslavsurf(3,*),pmastsurf(6,*),distmin,s0(60,60),xdesi(3,*),
      &  ds1(60,60),ff0(60),dfl(20,60),dxstiff(27,mi(1),ne,*),
-     &  vl(0:mi(2),26),v(0:mi(2),*),sigmak
+     &  vl(0:mi(2),20),v(0:mi(2),*),sigmak
 !
       include "gauss.f"
 !

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -222,7 +222,7 @@ c          enddo
                write(*,*)
      &            '         is converted into PEEQ; no distinction'
                write(*,*) 
-     &          '        is made between PEEQ, CEEQ, CE and PE'
+     &          '         is made between PEEQ, CEEQ, CE and PE'
                write(*,*)
             elseif(textpart(ii)(1:3).eq.'SDV') then
                if((nmethod.eq.2).or.(nmethod.eq.3)) then

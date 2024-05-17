@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                     */
+/*              Copyright (C) 1998-2023 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -73,7 +73,7 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 		  ITG *iponor2d,ITG *knor2d,ITG *ne2d,ITG *iponoel2d,
 		  ITG *inoel2d,
 		  ITG *mpcend,ITG *irobustdesign,ITG *irandomtype,
-		  double *randomval){
+		  double *randomval,ITG *rig){
 	     
   char description[13]="            ",*lakon=NULL,cflag[1]=" ",
     *lakonfa=NULL,*objectset=NULL,filabnew[5]="    ";
@@ -83,19 +83,20 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     ndesi,iobject,*iponoel=NULL,node,*nodedesi=NULL,*ipoface=NULL,*nodface=NULL,
     *inoel=NULL,icoordinate=0,*istartdesi=NULL,*ialdesi=NULL,
     *istartelem=NULL,*ialelem=NULL,inoelsize,*itmp=NULL,*ielorien=NULL,
-    iglob=0,idesvar=0,inorm=0,irand=0,*nodedesiinv=NULL,
+    iglob=0,idesvar=0,inorm=0,irand=0,*nodedesiinv=NULL,ifree,
     iregion=0,*konfa=NULL,*ipkonfa=NULL,nsurfs,*iponoelfa=NULL,
     *inoelfa=NULL,*iponor=NULL,*iponexp=NULL,ifreemax,*ipretinfo=NULL,
-    nfield,iforce,*iponod2dto3d=NULL,*iponk2dto3d=NULL,ishape=0,ndesibou,
+    nfield,iforce,*nod2nd3rd=NULL,*nod1st=NULL,ishape=0,ndesibou,
     *nodedesibou=NULL,*nodedesiinvbou=NULL,nmethodnew=0,*neigh=NULL,
-    *ipneigh=NULL;
+    *ipneigh=NULL,ifeasd=0,*nx=NULL,*ny=NULL,*nz=NULL,*nodes=NULL;
       
   double *stn=NULL,*tper,*xdesi=NULL,ptime=0.,*doubleglob=NULL,*xstate=NULL,
     *ener=NULL,sigma=0,*extnor=NULL,dtime,time,*xnor=NULL,*cdni=NULL,
     *cdnr=NULL,*cdn=NULL,*qfx=NULL,*emn=NULL,*fni=NULL,*fnr=NULL,
     *eenmax=NULL,*veold=NULL,*stnmax=NULL,*vmax=NULL,*stni=NULL,
     *stnr=NULL,*vi=NULL,*vr=NULL,*qfn=NULL,*xstaten=NULL,*enern=NULL,
-    *epn=NULL,*fn=NULL,*een=NULL,*v=NULL;
+    *epn=NULL,*fn=NULL,*een=NULL,*v=NULL,*x=NULL,*y=NULL,*z=NULL,*xo=NULL,
+    *yo=NULL,*zo=NULL,*dist=NULL;
   
 #ifdef SGI
   ITG token;
@@ -150,14 +151,14 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   NNEW(ipoface,ITG,*nk);
   NNEW(nodface,ITG,5*6**ne);
   NNEW(konfa,ITG,8*6**ne);
-  NNEW(ipkonfa,ITG,6**ne);
+  NNEW(ipkonfa,ITG,6**ne+1);
   NNEW(lakonfa,char,8*6**ne);
   FORTRAN(findextsurface,(nodface,ipoface,ne,ipkon,lakon,kon,
   			  konfa,ipkonfa,nk,lakonfa,&nsurfs,
-  			  &ifreemax));
+  			  &ifreemax,&ifree));
   RENEW(nodface,ITG,5*ifreemax);
-  RENEW(konfa,ITG,8*nsurfs);
-  RENEW(ipkonfa,ITG,nsurfs);
+  RENEW(konfa,ITG,ifree);
+  RENEW(ipkonfa,ITG,nsurfs+1);
   RENEW(lakonfa,char,8*nsurfs);
 
   /* find the external faces belonging to a given node */
@@ -176,15 +177,15 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   
   if(*ne2d!=0){
 
-    NNEW(iponod2dto3d,ITG,3**nk);
-    NNEW(iponk2dto3d,ITG,*nk);
+    NNEW(nod2nd3rd,ITG,3**nk);
+    NNEW(nod1st,ITG,*nk);
      
     FORTRAN(getdesiinfo2d,(set,istartset,iendset,ialset,nset,
 			   mi,nactdof,&ndesi,nodedesi,ntie,tieset,
 			   nodedesiinv,lakon,ipkon,kon,iponoelfa,
-			   iponod2dto3d,iponor2d,knor2d,iponoel2d,
-			   inoel2d,nobject,objectset,iponk2dto3d,ne,
-			   jobnamef));
+			   nod2nd3rd,iponor2d,knor2d,iponoel2d,
+			   inoel2d,nobject,objectset,nod1st,ne,
+			   jobnamef,rig));
     						 
   
   }else{
@@ -232,7 +233,7 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   
   FORTRAN(normalsonsurface_robust,(ipkon,kon,lakon,extnor,co,nk,ipoface,
     			           nodface,nactdof,mi,nodedesiinv,&iregion,
-    			           iponoelfa,&ndesi,nodedesi,iponod2dto3d,
+    			           iponoelfa,&ndesi,nodedesi,nod2nd3rd,
     			           ikboun,nboun,ne2d)); 
   
   /* if the sensitivity calculation is used in a optimization script
@@ -255,15 +256,29 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   NNEW(xnor,double,24*nsurfs);
   NNEW(iponexp,ITG,2**nk);
   NNEW(ipretinfo,ITG,*nk);
+  NNEW(x,double,*nk);
+  NNEW(y,double,*nk);
+  NNEW(z,double,*nk);
+  NNEW(xo,double,*nk);
+  NNEW(yo,double,*nk);
+  NNEW(zo,double,*nk);
+  NNEW(nx,ITG,*nk);
+  NNEW(ny,ITG,*nk);
+  NNEW(nz,ITG,*nk);
+  NNEW(nodes,ITG,*nk);
+  NNEW(dist,double,*nk);
   
-  FORTRAN(normalsforequ_se,(nk,co,iponoelfa,inoelfa,konfa,ipkonfa,lakonfa,
-			    &nsurfs,iponor,xnor,nodedesiinv,jobnamef,
-			    iponexp,nmpc,labmpc,ipompc,nodempc,ipretinfo,
-			    kon,ipkon,lakon,iponoel,inoel,iponor2d,knor2d,
-			    iponod2dto3d,ipoface,nodface));
+  FORTRAN(writeinputdeck,(nk,co,iponoelfa,inoelfa,konfa,ipkonfa,lakonfa,
+			  &nsurfs,iponor,xnor,nodedesiinv,jobnamef,
+			  iponexp,nmpc,labmpc,ipompc,nodempc,ipretinfo,
+			  kon,ipkon,lakon,iponoel,inoel,iponor2d,knor2d,
+			  ipoface,nodface,ne,x,y,z,xo,yo,zo,nx,ny,nz,nodes,
+			  dist,ne2d,nod1st,nod2nd3rd,extnor));
     	  
   SFREE(konfa);SFREE(ipkonfa);SFREE(lakonfa);SFREE(iponor);SFREE(xnor);
   SFREE(iponoelfa);SFREE(inoelfa);SFREE(iponexp);SFREE(ipretinfo);
+  SFREE(x);SFREE(y);SFREE(z);SFREE(xo);SFREE(yo);SFREE(zo);SFREE(nx);
+  SFREE(ny);SFREE(nz);SFREE(nodes);SFREE(dist);
        
   /* createinum is called in order to determine the nodes belonging
      to elements; this information is needed in frd_se */
@@ -303,7 +318,7 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     	  &iinc,&mode,&noddiam,description,mi,&ngraph,ne,cs,set,nset,
     	  istartset,iendset,ialset,jobnamec,output,
     	  extnor,&iobject,objectset,ntrans,inotr,trab,&idesvar,orname,
-    	  &icoordinate,&inorm,&irand,&ishape); 
+    	  &icoordinate,&inorm,&irand,&ishape,&ifeasd); 
   inorm=0;
 
   /* storing the normal direction for every design variable */
@@ -327,7 +342,7 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
             
   SFREE(iponoel);SFREE(inoel);SFREE(nodedesiinv);
   
-  if(*ne2d!=0){SFREE(iponod2dto3d);SFREE(iponk2dto3d);}
+  if(*ne2d!=0){SFREE(nod2nd3rd);SFREE(nod1st);}
      
   // if(*nbody>0) SFREE(ipobody);
 

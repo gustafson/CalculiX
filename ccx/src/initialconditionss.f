@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -111,7 +111,7 @@
                 cycle
               endif
               t0(l)=temperature
-              t1(l)=temperature
+c              t1(l)=temperature
               vold(0,l)=temperature
               if((inoelfree.ne.0).or.(nuel_.gt.0)) then
                 t0g(1,l)=tempgrad1
@@ -124,9 +124,6 @@
               noset(81:81)=' '
               ipos=index(noset,' ')
               noset(ipos:ipos)='N'
-c              do ii=1,nset
-c                if(set(ii).eq.noset) exit
-c              enddo
               call cident81(set,noset,nset,id)
               ii=nset+1
               if(id.gt.0) then
@@ -147,7 +144,7 @@ c              enddo
               do j=istartset(ii),iendset(ii)
                 if(ialset(j).gt.0) then
                   t0(ialset(j))=temperature
-                  t1(ialset(j))=temperature
+c                  t1(ialset(j))=temperature
                   vold(0,ialset(j))=temperature
                   if((inoelfree.ne.0).or.(nuel_.gt.0)) then
                     t0g(1,ialset(j))=tempgrad1
@@ -161,7 +158,7 @@ c              enddo
                     k=k-ialset(j)
                     if(k.ge.ialset(j-1)) exit
                     t0(k)=temperature
-                    t1(k)=temperature
+c                    t1(k)=temperature
                     vold(0,k)=temperature
                     if((inoelfree.ne.0).or.(nuel_.gt.0)) then
                       t0g(1,k)=tempgrad1

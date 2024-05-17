@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -161,14 +161,15 @@
      &     ipoinp,inp,ipoinpc)
       if((istat.lt.0).or.(key.eq.1)) then
         if((iperturb(1).ge.2).or.(nef.gt.0)) then
-          write(*,*)'*WARNING reading *DYNAMIC: a nonlinear analysis i
-     &s requested'
-          write(*,*) '         but no time increment nor step is speci
-     &fied'
+          write(*,*)'*WARNING reading *DYNAMIC: a nonlinear analysis is
+     &requested'
+          write(*,*) '         but no time increment nor step is specifi
+     &ed'
           write(*,*) '         the defaults (1,1) are used'
           tinc=1.d0
           tper=1.d0
-          tmin=1.d-5
+c          tmin=1.d-5
+          tmin=1.d-10
           tmax=1.d+30
           tincf=1.d-2
         endif
@@ -207,20 +208,39 @@
         return
       endif
 !     
-      if(tinc.le.0.d0) then
-        write(*,*)'*ERROR reading *DYNAMIC: initial increment size is n
-     &egative'
-      endif
       if(tper.le.0.d0) then
-        write(*,*) '*ERROR reading *DYNAMIC: step size is negative'
+        write(*,*) '*ERROR reading *DYNAMIC: step size is nonpositive'
+        ier=1
+        return
       endif
-      if(tinc.gt.tper) then
-        write(*,*)'*ERROR reading *DYNAMIC: initial increment size exce
-     &eds step size'
+!
+      if(idrct.ne.1) then
+        if(tinc.gt.0.d0) then
+          write(*,*) '*WARNING reading *DYNAMIC: the initial time'
+          write(*,*) '         increment defined by the user will not'
+          write(*,*) '         be used since the time increment is'
+          write(*,*) '         determined automatically by the dynamic'
+          write(*,*) '         procedure based on stability'
+          write(*,*) '         considerations'
+        endif
+      else
+        if(tinc.le.0.d0) then
+          write(*,*)'*ERROR reading *DYNAMIC: initial increment size is 
+     &negative'
+          ier=1
+          return
+        endif
+        if(tinc.gt.tper) then
+          write(*,*)'*ERROR reading *DYNAMIC: initial increment size exc
+     &eeds step size'
+          ier=1
+          return
+        endif
       endif
+!      
       if((nef.gt.0).and.(tincf.le.0.d0)) then
-        write(*,*) '*WARNING reading *DYNAMIC: initial CFD increment si
-     &ze is zero or negative; the default of 0.01 is taken'
+        write(*,*) '*WARNING reading *DYNAMIC: initial CFD increment siz
+     &e is zero or negative; the default of 0.01 is taken'
         tincf=1.d-2
       endif
 !     
@@ -243,6 +263,9 @@
           write(*,*) '         to the maximum value'
           tinc=dabs(tmax)
         endif
+      else
+        tmin=tinc
+        tmax=tinc
       endif
 !     
 !     10 cutbacks allowed for dynamics (because of contact)
@@ -257,7 +280,12 @@
 !     output was requested on a *EL PRINT, *EL FILE OR *ELEMENT OUTPUT
 !     card
 !
-      if(iexpl.le.1) nener=1
+      if(iexpl.le.1) then
+        nener=1
+        write(*,*) '*INFO reading *DYNAMIC: for implicit calculations'
+        write(*,*) '      the calculation of the internal energy'
+        write(*,*) '      is activated.'
+      endif
 !     
       call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
      &     ipoinp,inp,ipoinpc)

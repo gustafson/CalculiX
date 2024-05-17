@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -42,6 +42,14 @@
 !     nmethod=3: static stiffness + buckling stiffness
 !     nmethod=4: stiffness matrix + mass matrix
 !     
+!     intscheme=0: use the integration scheme corresponding to the element     
+!                  type, i.e. reduced integration for reduced integration    
+!                  elements etc.
+!     intscheme=1: use for C3D8R and C3D20R elements the integration point
+!                  schemes for C3D8 and C3D20, respectively, for all other    
+!                  elements the the integration scheme corresponding to the
+!                  element type     
+!     
       implicit none
 !     
       integer mass,stiffness,buckling,rhsi,coriolis
@@ -52,7 +60,7 @@
       character*80 matname(*),amat
       character*81 tieset(3,*),set(*)
 !     
-      integer konl(26),ifaceq(8,6),nelemload(2,*),nbody,nelem,
+      integer konl(20),ifaceq(8,6),nelemload(2,*),nbody,nelem,
      &     mi(*),jfaces,igauss,mortar,kon(*),ielprop(*),null,
      &     mattyp,ithermal(*),iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &     nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
@@ -68,12 +76,12 @@
      &     mscalmethod,nset,islavelinv(*),jqtloc(*),irowtloc(*),
      &     node1,node2,irowtloc1(16),jqtloc1(9),j2,mortartrafoflag
 !     
-      real*8 co(3,*),xl(3,26),shp(4,26),xs2(3,7),veold(0:mi(2),*),
+      real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),veold(0:mi(2),*),
      &     s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
-     &     bf(3),q(3),shpj(4,26),elcon(0:ncmat_,ntmat_,*),t(3),
+     &     bf(3),q(3),shpj(4,20),elcon(0:ncmat_,ntmat_,*),t(3),
      &     rhcon(0:1,ntmat_,*),xkl(3,3),eknlsign,reltime,prop(*),
      &     alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
-     &     anisox(3,3,3,3),voldl(0:mi(2),26),vo(3,3),xloadold(2,*),
+     &     anisox(3,3,3,3),voldl(0:mi(2),20),vo(3,3),xloadold(2,*),
      &     xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),xload(2,*),
      &     xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &     v(3,3,3,3),springarea(2,*),thickness,tlayer(4),dlayer(4),
@@ -81,14 +89,14 @@
      &     sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &     s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),xlayer(mi(3),4),
      &     senergy,senergyb,rho,elas(21),summass,summ,thicke(mi(3),*),
-     &     sume,factorm,factore,alp,elconloc(21),eth(6),doubleglob(*),
+     &     sume,factorm,factore,alp,elconloc(ncmat_),eth(6),
      &     weight,coords(3),dmass,xl1(3,9),term,clearini(3,9,*),
      &     plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &     xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
      &     sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3),
-     &     pslavsurf(3,*),pmastsurf(6,*),xmass,xsjmass,shpmass(4,26),
-     &     shpjmass(4,26),smscalel,smfactor,shptil(4,26),autloc(*),
-     &     shptil2(7,9),autloc1(16)
+     &     pslavsurf(3,*),pmastsurf(6,*),xmass,xsjmass,shpmass(4,20),
+     &     shpjmass(4,20),smscalel,smfactor,shptil(4,20),autloc(*),
+     &     shptil2(7,9),autloc1(16),doubleglob(*)
 !     
       include "gauss.f"
 !     
@@ -261,7 +269,6 @@ c     Bernhardi end
 !     
       endif
 !     
-c      if(intscheme.eq.0) then
         if(lakonl(4:5).eq.'8R') then
           mint2d=1
           if(intscheme.eq.0) then
@@ -303,7 +310,11 @@ c      if(intscheme.eq.0) then
           mint3d=4
         elseif(lakonl(4:4).eq.'4') then
           mint2d=1
-          mint3d=1
+          if(intscheme.eq.0) then
+            mint3d=1
+          else
+            mint3d=4
+          endif
         elseif(lakonl(4:5).eq.'15') then
           if(lakonl(7:8).eq.'LC') then
             mint3d=6*nlayer
@@ -473,7 +484,6 @@ c     write(*,*) 'e_c3d ',nelem
 !     computation of the matrix: loop over the Gauss points
 !     
       do kk=1,mint3d
-c        if(intscheme.eq.0) then
           if(lakonl(4:5).eq.'8R') then
             if(intscheme.eq.0) then
               xi=gauss3d1(1,kk)
@@ -569,10 +579,17 @@ c        if(intscheme.eq.0) then
             ze=gauss3d5(3,kk)
             weight=weight3d5(kk)
           elseif(lakonl(4:4).eq.'4') then
-            xi=gauss3d4(1,kk)
-            et=gauss3d4(2,kk)
-            ze=gauss3d4(3,kk)
-            weight=weight3d4(kk)
+            if(intscheme.eq.0) then
+              xi=gauss3d4(1,kk)
+              et=gauss3d4(2,kk)
+              ze=gauss3d4(3,kk)
+              weight=weight3d4(kk)
+            else
+              xi=gauss3d5(1,kk)
+              et=gauss3d5(2,kk)
+              ze=gauss3d5(3,kk)
+              weight=weight3d5(kk)
+            endif
           elseif(lakonl(4:5).eq.'15') then
             if(lakonl(7:8).ne.'LC') then
               xi=gauss3d8(1,kk)
@@ -630,7 +647,7 @@ c        if(intscheme.eq.0) then
 !     in the gauss point
 !     
 c     Bernhardi start
-        if(lakonl(1:5).eq.'C3D8R') then
+        if((lakonl(1:5).eq.'C3D8R').and.(intscheme.eq.0)) then
           call shape8hr(xl,xsj,shp,gs,a)
         elseif(lakonl(1:5).eq.'C3D8I') then
           call shape8hu(xi,et,ze,xl,xsj,shp,iflag)
@@ -1889,8 +1906,11 @@ c     mortar end
           endif
         endif
       endif
-!     
-      if((mass.eq.1).and.(iexpl.gt.1).and.(mortar.ne.-1) ) then
+!
+!     lumping the mass matrix for explicit dynamics
+!     (not for the massless method)
+!
+      if((mass.eq.1).and.(iexpl.gt.1).and.(mortar.ne.-1)) then
 !     
 !     scaling the diagonal terms of the mass matrix such that the total mass
 !     is right (LUMPING; for explicit dynamic calculations)
@@ -1905,9 +1925,7 @@ c     mortar end
         enddo
 !     
         if(nope.eq.20) then
-c     alp=.2215d0
           alp=.2917d0
-!     maybe alp=.2917d0 is better??
         elseif(nope.eq.10) then
           alp=0.1203d0
         elseif(nope.eq.15) then
@@ -1924,7 +1942,6 @@ c     alp=.2215d0
           factore=summass/sume
         endif
 !     
-c     write(6,*) alp, sume, summ, factore, factorm
         do i=1,3*nopev,3
           sm(i,i)=sm(i,i)*factore
           sm(i+1,i+1)=sm(i,i)
@@ -1936,7 +1953,7 @@ c     write(6,*) alp, sume, summ, factore, factorm
           sm(i+2,i+2)=sm(i,i)
         enddo
 !     
-        if((mscalmethod.ne.1).and.(mscalmethod.ne.3)) then
+c        if((mscalmethod.ne.1).and.(mscalmethod.ne.3)) then
 !     
 !     setting all off-diagonal terms to zero     
 !     
@@ -1946,39 +1963,61 @@ c     write(6,*) alp, sume, summ, factore, factorm
               sm(i,j)=0.d0
             enddo
           enddo
-        else
+c        endif
+      endif
+!
+!     mscalmethod = 1 or 3: selective mass scaling SMS
 !     
-!     CC: Mass Scaling
-!     mscalmethod = 1: selective mass scaling SMS
+      if((mass.eq.1).and.(iexpl.gt.1)) then
+        if((mscalmethod.eq.1).or.(mscalmethod.eq.3)) then
 !     
 !     beta = smscalel
 !     
           smfactor=smscalel*summass/((nope-1)*nope)
 !     
           do i=1,3*nope
-            do j=1,3*nope
-              if(i.ne.j) then
-!     set non diagonals to zero           
-                sm(i,j)=0.d0
-!     diagonal terms of M for SMS
-              else
-                sm(i,j)=sm(i,j)+(nope-1)*smfactor
-              endif
-            enddo
+c            do j=1,3*nope
+c              if(i.ne.j) then
+c!     set non diagonals to zero           
+c                sm(i,j)=0.d0
+c!     diagonal terms of M for SMS
+c              else
+c                sm(i,j)=sm(i,j)+(nope-1)*smfactor
+                sm(i,i)=sm(i,i)+(nope-1)*smfactor
+c              endif
+c            enddo
           enddo
 !     
 !     nondiagonal terms of M for SMS
 !     
-          i=0
-          do j=0,nope*3-1,3
-            i=i+1
-            do k=1,(nope-i)
-              do l=1,3
-                sm(j+l+k*3,j+l)=-smfactor
-                sm(j+l,j+l+k*3)=-smfactor
+!         no massless method: regular mass matrix was lumped     
+!     
+c          if(mortar.ne.-1) then
+c            i=0
+c            do j=0,nope*3-1,3
+c              i=i+1
+c              do k=1,(nope-i)
+c                do l=1,3
+c                  sm(j+l+k*3,j+l)=-smfactor
+c                  sm(j+l,j+l+k*3)=-smfactor
+c                enddo
+c              enddo
+c            enddo
+c          else
+c!     
+c!          massless method: regular mass matrix was not lumped     
+c!     
+            i=0
+            do j=0,nope*3-1,3
+              i=i+1
+              do k=1,(nope-i)
+                do l=1,3
+                  sm(j+l+k*3,j+l)=sm(j+l+k*3,j+l)-smfactor
+                  sm(j+l,j+l+k*3)=sm(j+l,j+l+k*3)-smfactor
+                enddo
               enddo
             enddo
-          enddo
+c          endif
 !     to calculate additional energy in resultsmech.f:
           smscalel=smfactor
         endif

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -309,7 +309,7 @@ c          dhdsm=dhds2
               h1=hfr(id)+(s-sfr(id))/(sfr(id+1)-sfr(id))*
      &             (hfr(id+1)-hfr(id))
               call hns(xflow,rho,b,theta,dg,sqrts0,h1,h2)
-              write(*,*) 'B jump ',s,h1,h2,hback
+c              write(*,*) 'B jump ',s,h1,h2,hback
               delta=h2-hback
               if(delta*sg.eq.0.d0) then
                 sg=delta

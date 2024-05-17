@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -50,10 +50,10 @@
      &  neb,ndesi,nodedesi(*),idesvar1,istartelem(*),ialelem(*),
      &  icoordinate,ii1,ieigenfrequency,mass(2),stiffness,buckling,rhsi,
      &  stiffonly(2),coriolis,idesloc1,idesvar2,idesloc2,icolumn,ii2,
-     &  nset
+     &  nset,kk,node2
 !
       real*8 co(3,*),coefmpc(*),xload(2,*),p1(3),p2(3),bodyf(3),
-     &  xloadold(2,*),reltime,t0(*),t1(*),vold(0:mi(2),*),
+     &  xloadold(2,*),reltime,t0(*),t1(*),vold(0:mi(2),*),dd,
      &  s(60,60),ff(60),sti(6,mi(1),*),sm(60,60),xdesi(3,*),
      &  stx(6,mi(1),*),elcon(0:ncmat_,ntmat_,*),val,sigma,
      &  rhcon(0:1,ntmat_,*),springarea(2,*),alcon(0:6,ntmat_,*),

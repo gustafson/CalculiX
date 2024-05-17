@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,pnewdt,istep,iinc,ipkon,nmethod,
-     &        iperturb,depvisc,eloc,nlgeom_undo)
+     &        iperturb,depvisc,eloc,nlgeom_undo,physcon,ncmat_)
 !
 !     calculates stiffness and stresses for a user defined material
 !     law
@@ -30,15 +30,14 @@
       character*80 amat,amatloc
 !
       integer ithermal(*),icmd,kode,ielas,iel,iint,nstate_,mi(*),iorien,
-     &  istep,iinc,ipkon(*),nmethod,iperturb(*),nlgeom_undo
+     &  istep,iinc,ipkon(*),nmethod,iperturb(*),nlgeom_undo,ncmat_,j
 !
       real*8 elconloc(*),stiff(21),emec(6),emec0(6),beta(6),stre(6),
      &  vj,t1l,dtime,xkl(3,3),xikl(3,3),vij,pgauss(3),orab(7,*),
-     &  time,ttime,pnewdt,depvisc,eloc(6)
+     &  time,ttime,pnewdt,depvisc,eloc(6),physcon(*)
 !
       real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
-      
       if(amat(1:8).eq.'ABAQUSNL') then
 
          amatloc(1:72)=amat(9:80)
@@ -47,7 +46,7 @@
      &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
      &        iorien,pgauss,orab,istep,iinc,pnewdt,nmethod,iperturb)
-         
+!         
       elseif(amat(1:9).eq.'@ABAQUSNL') then
 !
          call umat_abaqusnl(amat,iel,iint,kode,elconloc,emec,
@@ -121,6 +120,13 @@
      &        icmd,ielas,mi(1),
      &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
 !
+      elseif(amat(1:11).eq.'JOHNSONCOOK') then
+!
+         call umat_abaqusnl_total(amat,iel,iint,kode,elconloc,emec,
+     &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
+     &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
+     &        iorien,pgauss,orab,istep,iinc,pnewdt,nmethod,iperturb)
+!
       elseif(amat(1:12).eq.'LIN_EL_COROT') then
 !
          amatloc(1:68)=amat(13:80)
@@ -149,7 +155,8 @@
      &        iel,iint,kode,elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),
-     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab)
+     &        nstate_,xstateini,xstate,stre,stiff,iorien,pgauss,orab,
+     &        physcon)
 !
       elseif(amat(1:20).eq.'SINGLE_CRYSTAL_CREEP') then
 !
@@ -199,7 +206,7 @@
      &        elconloc,emec,emec0,
      &        beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
      &        icmd,ielas,mi(1),nstate_,xstateini,xstate,stre,stiff,
-     &        iorien,pgauss,orab,eloc,nlgeom_undo)
+     &        iorien,pgauss,orab,eloc,nlgeom_undo,ncmat_)
 !
       elseif(amat(1:22).eq.'UNDO_NLGEOM_LIN_ISO_EL') then
 !

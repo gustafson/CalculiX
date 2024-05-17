@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                     */
+/*              Copyright (C) 1998-2023 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include "CalculiX.h"
 
 void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
@@ -59,7 +60,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 		ITG *nzsprevstep,ITG *nlabel,double *physcon,char *jobnamef,
 		ITG *iponor2d,ITG *knor2d,ITG *ne2d,ITG *iponoel2d,ITG *inoel2d,
 		ITG *mpcend,double *dgdxglob,double *g0,ITG **nodedesip,
-		ITG *ndesi,ITG *nobjectstart,double **xdesip){
+		ITG *ndesi,ITG *nobjectstart,double **xdesip,ITG *rig){
 	     
   char description[13]="            ",*lakon=NULL,cflag[1]=" ",fneig[132]="",
     stiffmatrix[132]="",*lakonfa=NULL,*objectset=NULL;
@@ -69,21 +70,22 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   ITG *inum=NULL,k,*irow=NULL,ielas=0,icmd=0,iinc=1,nasym=0,
     mass[2]={0,0},stiffness=1,buckling=0,rhsi=1,intscheme=0,*ncocon=NULL,
     *nshcon=NULL,mode=-1,noddiam=-1,coriolis=0,iout,
-    ifreebody,*itg=NULL,ntg=0,ngraph=1,mt=mi[1]+1,ne0,*integerglob=NULL,     
+    *itg=NULL,ntg=0,ngraph=1,mt=mi[1]+1,ne0,*integerglob=NULL,     
     icfd=0,*inomat=NULL,*islavact=NULL,*islavnode=NULL,*nslavnode=NULL,
     *islavsurf=NULL,nmethodl,*kon=NULL,*ipkon=NULL,*ielmat=NULL,nzss,
     *mast1=NULL,*irows=NULL,*jqs=NULL,*ipointer=NULL,i,iread,
-    *nactdofinv=NULL,*nodorig=NULL,iobject,*iponoel=NULL,node,
-    *nodedesi=NULL,*ipoface=NULL,*nodface=NULL,*inoel=NULL,*ipoorel=NULL,
+    *nactdofinv=NULL,iobject,*iponoel=NULL,node,
+    *nodedesi=NULL,*ipoface=NULL,*nodface=NULL,*inoel=NULL,
     icoordinate=1,ishapeenergy=0,imass=0,idisplacement=0,
-    *istartdesi=NULL,*ialdesi=NULL,*iorel=NULL,*ipoeldi=NULL,*ieldi=NULL,
+    *istartdesi=NULL,*ialdesi=NULL,*ipoeldi=NULL,*ieldi=NULL,
     *istartelem=NULL,*ialelem=NULL,ieigenfrequency=0,cyclicsymmetry=0,
     nherm,nev,iev,inoelsize,*itmp=NULL,nmd,nevd,*nm=NULL,*ielorien=NULL,
     igreen=0,iglob=0,idesvar=0,inorm=0,irand=0,*nodedesiinv=NULL,
-    *nnodes=NULL,iregion=0,*konfa=NULL,*ipkonfa=NULL,nsurfs,
-    *iponor=NULL,*iponoelfa=NULL,*inoelfa=NULL,ifreemax,nconstraint,
-    *iponexp=NULL,*ipretinfo=NULL,nfield,iforce,*iponod2dto3d=NULL,
-    *iponk2dto3d=NULL,ishape=0,iscaleflag,istart,modalstress=0;
+    *nnodes=NULL,iregion=0,*konfa=NULL,*ipkonfa=NULL,nsurfs,ifree,
+    *iponor=NULL,*iponoelfa=NULL,*inoelfa=NULL,ifreemax,
+    *iponexp=NULL,*ipretinfo=NULL,nfield,iforce,*nod2nd3rd=NULL,
+    *nod1st=NULL,ishape=0,iscaleflag,istart,modalstress=0,ifeasd=0,
+    *nx=NULL,*ny=NULL,*nz=NULL,*nodes=NULL;
       
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,*tper,
     *f=NULL,*fn=NULL,qa[4],*epn=NULL,*xstateini=NULL,*xdesi=NULL,
@@ -98,7 +100,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     distmin,*df=NULL,*dgdx=NULL,sigma=0,*xinterpol=NULL,
     *extnor=NULL,*veold=NULL,*accold=NULL,bet,gam,sigmak=1.,sigmal=1.,
     dtime,time,reltime=1.,*weightformgrad=NULL,*fint=NULL,*xnor=NULL,
-    *dgdxdy=NULL,*senvector=NULL;
+    *dgdxdy=NULL,*x=NULL,*y=NULL,*xo=NULL,*yo=NULL,*zo=NULL,*dist=NULL;
 
   FILE *f1;
   
@@ -116,6 +118,11 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   dtime=*tper;
 
   ne0=*ne;
+
+  if(*nstate_!=0){
+    NNEW(xstateini,double,*nstate_*mi[0]*ne0);
+    memcpy(&xstateini[0],&xstate[0],sizeof(double)**nstate_*mi[0]*ne0);
+  }
 
   /* determining the global values to be used as boundary conditions
      for a submodel */
@@ -156,7 +163,9 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       imass=1;
     }else if(strcmp1(&objectset[i*405],"STRAINENERGY")==0){
       ishapeenergy=1;
-    }else if((strcmp1(&objectset[i*405],"STRESS")==0)||
+    }else if((strcmp1(&objectset[i*405],"MISESSTRESS")==0)||
+             (strcmp1(&objectset[i*405],"PS1STRESS")==0)||
+	     (strcmp1(&objectset[i*405],"PS3STRESS")==0)||
 	     (strcmp1(&objectset[i*405],"EQPLASTICSTRAIN")==0)){
       idisplacement=1;
     }
@@ -174,11 +183,11 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   }
 
   if(ishapeenergy==1){
-    NNEW(enerini,double,mi[0]**ne);
+    NNEW(enerini,double,2*mi[0]**ne);
     NNEW(emeini,double,6*mi[0]**ne); 
     NNEW(stiini,double,6*mi[0]**ne); 
       
-    memcpy(&enerini[0],&ener[0],sizeof(double)*mi[0]**ne);
+    memcpy(&enerini[0],&ener[0],sizeof(double)*2*mi[0]**ne);
     memcpy(&emeini[0],&eme[0],sizeof(double)*6*mi[0]**ne);
     memcpy(&stiini[0],&sti[0],sizeof(double)*6*mi[0]**ne);
   }
@@ -187,7 +196,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 
     /* opening the eigenvalue file and checking for cyclic symmetry */
       
-    strcpy(fneig,jobnamec);
+    strcpy2(fneig,jobnamec,132);
     strcat(fneig,".eig");
       
     if((f1=fopen(fneig,"rb"))==NULL){
@@ -254,14 +263,14 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   NNEW(ipoface,ITG,*nk);
   NNEW(nodface,ITG,5*6**ne);
   NNEW(konfa,ITG,8*6**ne);
-  NNEW(ipkonfa,ITG,6**ne);
+  NNEW(ipkonfa,ITG,6**ne+1);
   NNEW(lakonfa,char,8*6**ne);
   FORTRAN(findextsurface,(nodface,ipoface,ne,ipkon,lakon,kon,
 			  konfa,ipkonfa,nk,lakonfa,&nsurfs,
-			  &ifreemax));
+			  &ifreemax,&ifree));
   RENEW(nodface,ITG,5*ifreemax);
-  RENEW(konfa,ITG,8*nsurfs);
-  RENEW(ipkonfa,ITG,nsurfs);
+  RENEW(konfa,ITG,ifree);
+  RENEW(ipkonfa,ITG,nsurfs+1);
   RENEW(lakonfa,char,8*nsurfs);
 
   /* find the external faces belonging to a given node */
@@ -279,16 +288,15 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       
   if(*ne2d!=0){
 
-    NNEW(iponod2dto3d,ITG,3**nk);
-    NNEW(iponk2dto3d,ITG,*nk);
+    NNEW(nod2nd3rd,ITG,2**nk);
+    NNEW(nod1st,ITG,*nk);
 	 
     FORTRAN(getdesiinfo2d,(set,istartset,iendset,ialset,nset,
 			   mi,nactdof,ndesi,nodedesi,ntie,tieset,
 			   nodedesiinv,lakon,ipkon,kon,iponoelfa,
-			   iponod2dto3d,iponor2d,knor2d,iponoel2d,
-			   inoel2d,nobject,objectset,iponk2dto3d,ne,
-			   jobnamef));
-			   			     
+			   nod2nd3rd,iponor2d,knor2d,iponoel2d,
+			   inoel2d,nobject,objectset,nod1st,ne,
+			   jobnamef,rig));
       
   }else{
       
@@ -296,7 +304,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 			   mi,nactdof,ndesi,nodedesi,ntie,tieset,
 			   itmp,nmpc,nodempc,ipompc,nodedesiinv,
 			   iponoel,inoel,lakon,ipkon,
-			   kon,&iregion,ipoface,nodface,nk,jobnamef));  
+			   kon,&iregion,ipoface,nodface,nk,jobnamef,
+			   ipkonfa,lakonfa,konfa,&nsurfs));  
   }
       
   SFREE(itmp);
@@ -318,38 +327,52 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       
   FORTRAN(normalsonsurface_se,(ipkon,kon,lakon,extnor,co,nk,ipoface,
 			       nodface,nactdof,mi,nodedesiinv,&iregion,
-			       iponoelfa,ndesi,nodedesi,iponod2dto3d,
+			       iponoelfa,ndesi,nodedesi,nod2nd3rd,
 			       ikboun,nboun,ne2d)); 
       
   /* if the sensitivity calculation is used in a optimization script
      this script usually contains a loop consisting of:
      1. a call to CalculiX to define the sensitivities
      2. a small modification of the surface geometry in a direction which
-     decrease the objective function (only the design variables)
+     decreases the objective function (only the design variables)
      3. a modification of the internal mesh in order to preserve
      mesh quality
      The latter point can be done by performing a linear elastic
-     calculation in which the small modification in 2. is applied
+     calculation in which the small modification in 2. is applied as
      a *boundary condition and all other nodes (on the external 
      surface but no design variables) are fixed by *equation's
      in a direction normal to the surface. At corners and edges
      there my be more than one normal. The necessary equations are
-     calculated in normalsforeq_se.f and stored in jobname.equ */
+     calculated in writeinputdeck.f and stored in jobname.equ */
 
   NNEW(iponor,ITG,8*nsurfs);
   for(i=0;i<8*nsurfs;i++) iponor[i]=-1;
   NNEW(xnor,double,24*nsurfs);
   NNEW(iponexp,ITG,2**nk);
   NNEW(ipretinfo,ITG,*nk);
+  NNEW(x,double,*nk);
+  NNEW(y,double,*nk);
+  NNEW(z,double,*nk);
+  NNEW(xo,double,*nk);
+  NNEW(yo,double,*nk);
+  NNEW(zo,double,*nk);
+  NNEW(nx,ITG,*nk);
+  NNEW(ny,ITG,*nk);
+  NNEW(nz,ITG,*nk);
+  NNEW(nodes,ITG,*nk);
+  NNEW(dist,double,*nk);
       
-  FORTRAN(normalsforequ_se,(nk,co,iponoelfa,inoelfa,konfa,ipkonfa,lakonfa,
-			    &nsurfs,iponor,xnor,nodedesiinv,jobnamef,
-			    iponexp,nmpc,labmpc,ipompc,nodempc,ipretinfo,
-			    kon,ipkon,lakon,iponoel,inoel,iponor2d,knor2d,
-			    iponod2dto3d,ipoface,nodface));
+  FORTRAN(writeinputdeck,(nk,co,iponoelfa,inoelfa,konfa,ipkonfa,lakonfa,
+			  &nsurfs,iponor,xnor,nodedesiinv,jobnamef,
+			  iponexp,nmpc,labmpc,ipompc,nodempc,ipretinfo,
+			  kon,ipkon,lakon,iponoel,inoel,iponor2d,knor2d,
+			  ipoface,nodface,ne,x,y,z,xo,yo,zo,nx,ny,nz,nodes,
+			  dist,ne2d,nod1st,nod2nd3rd,extnor));
                   
   SFREE(konfa);SFREE(ipkonfa);SFREE(lakonfa);SFREE(iponor);SFREE(xnor);
   SFREE(iponoelfa);SFREE(inoelfa);SFREE(iponexp);SFREE(ipretinfo);
+  SFREE(x);SFREE(y);SFREE(z);SFREE(xo);SFREE(yo);SFREE(zo);SFREE(nx);
+  SFREE(ny);SFREE(nz);SFREE(nodes);SFREE(dist);
 	  
   /* createinum is called in order to determine the nodes belonging
      to elements; this information is needed in frd_se */
@@ -370,8 +393,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   
     if(strcmp1(&filab[4],"I")==0){
       
-    FORTRAN(map3dto1d2d,(extnor,ipkon,inum,kon,lakon,&nfield,nk,
-			 ne,cflag,co,vold,&iforce,mi,ielprop,prop));
+      FORTRAN(map3dto1d2d,(extnor,ipkon,inum,kon,lakon,&nfield,nk,
+			   ne,cflag,co,vold,&iforce,mi,ielprop,prop));
     }
       
     frd_sen(co,nk,stn,inum,nmethod,kode,filab,&ptime,nstate_,
@@ -379,7 +402,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	    &iinc,&mode,&noddiam,description,mi,&ngraph,ne,cs,set,nset,
 	    istartset,iendset,ialset,jobnamec,output,
 	    extnor,&iobject,objectset,ntrans,inotr,trab,&idesvar,orname,
-	    &icoordinate,&inorm,&irand,&ishape); 
+	    &icoordinate,&inorm,&irand,&ishape,&ifeasd); 
     inorm=0;
     outputnormals=0;
   }
@@ -432,19 +455,6 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     NNEW(t1act,double,*nk);
     for(k=0;k<*nk;++k){t1act[k]=t1old[k];}
   }
-  
-  /* assigning the body forces to the elements */ 
-
-  /* if(*nbody>0){
-     ifreebody=*ne+1;
-     NNEW(ipobody,ITG,2*ifreebody**nbody);
-     for(k=1;k<=*nbody;k++){
-     FORTRAN(bodyforce,(cbody,ibody,ipobody,nbody,set,istartset,
-     iendset,ialset,&inewton,nset,&ifreebody,&k));
-     RENEW(ipobody,ITG,2*(*ne+ifreebody));
-     }
-     RENEW(ipobody,ITG,2*(ifreebody-1));
-     }*/
 
   /* allocating a field for the instantaneous amplitude */
 
@@ -453,14 +463,17 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   FORTRAN(tempload,(xforcold,xforc,xforcact,iamforc,nforc,xloadold,xload,
 		    xloadact,iamload,nload,ibody,xbody,nbody,xbodyold,xbodyact,
 		    t1old,t1,t1act,iamt1,nk,amta,
-		    namta,nam,ampli,&time,&reltime,ttime,&dtime,ithermal,nmethod,
+		    namta,nam,ampli,&time,&reltime,ttime,&dtime,ithermal,
+		    nmethod,
 		    xbounold,xboun,xbounact,iamboun,nboun,
 		    nodeboun,ndirboun,nodeforc,ndirforc,istep,&iinc,
 		    co,vold,itg,&ntg,amname,ikboun,ilboun,nelemload,sideload,mi,
-		    ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,istartset,
+		    ntrans,trab,inotr,veold,integerglob,doubleglob,tieset,
+		    istartset,
 		    iendset,ialset,ntie,nmpc,ipompc,ikmpc,ilmpc,nodempc,coefmpc,
 		    ipobody,iponoel,inoel,ipkon,kon,ielprop,prop,ielmat,
-		    shcon,nshcon,rhcon,nrhcon,cocon,ncocon,ntmat_,lakon,set,nset));
+		    shcon,nshcon,rhcon,nrhcon,cocon,ncocon,ntmat_,lakon,set,
+		    nset));
 
   /* determining the structure of the df matrix */
 
@@ -480,10 +493,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   /* invert nactdof */
   
   NNEW(nactdofinv,ITG,mt**nk);
-  NNEW(nodorig,ITG,*nk);
-  FORTRAN(gennactdofinv,(nactdof,nactdofinv,nk,mi,nodorig,
-			 ipkon,lakon,kon,ne));
-  SFREE(nodorig);
+  FORTRAN(gennactdofinv3d,(nactdof,nactdofinv,nk,mi));
 
   /* reading the stiffness matrix, mass matrix, eigenfrequencies
      and eigenmodes */
@@ -685,7 +695,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 
       /* for mass and strain energy the stiffness matrix is not needed */
 	
-      strcpy(stiffmatrix,jobnamec);
+      strcpy2(stiffmatrix,jobnamec,132);
       strcat(stiffmatrix,".stm");
 	
       if((f1=fopen(stiffmatrix,"rb"))==NULL){
@@ -814,7 +824,7 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 		 islavsurf,ielprop,prop,energyini,energy,df,&distmin,
 		 ndesi,nodedesi,sti,nkon,jqs,irows,nactdofinv,
 		 &icoordinate,dxstiff,istartdesi,ialdesi,xdesi,
-		 &ieigenfrequency,fint,&ishapeenergy,typeboun);
+		 &ieigenfrequency,fint,&ishapeenergy,typeboun,physcon);
 	  
       iout=1;SFREE(v);
       
@@ -922,9 +932,9 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 		       cs,output,istartdesi,ialdesi,xdesi,orname,&icoordinate,
 		       &iev,d,z,au,ad,aub,adb,&cyclicsymmetry,&nzss,&nev,
 		       &ishapeenergy,fint,nlabel,&igreen,&nasym,iponoel,inoel,
-		       nodedesiinv,dgdxdy,nkon,iponod2dto3d,iponk2dto3d,ics,
+		       nodedesiinv,dgdxdy,nkon,nod2nd3rd,nod1st,ics,
 		       mcs,mpcend,&noddiam,ipobody,ibody,xbody,nbody,
-		       nobjectstart,dfm); 
+		       nobjectstart,dfm,physcon,ne2d); 
       iout=1;
 
       SFREE(v);SFREE(f);SFREE(xstiff);SFREE(fn);SFREE(df);SFREE(stx);
@@ -962,17 +972,12 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 		            
     SFREE(nnodes);SFREE(xinterpol);
 
-    /* Filtering of sensitivities */
+    /* Backward filtering of sensitivities 
+       --> variable transformation from x to s */
   
-    filtermain(co,dgdxglob,nobject,nk,nodedesi,ndesi,objectset,
-	       xdesi,&distmin);
+    filtermain_backward(co,dgdxglob,nobject,nk,nodedesi,ndesi,objectset,
+	       xdesi,&distmin,nobjectstart);
 
-    /* scaling the designnodes being in the transition between 
-       the designspace and the non-designspace */
-	 
-    transitionmain(co,dgdxglob,nobject,nk,nodedesi,ndesi,objectset,
-		   ipkon,kon,lakon,ipoface,nodface,nodedesiinv,nobjectstart);
-	  
     /* createinum is called in order to determine the nodes belonging
        to elements; this information is needed in frd_se */
 
@@ -985,24 +990,26 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
        to the 2 symmetry planes */
 
     if(*ne2d!=0){
-      FORTRAN(extrapol2dto3d,(dgdxglob,iponod2dto3d,ndesi,
+      FORTRAN(extrapol2dto3d,(dgdxglob,nod2nd3rd,ndesi,
 			      nodedesi,nobject,nk,xinterpol,nnodes,
 			      ipkon,lakon,kon,ne,iponoel,inoel));
     }
 	    
     //++*kode;
 
-    NNEW(senvector,double,3**nk);
-
     /* scaling the sensitivities: highest absolute value is scaled to 1 */
     
     for(iobject=*nobjectstart;iobject<*nobject;iobject++){
 
-       iscaleflag=2;
-       istart=iobject+1;
-       FORTRAN(scalesen,(dgdxglob,nobject,nk,nodedesi,ndesi,objectset,
-                         &iscaleflag,&istart));
-    	  
+      /* writing the objectives in the dat-file for the optimizer */
+	  	      
+      FORTRAN(writeobj,(objectset,&iobject,g0,dgdxglob,nobject,ndesi,
+                        nodedesi,nk,nobjectstart));
+
+      iscaleflag=1;
+      istart=iobject+1;
+      FORTRAN(scalesen,(dgdxglob,weightformgrad,nk,nodedesi,ndesi,objectset,
+			&iscaleflag,&istart,ne2d)); 	  
 
       /* storing the sensitivities in the frd-file for visualization 
 	 and for optimization */
@@ -1016,31 +1023,24 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	FORTRAN(map3dto1d2d,(&dgdxglob[2**nk*iobject],ipkon,inum,kon,lakon,
 			     &nfield,nk,ne,cflag,co,vold,&iforce,mi,ielprop,
 			     prop));
-      
       }
           
-      frd_sen(co,nk,stn,inum,nmethod,kode,filab,&ptime,nstate_,
-	      istep,
+      frd_sen(co,nk,stn,inum,nmethod,kode,filab,&ptime,nstate_,istep,
 	      &iinc,&mode,&noddiam,description,mi,&ngraph,ne,cs,set,nset,
-	      istartset,iendset,ialset,jobnamec,output,
-	      dgdxglob,&iobject,objectset,ntrans,inotr,trab,&idesvar,orname,
-	      &icoordinate,&inorm,&irand,&ishape);
+	      istartset,iendset,ialset,jobnamec,output,dgdxglob,&iobject,
+	      objectset,ntrans,inotr,trab,&idesvar,orname,&icoordinate,
+	      &inorm,&irand,&ishape,&ifeasd);
 
-      /* writing the objectives in the dat-file for the optimizer */
-	  	      
-      FORTRAN(writeobj,(objectset,&iobject,g0));
     }  
 	  
-    SFREE(inum);
-      
-    SFREE(dgdx);SFREE(senvector);
+    SFREE(inum);SFREE(dgdx);
             
   } // end loop over nev
 
   SFREE(iponoel);SFREE(inoel);SFREE(nodedesiinv);
   
   if(*ne2d!=0){
-    SFREE(iponod2dto3d);SFREE(iponk2dto3d);
+    SFREE(nod2nd3rd);SFREE(nod1st);
   }
   
   if(ieigenfrequency==1){
@@ -1073,6 +1073,8 @@ void sensi_coor(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 
   (*ttime)+=(*tper);
   *nobjectstart=*nobject;
- 
+
+  if(*nstate_!=0){SFREE(xstateini);}
+  
   return;
 }

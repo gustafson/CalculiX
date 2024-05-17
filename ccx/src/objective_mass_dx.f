@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
       character*8 lakon(*),lakonl
       character*80 amat,matname(*)
 !
-      integer kon(*),konl(26),nea,neb,mi(*),mint2d,nopes,nelcon(2,*),
+      integer kon(*),konl(20),nea,neb,mi(*),mint2d,nopes,nelcon(2,*),
      &  ielmat(mi(3),*),ielorien(mi(3),*),ntmat_,ipkon(*),iflag,null,
      &  mt,i,ii,j,k,jj,kk,indexe,nope,norien,ihyper,iactive,
      &  imat,mint3d,iorien,ilayer,nlayer,ki,kl,istartdesi(*),
@@ -38,14 +38,12 @@
      &  nobject,iobject,ialdesi(*),ij,node1,node2,
      &  ifaceqexp(2,20),ifacewexp(2,15) 
 !
-      real*8 co(3,*),shp(4,26),xl(3,26),vl(0:mi(2),26),
+      real*8 co(3,*),shp(4,20),xl(3,20),vl(0:mi(2),20),
      &  prop(*),rhcon(0:1,ntmat_,*),xs2(3,7),thickness,rho,xl2(3,8),
      &  xsj2(3),shp2(7,8),xi,et,ze,
      &  xsj,weight,gs(8,4),a,tlayer(4),dlayer(4),xlayer(mi(3),4),
      &  thicke(mi(3),*),distmin,xmassel,g0(*),xmass(*),xdesi(3,*),
      &  dgdx(ndesi,nobject)
-!
-!
 !
       include "gauss.f"
 !
@@ -219,14 +217,10 @@ c     Bernhardi start
             elseif(lakonl(4:5).eq.'20') then
 c     Bernhardi end
                nope=20
-            elseif(lakonl(4:4).eq.'2') then
-               nope=26
             elseif(lakonl(4:4).eq.'8') then
                nope=8
             elseif(lakonl(4:5).eq.'10') then
                nope=10
-            elseif(lakonl(4:5).eq.'14') then
-               nope=14
             elseif(lakonl(4:4).eq.'4') then
                nope=4
             elseif(lakonl(4:5).eq.'15') then
@@ -285,8 +279,7 @@ c     Bernhardi end
                   call beamintscheme(lakonl,mint3d,ielprop(i),prop,
      &                 null,xi,et,ze,weight)
                endif
-            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'26R').or.
-     &              (lakonl(4:6).eq.'20R')) then
+            elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
                if(lakonl(7:8).eq.'LC') then
                   mint3d=8*nlayer
                else
@@ -294,7 +287,7 @@ c     Bernhardi end
                endif
             elseif(lakonl(4:4).eq.'2') then
                mint3d=27
-            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14')) then
+            elseif(lakonl(4:5).eq.'10') then
                mint3d=4
             elseif(lakonl(4:4).eq.'4') then
                mint3d=1
@@ -309,7 +302,9 @@ c     Bernhardi end
             elseif(lakonl(1:1).eq.'E') then
                mint3d=0
             endif
-            
+!     
+!           coordinates of the nodes belonging to the element     
+!     
             do j=1,nope
                konl(j)=kon(indexe+j)
                do k=1,3
@@ -317,9 +312,7 @@ c     Bernhardi end
                enddo
             enddo
 !     
-!     computation of the objective function and the derivate 
-!     if the designnode belongs to the considered element
-!     if not, next element in loop will be taken 
+!           applying a "delta" to the coordinates of the design variable     
 !     
             if(idesvar.gt.0) then
                do j=1,3
@@ -396,8 +389,7 @@ c     Bernhardi end
                      call beamintscheme(lakonl,mint3d,ielprop(i),prop,
      &                    jj,xi,et,ze,weight)
                   endif
-               elseif((lakonl(4:4).eq.'8').or.
-     &                 (lakonl(4:6).eq.'20R').or.(lakonl(4:6).eq.'26R'))
+                elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R'))
      &                 then
                   if(lakonl(7:8).ne.'LC') then
                      xi=gauss3d2(1,jj)
@@ -449,8 +441,7 @@ c     Bernhardi end
                   et=gauss3d3(2,jj)
                   ze=gauss3d3(3,jj)
                   weight=weight3d3(jj)
-               elseif((lakonl(4:5).eq.'10').or.(lakonl(4:5).eq.'14'))
-     &               then
+               elseif(lakonl(4:5).eq.'10') then
                   xi=gauss3d5(1,jj)
                   et=gauss3d5(2,jj)
                   ze=gauss3d5(3,jj)
@@ -528,14 +519,10 @@ c     Bernhardi end
                   else
                      call shape20h(xi,et,ze,xl,xsj,shp,iflag)
                   endif
-c               elseif(nope.eq.26) then
-c                  call shape26h(xi,et,ze,xl,xsj,shp,iflag,konl)
                elseif(nope.eq.8) then
                   call shape8h(xi,et,ze,xl,xsj,shp,iflag)
                elseif(nope.eq.10) then
                   call shape10tet(xi,et,ze,xl,xsj,shp,iflag)
-c               elseif(nope.eq.14) then
-c                  call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
                elseif(nope.eq.4) then
                   call shape4tet(xi,et,ze,xl,xsj,shp,iflag)
                elseif(nope.eq.15) then
@@ -549,11 +536,6 @@ c                  call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
                rho=rhcon(1,1,imat)
                xmassel=xmassel+weight*xsj*rho
 !
-!               write(5,'(i5,3x,i5,3x,i5,3x,e14.8,3x,e14.7,3x,e14.8,
-!     &                    3x,e14.8,3x,e14.8,3x,e20.14)') 
-!     &                    idesvar,i,jj,weight,xsj,xi,et,ze,
-!     &                    xmassel
-!     
 !     end of loop over all integration points
             enddo
 !     
@@ -570,7 +552,6 @@ c                  call shape14tet(xi,et,ze,xl,xsj,shp,iflag,konl)
 !     end of loop over all elements in thread
 !     
          enddo
-!     
 !     
       return
       end

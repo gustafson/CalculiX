@@ -1,6 +1,6 @@
-!     
+!
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
      &     pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale,
      &     list,ilist,smscale,mscalmethod,enerscal,t0g,t1g,
      &     islavelinv,autloc,irowtloc,jqtloc,mortartrafoflag,
-     &     intscheme)
+     &     intscheme,physcon)
 !     
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
@@ -40,8 +40,8 @@
       character*8 lakon(*),lakonl
       character*80 amat,matname(*)
 !     
-      integer kon(*),konl(26),nea,neb,mi(*),mint2d,nopes,intscheme,
-     &     nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),
+      integer kon(*),konl(20),nea,neb,mi(*),mint2d,nopes,intscheme,
+     &     nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),nr,
      &     ielorien(mi(3),*),ntmat_,ipkon(*),ne0,iflag,null,kscale,
      &     istep,iinc,mt,ne,mattyp,ithermal(*),iprestr,i,j,k,m1,m2,jj,
      &     i1,m3,m4,kk,nener,indexe,nope,norien,iperturb(*),iout,
@@ -50,22 +50,22 @@
      &     nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_fn,
      &     calcul_cauchy,calcul_qa,nopered,mortar,jfaces,igauss,
      &     istrainfree,nlgeom_undo,list,ilist(*),m,j1,mscalmethod,
-     &     irowtloc(*),jqtloc(*),jqtloc1(21),irowtloc1(96),
+     &     irowtloc(*),jqtloc(*),jqtloc1(21),irowtloc1(96),icmdcpy,
      &     islavelinv(*),node1,node2,j2,ii,mortartrafoflag
 !     
-      real*8 co(3,*),v(0:mi(2),*),shp(4,26),stiini(6,mi(1),*),
-     &     stx(6,mi(1),*),xl(3,26),vl(0:mi(2),26),stre(6),prop(*),
+      real*8 co(3,*),v(0:mi(2),*),shp(4,20),stiini(6,mi(1),*),
+     &     stx(6,mi(1),*),xl(3,20),vl(0:mi(2),20),stre(6),prop(*),
      &     elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xs2(3,7),
      &     alcon(0:6,ntmat_,*),vini(0:mi(2),*),thickness,
      &     alzero(*),orab(7,*),elas(21),rho,fn(0:mi(2),*),
-     &     fnl(3,10),skl(3,3),beta(6),q(0:mi(2),26),xl2(3,8),
+     &     fnl(3,10),skl(3,3),beta(6),q(0:mi(2),20),xl2(3,8),
      &     vkl(0:3,3),t0(*),t1(*),prestr(6,mi(1),*),eme(6,mi(1),*),
      &     ckl(3,3),vold(0:mi(2),*),eloc(6),veold(0:mi(2),*),
-     &     springarea(2,*),elconloc(21),eth(6),xkl(3,3),
-     &     voldl(0:mi(2),26),xikl(3,3),ener(mi(1),*),
-     &     emec(6),eei(6,mi(1),*),enerini(mi(1),*),
-     &     emec0(6),vel(1:3,26),veoldl(0:mi(2),26),xsj2(3),shp2(7,8),
-     &     e,un,al,um,am1,xi,et,ze,tt,
+     &     springarea(2,*),elconloc(ncmat_),eth(6),xkl(3,3),
+     &     voldl(0:mi(2),20),xikl(3,3),ener(2,mi(1),*),
+     &     emec(6),eei(6,mi(1),*),enerini(2,mi(1),*),physcon(*),
+     &     emec0(6),vel(1:3,20),veoldl(0:mi(2),20),xsj2(3),shp2(7,8),
+     &     e,un,al,um,am1,xi,et,ze,tt,senergy,venergy,
      &     xsj,qa(*),vj,t0l,t1l,dtime,weight,pgauss(3),vij,time,ttime,
      &     plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &     xstiff(27,mi(1),*),xstate(nstate_,mi(1),*),plconloc(802),
@@ -74,10 +74,10 @@
      &     thicke(mi(3),*),emeini(6,mi(1),*),clearini(3,9,*),
      &     pslavsurf(3,*),pmastsurf(6,*),smscale(*),sum1,sum2,
      &     scal,enerscal,elineng(6),t0g(2,*),t1g(2,*),autloc(*),
-     &     autloc1(96),shptil(4,26)
+     &     autloc1(96),shptil(4,20)
 !     
       include "gauss.f"
-!     
+!
       iflag=3
       null=0
 !     
@@ -368,7 +368,6 @@ c     Bernhardi end
 !     
 !     calculating the forces for the contact elements
 !     
-c     write(*,*) 'resultsmech ',i,lakonl,mint3d
         if(mint3d.eq.0) then
 !     
 !     "normal" spring and dashpot elements
@@ -394,26 +393,50 @@ c     write(*,*) 'resultsmech ',i,lakonl,mint3d
      &           (lakonl(7:7).eq.'2').or.((mortar.eq.0).and.
      &           ((nmethod.ne.1).or.(iperturb(1).ge.2).or.
      &           (iout.ne.-1)))) then
+!
+!     nr is the element number in the assumption that all
+!     slave nodes lead to contact, i.e. that in each slave node a
+!     spring element was generated in gencontelem_n2f.f
+!
+              if(nener.eq.1) then
+                if(lakonl(7:7).ne.'C') then
+                  nr=i
+                else
+                  nr=ne0+konl(nope+1)
+                endif
+c                venergy=enerini(2,1,nr)
+                venergy=0.d0
+              endif
               call springforc_n2f(xl,konl,vl,imat,elcon,nelcon,elas,
      &             fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
-     &             plicon,nplicon,npmat_,ener(1,i),nener,
+     &             plicon,nplicon,npmat_,senergy,nener,
      &             stx(1,1,i),mi,springarea(1,konl(nope+1)),nmethod,
      &             ne0,nstate_,xstateini,xstate,reltime,
-     &             ielas,ener(1,i+ne),ielorien,orab,norien,i,
+     &             ielas,venergy,ielorien,orab,norien,i,
      &             smscale,mscalmethod)
+              if(nener.eq.1) then
+                ener(1,1,nr)=senergy
+                ener(2,1,nr)=venergy
+              endif
             elseif((mortar.eq.1).and.
      &             ((nmethod.ne.1).or.(iperturb(1).ge.2).or.
      &             (iout.ne.-1))) then
               jfaces=kon(indexe+nope+2)
               igauss=kon(indexe+nope+1)
+c              if(nener.eq.1) venergy=enerini(2,1,ne0+igauss)
+              if(nener.eq.1) venergy=0.d0
               call springforc_f2f(xl,vl,imat,elcon,nelcon,elas,
      &             fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
-     &             plicon,nplicon,npmat_,ener(1,i),nener,
+     &             plicon,nplicon,npmat_,senergy,nener,
      &             stx(1,1,i),mi,springarea(1,igauss),nmethod,
      &             ne0,nstate_,xstateini,xstate,reltime,
      &             ielas,jfaces,igauss,pslavsurf,pmastsurf,
-     &             clearini,ener(1,i+ne),kscale,konl,iout,i,
+     &             clearini,venergy,kscale,konl,iout,i,
      &             smscale,mscalmethod)
+              if(nener.eq.1) then
+                ener(1,1,ne0+igauss)=senergy
+                ener(2,1,ne0+igauss)=venergy
+              endif
             endif
 !     
 !     next lines are not executed in linstatic.c before the
@@ -595,6 +618,11 @@ c     write(*,*) 'resultsmech ',i,lakonl,mint3d
 c     Bernhardi start
           if(lakonl(1:5).eq.'C3D8R') then
             call shape8hr(xl,xsj,shp,gs,a)
+            icmdcpy=icmd
+!     
+!           tangent stiffness ds/de is needed in hgforce.f    
+!     
+            icmd=0
           elseif(lakonl(1:5).eq.'C3D8I') then
             call shape8hu(xi,et,ze,xl,xsj,shp,iflag)
           elseif(nope.eq.20) then
@@ -730,28 +758,28 @@ c     Bernhardi end
             vj=xkl(1,1)*(xkl(2,2)*xkl(3,3)-xkl(2,3)*xkl(3,2))
      &           -xkl(1,2)*(xkl(2,1)*xkl(3,3)-xkl(2,3)*xkl(3,1))
      &           +xkl(1,3)*(xkl(2,1)*xkl(3,2)-xkl(2,2)*xkl(3,1))
-!     
-!     inversion of the deformation gradient (only for
-!     deformation plasticity)
-!     
-            if(kode.eq.-50) then
-!     
-              ckl(1,1)=(xkl(2,2)*xkl(3,3)-xkl(2,3)*xkl(3,2))/vj
-              ckl(2,2)=(xkl(1,1)*xkl(3,3)-xkl(1,3)*xkl(3,1))/vj
-              ckl(3,3)=(xkl(1,1)*xkl(2,2)-xkl(1,2)*xkl(2,1))/vj
-              ckl(1,2)=(xkl(1,3)*xkl(3,2)-xkl(1,2)*xkl(3,3))/vj
-              ckl(1,3)=(xkl(1,2)*xkl(2,3)-xkl(2,2)*xkl(1,3))/vj
-              ckl(2,3)=(xkl(2,1)*xkl(1,3)-xkl(1,1)*xkl(2,3))/vj
-              ckl(2,1)=(xkl(3,1)*xkl(2,3)-xkl(2,1)*xkl(3,3))/vj
-              ckl(3,1)=(xkl(2,1)*xkl(3,2)-xkl(2,2)*xkl(3,1))/vj
-              ckl(3,2)=(xkl(3,1)*xkl(1,2)-xkl(1,1)*xkl(3,2))/vj
-!     
-!     converting the Lagrangian strain into Eulerian
-!     strain (only for deformation plasticity)
-!     
-              cauchy=0
-              call str2mat(eloc,ckl,vj,cauchy)
-            endif
+c!     
+c!     inversion of the deformation gradient (only for
+c!     deformation plasticity)
+c!     
+c            if(kode.eq.-50) then
+c!     
+c              ckl(1,1)=(xkl(2,2)*xkl(3,3)-xkl(2,3)*xkl(3,2))/vj
+c              ckl(2,2)=(xkl(1,1)*xkl(3,3)-xkl(1,3)*xkl(3,1))/vj
+c              ckl(3,3)=(xkl(1,1)*xkl(2,2)-xkl(1,2)*xkl(2,1))/vj
+c              ckl(1,2)=(xkl(1,3)*xkl(3,2)-xkl(1,2)*xkl(3,3))/vj
+c              ckl(1,3)=(xkl(1,2)*xkl(2,3)-xkl(2,2)*xkl(1,3))/vj
+c              ckl(2,3)=(xkl(2,1)*xkl(1,3)-xkl(1,1)*xkl(2,3))/vj
+c              ckl(2,1)=(xkl(3,1)*xkl(2,3)-xkl(2,1)*xkl(3,3))/vj
+c              ckl(3,1)=(xkl(2,1)*xkl(3,2)-xkl(2,2)*xkl(3,1))/vj
+c              ckl(3,2)=(xkl(3,1)*xkl(1,2)-xkl(1,1)*xkl(3,2))/vj
+c!     
+c!     converting the Lagrangian strain into Eulerian
+c!     strain (only for deformation plasticity)
+c!     
+c              cauchy=0
+c              call str2mat(eloc,ckl,vj,cauchy)
+c            endif
 !     
           endif
 !     
@@ -903,9 +931,6 @@ c     Bernhardi end
 !     
           if(ithermal(1).ne.0) then
             call calcmechstrain(vkl,vokl,emec,eth,iperturb)
-c     do m1=1,6
-c     emec(m1)=eloc(m1)-eth(m1)
-c     enddo
           else
             do m1=1,6
               emec(m1)=eloc(m1)
@@ -942,7 +967,8 @@ c     enddo
      &         plconloc,xstate,xstateini,ielas,
      &         amat,t1l,dtime,time,ttime,i,jj,nstate_,mi(1),
      &         iorien,pgauss,orab,eloc,mattyp,qa(3),istep,iinc,
-     &         ipkon,nmethod,iperturb,qa(4),nlgeom_undo)
+     &         ipkon,nmethod,iperturb,qa(4),nlgeom_undo,physcon,
+     &         ncmat_)
 !     
           if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
      &         (nmethod.ne.5).and.(icmd.ne.3)) then
@@ -1019,13 +1045,23 @@ c     enddo
 !     be updated at the end of each increment (also if no output
 !     is requested), since it is input to the umat routine
 !     
+c          if((iout.ge.0).or.(iout.eq.-2).or.(kode.le.-100).or.
           if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100).or.
+!
+!              next line was inserted since the extra call
+!              of results at the end of an increment is not 
+!              executed if no printing information is needed
+!              for that increment (due to the FREQUENCY parameter)          
+!              07.07.2023
+!
+     &         ((iout.eq.0).and.(nener.eq.1)).or.
      &         ((nmethod.eq.4).and.
      &         ((iperturb(1).gt.1).and.(nlgeom_undo.eq.0)).and.
      &         (ithermal(1).le.1))) then
 !     
             if(nener.eq.1) then
-              ener(jj,i)=enerini(jj,i)+
+!     sigma.d(epsilon)=(sigma_ini+sigma)*(epsilon-epsilon_ini)/2
+              ener(1,jj,i)=enerini(1,jj,i)+
      &             ((emec(1)-emeini(1,jj,i))*
      &             (stre(1)+stiini(1,jj,i))+
      &             (emec(2)-emeini(2,jj,i))*
@@ -1044,7 +1080,6 @@ c     enddo
             eme(6,jj,i)=emec(6)
           endif
 !     
-c          if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
           if(iout.gt.0) then
 !     
             eei(1,jj,i)=eloc(1)
@@ -1067,7 +1102,7 @@ c          if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
                 vel(m1,1)=vel(m1,1)+shp(4,i1)*veoldl(m1,i1)
               enddo
             enddo
-            ener(jj,i+ne)=rho*(vel(1,1)*vel(1,1)+
+            ener(2,jj,i)=rho*(vel(1,1)*vel(1,1)+
      &           vel(2,1)*vel(2,1)+ vel(3,1)*vel(3,1))/2.d0
           endif
 !     
@@ -1156,6 +1191,7 @@ c          if((iout.gt.0).or.(iout.eq.-2).or.(kode.le.-100)) then
 c     Bernhardi start
             if(lakonl(1:5).eq.'C3D8R') then
               call hgforce(fn,elas,a,gs,vl,mi,konl)
+              icmd=icmdcpy
             endif
 c     Bernhardi end
           endif
@@ -1248,5 +1284,6 @@ c     Bernhardi end
 !     
       enddo
 !     
+c          if(j.ne.-1) stop
       return
       end

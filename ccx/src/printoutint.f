@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -39,7 +39,7 @@
      &  null,ielprop(*),nelel,ithermal(*)
 !
       real*8 stx(6,mi(1),*),eei(6,mi(1),*),xstate(nstate_,mi(1),*),
-     &  ener(mi(1),*),qfx(3,mi(1),*),xi,et,ze,xl(3,20),xsj,shp(4,20),
+     &  ener(2,mi(1),*),qfx(3,mi(1),*),xi,et,ze,xl(3,20),xsj,shp(4,20),
      &  coords(3,27),weight,orab(7,*),co(3,*),a(3,3),b(3,3),c(3,3),
      &  qfxl(3),thicke(mi(3),*),xsj2(3),shp2(7,8),xl2(3,8),xs2(3,7),
      &  thickness,tlayer(4),dlayer(4),xlayer(mi(3),4),eme(6,mi(1),*),
@@ -120,7 +120,6 @@
          do k=1,4
             dlayer(k)=0.d0
          enddo
-!
 !
       elseif(lakon(nelel)(4:5).eq.'15') then
 !     
@@ -552,7 +551,7 @@ c     &   (lakon(nelel)(1:1).eq.'F')) then
       elseif(prlab(ii)(1:4).eq.'ENER') then
          do j=1,mint3d
             write(5,'(i10,1x,i3,1p,6(1x,e13.6))') nelem,j,
-     &           ener(j,nelel)
+     &           ener(1,j,nelel)
          enddo
       elseif(prlab(ii)(1:4).eq.'SDV ') then
          do j=1,mint3d

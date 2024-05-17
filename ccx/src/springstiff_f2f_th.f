@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,15 +38,13 @@
       real*8 xl(3,19),pproj(3),shp2m(7,9),ak(5),
      &  al(3),s(60,60),voldl(0:mi(2),19),pl(3,19),xn(3),
      &  alpha,beta,elcon(0:ncmat_,ntmat_,*),xm(3),
-     &  xi,et,dpresdoverlap,xs2(3,7),elconloc(21),plconloc(802),
+     &  xi,et,dpresdoverlap,xs2(3,7),elconloc(*),plconloc(802),
      &  xk,temp(2),xiso(20),yiso(20),plicon(0:2*npmat_,ntmat_,*),d(2),
      &  springarea(2),overlap,clear,timeend(2),reltime,
      &  xsj2s(3),xs2s(3,7),shp2s(7,9),weight,pslavsurf(3,*),
      &  pmastsurf(6,*),clearini(3,9,*),t1ls,t1lm,tmean,predef(2),
      &  plkcon(0:2*npmat_,ntmat_,*),pressure,dtemp,flowm(2),
      &  constant,coords(3),conductance
-!
-!
 !
       iflag=1
 !     
@@ -83,16 +81,12 @@
       et=pslavsurf(2,igauss)
       weight=pslavsurf(3,igauss)
 !
-c      if(nopes.eq.9) then
-c          call shape9q(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
       if(nopes.eq.8) then
           call shape8q(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
       elseif(nopes.eq.4) then
           call shape4q(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
       elseif(nopes.eq.6) then
           call shape6tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
-c      elseif(nopes.eq.7) then
-c          call shape7tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
       else
           call shape3tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
       endif
@@ -115,16 +109,12 @@ c          call shape7tri(xi,et,pl(1,nopem+1),xsj2s,xs2s,shp2s,iflag)
 !
 !     determining the jacobian vector on the surface 
 !
-c      if(nopem.eq.9) then
-c         call shape9q(xi,et,pl,xm,xs2,shp2m,iflag)
       if(nopem.eq.8) then
          call shape8q(xi,et,pl,xm,xs2,shp2m,iflag)
       elseif(nopem.eq.4) then
          call shape4q(xi,et,pl,xm,xs2,shp2m,iflag)
       elseif(nopem.eq.6) then
          call shape6tri(xi,et,pl,xm,xs2,shp2m,iflag)
-c      elseif(nopem.eq.7) then
-c         call shape7tri(xi,et,pl,xm,xs2,shp2m,iflag)
       else
          call shape3tri(xi,et,pl,xm,xs2,shp2m,iflag)
       endif

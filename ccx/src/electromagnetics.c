@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -67,7 +67,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 		      ITG *nplkcon,
 		      double **xstatep,ITG *npmat_,ITG *istep,double *ttime,
 		      char *matname,double *qaold,ITG *mi,
-		      ITG *isolver,ITG *ncmat_,ITG *nstate_,ITG *iumat,
+		      ITG *isolver,ITG *ncmat_,ITG *nstate_,
 		      double *cs,ITG *mcs,ITG *nkon,double **enerp,ITG *mpcinfo,
 		      char *output,
 		      double *shcon,ITG *nshcon,double *cocon,ITG *ncocon,
@@ -468,7 +468,8 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 	     neq,nzs,&nmethodact,&f,&fext,&b,&aux2,&fini,&fextini,
 	     &adb,&aub,&ithermalact,iperturb,mass,mi,iexpl,&mortar,
              typeboun,&cv,&cvini,&iit,network,itiefac,&ne0,&nkon0,
-	     nintpoint,islavsurf,pmastsurf,tieset,ntie,&num_cpus);
+	     nintpoint,islavsurf,pmastsurf,tieset,ntie,&num_cpus,
+	     ielmat,matname);
   
   /* invert nactdof */
   
@@ -506,7 +507,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 	  islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 	  ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 	  labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	  &intscheme);
+	  &intscheme,physcon);
   
   SFREE(fn);SFREE(inum);SFREE(v);
   
@@ -636,7 +637,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 	  islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 	  ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 	  labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	  &intscheme);
+	  &intscheme,physcon);
   
   //  memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
   

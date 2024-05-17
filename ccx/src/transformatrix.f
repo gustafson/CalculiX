@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -21,13 +21,15 @@
 !     determines the transformation matrix a in a point p for a carthesian 
 !     (xab(7)>0) or cylindrical transformation (xab(7)<0)
 !
+!     the matrix a(i,j) corresponds to matrix T, p. 100 in 
+!     Dhondt, G., The Finite Element Method for Three-Dimensional
+!                 Thermomechanical Applications, Wiley (2004).
+!
       implicit none
 !
       integer j
 !
       real*8 xab(7),p(3),a(3,3),e1(3),e2(3),e3(3),dd
-!
-!
 !
       if(xab(7).gt.0) then
 !

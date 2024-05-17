@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -227,7 +227,8 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	RENEW(kon,ITG,*nkon+11**nslavs);
 	NNEW(springarea,double,2**nslavs);
 	if(*nener==1){
-	  RENEW(ener,double,mi[0]*(*ne+*nslavs)*2);
+	  RENEW(ener,double,2*mi[0]*(*ne+*nslavs));
+	  DMEMSET(ener,0,2*mi[0]*(*ne+*nslavs),0.);
 	}
 	RENEW(ipkon,ITG,*ne+*nslavs);
 	RENEW(lakon,char,8*(*ne+*nslavs));
@@ -273,7 +274,8 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	RENEW(pmastsurf,double,6**nintpoint);
 	      
 	if(*nener==1){
-	  RENEW(ener,double,mi[0]*(*ne+*nintpoint)*2);
+	  RENEW(ener,double,2*mi[0]*(*ne+*nintpoint));
+	  DMEMSET(ener,0,2*mi[0]*(*ne+*nslavs),0.);
 	}
 	RENEW(ipkon,ITG,*ne+*nintpoint);
 	RENEW(lakon,char,8*(*ne+*nintpoint));
@@ -349,7 +351,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		   labmpc,nk,&memmpc_,&icascade,&maxlenmpc,
 		   kon,ipkon,lakon,ne,nactdof,icol,jq,&irow,isolver,
 		   neq,nzs,nmethod,ithermal,iperturb,mass,mi,ics,cs,
-		   mcs,mortar,typeboun,&iit,&network,iexpl);
+		   mcs,mortar,typeboun,&iit,&network,iexpl,ielmat,matname);
     }
   }
 
@@ -388,7 +390,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   NNEW(eei,double,6*mi[0]**ne);
   NNEW(stiini,double,6*mi[0]*ne0);
   NNEW(emeini,double,6*mi[0]*ne0);
-  if(*nener==1) NNEW(enerini,double,mi[0]*ne0);
+  if(*nener==1) NNEW(enerini,double,2*mi[0]*ne0);
     
   if(*iperturb==0){
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
@@ -413,7 +415,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 	    ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	    &intscheme);
+	    &intscheme,physcon);
   }else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -437,7 +439,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 	    ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	    &intscheme);
+	    &intscheme,physcon);
   }
   
   SFREE(eei);SFREE(stiini);SFREE(emeini);SFREE(vini);
@@ -596,7 +598,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  ntrans,inotr,trab,co,nk,nactdof,jobnamec,mi,ipkon,
                   lakon,kon,ne,mei,nboun,nmpc,cs,mcs,ithermal,nmethod);
 
-    strcpy(fneig,jobnamec);
+    strcpy2(fneig,jobnamec,132);
     strcat(fneig,".frd");
     if((f1=fopen(fneig,"ab"))==NULL){
       printf(" *ERROR in frd: cannot open frd file for writing...");
@@ -653,12 +655,40 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     NNEW(z,double,(long long)ncv*neq[1]);
     NNEW(workd,double,3*neq[1]);
 
+    /* for the limits: look for "ierr = -3" in dsaupd.f and dnaupd.f */
+    
     if(nasym==1){
+
+      /* nev+2 <= ncv <= n */
+      
+      if(nev+2>neq[1]){
+	printf(" *ERROR in arpack: too many eigenvalues requested\n");
+	printf("                   number is reduced to: %d\n\n",neq[1]-2);
+	nev=neq[1]-2;
+      }
+      if(ncv<nev+2){
+	ncv=nev+2;
+      }else{
+	if(ncv>neq[1]){ncv=neq[1];}
+      }
       lworkl=3*ncv*(2+ncv);
       NNEW(workl,double,lworkl);
       FORTRAN(dnaupd,(&ido,bmat,&neq[1],which,&nev,&tol,resid,&ncv,z,&ldz,iparam,ipntr,workd,
 		      workl,&lworkl,&info));
     }else{
+
+      /* nev+1 <= ncv <= n */
+      
+      if(nev+1>neq[1]){
+	printf(" *ERROR in arpack: too many eigenvalues requested\n");
+	printf("                   number is reduced to: %d\n\n",neq[1]-1);
+	nev=neq[1]-1;
+      }
+      if(ncv<nev+1){
+	ncv=nev+1;
+      }else{
+	if(ncv>neq[1]){ncv=neq[1];}
+      }
       lworkl=ncv*(8+ncv);
       NNEW(workl,double,lworkl);
       FORTRAN(dsaupd,(&ido,bmat,&neq[1],which,&nev,&tol,resid,&ncv,z,&ldz,iparam,ipntr,workd,
@@ -876,7 +906,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   
   if(mei[3]==1){
     
-    strcpy(fneig,jobnamec);
+    strcpy2(fneig,jobnamec,132);
     strcat(fneig,".eig");
       
     if((f1=fopen(fneig,"wb"))==NULL){
@@ -1080,7 +1110,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     NNEW(vini,double,mt**nk);
     NNEW(stiini,double,6*mi[0]*ne0);
     NNEW(emeini,double,6*mi[0]*ne0);
-    if(*nener==1) NNEW(enerini,double,mi[0]*ne0);
+    if(*nener==1) NNEW(enerini,double,2*mi[0]*ne0);
 
     DMEMSET(v,0,mt**nk,0.);
     if(*iperturb==0){
@@ -1108,7 +1138,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 	      ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 	      labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	      &intscheme);}
+	      &intscheme,physcon);}
     else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
 	      stx,elcon,
@@ -1133,7 +1163,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	      islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 	      ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 	      labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	      &intscheme);
+	      &intscheme,physcon);
     }
     SFREE(eei);SFREE(stiini);SFREE(emeini);SFREE(vini);
     if(*nener==1) SFREE(enerini);
@@ -1231,7 +1261,7 @@ void arpack(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     if(ncont!=0){
       *ne=ne0;
       if(*nener==1){
-	RENEW(ener,double,mi[0]**ne*2);
+	if(*mortar==1)RENEW(ener,double,mi[0]**ne*2);
       }
       RENEW(ipkon,ITG,*ne);
       RENEW(lakon,char,8**ne);

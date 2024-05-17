@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -39,12 +39,13 @@ void stress_sen_dx(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	ITG *kscale,ITG *iobject,char *objectset,double *g0,double *dgdx,
 	ITG *nea,ITG *neb,ITG *nasym,double *distmin,ITG*idesvar,double *dstx,
 	ITG *ialdesi,ITG *ialeneigh,ITG *neaneigh,ITG *nebneigh,ITG *ialnneigh,
-	ITG *naneigh,ITG *nbneigh,double *stn,double *expks,ITG *ndesi){   
+	ITG *naneigh,ITG *nbneigh,double *stn,double *expks,ITG *ndesi,
+	double *physcon){   
                   
   ITG symmetryflag=0,mt=mi[1]+1,i,iactpos,calcul_fn,list,
     calcul_qa,calcul_cauchy,ikin=0,nal,iout=2,icmd=3,nener=0,
     *inum=NULL,nprintl=0,unperturbflag,nfield,ndim,iorienglob,
-    force,mscalmethod=0,*islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,
+    iforce,mscalmethod=0,*islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,
     mortartrafoflag=0,intscheme=0;
 
   double *fn=NULL,*eei=NULL,qa[4]={0.,0.,-1.,0.},*xstiff=NULL,*ener=NULL,    
@@ -84,20 +85,20 @@ void stress_sen_dx(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 		       pslavsurf,pmastsurf,mortar,clearini,nea,neb,ielprop,
 		       prop,kscale,&list,ialdesi,smscale,&mscalmethod,
 		       &enerscal,t0g,t1g,islavelinv,autloc,irowtloc,jqtloc,
-		       &mortartrafoflag,&intscheme));
+		       &mortartrafoflag,&intscheme,physcon));
 
   /* extrapolating the stresses */
 
   nfield=6;
   ndim=6;
   iorienglob=0;
-  force=0;
+  iforce=0;
   //  strcpy1(&cflag[0],&filab[2962],1);
   strcpy1(&cflag[0],&filab[178],1);
   
   FORTRAN(extrapolate_se,(dstx,dstn,ipkon,inum,kon,lakon,
 			  &nfield,nk,ne,mi,&ndim,orab,ielorien,co,&iorienglob,
-			  cflag,vold,&force,ielmat,thicke,ielprop,prop,
+			  cflag,vold,&iforce,ielmat,thicke,ielprop,prop,
 			  ialeneigh,
 			  neaneigh,nebneigh,ialnneigh,naneigh,nbneigh));
 
@@ -109,6 +110,5 @@ void stress_sen_dx(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   dgdx[(*idesvar-1)+(*iobject-1)**ndesi]=dksper/(*distmin**expks);
       
   SFREE(fn);SFREE(eei);SFREE(eme);SFREE(inum);
-  SFREE(ener);SFREE(xstiff);   
 
 }

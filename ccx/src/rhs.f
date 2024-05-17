@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,12 +44,12 @@
      &     nrhcon(*),nalcon(2,*),ielmat(mi(3),*),ielorien(mi(3),*),
      &     ipkon(*),ielprop(*),nstate_,idummy,rhsi,ntrans,inotr(2,*),
      &     nk,ne,nmpc,nforc,nload,neq,nmethod,nom,m,idm,idir,itr,
-     &     ithermal(*),iprestr,iperturb(*),i,j,k,idist,jj,node,
+     &     ithermal(*),iprestr,iperturb(*),i,j,k,idist,jj,node,kk,
      &     id,ist,index,jdof1,jdof,node1,ntmat_,indexe,nope,norien,
-     &     iexpl,idof1,iinc,istep,icalccg,nplicon(0:ntmat_,*),
+     &     iexpl,idof1,iinc,istep,icalccg,nplicon(0:ntmat_,*),node2,
      &     nplkcon(0:ntmat_,*),npmat_,ikactmech(*),nactmech,nea,neb
 !     
-      real*8 co(3,*),coefmpc(*),xforc(*),xload(2,*),p1(3,2),
+      real*8 co(3,*),coefmpc(*),xforc(*),xload(2,*),p1(3,2),dd,
      &     p2(3,2),fext(*),bodyf(3),elcon(0:21,ntmat_,*),a(3,3),
      &     rhcon(0:1,ntmat_,*),xloadold(2,*),reltime,prop(*),
      &     alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*),
@@ -115,7 +115,7 @@
             do
               j=ipobody(1,index)
               if(j.eq.0) exit
-              if(ibody(1,j).eq.1) then
+              if(abs(ibody(1,j)).eq.1) then
                 nom=nom+1
                 if(nom.gt.2) then
                   write(*,*)
@@ -125,12 +125,14 @@
                   call exit(201)
                 endif
                 om(nom)=xbody(1,j)
-                p1(1,nom)=xbody(2,j)
-                p1(2,nom)=xbody(3,j)
-                p1(3,nom)=xbody(4,j)
-                p2(1,nom)=xbody(5,j)
-                p2(2,nom)=xbody(6,j)
-                p2(3,nom)=xbody(7,j)
+                if(ibody(1,j).eq.1) then
+                  p1(1,nom)=xbody(2,j)
+                  p1(2,nom)=xbody(3,j)
+                  p1(3,nom)=xbody(4,j)
+                  p2(1,nom)=xbody(5,j)
+                  p2(2,nom)=xbody(6,j)
+                  p2(3,nom)=xbody(7,j)
+                endif
 !     
 !     assigning gravity forces
 !     

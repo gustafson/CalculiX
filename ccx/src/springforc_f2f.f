@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -49,8 +49,6 @@
       include "gauss.f"
 !
       iflag=2
-!
-      if(nener.eq.1) venergy=0.d0
 !     
 !     # of master nodes
 !
@@ -183,7 +181,7 @@
             elas(1)=dexp(-beta*clear+dlog(alpha))
          endif
          if(nener.eq.1) then
-            senergy=elas(1)/beta;
+            senergy=elas(1)/beta
          endif
       elseif((int(elcon(3,1,imat)).eq.2).or.
      &       (int(elcon(3,1,imat)).eq.4)) then
@@ -199,7 +197,7 @@
          endif
 !         
          if(nener.eq.1) then
-            senergy=-elas(1)*clear/2.d0;
+            senergy=-elas(1)*clear/2.d0
          endif
       elseif(int(elcon(3,1,imat)).eq.3) then
 !     
@@ -219,7 +217,7 @@
          if(id.eq.0) then
             pres=yiso(1)
             if(nener.eq.1) then
-               senergy=yiso(1)*overlap;
+               senergy=yiso(1)*overlap
             endif
          elseif(id.eq.niso) then
             pres=yiso(niso)
@@ -389,7 +387,7 @@ c            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
 !
 !              shear elastic energy
 !
-               if(nener.eq.1) senergy=senergy+dftrial*dte
+               if(nener.eq.1) senergy=senergy+dftrial*dte/2.d0
             else
 !     
 !     slip
@@ -410,8 +408,8 @@ c            dftrial=dsqrt(ftrial(1)**2+ftrial(2)**2+ftrial(3)**2)
 !              shear elastic and viscous energy
 !
                if(nener.eq.1) then
-                  senergy=senergy+dfshear*dfshear/xk
-                  venergy=dg*dfshear
+                  senergy=senergy+dfshear*dfshear/(xk*2.d0)
+                  venergy=venergy+dg*dfshear
                endif
 !
             endif

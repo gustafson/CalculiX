@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -46,6 +46,11 @@
 !     
         nmax=max(1,int((iendfront(i)-istartfront(i)+1)/1.1d0))
         if(nmax.le.2) cycle
+!     
+!       next line introduced on 27th of Nov 2022 to limit the radius 
+!       of influence     
+!     
+        nmax=min(nmax,5)
 !     
         if(isubsurffront(i).eq.1) then
           istart=istartfront(i)

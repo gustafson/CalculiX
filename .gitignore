@@ -1,0 +1,8 @@
+*.o
+*.a
+*~
+ccx/Doxygen
+ccx/html
+doc
+*bz2
+examples

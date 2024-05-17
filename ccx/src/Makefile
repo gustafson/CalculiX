@@ -30,8 +30,8 @@ FC=gfortran
 ## LDFLAGS += -g
 ## CFLAGS=-march=native -O2 -Wall ## conservative
 ## FFLAGS=-march=native -O2 -Wall ## conservative
-CFLAGS=-march=native -O3 -Wall ## -fcommon ## -flto ## aggressive -fprofile-generate -fprofile-use
-FFLAGS=-march=native -O3 -Wall -fallow-argument-mismatch ## -flto ## aggressive -fprofile-generate -fprofile-use
+CFLAGS=-march=native -O3 ## -Wall ## -fcommon ## -flto ## aggressive -fprofile-generate -fprofile-use
+FFLAGS=-march=native -O3 ## -Wall -fallow-argument-mismatch ## -flto ## aggressive -fprofile-generate -fprofile-use
 
 ## Integer8.  Note at least Arpack and Pardiso need to be compiled for
 ## Integer8 as well.  Spooles does not appear to be int8 according to Guido
@@ -95,14 +95,10 @@ LDFLAGS += `pkg-config --libs blas$(INTEXT)`
 ## PARDISO 
 ## CFLAGS  += -DPARDISO
 ## LDFLAGS += -L/home/pete/local/lib64/ -lpardiso -lgfortran -lpthread -lm -fopenmp
-## CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
-## LDFLAGS += `pkg-config --libs pardiso`
-CFLAGS += -m64 -I/usr/include/mkl -DPARDISO
-FFLAGS += -m64 -I/usr/include/mkl 
-## 64bit ints gfortran openmp libgomp on gentoo
-LDFLAGS += -Wl,--no-as-needed -lmkl_gf_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
-## 32bit ints gfortran openmp libgomp
-## LDFLAGS += -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+CFLAGS  += `pkg-config --cflags mkl-dynamic-lp64-tbb` -DPARDISO -I/opt/intel/oneapi/mkl/2023.0.0/include/
+LDFLAGS += `pkg-config --libs mkl-dynamic-lp64-tbb` -L/opt/intel/oneapi/mkl/2023.0.0/lib/intel64/
+## 32bit ints would be: mkl-dynamic-lp64-tbb
+## 64bit ints would be: mkl-dynamic-ilp64-tbb
 
 ################################################################################
 ################################################################################
@@ -182,7 +178,7 @@ LDFLAGS += `pkg-config --libs exodusii`
 
 include Makefile.inc
 
-SCCXMAIN = ccx_2.20.c
+SCCXMAIN = ccx_2.21.c
 
 ## Define all the object file rules to identify dependencies
 OCCXCU = $(SCCXCU:.cu=.o)
@@ -193,11 +189,11 @@ OCCXMAIN = $(SCCXMAIN:.c=.o)
 ## Link to math and standard c
 CFLAGS += -lm -lc
 
-ccx_2.20: $(OCCXMAIN) ccx_2.20.a
+ccx_2.21: $(OCCXMAIN) ccx_2.21.a
 	#./date.pl;
-	$(CC) $(CFLAGS) -c ccx_2.20.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.20.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -c ccx_2.21.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.21.a $(LDFLAGS)
 
-ccx_2.20.a: $(OCCXF) $(OCCXC)
+ccx_2.21.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
 
 clean:

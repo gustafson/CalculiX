@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                     */
+/*              Copyright (C) 1998-2023 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -24,26 +24,26 @@
 
 static char *objectset1;
 
-static ITG *nobject1,*nodedesiboun1,ndesiboun1,*nx1,*ny1,*nz1,
-    num_cpus,ifree1,*iobject1,*ndesi1,*nk1;
+static ITG *nodedesiboun1,ndesiboun1,*nx1,*ny1,*nz1,num_cpus,ifree1,
+    *iobject1,*nk1,*nobject1;
 
 /* y1 had to be replaced by yy1, else the following compiler error
    popped up: 
 
-   filtermain.c:42: error: ‘y1’ redeclared as different kind of symbol */
+   thicknessmain.c:42: error: ‘y1’ redeclared as different kind of symbol */
 
-static double *xo1,*yo1,*zo1,*x1,*yy1,*z1,*co1,*dgdxglob1,*xdesi1;
+static double *xo1,*yo1,*zo1,*x1,*yy1,*z1,*co1,*dgdxglob1,*coini1,*g01,
+    *extnor1;
     
 
-void thicknessmain(double *co,ITG *nobject,ITG *nk,
-                ITG *nodedesi,ITG *ndesi,char *objectset,ITG *ipkon,
-		ITG *kon,char *lakon,char *set,ITG *nset,ITG *istartset,
+void thicknessmain(double *co,ITG *nobject,ITG *nk,ITG *nodedesi,ITG *ndesi,
+                char *objectset,char *set,ITG *nset,ITG *istartset,
 		ITG *iendset,ITG *ialset,ITG *iobject,ITG *nodedesiinv,
-		double *dgdxglob,double *xdesi){
+		double *dgdxglob,double *extnor,double *coini,double *g0){
 		
     /* calculation of distance between nodes */
 
-    ITG *nx=NULL,*ny=NULL,*nz=NULL,ifree,i,*ithread=NULL,ndesiboun,
+    ITG *nx=NULL,*ny=NULL,*nz=NULL,ifree,i,j,*ithread=NULL,ndesiboun,
         *nodedesiboun=NULL;
     
     double *xo=NULL,*yo=NULL,*zo=NULL,*x=NULL,*y=NULL,*z=NULL;
@@ -59,7 +59,7 @@ void thicknessmain(double *co,ITG *nobject,ITG *nk,
     NNEW(nx,ITG,*nk);
     NNEW(ny,ITG,*nk);
     NNEW(nz,ITG,*nk);
-    NNEW(nodedesiboun,ITG,*ndesi);   
+    NNEW(nodedesiboun,ITG,*ndesi); 
     
     FORTRAN(prethickness,(co,xo,yo,zo,x,y,z,nx,ny,nz,&ifree,nodedesiinv,
      			&ndesiboun,nodedesiboun,set,nset,objectset,
@@ -123,12 +123,13 @@ void thicknessmain(double *co,ITG *nobject,ITG *nk,
     
     pthread_t tid[num_cpus];
 
-    nobject1=nobject;nodedesiboun1=nodedesiboun;
+    NNEW(g01,double,num_cpus**nobject);
+    
+    nodedesiboun1=nodedesiboun;coini1=coini;nk1=nk;nobject1=nobject;
     ndesiboun1=ndesiboun;objectset1=objectset;xo1=xo;yo1=yo;zo1=zo;
     x1=x;yy1=y;z1=z;nx1=nx;ny1=ny;nz1=nz;ifree1=ifree;co1=co;  
-    iobject1=iobject;ndesi1=ndesi;dgdxglob1=dgdxglob;nk1=nk;
-    xdesi1=xdesi;
-
+    iobject1=iobject;dgdxglob1=dgdxglob;extnor1=extnor;
+    
     /* assessment of actual wallthickness */
     /* create threads and wait */
   
@@ -139,7 +140,14 @@ void thicknessmain(double *co,ITG *nobject,ITG *nk,
     }
     for(i=0; i<num_cpus; i++)  pthread_join(tid[i], NULL);
 
-    SFREE(xo);SFREE(yo);SFREE(zo);
+    /* Assembling g0 */
+     	 
+    g0[*iobject-1]=g01[*iobject-1];
+    for(j=1;j<num_cpus;j++){
+     g0[*iobject-1]+=g01[*iobject-1+j*(*nobject-1)];
+    }
+    
+    SFREE(xo);SFREE(yo);SFREE(zo);SFREE(g01);
     SFREE(x);SFREE(y);SFREE(z);SFREE(nx);SFREE(ny);SFREE(nz);
     SFREE(ithread);SFREE(nodedesiboun);   
                                      
@@ -151,9 +159,10 @@ void thicknessmain(double *co,ITG *nobject,ITG *nk,
 
 void *thicknessmt(ITG *i){
 
-    ITG indexr,ndesia,ndesib,ndesidelta;
+    ITG indexr,indexg0,ndesia,ndesib,ndesidelta;
 
     indexr=*i*ifree1;
+    indexg0=*i**nobject1;
     
     ndesidelta=(ITG)ceil(ndesiboun1/(double)num_cpus);
     ndesia=*i*ndesidelta+1;
@@ -162,10 +171,9 @@ void *thicknessmt(ITG *i){
     
     //printf("indexr=%" ITGFORMAT","ndesia=%" ITGFORMAT",ndesib=%" ITGFORMAT"\n",indexr,ndesia,ndesib);
 
-    FORTRAN(thickness,(nobject1,nodedesiboun1,&ndesiboun1,objectset1,
-		       xo1,yo1,zo1,x1,yy1,z1,nx1,ny1,nz1,co1,&ifree1,
-		       &ndesia,&ndesib,iobject1,ndesi1,dgdxglob1,nk1,
-		       xdesi1));
+    FORTRAN(thickness,(nodedesiboun1,&ndesiboun1,objectset1,xo1,yo1,zo1,
+		       x1,yy1,z1,nx1,ny1,nz1,co1,&ifree1,&ndesia,&ndesib,
+		       iobject1,dgdxglob1,nk1,extnor1,&g01[indexg0],coini1));
        
     return NULL;
 }

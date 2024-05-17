@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
      &     ipompc,nodempc,coefmpc,nmpc,ikmpc,ilmpc,veold,
      &     ne0,ipkon,thicke,
      &     integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
-     &     nasym,ielprop,prop)
+     &     nasym,ielprop,prop,nope)
 !     
 !     computation of the element matrix and rhs for the user element
 !     of type u1
@@ -52,7 +52,7 @@
       character*80 matname(*),amat
       character*81 tieset(3,*)
 !     
-      integer konl(26),nelemload(2,*),nbody,nelem,mi(*),kon(*),
+      integer konl(20),nelemload(2,*),nbody,nelem,mi(*),kon(*),
      &     ielprop(*),null,index,mattyp,ithermal(*),iperturb(*),nload,
      &     idist,
      &     i,j,i1,nmethod,kk,nelcon(2,*),nrhcon(*),nalcon(2,*),
@@ -63,8 +63,8 @@
      &     ialset(*),ntie,integerglob(*),nasym,nplicon(0:ntmat_,*),
      &     nplkcon(0:ntmat_,*),npmat_
 !     
-      real*8 co(3,*),xl(3,26),veold(0:mi(2),*),rho,s(60,60),bodyfx(3),
-     &     ff(60),elconloc(21),coords(3),p1(3),elcon(0:ncmat_,ntmat_,*),
+      real*8 co(3,*),xl(3,20),veold(0:mi(2),*),rho,s(60,60),bodyfx(3),
+     &     ff(60),elconloc(ncmat_),coords(3),p1(3),
      &     p2(3),eth(6),rhcon(0:1,ntmat_,*),reltime,prop(*),
      &     alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
      &     xloadold(2,*),vold(0:mi(2),*),xload(2,*),omx,e,un,um,tt,
@@ -72,7 +72,8 @@
      &     elas(21),thicke(mi(3),*),doubleglob(*),dl,
      &     plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &     xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,
-     &     a,xi11,xi12,xi22,xk,e1(3),offset1,offset2,y1,y2,y3,z1,z2,z3
+     &     a,xi11,xi12,xi22,xk,e1(3),offset1,offset2,y1,y2,y3,z1,z2,z3,
+     &     elcon(0:ncmat_,ntmat_,*)
 !     
       if(lakonl(2:2).eq.'1') then
         call e_c3d_u1(co,kon,lakonl,p1,p2,omx,bodyfx,nbody,s,sm,
@@ -113,9 +114,13 @@
      &       ne0,ipkon,thicke,integerglob,doubleglob,tieset,istartset,
      &       iendset,ialset,ntie,nasym,ielprop,prop)     
       else
-        write(*,*) '*ERROR in e_c3d_u.f: user element'
-        write(*,*) '       ',lakonl(1:5),' is not defined'
-        call exit(201)
+!
+!       substructure (superelement)
+!
+        nope=-1
+c        write(*,*) '*ERROR in e_c3d_u.f: user element'
+c        write(*,*) '       ',lakonl(1:5),' is not defined'
+c        call exit(201)
       endif
 !     
       return
