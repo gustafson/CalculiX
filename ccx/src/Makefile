@@ -22,8 +22,9 @@
 ################################################################################
 ################################################################################
 
-CC=gcc
-FC=gfortran
+# GCCROOT=/usr/x86_64-pc-linux-gnu/gcc-bin/9.4.0/
+CC=$(GCCROOT)gcc
+FC=$(GCCROOT)gfortran
 
 ## CFLAGS=-march=native -g -O0 ## debugging  -pg
 ## FFLAGS=-march=native -g -O0 ## debugging  -pg
@@ -46,8 +47,7 @@ LDFLAGS +=
 
 ## Multi Threaded and MPI
 CFLAGS += -DUSE_MT
-#CFLAGS += -DCALCULIX_MPI 
-FFLAGS += -fopenmp
+#CFLAGS += -DCALCULIX_MPI -fopenmp
 
 ## This is now default for calculix and relates to CFD
 CFLAGS += -DNETWORKOUT
@@ -97,8 +97,15 @@ LDFLAGS += `pkg-config --libs blas$(INTEXT)`
 ## LDFLAGS += -L/home/pete/local/lib64/ -lpardiso -lgfortran -lpthread -lm -fopenmp
 ## CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
 ## LDFLAGS += `pkg-config --libs pardiso`
-CFLAGS += -m64 -I/usr/include/mkl -DPARDISO
-FFLAGS += -m64 -I/usr/include/mkl 
+CFLAGS += `pkg-config --cflags mkl-dynamic-lp64-gomp` -DPARDISO
+LDFLAGS += `pkg-config --libs mkl-dynamic-lp64-gomp`
+CFLAGS += -m64 -I/opt/intel/oneapi/mkl/2023.0.0/include
+FFLAGS += -m64 -I/opt/intel/oneapi/mkl/2023.0.0/include
+LDFLAGS += -L/opt/intel/oneapi/mkl/2023.0.0/lib/intel64
+
+## PastiX
+## CFLAGS += -DPASTIX # -DPASTIX_FP32
+
 ## 64bit ints gfortran openmp libgomp on gentoo
 LDFLAGS += -Wl,--no-as-needed -lmkl_gf_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
 ## 32bit ints gfortran openmp libgomp
