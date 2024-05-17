@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -331,9 +331,6 @@
 !     check the existence of the node set (if any was specified)
 !
       if(ipos.ne.0) then
-c         do i=1,nset
-c            if(set(i).eq.noset) exit
-c         enddo
         call cident81(set,noset,nset,id)
         i=nset+1
         if(id.gt.0) then
@@ -433,7 +430,7 @@ c         enddo
                   filab(8)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'HFL ') then
-               if((ithermal(1).le.1).and.(nmethod.le.7)) then
+               if(ithermal(1).le.1) then
                   write(*,*) 
      &'*WARNING reading *NODE/EL/CONTACT FILE: HFL only makes '
                   write(*,*) '         sense for heat transfer '
@@ -635,9 +632,16 @@ c         enddo
                filab(32)(6:6)=elemsys
                filab(32)(7:87)=noset
             elseif(textpart(ii)(1:3).eq.'HER') then
-               filab(33)(1:4)='HER '
-               filab(33)(6:6)=elemsys
-               filab(33)(7:87)=noset
+               if(ithermal(1).le.1) then
+                  write(*,*) 
+     &'*WARNING reading *NODE/EL/CONTACT FILE: HER only makes '
+                  write(*,*) '         sense for heat transfer '
+                  write(*,*) '          calculations'
+               else
+                 filab(33)(1:4)='HER '
+                 filab(33)(6:6)=elemsys
+                 filab(33)(7:87)=noset
+               endif
             elseif(textpart(ii)(1:4).eq.'VF  ') then
                if(nef.eq.0) then
                   write(*,*) 
@@ -772,6 +776,18 @@ c         enddo
                   filab(46)(1:4)='PCON'
                   filab(46)(6:6)=elemsys
                   filab(46)(7:87)=noset
+               endif
+            elseif(textpart(ii)(1:3).eq.'SEN') then
+               if((nmethod.ne.12).and.(nmethod.ne.16)) then
+                  write(*,*) 
+     &'*WARNING reading *NODE/EL/CONTACT FILE: SEN only makes'
+                  write(*,*) 
+     &         '         sense for sensitivity and feasible direction'
+                  write(*,*) '         calculations'
+               else
+                  filab(47)(1:4)='SEN '
+                  filab(47)(6:6)=nodesys
+                  filab(47)(7:87)=noset
                endif
             elseif(textpart(ii)(1:4).eq.'DEPF') then
                if(nef.eq.0) then

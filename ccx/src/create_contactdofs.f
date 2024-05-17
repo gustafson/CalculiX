@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -132,9 +132,8 @@ C
       enddo
       neqtot=k
 !     
-      if((neqslav.ne.3*nslavs).or.(neqtot.ne.3*(nslavs+nmasts))) then
+      if(neqtot.ne.3*(nslavs+nmasts)) then
         write(*,*) '*ERROR in create_contactdofs'
-        write(*,*) '       neqslav.ne.3*nslavs or'
         write(*,*) '       neqtot.ne.3*(nslavs+nmasts)'
         call exit(201)
       endif

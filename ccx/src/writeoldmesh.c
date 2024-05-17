@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -46,10 +46,10 @@ void writeoldmesh(ITG *nk,ITG *ne,double *co,ITG *ipkon,
     *fnr=NULL,*fni=NULL,*emn=NULL,*thicke=NULL,*qfx=NULL,*cdn=NULL,
     *cdnr=NULL,*cdni=NULL,*prop=NULL,*sti=NULL;
 
-  strcpy(foldmesh,jobnamec);
+  strcpy2(foldmesh,jobnamec,132);
   strcat(foldmesh,".urf");
 
-  strcpy(fneig,foldmesh);
+  strcpy2(fneig,foldmesh,132);
   strcat(fneig,".frd");
 
   if((f1=fopen(fneig,"wb"))==NULL){

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -231,8 +231,8 @@
      &  ialset(*),ntie,integerglob(*),nasym,nplicon(0:ntmat_,*),
      &  nplkcon(0:ntmat_,*),npmat_
 !
-      real*8 co(3,*),xl(3,26),veold(0:mi(2),*),rho,s(60,60),bodyfx(3),
-     &  ff(60),elconloc(21),coords(3),p1(3),elcon(0:ncmat_,ntmat_,*),
+      real*8 co(3,*),xl(3,20),veold(0:mi(2),*),rho,s(60,60),bodyfx(3),
+     &  ff(60),elconloc(ncmat_),coords(3),p1(3),
      &  p2(3),eth(6),rhcon(0:1,ntmat_,*),reltime,prop(*),tm(3,3),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),t0(*),t1(*),
      &  xloadold(2,*),vold(0:mi(2),*),xload(2,*),omx,e,un,um,tt,
@@ -241,9 +241,7 @@
      &  plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &  xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tmg(12,12),
      &  a,xi11,xi12,xi22,xk,e1(3),offset1,offset2,y1,y2,y3,z1,z2,z3,
-     &  sg(12,12)
-!
-!
+     &  sg(12,12),elcon(0:ncmat_,ntmat_,*)
 !
       indexe=ipkon(nelem)
 !
@@ -325,6 +323,9 @@
       e3(1)=e1(2)*e2(3)-e1(3)*e2(2)
       e3(2)=e1(3)*e2(1)-e1(1)*e2(3)
       e3(3)=e1(1)*e2(2)-e1(2)*e2(1)
+c      write(*,*) 'u1 trans1 ',e1(1),e1(2),e1(3)
+c      write(*,*) 'u1 trans2 ',e2(1),e2(2),e2(3)
+c      write(*,*) 'u1 trans3 ',e3(1),e3(2),e3(3)
 !
 !     transformation matrix from the global into the local system
 !
@@ -475,7 +476,14 @@
      &         3.d0*xk*um*a*dl*dl*e*xi22+
      &         36.d0*(e*xi22)**2)
 !  
-!           stiffness matrix S' in local coordinates
+!     stiffness matrix S' in local coordinates
+!
+!     this if from Appendix A of the article by Yunhua Luo;
+!     the following corrections were made to the equations in the
+!     article: 1) in line 4: k(3,3)=k(3,9) should be replaced by
+!                 k(3,3)=-k(3,9)
+!              2) in line 6: k(4,4)=k(7,7) should be replaced by
+!                 k(4,4)=k(10,10)
 !
             s(1,1)=e*a/dl
             s(1,7)=-s(1,1)
@@ -485,7 +493,7 @@
             s(2,12)=s(2,6)
             s(3,3)=12.d0*z1/(dl*z2)
             s(3,5)=-6.d0*z1/z2
-            s(3,9)=s(3,3)
+            s(3,9)=-s(3,3)
             s(3,11)=s(3,5)
             s(4,4)=um*(xi11+xi22)/dl
             s(4,10)=-s(4,4)
@@ -535,6 +543,12 @@
 !
 !           stiffness matrix in global coordinates: S = T^T*S'*T
 !
+c            do i=1,12
+c              do j=1,12
+c                write(*,*) 'u1 lstiffness',i,j,s(i,j)
+c              enddo
+c            enddo
+!                
             do i=1,12
                do j=1,12
                   sg(i,j)=0.d0
@@ -551,7 +565,8 @@
                   s(i,j)=0.d0
                   do k=1,12
                      s(i,j)=s(i,j)+tmg(k,i)*sg(k,j)
-                  enddo
+                   enddo
+c                   write(*,*) 'u1 stiffness',i,j,s(i,j)
                enddo
             enddo
 !

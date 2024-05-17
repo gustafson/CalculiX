@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -133,12 +133,6 @@
       if(orientation.eq.'                    
      &                                 ') then
          iorientation=0
-c      elseif(nelcon(1,i).eq.2) then
-c         write(*,*) '*INFO reading *BEAM SECTION: an orientation'
-c         write(*,*) '      is for isotropic materials irrelevant'
-c         call inputinfo(inpc,ipoinpc,iline,
-c     &"*BEAM SECTION%")
-c         iorientation=0
       else
          do i=1,norien
             if(orname(i).eq.orientation) exit
@@ -154,9 +148,6 @@ c         iorientation=0
          iorientation=i
       endif
 !
-c      do i=1,nset
-c         if(set(i).eq.elset) exit
-c      enddo
       call cident81(set,elset,nset,id)
       i=nset+1
       if(id.gt.0) then

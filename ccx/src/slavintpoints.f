@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -81,6 +81,12 @@
 !     
       ifaces=islavsurf(1,l)
       nelems=int(ifaces/10)
+      if(ipkon(nelems).lt.0) then
+        write(*,*) '*WARNING in slavintpoints'
+        write(*,*) '         element ',nelems,' on slave contact'
+        write(*,*) '         surface does not exist'
+        return
+      endif
       jfaces=ifaces-nelems*10
 !     
 !     get nope,nopes

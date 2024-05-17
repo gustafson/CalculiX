@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,8 +28,6 @@
 !     
       implicit none
 !     
-      logical force
-!     
       character*1 cflag
       character*6 prlab(*)
       character*8 lakon(*)
@@ -44,10 +42,10 @@
      &     inum(*),nfield,ikin,nodes,ne0,nope,mt,ielmat(mi(3),*),iface,
      &     jfaces,mortar,islavsurf(2,*),ielprop(*),nload,i,ntmat_,id,
      &     nelemload(2,*),nrhcon(*),ipobody(2,*),ibody(3,*),nbody,
-     &     nmethod,ne
+     &     nmethod,ne,iforce
 !     
       real*8 v(0:mi(2),*),t1(*),fn(0:mi(2),*),stx(6,mi(1),*),bhetot,
-     &     eei(6,mi(1),*),xstate(nstate_,mi(1),*),ener(mi(1),*),
+     &     eei(6,mi(1),*),xstate(nstate_,mi(1),*),ener(2,mi(1),*),
      &     volumetot,co(3,*),qfx(3,mi(1),*),rftot(0:3),ttime,time,
      &     trab(7,*),orab(7,*),vold(0:mi(2),*),enerkintot,
      &     eme(6,mi(1),*),prop(*),veold(0:mi(2),*),xload(2,*),xmasstot,
@@ -64,9 +62,9 @@
           if(filab(1)(5:5).ne.' ') then
             nfield=mt
             cflag=' '
-            force=.false.
+            iforce=0
             call map3dto1d2d(v,ipkon,inum,kon,lakon,nfield,nk,
-     &           ne,cflag,co,vold,force,mi,ielprop,prop)
+     &           ne,cflag,co,vold,iforce,mi,ielprop,prop)
           endif
           exit
         endif
@@ -76,9 +74,9 @@
           if(filab(2)(5:5).ne.' ') then
             nfield=1
             cflag=' '
-            force=.false.
+            iforce=0
             call map3dto1d2d(t1,ipkon,inum,kon,lakon,nfield,nk,
-     &           ne,cflag,co,vold,force,mi,ielprop,prop)
+     &           ne,cflag,co,vold,iforce,mi,ielprop,prop)
           endif
           exit
         endif
@@ -88,9 +86,9 @@
           if(filab(1)(5:5).ne.' ') then
             nfield=mt
             cflag=' '
-            force=.true.
+            iforce=1
             call map3dto1d2d(fn,ipkon,inum,kon,lakon,nfield,nk,
-     &           ne,cflag,co,vold,force,mi,ielprop,prop)
+     &           ne,cflag,co,vold,iforce,mi,ielprop,prop)
           endif
           exit
         endif
@@ -421,12 +419,12 @@
             write(5,*)
             if(mortar.eq.0) then
               write(5,124) ttime+time
- 124          format(' contact print energy (slave node,energy) for'  
+ 124          format(' contact spring energy (slave node,energy) for '  
      &             'all contact elements and time',e14.7)
             elseif(mortar.eq.1) then
               write(5,128) ttime+time
  128          format(
-     &             ' contact print energy (slave element+face,energy)'  
+     &             ' contact spring energy (slave element+face,energy) '  
      &             'for all contact elements and time',e14.7)
             endif
             write(5,*)

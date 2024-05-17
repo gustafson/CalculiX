@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -41,7 +41,7 @@ static double *co1,*v1,*stx1,*elcon1,*rhcon1,*alcon1,*alzero1,*orab1,*t01,*t11,
   *vini1,*ener1,*eei1,*enerini1,*springarea1,*reltime1,*coefmpc1,
   *cocon1,*qfx1,*thicke1,*emeini1,*shcon1,*xload1,*prop1,
   *xloadold1,*pslavsurf1,*pmastsurf1,*clearini1,*xbody1,*energy1=NULL,
-  *smscale1,*energysms1=NULL,*t0g1,*t1g1,*autloc1;
+  *smscale1,*energysms1=NULL,*t0g1,*t1g1,*autloc1,*physcon1;
 
 void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	     double *v,double *stn,ITG *inum,double *stx,double *elcon,
@@ -79,7 +79,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	     ITG *nodeboun2,double *xboun2,ITG *nmpc2,ITG *ipompc2,
 	     ITG *nodempc2,double *coefmpc2,char *labmpc2,ITG *ikboun2,
 	     ITG *ilboun2,ITG *ikmpc2,ITG *ilmpc2,ITG *mortartrafoflag,
-	     ITG *intscheme){
+	     ITG *intscheme,double *physcon){
 
   ITG intpointvarm,calcul_fn,calcul_f,calcul_qa,calcul_cauchy,ikin,
     intpointvart,mt=mi[1]+1,i,j;
@@ -165,7 +165,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   /* 1. nodewise storage of the primary variables
      2. determination which derived variables have to be calculated */
 
-  if((*mortar>1) && (*mortartrafoflag==1)){
+  if((*mortar>1)&&(*mortartrafoflag==1)){
     
     /* fix for trafo U->Uhat for mortar contact */
     
@@ -174,14 +174,16 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 	       labmpc2,nmpc2,nmethod,cam,neq,
 	       veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
 	       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
-	       &ikin,&intpointvart,typeboun,&num_cpus,mortar,nener);
+	       &ikin,&intpointvart,typeboun,&num_cpus,mortar,nener,iponoel,
+	       network);
   }else{
     resultsini(nk,v,ithermal,filab,iperturb,f,fn,
 	       nactdof,iout,qa,vold,b,nodeboun,ndirboun,
 	       xboun,nboun,ipompc,nodempc,coefmpc,labmpc,nmpc,nmethod,cam,neq,
 	       veold,accold,bet,gam,dtime,mi,vini,nprint,prlab,
 	       &intpointvarm,&calcul_fn,&calcul_f,&calcul_qa,&calcul_cauchy,
-	       &ikin,&intpointvart,typeboun,&num_cpus,mortar,nener);
+	       &ikin,&intpointvart,typeboun,&num_cpus,mortar,nener,iponoel,
+	       network);
   }
 
   /* next statement allows for storing the displacements in each
@@ -228,6 +230,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
     kscale1=kscale;smscale1=smscale;mscalmethod1=mscalmethod;t0g1=t0g;
     t1g1=t1g;islavelinv1=islavelinv;autloc1=autloc;jqtloc1=jqtloc;
     irowtloc1=irowtloc;mortartrafoflag1=mortartrafoflag;intscheme1=intscheme;
+    physcon1=physcon;
 
     /* calculating the stresses */
 	
@@ -447,11 +450,17 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
     }
     for(i=0; i<num_cpus; i++)
       pthread_join(tid[i], NULL);
-	
-    for(i=0;i<4;i++){
-      //	    energy[i]=energyini[i]+energy1[i];
+
+    /* the contact spring friction energy is calculated incrementally
+       (i.e. set to zero in enerini(2,1,ne0+*) at the start of the
+        increment; since nintpoint changes from increment to
+	increment) */
+    
+    for(i=0;i<3;i++){
       energy[i]=energy1[i];
     }
+    energy[3]=energyini[3]+energy1[3];
+    
     for(i=0;i<4;i++){
       for(j=1;j<num_cpus;j++){
 	energy[i]+=energy1[i+j*4];
@@ -479,7 +488,7 @@ void results(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 			  islavnode,nslavnode,ntie,islavsurf,time,ielprop,prop,
 			  veold,ne0,nmpc,ipompc,nodempc,labmpc,energyini,energy,
 			  orname,xload,itiefac,pmastsurf,springarea,tieset,
-			  ipobody,ibody,xbody,nbody));
+			  ipobody,ibody,xbody,nbody,iinc));
   }
   
   return;
@@ -514,7 +523,7 @@ void *resultsmechmt(ITG *i){
 		       &nea,&neb,ielprop1,prop1,kscale1,&list1,ilist1,smscale1,
 		       mscalmethod1,&energysms1[indexnal],t0g1,t1g1,
 		       islavelinv1,autloc1,irowtloc1,jqtloc1,mortartrafoflag1,
-		       intscheme1));
+		       intscheme1,physcon1));
 
   return NULL;
 }

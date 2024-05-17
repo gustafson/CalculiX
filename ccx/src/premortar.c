@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -19,6 +19,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "CalculiX.h"
 #include "mortar.h"
 
@@ -550,7 +551,7 @@ void premortar(ITG *iflagact,ITG *ismallsliding,ITG *nzs,ITG *nzsc2,
         islavelinv,autloc,irowtloc,jqtloc,nboun2,
         ndirboun2,nodeboun2,xboun2,nmpc2,ipompc2,nodempc2,coefmpc2,
         labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	intscheme);
+	intscheme,physcon);
   
   if(debug==1)printf(" precontactmortar: results_dstil finished\n");
   fflush(stdout);

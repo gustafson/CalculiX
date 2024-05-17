@@ -59,7 +59,7 @@ void readnewmesh(char *jobnamec,ITG *nboun,ITG *nodeboun,ITG *iamboun,
 
   ITG *integerglob=NULL,iglob=1,irefine=1,*inodestet=NULL,nnodestet=0,i,
     istart,j,iquadratic,nenew,nline,nset_=0,*ipoinp=NULL,
-    *inp=NULL,*ipoinpc=NULL,idummy[2]={0,0},nuel_=0,inp_size,nentries=18,
+    *inp=NULL,*ipoinpc=NULL,idummy[2]={0,0},nuel_=0,inp_size,nentries=19,
     nkold_,neold_,nkonold_,*ielprop=NULL,*iponor=NULL,*iponoel=NULL,
     *rig=NULL,*ne2boun=NULL,*ielorien=NULL,*inotr=NULL,im,mt=mi[1]+1,
     *ielmat=NULL,*irandomtype=NULL,*iparentel=NULL,*ipompc=NULL,*ikmpc=NULL,
@@ -93,7 +93,7 @@ void readnewmesh(char *jobnamec,ITG *nboun,ITG *nodeboun,ITG *iamboun,
 
     NNEW(ipoinp,ITG,2*nentries);
 
-    strcpy(fnrfn,jobnamec);
+    strcpy2(fnrfn,jobnamec,132);
     strcat(fnrfn,".rfn");
 
     readinput(fnrfn,&inpc,&nline,&nset_,ipoinp,&inp,&ipoinpc,idummy,&nuel_,
@@ -179,7 +179,7 @@ void readnewmesh(char *jobnamec,ITG *nboun,ITG *nodeboun,ITG *iamboun,
     /* get the nodes and topology of the refined mesh of the part of the 
        mesh which was refined */
   
-    strcpy(masterrfnfile,jobnamec);
+    strcpy2(masterrfnfile,jobnamec,132);
     strcat(masterrfnfile,".rfn.frd");
   
     getglobalresults(masterrfnfile,&integerglob,&doubleglob,nboun,iamboun,xboun,
@@ -258,7 +258,7 @@ void readnewmesh(char *jobnamec,ITG *nboun,ITG *nodeboun,ITG *iamboun,
       /* create MPC's to determine the temperatures t0 and t1 in
 	 the new mesh based on the values in the old mesh */
 
-      strcpy(masterurffile,jobnamec);
+      strcpy2(masterurffile,jobnamec,132);
       strcat(masterurffile,".urf.frd");
 
       /* reading the old mesh */

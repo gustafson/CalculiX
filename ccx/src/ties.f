@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
 !
       implicit none
 !
-      logical multistage,tied,fluidperiodic,fluidcyclic
+      logical multistage,tied
 !
       character*1 inpc(*)
       character*81 tieset(3,*)
@@ -37,8 +37,6 @@
 !
       multistage=.false.
       tied=.true.
-      fluidperiodic=.false.
-      fluidcyclic=.false.
 !
       if(istep.gt.0) then
          write(*,*) '*ERROR reading *TIE: *TIE should'
@@ -80,12 +78,6 @@
          elseif(textpart(i)(1:10).eq.'MULTISTAGE') then
             multistage=.true.
             tied=.false.
-         elseif(textpart(i)(1:13).eq.'FLUIDPERIODIC') then
-            fluidperiodic=.true.
-            tied=.false.
-         elseif(textpart(i)(1:11).eq.'FLUIDCYCLIC') then
-            fluidcyclic=.true.
-            tied=.false.
          elseif(textpart(i)(1:9).eq.'ADJUST=NO') then
             tietol(2,ntie)=-1.d0
          else
@@ -117,10 +109,6 @@
          tieset(1,ntie)(81:81)='M'
       elseif(tied) then
          tieset(1,ntie)(81:81)='T'
-      elseif(fluidperiodic) then
-         tieset(1,ntie)(81:81)='P'
-      elseif(fluidcyclic) then
-         tieset(1,ntie)(81:81)='Z'
       else
          tieset(1,ntie)(81:81)=' '
       endif
@@ -151,19 +139,6 @@
          tieset(3,ntie)(81:81)=' '
          ipos=index(tieset(3,ntie),' ')
          tieset(3,ntie)(ipos:ipos)='S'
-      elseif((fluidperiodic).or.(fluidcyclic)) then
-!
-!        slave and master surface must be facial
-!
-         tieset(2,ntie)(1:80)=textpart(1)(1:80)
-         tieset(2,ntie)(81:81)=' '
-         ipos=index(tieset(2,ntie),' ')
-         tieset(2,ntie)(ipos:ipos)='T'
-!     
-         tieset(3,ntie)(1:80)=textpart(2)(1:80)
-         tieset(3,ntie)(81:81)=' '
-         ipos=index(tieset(3,ntie),' ')
-         tieset(3,ntie)(ipos:ipos)='T'
       else
 !
 !        cyclic symmetry tie

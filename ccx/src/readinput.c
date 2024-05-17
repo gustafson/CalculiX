@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -22,8 +22,8 @@
 #include <ctype.h>
 #include "CalculiX.h"
 
-void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
-	       ITG *ipoinp, ITG **inpp, ITG **ipoinpcp, ITG *ithermal,
+void readinput(char *jobnamec,char **inpcp,ITG *nline,ITG *nset,
+	       ITG *ipoinp,ITG **inpp,ITG **ipoinpcp,ITG *ithermal,
                ITG *nuel,ITG *inp_size){
 
   /*   reads and stores the input deck in inpcp; determines the
@@ -38,7 +38,7 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
     icntrl,nload,nforc,nboun,nk,ne,nmpc,nalset,nmat,ntmat,npmat,
     norien,nam,nprint,mi[3],ntrans,ncs,namtot,ncmat,memmpc,ne1d,
     ne2d,nflow,*meminset=NULL,*rmeminset=NULL, *inp=NULL,ntie,
-    nener,nstate,nentries=18,ifreeinp,ikey,lincludefn,nslavs,
+    nener,nstate,nentries=19,ifreeinp,ikey,lincludefn,nslavs,
     nbody,ncharmax=1000000,*ipoinpc=NULL,ichangefriction=0,nkon,
     ifile,mcs,initialtemperature=0,nprop,mortar,ifacecount,
     nintpoint,infree[4],iheading=0,ichangesurfacebehavior=0,
@@ -59,11 +59,11 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
 
   /* opening the input file */
 
-  strcpy(fninp,jobnamec);
+  strcpy2(fninp,jobnamec,132);
   strcat(fninp,".inp");
   if((f1[in]=fopen(fninp,"r"))==NULL){
       printf(" *ERROR in readinput: cannot open file %s\n",fninp);
-      exit(0);
+      exit(201);
   }
 
   /* starting to read the input file */
@@ -130,6 +130,10 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
 	      }
 	      if(j>=9){
 		  if(strcmp1(&buff[j-9],"FILENAME=")==0) ifile=1;
+		  if(strcmp1(&buff[j-9],"MASSFILE=")==0) ifile=1;
+	      }
+	      if(j>=14){
+		  if(strcmp1(&buff[j-14],"STIFFNESSFILE=")==0) ifile=1;
 	      }
 	      if(ifile==1){
 		  do{
@@ -173,10 +177,11 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
 	  in++;
 	  if(in>9){
 	      printf(" *ERROR in readinput: include statements can \n not be cascaded over more than 9 levels\n");
+	      exit(201);
 	  }
 	  if((f1[in]=fopen(includefn,"r"))==NULL){
 	      printf(" *ERROR in readinput: cannot open file %s\n",includefn);
-	      exit(0);
+	      exit(201);
 	  }
           continue;
       }
@@ -333,6 +338,11 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }
+      else if(strcmp1(&buff[0],"*MATRIXASSEMBLE")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATRIXASSEMBLE",
+                          nline,&ikey));
+	(*nuel)++;
+      }
       else if((strcmp1(&buff[0],"*NODE")==0)&&
 	      (strcmp1(&buff[0],"*NODEPRINT")!=0)&&
 	      (strcmp1(&buff[0],"*NODEOUTPUT")!=0)&&
@@ -351,6 +361,10 @@ void readinput(char *jobnamec, char **inpcp, ITG *nline, ITG *nset,
                           nline,&ikey));
       }
       else if(strcmp1(&buff[0],"*PLASTIC")==0){
+        FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
+                          nline,&ikey));
+      }
+      else if(strcmp1(&buff[0],"*RATEDEPENDENT")==0){
         FORTRAN(keystart,(&ifreeinp,ipoinp,inp,"MATERIAL",
                           nline,&ikey));
       }

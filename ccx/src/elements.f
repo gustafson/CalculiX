@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -67,8 +67,6 @@
         ipos=index(elset,' ')
         elset(ipos:ipos)='E'
         ielset=1
-c        do js=1,nset
-c          if(set(js).eq.elset) then
         call cident81(set,elset,nset,js)
         if(js.gt.0) then
           if(elset.eq.set(js)) then
@@ -108,11 +106,9 @@ c          if(set(js).eq.elset) then
             endif
           endif
         endif
-c        enddo
 !     
 !     new set
 !     
-cc        call cident81(set,elset,nset,id)
         nset=nset+1
         if(nset.gt.nset_) then
           write(*,*) '*ERROR reading *ELEMENT: increase nset_'

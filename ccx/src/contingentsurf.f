@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
       subroutine contingentsurf(ncrack,xplanecrack,istartcrackbou,
-     &     iendcrackbou,costruc,cg,coproj,crackarea,nnfront,
+     &     iendcrackbou,costruc,cg,crackarea,nnfront,
      &     isubsurffront,istartcrackfro,iendcrackfro,istartfront,
      &     iendfront,acrack,xa,ifrontrel,integerglob,doubleglob,
      &     nstep,surfnor,surfco,resarea,alambdapj,shape)
@@ -26,6 +26,10 @@
 !     of contingent free surfaces
 !     
       implicit none
+!
+      character*5 outlabel
+      character*8 filename
+      character*9 filelabel
 !     
       integer i,j,k,l,m,ncrack,istartcrackbou(*),iendcrackbou(*),loopa,
      &     nnfront,istart,iend,isubsurffront(*),isf,icrack,konl(20),
@@ -36,9 +40,9 @@
      &     itrend,itrendprev
 !     
       real*8 a(3,3),x,y,z,det,dd,xplanecrack(4,*),cg(3,*),costruc(3,*),
-     &     pa,pb,pc,coproj(3,*),crackarea(*),v1(3),v2(3),al,p(3),
-     &     acrack(*),dir(3),dirproj(3),xa(3,*),alambda,doubleglob(*),
-     &     q(3),coords(3),value(1),ratio(20),dist,xinter(3),r(3),
+     &     pa,pb,pc,crackarea(*),v1(3),v2(3),al,p(3),
+     &     acrack(*),xa(3,*),alambda,doubleglob(*),factor,
+     &     q(3),coords(3),value(1),ratio(20),dist,xinter(3),
      &     cosang,alambdaprev,snor(3),xinterprev(3),surfnor(3,*),
      &     resarea(*),a1,b1,c1,d1,e1,f1,surfco(3,*),alambdapj(*),
      &     xxs(3),xxt(3),xxn(3),amin,amax,bmin,bmax,
@@ -61,6 +65,8 @@
 !     
       do i=1,ncrack
 !     
+!     determining the mean plane     
+!     
 !     setting the LHS (a; only upper triangle is used since the matrix
 !     is symmetric) and the RHS (b) to zero
 !     
@@ -75,7 +81,7 @@
 !     
         do j=istartcrackbou(i),iendcrackbou(i)
 !     
-!     taking into account the front node
+!     taking into account the boundary node
 !     
           x=costruc(1,j)
           y=costruc(2,j)
@@ -133,27 +139,14 @@ c     write(*,*)
 !     
       enddo
 !
-!     projection of all boundary nodes onto the mean plane
-!
-      do i=1,ncrack
-        do j=istartcrackbou(i),iendcrackbou(i)
-          al=(costruc(1,j)-cg(1,i))*xplanecrack(1,i)+
-     &       (costruc(2,j)-cg(2,i))*xplanecrack(2,i)+
-     &       (costruc(3,j)-cg(3,i))*xplanecrack(3,i)
-          do k=1,3
-            coproj(k,j)=costruc(k,j)-al*xplanecrack(k,i)
-          enddo
-        enddo
-      enddo
-!
 !     calculate the area of the cracks
 !
       do i=1,ncrack
         crackarea(i)=0.d0
         do j=istartcrackbou(i),iendcrackbou(i)-1
           do k=1,3
-            v1(k)=coproj(k,j)-cg(k,i)
-            v2(k)=coproj(k,j+1)-cg(k,i)
+            v1(k)=costruc(k,j)-cg(k,i)
+            v2(k)=costruc(k,j+1)-cg(k,i)
           enddo
           crackarea(i)=crackarea(i)+
      &         dsqrt((v1(2)*v2(3)-v1(3)*v2(2))**2+
@@ -166,6 +159,9 @@ c     write(*,*)
 !     1) calculating the area of the remaining cross section
 !     2) determining the adjacent free surfaces and the minimum
 !        distance from the crack front
+!
+c      open(14,file='set0.fbd',status='unknown')
+c      write(14,*) 'seto set0'
 !
       do icrack=1,ncrack
 !
@@ -198,36 +194,22 @@ c     write(*,*)
 !
           do j=istartfront(i)+isf,iendfront(i)-isf
             jrel=ifrontrel(j)
-!
-!           project the local crack propagation direction onto
-!           the crack plane and normalized
-!
-            do k=1,3
-              dir(k)=costruc(k,jrel)+xa(k,j)
-            enddo
-            al=(dir(1)-cg(1,icrack))*xplanecrack(1,icrack)+
-     &         (dir(2)-cg(2,icrack))*xplanecrack(2,icrack)+
-     &         (dir(3)-cg(3,icrack))*xplanecrack(3,icrack)
-            do k=1,3
-              dirproj(k)=dir(k)-al*xplanecrack(k,icrack)-coproj(k,jrel)
-            enddo
-            dd=dsqrt(dirproj(1)**2+dirproj(2)**2+dirproj(3)**2)
-            do k=1,3
-              dirproj(k)=dirproj(k)/dd
-            enddo
-!
+!     
 !           finding the intersection of a straight line through
 !           the actual node on the crack front and in the direction of
-!           the projected crack propagation with the free surface
+!           the crack propagation with the free surface
 !
-            alambda=acrack(j)*0.1d0
+c            alambda=acrack(j)*0.1d0
+            alambda=acrack(j)*0.5d0
+c            factor=1.2d0
+            factor=1.5d0
             do k=1,3
-              p(k)=coproj(k,jrel)
+              p(k)=costruc(k,jrel)
             enddo
 !
             do
               do k=1,3
-                q(k)=p(k)+alambda*dirproj(k)
+                q(k)=p(k)+alambda*xa(k,j)
                 coords(k)=q(k)
               enddo
               call basis(doubleglob(1),doubleglob(netet+1),
@@ -245,28 +227,46 @@ c     write(*,*)
      &             nselect,istartset,iendset,ialset,imastset,
      &             integerglob(nkon+2*ne+8*netet+6),nterms,konl,
      &             nelem,loopa,dist)
-              if(dist.gt.1.d-6) exit
-              alambda=2*alambda
+              if(dist.gt.1.d-6) then
+                cosang=((p(1)-q(1))*(coords(1)-q(1))+
+     &               (p(2)-q(2))*(coords(2)-q(2))+
+     &               (p(3)-q(3))*(coords(3)-q(3)))/(dist*alambda)
+                if((cosang.lt.0.707d0).and.(factor.gt.1.19d0)) then
+                  alambda=alambda/factor
+                  factor=1.01d0
+                else
+                  exit
+                endif
+              endif
+              alambda=factor*alambda
             enddo
 !
-            do k=1,3
-              r(k)=coords(k)
-            enddo
-            cosang=((p(1)-q(1))*(r(1)-q(1))+
-     &              (p(2)-q(2))*(r(2)-q(2))+
-     &           (p(3)-q(3))*(r(3)-q(3)))/(dist*alambda)
-            alambda=max(alambda-dist/cosang,1.d-10)
+            if(alambda-dist/cosang.lt.1.d-10) then
+              alambda=alambdaprev
+            else
+              alambda=alambda-dist/cosang
+            endif
 !
 !           intersection with the free surface
 !
             do k=1,3
-              xinter(k)=p(k)+alambda*dirproj(k)
+              xinter(k)=p(k)+alambda*xa(k,j)
             enddo
+!
+!           printing lambda to standard out
+!           storing intersection points to file            
+!
+c            write(*,*) 'set0',j,alambda
+c            write(outlabel(1:2),'(i2)') j
+c            outlabel(3:4)='p '
+c 100        format('pnt ',a4,3(1x,e15.8))
+c            write(14,100) outlabel,xinter(1),xinter(2),xinter(3)
 !
 !           first subsurface node
 !
             if(j.eq.istartfront(i)+isf) then
               itrend=-1
+              alambdaprev=1.d30
             else
 !
 !             remaining nodes: determine the area outside
@@ -292,11 +292,13 @@ c     write(*,*)
      &             (costruc(3,jrel)-xinterprev(3))**2)
               resarea(icrack)=resarea(icrack)+0.25d0*
      &             dsqrt(4.d0*(e1*f1)**2-(b1**2+d1**2-a1**2-c1**2)**2)
-              if((alambda.lt.alambdaprev).and.
-     &           (dabs(alambda-alambdaprev).gt.0.01*alambdaprev)) then
-                itrend=-1
-              else
-                itrend=1
+!
+              if(dabs(alambda-alambdaprev).gt.0.01*alambdaprev) then
+                if(alambda.gt.alambdaprev) then
+                  itrend=1
+                else
+                  itrend=-1
+                endif
               endif
             endif
 !
@@ -318,6 +320,7 @@ c     write(*,*)
                   surfco(k,nummin)=xinterprev(k)
                   surfnor(k,nummin)=snor(k)
                 enddo
+c     write(*,*) 'contingentsurf min!:',j-1
               elseif(surfnor(1,nummin)*snor(1)+
      &               surfnor(2,nummin)*snor(2)+
      &               surfnor(3,nummin)*snor(3).lt.0.5d0) then
@@ -330,23 +333,35 @@ c     write(*,*)
                   surfco(k,nummin)=xinterprev(k)
                   surfnor(k,nummin)=snor(k)
                 enddo
+c                write(*,*) 'contingentsurf min!:',j-1
               endif
             endif
 !
 !           for surface crack:
 !           last subsurface front node: minimum if decreasing trend and
-!           the free surface normal does not coincide with the one from
-!           the previous minimum !
+!           1) no other minimum was found OR
+!           2) the free surface normal does not coincide with the one from
+!              the previous minimum !
 !
             if((j.eq.iendfront(i)-isf).and.(isf.eq.1)) then
-              if(surfnor(1,nummin)*snor(1)+
-     &           surfnor(2,nummin)*snor(2)+
-     &           surfnor(3,nummin)*snor(3).lt.0.5d0) then
-                nummin=nummin+1
-                do k=1,3
-                  surfco(k,nummin)=xinterprev(k)
-                  surfnor(k,nummin)=snor(k)
-                enddo
+              if(itrend.lt.0) then
+                if(nummin.eq.0) then
+                  nummin=nummin+1
+                  do k=1,3
+                    surfco(k,nummin)=xinter(k)
+                    surfnor(k,nummin)=xa(k,j)
+                  enddo
+c                  write(*,*) 'contingentsurf min!:',j-1
+                elseif(surfnor(1,nummin)*xa(1,j)+
+     &                 surfnor(2,nummin)*xa(2,j)+
+     &                 surfnor(3,nummin)*xa(3,j).lt.0.5d0) then
+                  nummin=nummin+1
+                  do k=1,3
+                    surfco(k,nummin)=xinter(k)
+                    surfnor(k,nummin)=xa(k,j)
+                  enddo
+c                  write(*,*) 'contingentsurf min!:',j-1
+                endif
               endif
             endif
 !
@@ -354,36 +369,51 @@ c     write(*,*)
             alambdaprev=alambda
             do k=1,3
               xinterprev(k)=xinter(k)
-              snor(k)=q(k)-r(k)
-            enddo
-            dd=sqrt(snor(1)**2+snor(2)**2+snor(3)**2)
-            do k=1,3
-              snor(k)=snor(k)/dd
+              snor(k)=xa(k,j)
             enddo
 !            
           enddo
         enddo
 !
+!       normal on mean plane
+!
         do k=1,3
           xxn(k)=xplanecrack(k,icrack)
         enddo
 !
-!     loop over all minima found
+c        write(14,*) 'setc set0'
+c        close(14)
+!
+!       loop over all minima found
 !
         do m=1,nummin
-          alambdamin=1.d30
+c          filename='set .fbd'
+c          write(filename(4:4),'(i1)') m
+c          open(14,file=filename,status='unknown')
+c          filelabel='seto set '
+c          write(filelabel(9:9),'(i1)') m
+c          write(14,*) filelabel
 !
-!         free surface normal for minimum m
+          alambdamin=1.d30
+          alambdaprev=1.d30
+!
+!         the propagation direction = the approximate free surface normal
+!         for minimum m
 !
           do k=1,3
             xxs(k)=surfnor(k,m)
           enddo
 !
-!         in-plane vector orthogonal to free surface normal
+!         in-plane vector orthogonal to propagation direction and
+!         mean-plane normal
 !
           xxt(1)=xxn(2)*xxs(3)-xxn(3)*xxs(2)
           xxt(2)=xxn(3)*xxs(1)-xxn(1)*xxs(3)
           xxt(3)=xxn(1)*xxs(2)-xxn(2)*xxs(1)
+          dd=dsqrt(xxt(1)*xxt(1)+xxt(2)*xxt(2)+xxt(3)*xxt(3))
+          do k=1,3
+            xxt(k)=xxt(k)/dd
+          enddo
 !     
 !         loop over the fronts: determine the distance from the free
 !         surface in direction xxs (normal to surface at minimum)
@@ -409,7 +439,10 @@ c             (surfco(3,m)-costruc(3,jrel))*xxs(3)
 !             through the front node at stake and in the direction              
 !             of the free surface normal corresponding to minimum m
 !
-              alambda=acrack(j)*0.05
+c              alambda=acrack(j)*0.1d0
+              alambda=acrack(j)*0.5d0
+c              factor=1.2d0
+              factor=1.5d0
               do k=1,3
                 p(k)=costruc(k,jrel)
               enddo
@@ -433,22 +466,31 @@ c             (surfco(3,m)-costruc(3,jrel))*xxs(3)
      &               nselect,istartset,iendset,ialset,imastset,
      &               integerglob(nkon+2*ne+8*netet+6),nterms,konl,
      &               nelem,loopa,dist)
-                if(dist.gt.1.d-6) exit
-                alambda=2*alambda
+                if(dist.gt.1.d-6) then
+                  cosang=((p(1)-q(1))*(coords(1)-q(1))+
+     &                 (p(2)-q(2))*(coords(2)-q(2))+
+     &                 (p(3)-q(3))*(coords(3)-q(3)))/(dist*alambda)
+                  if((cosang.lt.0.707d0).and.(factor.gt.1.19d0)) then
+                    alambda=alambda/factor
+                    factor=1.01d0
+                  else
+                    exit
+                  endif
+                endif
+                alambda=factor*alambda
               enddo
 !     
-              do k=1,3
-                r(k)=coords(k)
-              enddo
-              cosang=((p(1)-q(1))*(r(1)-q(1))+
-     &             (p(2)-q(2))*(r(2)-q(2))+
-     &             (p(3)-q(3))*(r(3)-q(3)))
-              alambda=alambda-dist/cosang
+              if(alambda-dist/cosang.lt.1.d-10) then
+                alambda=alambdaprev
+              else
+                alambda=alambda-dist/cosang
+              endif
 !
 !*** end alternative 1              
 !
 !             alambda is the distance from the free surface in direction xxs
 !
+              alambdaprev=alambda
               alambdapj(j)=alambda
 !
               alambdamin=min(alambdamin,alambda)
@@ -470,18 +512,18 @@ c             (surfco(3,m)-costruc(3,jrel))*xxs(3)
 !     scalar product of vector connecting the front
 !     node with the center of gravity with xxs
 !     
-            prod=(coproj(1,j)-cg(1,icrack))*xxs(1)+
-     &           (coproj(2,j)-cg(2,icrack))*xxs(2)+
-     &           (coproj(3,j)-cg(3,icrack))*xxs(3)
+            prod=(costruc(1,j)-cg(1,icrack))*xxs(1)+
+     &           (costruc(2,j)-cg(2,icrack))*xxs(2)+
+     &           (costruc(3,j)-cg(3,icrack))*xxs(3)
             amin=min(amin,prod)
             amax=max(amax,prod)
 !     
 !     scalar product of vector connecting the front
 !     node with the center of gravity with xxt
 !     
-            prod=(coproj(1,j)-cg(1,icrack))*xxt(1)+
-     &           (coproj(2,j)-cg(2,icrack))*xxt(2)+
-     &           (coproj(3,j)-cg(3,icrack))*xxt(3)
+            prod=(costruc(1,j)-cg(1,icrack))*xxt(1)+
+     &           (costruc(2,j)-cg(2,icrack))*xxt(2)+
+     &           (costruc(3,j)-cg(3,icrack))*xxt(3)
             bmin=min(bmin,prod)
             bmax=max(bmax,prod)
           enddo
@@ -499,10 +541,6 @@ c             (surfco(3,m)-costruc(3,jrel))*xxs(3)
 !         ratio of "major axes" of crack
 !     
           aratio=acr/bcr
-!     
-!         area ratio for residual area: if 0: big crack, if 1: small crack
-!
-          arearatio=resarea(icrack)/(resarea(icrack)+crackarea(icrack))
 !
 !         limits for the ratios
 !
@@ -515,18 +553,25 @@ c             (surfco(3,m)-costruc(3,jrel))*xxs(3)
 !         and xratio (the closeness to the free surface)
 !         for all modes at minimum point (to do)
 !
-          xk1max=xk1max
-          xk2max=xk2max
-          xk3max=xk3max
+          xk1max=1.d0
+          xk2max=1.d0
+          xk3max=1.d0
 !
 !         for all other positions along the crack front the magnification
 !         factor is less
 !          
           do i=istart,iend
 !     
+!           positions at the free surface (for surface cracks)
+!
+            if(isf.eq.1) then
+              alambdapj(istartfront(i))=alambdapj(istartfront(i)+1)
+              alambdapj(iendfront(i))=alambdapj(iendfront(i)-1)
+            endif
+!     
 !           loop over the internal nodes of a front
 !     
-            do j=istartfront(i)+isf,iendfront(i)-isf
+            do j=istartfront(i),iendfront(i)
               jrel=ifrontrel(j)
               alamratio=alambdamin/alambdapj(j)
               alamratio=max(alamratio,0.d0)
@@ -535,20 +580,21 @@ c             (surfco(3,m)-costruc(3,jrel))*xxs(3)
               shape(2,j)=shape(2,j)*((xk2max-1.d0)*alamratio+1.d0)
               shape(3,j)=shape(3,j)*((xk3max-1.d0)*alamratio+1.d0)
             enddo
-!     
-!           positions at the free surface (for surface cracks)
 !
-            if(isf.eq.1) then
-              do k=1,3
-                shape(k,istartfront(i))=shape(k,istartfront(i)+1)
-                shape(k,iendfront(i))=shape(k,iendfront(i)-1)
-              enddo
-            endif
           enddo
+!     
+c          filelabel='setc set '
+c          write(filelabel(9:9),'(i1)') m
+c          write(14,*) filelabel
+c          close(14)
+!     
         enddo  ! end loop over the mimima for crack "icrack"
-!
+!     
 !       taking the area effect into account
-!
+!       area ratio for residual area: if 0: big crack, if 1: small crack
+!     
+        arearatio=resarea(icrack)/(resarea(icrack)+crackarea(icrack))
+!     
         do j=istartcrackfro(icrack),iendcrackfro(icrack)
         enddo
 !

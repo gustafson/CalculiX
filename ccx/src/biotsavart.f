@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,7 +28,7 @@
       integer ipkon(*),kon(*),ne,i,nka,nkb,mint3d,konl(26),
      &  j,k,indexe,kk,iflag,mi(*),nope,l
 !
-      real*8 co(3,*),qfx(3,mi(1),*),h0(3,*),xl(3,26),r(3),c2,
+      real*8 co(3,*),qfx(3,mi(1),*),h0(3,*),xl(3,20),r(3),c2,
      &  con(3),pgauss(3),c1,xi,et,ze,xsj,shp(4,20),weight
 !
       include "gauss.f"

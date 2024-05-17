@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
       implicit none
 !
       integer nentries
-      parameter(nentries=18)
+      parameter(nentries=19)
 !
       character*1 inpc(*)
       character*20 nameref(nentries)
@@ -29,7 +29,7 @@
      &  ipoinpc(0:*)
 !
       data nameref /'RESTART,READ','NODE','USERELEMENT','ELEMENT',
-     &              'NSET',
+     &              'MATRIXASSEMBLE','NSET',
      &              'ELSET','SURFACE','TRANSFORM','MATERIAL',
      &              'DISTRIBUTION',
      &              'ORIENTATION','TIE','INTERACTION',

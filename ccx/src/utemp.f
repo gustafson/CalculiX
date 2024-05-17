@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,7 +56,7 @@
 !                        containing a pointer to the next body load
 !                        applied to element i, else 0
 !     ibody(1,i)         code identifying the kind of body load i:
-!                        1=centrifugal, 2=gravity, 3=generalized gravity
+!                        -1,1=centrifugal, 2=gravity, 3=generalized gravity
 !     ibody(2,i)         amplitude number for load i
 !     ibody(3,i)         load case number for load i
 !     xbody(1,i)         size of body load i

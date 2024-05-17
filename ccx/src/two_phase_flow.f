@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@
      &     ipkon(*),kon(*),icase,kgas,k_oil,mtlog,ier,nshcon(*),
      &     nrhcon(*),ntmat_,n1,n2,n11
 !
-!     note: Tt2 and T2 are used in proprietary routines
+!     note: Tt2 and T2 are used in company routines
 !
       real*8 prop(*),v(0:mi(2),*),kappa,R,a,d,dl,
      &     T1,Tt1,pt1,pt2,cp,dvi_air,dvi_oil,

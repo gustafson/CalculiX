@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -62,8 +62,9 @@
 !        root iteratively by 2)
 !     
          i=1
-!
-         M1_min=0.001d0
+! Change on 10th of July 2023
+         M1_min=0.0000001d0
+c         M1_min=0.001d0
          M1_max=1
 !
          Z1_min=M1_min**2

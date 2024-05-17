@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -143,42 +143,29 @@
           return
         endif  
 !     
-!     some constraints accept relative or absolute constraint values.
-!     we parse those below
+!     relative constraint value
 !     
-        if((objectset(1,iobject)(1:8).eq.'ALL-DISP').or.
-     &       (objectset(1,iobject)(1:6).eq.'X-DISP').or.
-     &       (objectset(1,iobject)(1:6).eq.'Y-DISP').or.
-     &       (objectset(1,iobject)(1:6).eq.'Z-DISP').or.
-     &       (objectset(1,iobject)(1:4).eq.'MASS').or.
-     &       (objectset(1,iobject)(1:11).eq.'MODALSTRESS').or.
-     &       (objectset(1,iobject)(1:12).eq.'STRAINENERGY').or.
-     &       (objectset(1,iobject)(1:6).eq.'STRESS')) then
+        if(n.ge.3) then
+          read(textpart(3)(1:20),'(f20.0)',iostat=istat) relval
+          if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,"*CONSTRAINT%",ier)
+            return
+          endif
+          if(istat.le.0) then
+            objectset(1,iobject)(41:60)=textpart(3)(1:20)
+          endif
+        endif 
 !     
 !     absolute constraint value
 !     
-          if(n.ge.3) then
-            read(textpart(3)(1:20),'(f20.0)',iostat=istat) relval
-            if(istat.gt.0) then
-              call inputerror(inpc,ipoinpc,iline,"*CONSTRAINT%",ier)
-              return
-            endif
-            if(istat.le.0) then
-              objectset(1,iobject)(41:60)=textpart(3)(1:20)
-            endif
-          endif 
-!     
-!     relative constraint value
-!     
-          if(n.ge.4) then
-            read(textpart(4)(1:20),'(f20.0)',iostat=istat) absval
-            if(istat.gt.0) then
-              call inputerror(inpc,ipoinpc,iline,"*CONSTRAINT%",ier)
-              return
-            endif
-            objectset(1,iobject)(61:80)=textpart(4)(1:20)
+        if(n.ge.4) then
+          read(textpart(4)(1:20),'(f20.0)',iostat=istat) absval
+          if(istat.gt.0) then
+            call inputerror(inpc,ipoinpc,iline,"*CONSTRAINT%",ier)
+            return
           endif
-        endif  
+          objectset(1,iobject)(61:80)=textpart(4)(1:20)
+        endif
       enddo
 !      
       return

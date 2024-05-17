@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -161,6 +161,7 @@ void checkconvnet(ITG *icutb, ITG *iin,
       
       if(idivergence==1){
 	  *dtheta=*dtheta*df;
+	  if(*dtheta<0.0001){*dtheta=0.0001;}
 	  printf("\n network divergence; the under-relaxation parameter is decreased to %e\n",*dtheta);
 	  printf(" the network iteration for the increment is reattempted\n\n");
 	  *iin=0;
@@ -176,13 +177,14 @@ void checkconvnet(ITG *icutb, ITG *iin,
 	     if(dyna_flag_1==0 && dyna_flag_2==0 && *iplausi==1){
 		printf("      good convergence --> *dtheta is increased %" ITGFORMAT "\n",*iin);
 		*dtheta=*dtheta*(1.2);
-		if(*dtheta>=1){
+		if(*dtheta>=1.){
 	           *dtheta=1.;
 		}	        
 	     }
 	     else if(dyna_flag_1!=0 && dyna_flag_2!=0 && *iplausi!=1){
 		printf("      bad convergence progression --> *dtheta is decreased %" ITGFORMAT "\n",*iin);
-		*dtheta=*dtheta*(0.8);	        
+		*dtheta=*dtheta*(0.8);
+		if(*dtheta<0.0001){*dtheta=0.0001;}
 	     }
 	     else{
 	        printf("      no convergence\n\n"); 

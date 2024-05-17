@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -53,7 +53,7 @@ void crackfrd(ITG *nk,ITG *ngraph,ITG *noddiam,double *cs,ITG *kode,ITG *inum,
 
   double pi,oner,nullr,*xstaten=NULL;
 
-  strcpy(fneig,jobnamec);
+  strcpy2(fneig,jobnamec,132);
   strcat(fneig,".frd");
 
   if((f1=fopen(fneig,"ab"))==NULL){

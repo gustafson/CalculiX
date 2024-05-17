@@ -1,6 +1,6 @@
  
 ========
-LOG-BOOK Version 2.20
+LOG-BOOK Version 2.21
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -5028,7 +5028,7 @@ Dec 2002        - started to work on single crystal plasticity
  17 July 2022   - worked on the documentation of massless contact
 
  19 July 2022   - changed the logic for energy statistics in dynamic
-                  calculations: no energy statistics are only written if
+                  calculations: energy statistics are only written if
 		  ENER was selected on a *EL PRINT, *EL FILE or *ELEMENT
 		  OUTPUT card.
 
@@ -5036,3 +5036,189 @@ Dec 2002        - started to work on single crystal plasticity
                   should be used instead of elas)
 
  29 July 2022   - made some changes in nonlingeo.c concerning nactdofinv
+
+ 4 Aug 2022     - posted version 2.20
+                - started changing ener(mi(1),*) into ener(2,mi(1),*) to
+                  take the contact spring energy correctly into account
+
+ 5 Aug 2022     - made a change in the contact energy calculation in
+                  springforc_n2f.f
+
+ 30 Aug 2022    - calculated the energy dissipated by friction in massless.c
+
+ 31 Aug 2022    - made corrections in massless.c and springforc*f
+                - checked for the number of characters in the name of the
+		  input deck without .inp (should not exceed 127 characters)
+
+ 2 Sep 2022     - made few corrections in cloads.f (distributed loading)
+                - introduced MATRIXSTORAGE in the *BUCKLE procedure
+		- replaced strcpy by strcpy2 (looks like newer compilers do
+		  no stop copying at '\0')
+                - made a check in arpack.c on the size of ncv relative to
+		  n and nev
+
+ 5 Sep 2022     - actualized CalculiXstep.c regarding the allocation
+                  and deallocation of set
+
+ 6 Sep 2022     - corrected an error in e_c3d_u1.f
+
+ 8 Sep 2022     - removed FLUID PERIODIC and FLUID CYCLIC from the
+                  tie.f and cyclicsymmetrymodels.f routines and the
+		  documentation
+
+ 19 Sep 2022    - changed the dimension of elconloc from 21 to ncmat_
+                - corrected some errors in matrixstorage.c
+
+ 25 Sep 2022    - wrote channeljoint.f
+
+ 28 Sep 2022    - made a correction in CalculiX.c for advective elements
+                  in combination with contact (memory shift of the
+		  contact internal variables)
+
+ 30 Sep 2022    - accelerated non-massless explicit dynamics without energy
+                  requests
+
+ 8 Oct 2022     - made a correction in dynamics.f for DIRECT
+
+ 9 Oct 2022     - worked on channel joints
+
+ 15 Oct 2022    - treated the joint of a frontwater curve channel with
+                  a backwater curve channel
+		  
+ 16 Oct 2022    - worked on a joint of two backwater curve channels
+
+ 18 Oct 2022    - implemented the massless method for linear applications
+                  (no update of stiffness matrix)
+
+ 19 Oct 2022    - linear massless explicit dynamics seems to work
+
+ 29 Oct 2022    - made a small correction for massless explicit dynamics
+                  in nonlingeo.c (deallocation)
+
+ 31 Oct 2022    - added an example for explicit dynamics with an orthotropic
+                  material
+
+ 4 Nov 2022     - checked in createlocalsys whether the angle is smaller
+                  than pi or exceeds pi
+
+ 2 Dec 2022     - modified eqspacednodes.f
+
+ 10 Dec 2022    - changed the code for feasible directions.
+
+ 14 Dec 2022    - worked on crack propagation (boundarymesh.f)
+                - included the step number in the .dat-file
+		
+ 23 Dec 2022    - corrected umat_ideal_gas.f
+
+  2 Jan 2023    - worked on umat_ideal_gas.f
+                - transferred physcon into umat_ideal_gas.f
+
+ 22 Jan 2023    - inserted the increment number into the .dat-file
+
+ 28 Jan 2023    - removed variable iumat
+                - started inserting Johnson Cook model
+
+ 4 Feb 2023     - taking the thermal expansion into account in
+                  umat_abaqusnl: the total right stretch tensor has to
+		  be taken to calculate the corotational stress from the
+		  PK2 stress, no the mechanical right stretch tensor.
+
+ 11 Feb 2023    - updated the feasible direction procedure
+
+ 17 Feb 2023    - worked on feasible directions
+                - modified the conditions governing the storage of the
+		  STEP number in the .dat file
+                - modified the conditions governing the storage of the
+		  INCREMENT number in the .dat file
+
+ 24 Feb 2023    - change in smalldist.f: distmin should not be smaller
+                  than 1.d-8
+		- made a change in umat_abaqusnl.f: taking expansion
+		  into account after return from umat.f
+                - accelerated Johnson-Cook (wrote umat_abaqusnl_4_jcook.f)
+
+ 3 Mar 2023     - made a change in umat_abaqusnl.f and umat_abaqusnl_4_jcook.f
+                  (multiplied tangent matrix with vj)
+
+ 7 Mar 2023     - updated umat_johnson_cook.f and wrote umat_def_plas.f
+
+ 9 Mar 2023     - changed deformation plasticity from Cauchy stress vs.
+                  Euler strain to Cauchy stress vs. Hencky strain.
+
+ 13 Mar 2023    - worked on the tangent in umat_abaqusnl.f
+
+ 14 Mar 2023    - changed the value of alambda and factor in
+                  contingentsurf.f in order to accelerate the calculation
+                - worked on the consistent tangent in umat_abaqusnl.f and
+		  umat_abaqusnl_total.f
+
+ 21 Mar 2023    - cleaned umat_abaqusnl.f and umat_abaqusnl_total.f
+
+ 31 Mar 2023    - worked on the documentation for umat_abaqusnl.f
+                - introduced centrifugal forces about an axis based
+		  on node numbers
+
+ 1 April 2023   - removed an error from frd.c (imaginary part of
+                  fields for a steady state dynamics calculation)
+
+ 4 April 2023   - cleaned up normalsforequ_se.f
+
+ 10 May 2023    - worked on 2D sensitivity (output of mesh in
+                  normalsforequ_se.f)
+ 15 May 2023    - changed "26" in the declarations to "20" (no more
+                  than 20 nodes per element)
+
+ 19 May 2023    - integrated the 4-noded tet with 4 integration points
+                  instead of 1 for the mass matrix (intscheme=1; this is
+		  an exact integration if the density is constant)
+
+ 20 May 2023    - worked on 2D-sensitivity and feasible direction
+
+ 21 May 2023    - started debugging Mohr-Coulomb
+
+ 23 May 2023    - replaced ",26)" by ",20)" (no more than 20 nodes per
+                  element)
+		- worked on Mohr-Coulomb
+
+ 2 June 2023    - made a correction in changekon.f (included newly
+                  defined elements)
+                - worked on 2D feasible direction
+
+ 4 June 2023    - made a correction in the transformation matrix in
+                  mohrcoulomb.f
+
+ 13 June 2023   - if at least one initial temperature was defined, the initial
+                  temperatures AND the temperature in all nodes used by
+		  elements must be defined.
+
+ 18 June 2023   - worked on *matrix assemble in combination with
+                  cyclic symmetry
+
+ 27 June 2023   - finished *matrix assemble in combination with cyclic
+                  symmetry
+
+ 4 July 2023    - worked on *SUBSTRUCTURE MATRIX OUTPUT,OUTPUT FILE=MATRIX
+                - removed the network nodes from the change-in-temperature-
+		  check w.r.t. deltmx (resultsini, cam[2])
+
+ 7 July 2023    - fixed an error in resultsmech: energy was not calculated
+                  in an increment for which no printing output was requested.
+
+ 8 July 2023    - initialized xstateini for explicit dynamic calculations
+                  with plasticity and contact
+
+ 17 July 2023   - changed the header of the block for CDISP and CSTRE in
+                  the frd-file
+
+ 22 July 2023   - removed an error in the Johnson-Cook umat routine
+                - in nonlingeo.c, explicit dynamics, line 3130: displacements
+		  alone are not sufficient?
+		- hgforce.f needs an entry in the stiffness matrix:
+		  problematic for explicit dynamics (icmd=3 in line 1476).
+
+ 25 July 2023   - added interpolation for 2D-velocity in resultsprint.f
+                - made some changes in writeinputdeck.f and writeinputdeck2.f
+
+ 27 July 2023   - made some changes for the gas network elements
+                - corrected an error for the connection of linear beams
+		  and trusses.

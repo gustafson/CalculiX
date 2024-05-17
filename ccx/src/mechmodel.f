@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@
      &     icmd,beta,stre,xkl,ckl,vj,xikl,vij,plconloc,xstate,xstateini,
      &     ielas,amat,t1l,dtime,time,ttime,iel,iint,nstate_,mi,
      &     iorien,pgauss,orab,eloc,mattyp,pnewdt,istep,iinc,ipkon,
-     &     nmethod,iperturb,depvisc,nlgeom_undo)
+     &     nmethod,iperturb,depvisc,nlgeom_undo,physcon,ncmat_)
 !
 !     kode=-1: Arruda-Boyce
 !          -2: Mooney-Rivlin
@@ -42,6 +42,7 @@
 !          -50: deformation plasticity
 !          -51: incremental plasticity (no viscosity)
 !          -52: viscoplasticity
+!          -53: Mohr-Coulomb plasticity
 !       < -100: user material routine with -kode-100 user
 !               defined constants with keyword *USER MATERIAL
 !
@@ -50,49 +51,59 @@
       character*80 amat
 !
       integer kode,ithermal(*),icmd,ielas,iel,iint,nstate_,mi(*),iorien,
-     &  mattyp,istep,iinc,ipkon(*),nmethod,iperturb(*),nlgeom_undo
+     &     mattyp,istep,iinc,ipkon(*),nmethod,iperturb(*),nlgeom_undo,
+     &     ncmat_,j
 !
       real*8 elconloc(*),elas(21),emec(*),emec0(*),beta(*),stre(*),
      &  ckl(*),vj,plconloc(*),t1l,xkl(*),xikl(*),vij,depvisc,
      &  dtime,didc(27),d2idc2(243),dibdc(27),d2ibdc2(243),
      &  dudc(9),d2udc2(81),dldc(27),d2ldc2(243),dlbdc(27),d2lbdc2(243),
-     &  pgauss(3),orab(7,*),time,ttime,eloc(6),pnewdt
+     &  pgauss(3),orab(7,*),time,ttime,eloc(6),pnewdt,physcon(*)
 !
       real*8 xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*)
 !
       if(kode.gt.0) then
          call linel(kode,mattyp,beta,emec,stre,elas,elconloc,
-     &  iorien,orab,pgauss)
+     &  iorien,orab,pgauss,ncmat_)
       elseif(kode.gt.-50) then
          mattyp=3
          call rubber(elconloc,elas,emec,kode,didc,d2idc2,
      &     dibdc,d2ibdc2,dudc,d2udc2,dldc,d2ldc2,dlbdc,d2lbdc2,
-     &     ithermal,icmd,beta,stre)
+     &     ithermal,icmd,beta,stre,ncmat_)
       elseif(kode.eq.-50) then
          mattyp=3
-         call defplas(elconloc,elas,emec,ithermal,icmd,beta,stre,
-     &     ckl,vj,xstate,nstate_,iel,iint,mi)
-      elseif(kode.gt.-100) then
+c         call defplas(elconloc,elas,emec,ithermal,icmd,beta,stre,
+c     &     ckl,vj,xstate,nstate_,iel,iint,mi)
+         call umat_abaqusnl_total(amat,iel,iint,kode,elconloc,emec,
+     &        emec0,beta,xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,
+     &        icmd,ielas,mi,nstate_,xstateini,xstate,stre,elas,
+     &        iorien,pgauss,orab,istep,iinc,pnewdt,nmethod,iperturb)
+      elseif((kode.eq.-51).or.(kode.eq.-52)) then
          mattyp=3
          if(iperturb(2).eq.1) then
             call incplas(elconloc,plconloc,xstate,xstateini,elas,emec,
      &           ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
-     &           time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod,
+     &           time,ttime,iel,iint,nstate_,mi,eloc,pgauss,nmethod,
      &           pnewdt,depvisc)
          else
             call incplas_lin(elconloc,plconloc,xstate,xstateini,elas,
      &           emec,
      &           ithermal,icmd,beta,stre,vj,kode,ielas,amat,t1l,dtime,
-     &           time,ttime,iel,iint,nstate_,mi(1),eloc,pgauss,nmethod,
+     &           time,ttime,iel,iint,nstate_,mi,eloc,pgauss,nmethod,
      &           pnewdt,depvisc)
-         endif
-      else
-         mattyp=3
+          endif
+        elseif(kode.eq.-53) then
+          mattyp=3
+          call mohrcoulomb(elconloc,plconloc,xstate,xstateini,
+     &         elas,emec,icmd,beta,stre,
+     &         ielas,dtime,time,ttime,iel,iint,nstate_,mi,pnewdt)
+        else
+          mattyp=3
          call umat_main(amat,iel,iint,kode,elconloc,emec,emec0,beta,
      &        xikl,vij,xkl,vj,ithermal,t1l,dtime,time,ttime,icmd,ielas,
-     &        mi(1),nstate_,xstateini,xstate,stre,elas,iorien,pgauss,
+     &        mi,nstate_,xstateini,xstate,stre,elas,iorien,pgauss,
      &        orab,pnewdt,istep,iinc,ipkon,nmethod,iperturb,depvisc,
-     &        eloc,nlgeom_undo)
+     &        eloc,nlgeom_undo,physcon,ncmat_)
       endif
 !
       return

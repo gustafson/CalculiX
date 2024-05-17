@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,7 +33,6 @@
      &     iexpl,alpha,iamboun,plicon,nplicon,plkcon,
      &     nplkcon,iplas,npmat_,mi,nk_,trab,inotr,ntrans,ikboun,
      &     ilboun,ikmpc,ilmpc,ics,dcs,ncs_,namtot_,cs,nstate_,ncmat_,
-     &     iumat,
      &     mcs,labmpc,iponor,xnor,knor,thickn,thicke,ikforc,ilforc,
      &     offset,iponoel,inoel,rig,infree,nshcon,shcon,cocon,ncocon,
      &     physcon,nflow,ctrl,maxlenmpc,ne1d,
@@ -48,7 +47,8 @@
      &     iuel,nuel_,nodempcref,coefmpcref,ikmpcref,memmpcref_,
      &     mpcfreeref,maxlenmpcref,memmpc_,isens,namtot,nstam,dacon,
      &     vel,nef,velo,veloo,ne2boun,itempuser,irobustdesign,
-     &     irandomtype,randomval,nfc,nfc_,coeffc,ikdc,ndc,ndc_,edc)
+     &     irandomtype,randomval,nfc,nfc_,coeffc,ikdc,ndc,ndc_,edc,
+     &     coini)
 !     
       implicit none
 !     
@@ -114,9 +114,9 @@
      &     nmethod,nk,ne,nboun,nmpc,nmpc_,mpcfree,i,istat,n,
      &     key,nk_,ne_,nboun_,ncs_,namtot_,nstate_,iviewfile,
      &     isolver,ithermal(*),iperturb(*),iprestr,istep,mei(4),nkon,
-     &     nprint,nload,nload_,nforc,nforc_,nlabel,iumat,imat,
+     &     nprint,nload,nload_,nforc,nforc_,nlabel,imat,
      &     nset,nset_,nprint_,nam,nam_,jout(2),ncmat_,itpamp,
-     &     ierror,idrct,jmax(2),iexpl,iplas,npmat_,ntrans,ntrans_,
+     &     ierror,idrct,jmax(*),iexpl,iplas,npmat_,ntrans,ntrans_,
      &     M_or_SPC,nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),nflow,
      &     ne1d,ne2d,nener,irstrt(*),ii,maxlenmpc,inl,ipol,network,
      &     iline,mcs,ntie,ntie_,lprev,newstep,nbody,nbody_,ibody(3,*),
@@ -141,12 +141,12 @@
      &     xbody(7,*),xbodyold(7,*),t0g(2,*),t1g(2,*),
      &     fei(3),tinc,tper,xmodal(*),tmin,tmax,tincf,
      &     alpha(*),physcon(*),coefmpcref(*),vel(nef,*),velo(*),
-     &     veloo(*),randomval(2,*),coeffc(0:6,*),edc(12,*)
+     &     veloo(*),randomval(2,*),coeffc(0:6,*),edc(12,*),coini(3,*)
 !     
       save solid,ianisoplas,out3d,pretension
 !     
       integer nentries
-      parameter(nentries=18)
+      parameter(nentries=19)
 !
       irestartread=0
       newstep=0
@@ -268,7 +268,6 @@ c        nset=0
         write(*,*)
         return
       endif
-c     write(*,*) textpart(1)
 !     
       if(textpart(1)(1:10).eq.'*AMPLITUDE') then
         call amplitudes(inpc,textpart,amname,amta,namta,nam,
@@ -363,6 +362,11 @@ c     write(*,*) textpart(1)
      &       namtot_,namta,amta,iaxial,ipoinpc,idefforc,ipompc,nodempc,
      &       nmpc,ikmpc,ilmpc,labmpc,iamplitudedefault,namtot,ier)
         cflux_flag=.true.
+!     
+      elseif(textpart(1)(1:18).eq.'*CHANGECONTACTTYPE') then
+        call changecontacttypes(inpc,textpart,istep,istat,n,iline,
+     &       ipol,inl,ipoinp,inp,iperturb,ipoinpc,mortar,ier,iexpl,
+     &       nmethod)
 !     
       elseif(textpart(1)(1:15).eq.'*CHANGEFRICTION') then
         ichangefriction=1
@@ -669,12 +673,12 @@ c
       elseif(textpart(1)(1:8).eq.'*ENDSTEP') then
         exit
 !     
-      elseif(textpart(1)(1:10).eq.'*EQUATIONF') then
-        M_or_SPC=1
-        call equationfs(inpc,textpart,ipompc,nodempc,coefmpc,
-     &       nmpc,nmpc_,mpcfree,co,trab,ntrans,ikmpc,ilmpc,
-     &       labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
-     &       lakon,ne,nload,sideload,ipkon,kon,nelemload,ier)
+c      elseif(textpart(1)(1:10).eq.'*EQUATIONF') then
+c        M_or_SPC=1
+c        call equationfs(inpc,textpart,ipompc,nodempc,coefmpc,
+c     &       nmpc,nmpc_,mpcfree,co,trab,ntrans,ikmpc,ilmpc,
+c     &       labmpc,istep,istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,
+c     &       lakon,ne,nload,sideload,ipkon,kon,nelemload,ier)
 !     
       elseif(textpart(1)(1:9).eq.'*EQUATION') then
         M_or_SPC=1
@@ -700,7 +704,7 @@ c
 !     
       elseif(textpart(1)(1:18).eq.'*FEASIBLEDIRECTION') then
         call feasibledirections(inpc,textpart,istat,n,key,iline,ipol,
-     &     inl,ipoinp,inp,ipoinpc,nmethod,objectset,nobject,istep,ier)
+     &       inl,ipoinp,inp,ipoinpc,nmethod,istep,ier,tmax,tinc)
 !     
       elseif(textpart(1)(1:5).eq.'*FILM') then
         call films(inpc,textpart,set,istartset,iendset,
@@ -801,6 +805,10 @@ c
      &       kon,co,ne,ipkon,vold,ipoinpc,xstate,nstate_,nk,t0g,
      &       t1g,iaxial,ielprop,prop,ier,nuel_)
 !     
+      elseif(textpart(1)(1:12).eq.'*INITIALMESH') then
+         call initialmeshs(inpc,textpart,coini,nk,nk_,set,istat,n,
+     &        iline,ipol,inl,ipoinp,inp,ipoinpc,ier)              
+!     
       elseif(textpart(1)(1:22).eq.'*INITIALSTRAININCREASE') then
         call initialstrainincreases(inpc,textpart,prestr,iprestr,
      &       mi,istep,istat,n,iline,ipol,inl,ipoinp,inp,ne,ipoinpc,
@@ -828,6 +836,11 @@ c
      &       irstrt,istep,istat,n,iline,ipol,inl,ipoinp,inp,
      &       ipoinpc,imat,ier)
 !     
+      elseif(textpart(1)(1:15).eq.'*MATRIXASSEMBLE') then
+        call matrixassembles(textpart,n,iuel,nuel_,inpc,ipoinpc,
+     &       iline,ier,ipoinp,inp,inl,ipol,lakon,ipkon,kon,nkon,ne,ne_,
+     &       ielmat,mi,matname,nmat,nmat_,irstrt,istep)
+!     
       elseif(textpart(1)(1:16).eq.'*MEMBRANESECTION') then
         call membranesections(inpc,textpart,set,istartset,iendset,
      &       ialset,nset,ielmat,matname,nmat,ielorien,orname,
@@ -851,6 +864,17 @@ c
      &       ipol,inl,ipoinp,inp,ntie,ipoinpc,istep,ipkon,nset,
      &       istartset,iendset,set,ialset,ne,mi,ielmat,iprestr,
      &       iperturb,ier,tietol)
+!     
+      elseif(textpart(1)(1:21).eq.'*MOHRCOULOMBHARDENING') then
+        call mohrcoulombhardenings(inpc,textpart,nelcon,nmat,
+     &       plicon,nplicon,plkcon,nplkcon,iplas,iperturb,nstate_,
+     &       ncmat_,elcon,matname,irstrt,istep,istat,n,iline,ipol,
+     &       inl,ipoinp,inp,ipoinpc,ianisoplas,ier,ntmat_,npmat_)
+!     
+      elseif(textpart(1)(1:12).eq.'*MOHRCOULOMB') then
+        call mohrcoulombs(inpc,textpart,elcon,nelcon,nmat,
+     &       ntmat_,ncmat_,irstrt,istep,istat,n,iperturb,iline,ipol,
+     &       inl,ipoinp,inp,ipoinpc,ier,iplas,matname,nstate_)
 !     
       elseif(textpart(1)(1:4).eq.'*MPC') then
         call mpcs(inpc,textpart,set,istartset,iendset,
@@ -963,6 +987,11 @@ c
       elseif(textpart(1)(1:12).eq.'*RANDOMFIELD') then
         call randomfields(inpc,textpart,istep,istat,n,iline,
      &       ipol,inl,ipoinp,inp,ipoinpc,nener,physcon,ier)        
+!     
+      elseif(textpart(1)(1:14).eq.'*RATEDEPENDENT') then
+        call ratedependents(inpc,textpart,nelcon,nmat,ntmat_,
+     &     iplas,iperturb,nstate_,ncmat_,elcon,matname,irstrt,istep,
+     &     istat,n,iline,ipol,inl,ipoinp,inp,ipoinpc,ier)
 !     
       elseif(textpart(1)(1:11).eq.'*REFINEMESH') then
         call refinemeshs(inpc,textpart,filab,istep,istat,n,iline,
@@ -1101,7 +1130,7 @@ c
       elseif(textpart(1)(1:25).eq.'*SUBSTRUCTUREMATRIXOUTPUT') then
         call substructurematrixoutputs(textpart,istep,inpc,
      &       istat,n,key,iline,ipol,inl,ipoinp,inp,jobnamec,ipoinpc,
-     &       ier)
+     &       ier,jmax)
 !     
       elseif(textpart(1)(1:9).eq.'*SURFACE ') then
         call surfaces(inpc,textpart,set,istartset,iendset,ialset,
@@ -1179,7 +1208,7 @@ c
 !     
       elseif(textpart(1)(1:13).eq.'*USERMATERIAL') then
         call usermaterials(inpc,textpart,elcon,nelcon,
-     &       imat,ntmat_,ncmat_,iperturb,iumat,irstrt,istep,istat,n,
+     &       imat,ntmat_,ncmat_,iperturb,irstrt,istep,istat,n,
      &       iline,ipol,inl,ipoinp,inp,cocon,ncocon,ipoinpc,ier)
 !     
       elseif(textpart(1)(1:12).eq.'*USERSECTION') then
@@ -1209,8 +1238,8 @@ c
      &       ipoinp,inp,ipoinpc)
 !     
       else
-        write(*,*) '*WARNING in calinput. Card image cannot be inter
-     &preted:'
+        write(*,*) '*WARNING in calinput. Card image cannot be interpret
+     &ed:'
         call inputwarning(inpc,ipoinpc,iline,
      &       "the input file%")
         call getnewline(inpc,textpart,istat,n,key,iline,ipol,inl,
@@ -1227,6 +1256,14 @@ c
       endif
 !     
       enddo loop
+!     
+      if(ier.ge.1) then
+        write(*,*) '*ERROR in calinput: at least one fatal'
+        write(*,*) '       error message while reading the'
+        write(*,*) '       input deck: CalculiX stops.'
+        write(*,*)
+        call exit(201)
+      endif
 !     
 !     check whether the *END STEP card was preceded by a *STEP card    
 !     
@@ -1669,13 +1706,13 @@ c
         elseif(iperturb(1).eq.1) then
           write(*,*) '*ERROR in calinput: PERTURBATION and fluids'
           write(*,*) '       are mutually exclusive; '
-          ier=1
+          call exit(201)
         endif
       endif
 !     
-      write(*,*)
-      write(*,*) 'STEP ',istep
-      write(*,*)
+c      write(*,*)
+c      write(*,*) 'STEP ',istep
+c      write(*,*)
       if(nmethod.eq.-1) then
         write(*,*) 'Visco analysis was selected'
       elseif(nmethod.eq.0) then
@@ -1715,13 +1752,35 @@ c
       timepar(5)=tincf
 !     
       if(istep.eq.1) ncs_=lprev
-!     
-      if(ier.ge.1) then
-        write(*,*) '*ERROR in calinput: at least one fatal'
-        write(*,*) '       error message while reading the'
-        write(*,*) '       input deck: CalculiX stops.'
-        write(*,*)
-        call exit(201)
+c!     
+c      if(ier.ge.1) then
+c        write(*,*) '*ERROR in calinput: at least one fatal'
+c        write(*,*) '       error message while reading the'
+c        write(*,*) '       input deck: CalculiX stops.'
+c        write(*,*)
+c        call exit(201)
+c      endif
+!
+!     the step number is written in the .dat-file if data output
+!     was requested or if the procedure always leads to some
+!     output in the .dat file; this is the case for the following
+!     procedures:
+!     *FREQUENCY
+!     *BUCKLE
+!     *STEADY STATE DYNAMICS
+!     *COMPLEX FREQUENCY,CORIOLIS
+!     *COMPLEX FREQUENCY,FLUTTER
+!     *SENSITIVITY
+!     *ROBUST DESIGN
+!     *FEASIBLE DIRECTION
+!
+      if(((nmethod.eq.2).or.(nmethod.eq.3).or.(nmethod.eq.5).or.
+     &     (nmethod.eq.6).or.(nmethod.eq.7).or.(nmethod.eq.12).or.
+     &     (nmethod.eq.14).or.(nmethod.eq.16)).or.(nprint.gt.0)) then
+        write(5,*)
+        write(5,100) istep
+ 100    format('                        S T E P ',i7)
+        write(5,*)
       endif
 !     
       return

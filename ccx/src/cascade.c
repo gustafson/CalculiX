@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -65,7 +65,7 @@ void cascade(ITG *ipompc, double **coefmpcp, ITG **nodempcp, ITG *nmpc,
   nodempc=*nodempcp;
   coefmpc=*coefmpcp;
     
-  /*     for(i=0;i<*nmpc;i++){
+  /*   for(i=0;i<*nmpc;i++){
 	  j=i+1;
 	  FORTRAN(writempc,(ipompc,nodempc,coefmpc,labmpc,&j));
 	  }*/

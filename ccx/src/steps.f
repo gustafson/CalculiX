@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -31,7 +31,7 @@
       character*132 textpart(16)
 !
       integer iperturb(*),nforc,nload,ithermal(*),nk,istep,istat,n,key,
-     &  i,j,iprestr,jmax(2),irstrt(*),iline,ipol,inl,ipoinp(2,*),
+     &  i,j,iprestr,jmax(*),irstrt(*),iline,ipol,inl,ipoinp(2,*),
      &  inp(3,*),namtot_,
      &  newstep,nbody,ipoinpc(0:*),network,iamplitudedefault,nam,
      &  nam_,namta(3,*),namtot,nstam,ier
@@ -50,6 +50,11 @@
       if(iperturb(1).lt.2) iperturb(1)=0
       if(irstrt(1).lt.0) irstrt(1)=0
       istep=istep+1
+!
+      write(*,*)
+      write(*,*) 'STEP ',istep
+      write(*,*)
+!
       jmax(1)=100
       jmax(2)=10000
       physcon(14)=0.d0

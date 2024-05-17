@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,11 +29,11 @@
       character*20 empty
 !     
       integer iobject,nobject,istat,nactive,nnlconst,inameacti(*),
-     &     ipoacti(*),ifree,i,ndesi,nk,node,nodedesi(ndesi),
+     &     ipoacti(*),ifree,i,ndesi,nk,node,nodedesi(*),
      &     iconstacti(*),nconst
 !     
-      real*8 g0(nobject),bounds(nobject),scale,bound,objnorm(nobject),
-     &     dgdxglob(2,nk,nobject)
+      real*8 g0(*),bounds(nobject),scale,bound,objnorm(*),
+     &     dgdxglob(2,nk,*)
       empty='                    '
 !   
       write(5,*)
@@ -47,7 +47,7 @@
      &'FUNCTION         ','FUNCTION      ','  ACTIVE/ ','   NAME OF' 
       write(5,101)
      &'CONSTRAINT   ','FUNCTION        ','GE      ','VALUE            ',
-     &'BOUND            ','VALUE NORM.   ','  INACTIVE','   CONSTRAINT' 
+     &'BOUND            ','VIOLATION     ','  INACTIVE','   CONSTRAINT' 
       write(5,'(a113)') '  ################################################
      &#################################################################'
       write(5,*)
@@ -76,6 +76,7 @@
                write(*,*) '*WARNING in checkconstraint'
                write(*,*) '         no absolute constraint boundary'
                write(*,*) '         defined, system value taken' 
+               write(*,*)
                bound=g0(iobject)
             endif
             if(objectset(1,iobject)(41:60).ne.empty) then
@@ -85,6 +86,7 @@
                write(*,*) '*WARNING in checkconstraint'
                write(*,*) '         no relative constraint boundary'
                write(*,*) '         defined, 1.0 taken' 
+               write(*,*)
                scale=1.0d0
             endif
             bounds(iobject)=bound*scale

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                     */
+/*              Copyright (C) 1998-2023 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include "CalculiX.h"
 
 void sensi_orien(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
@@ -80,8 +81,8 @@ void sensi_orien(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     *nnodes=NULL,iregion=0,*konfa=NULL,*ipkonfa=NULL,nsurfs,
     *iponor=NULL,*iponoelfa=NULL,*inoelfa=NULL,
     ifreemax,nconstraint,
-    *iponexp=NULL,*ipretinfo=NULL,nfield,iforce,*iponod2dto3d=NULL,
-    *iponk2dto3d=NULL,ishape=0,nobjectstart=0;
+    *iponexp=NULL,*ipretinfo=NULL,nfield,iforce,*nod2nd3rd=NULL,
+    *nod1st=NULL,ishape=0,nobjectstart=0;
       
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,*tper,
     *f=NULL,*fn=NULL,qa[4],*epn=NULL,*xstateini=NULL,*xdesi=NULL,
@@ -155,7 +156,7 @@ void sensi_orien(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
       imass=1;
     }else if(strcmp1(&objectset[i*405],"STRAINENERGY")==0){
       ishapeenergy=1;
-    }else if(strcmp1(&objectset[i*405],"STRESS")==0){
+    }else if(strcmp1(&objectset[i*405],"MISESSTRESS")==0){
       idisplacement=1;
       //      }else if(strcmp1(&objectset[i*405],"THICKNESS")==0){
       //	  ithickness=1;
@@ -197,7 +198,7 @@ void sensi_orien(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 
     /* opening the eigenvalue file and checking for cyclic symmetry */
       
-    strcpy(fneig,jobnamec);
+    strcpy2(fneig,jobnamec,132);
     strcat(fneig,".eig");
       
     if((f1=fopen(fneig,"rb"))==NULL){
@@ -575,7 +576,7 @@ void sensi_orien(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 
       /* for mass and strain energy the stiffness matrix is not needed */
 	
-      strcpy(stiffmatrix,jobnamec);
+      strcpy2(stiffmatrix,jobnamec,132);
       strcat(stiffmatrix,".stm");
 	
       if((f1=fopen(stiffmatrix,"rb"))==NULL){
@@ -705,7 +706,7 @@ void sensi_orien(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 		 islavsurf,ielprop,prop,energyini,energy,df,&distmin,
 		 &ndesi,nodedesi,sti,nkon,jqs,irows,nactdofinv,
 		 &icoordinate,dxstiff,istartdesi,ialdesi,xdesi,
-		 &ieigenfrequency,fint,&ishapeenergy,typeboun);
+		 &ieigenfrequency,fint,&ishapeenergy,typeboun,physcon);
 	  
       iout=1;SFREE(v);
       
@@ -784,9 +785,9 @@ void sensi_orien(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 		       cs,output,istartdesi,ialdesi,xdesi,orname,&icoordinate,
 		       &iev,d,z,au,ad,aub,adb,&cyclicsymmetry,&nzss,&nev,
 		       &ishapeenergy,fint,nlabel,&igreen,&nasym,iponoel,inoel,
-		       nodedesiinv,dgdxdy,nkon,iponod2dto3d,iponk2dto3d,ics,
+		       nodedesiinv,dgdxdy,nkon,nod2nd3rd,nod1st,ics,
 		       mcs,mpcend,&noddiam,ipobody,ibody,xbody,nbody,
-		       &nobjectstart,dfm); 
+		       &nobjectstart,dfm,physcon,ne2d); 
       iout=1;
 
       SFREE(v);SFREE(f);SFREE(xstiff);SFREE(fn);SFREE(df);SFREE(stx);
@@ -801,7 +802,7 @@ void sensi_orien(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
   SFREE(iponoel);SFREE(inoel);SFREE(nodedesiinv);
   
   if(*ne2d!=0){
-    SFREE(iponod2dto3d);SFREE(iponk2dto3d);
+    SFREE(nod2nd3rd);SFREE(nod1st);
   }
   
   if(ieigenfrequency==1){

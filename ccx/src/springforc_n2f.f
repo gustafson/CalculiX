@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,12 +44,8 @@
      &  springarea(2),overlap,pres,xn1(3),xn2(3),
      &  xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),t1(3),t2(3),
      &  dt1,dte,alnew(3),reltime,smscale(*)
-!
-!
-!
+
       iflag=2
-!
-      if(nener.eq.1) venergy=0.d0
 !
 !     actual positions of the nodes belonging to the contact spring
 !     (otherwise no contact force)
@@ -326,6 +322,7 @@
             eps=elcon(1,1,imat)*pi/elcon(2,1,imat)
             elas(1)=(-springarea(1)*elcon(2,1,imat)*clear*
      &           (0.5d0+datan(-clear/eps)/pi)) 
+c               write(*,*) 'springforc_n2f.f',clear,springarea(1),elas(1)
             if(nener.eq.1) then
                senergy=-elas(1)*clear/2.d0
             endif
@@ -503,12 +500,11 @@ c     write(*,*)'STICK'
 !
 !              shear elastic energy
 !
-               if(nener.eq.1) senergy=senergy+dftrial*dte
+               if(nener.eq.1) senergy=senergy+dftrial*dte/2.d0 
             else
 !     
 !     slip
 !     
-c     write(*,*)'SLIP'
                dg=(dftrial-dfshear)/xk
                do i=1,3
                   ftrial(i)=te(i)/dte
@@ -525,8 +521,8 @@ c     write(*,*)'SLIP'
 !              shear elastic and viscous energy
 !
                if(nener.eq.1) then
-                  senergy=senergy+dfshear*dfshear/xk
-                  venergy=dg*dfshear
+                  senergy=senergy+dfshear*dfshear/(xk*2.d0)
+                  venergy=venergy+dg*dfshear
                endif
 !
             endif

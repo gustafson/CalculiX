@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -30,7 +30,7 @@
       integer istat,n,key,iline,ipol,inl,ipoinp(2,*),inp(3,*),
      &  ipoinpc(0:*),i,j,nentries
 !
-      parameter(nentries=18)
+      parameter(nentries=19)
 !
 !     reading a new line
 !

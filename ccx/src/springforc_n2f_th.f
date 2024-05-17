@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
      &  pl(3,10),xn(3),dm,alpha,beta,tnl(10),pressure,dtemp,
      &  dist,conductance,eps,pi,springarea,timeend(2),ak(5),
      &  elcon(0:ncmat_,ntmat_,*),pproj(3),xsj2(3),xs2(3,7),val,
-     &  shp2(7,9),xi,et,elconloc(21),plconloc(802),xk,d(2),flowm(2),
+     &  shp2(7,9),xi,et,elconloc(*),plconloc(802),xk,d(2),flowm(2),
      &  xiso(200),yiso(200),plkcon(0:2*npmat_,ntmat_,*),temp(2),
      &  predef(2),coords(3),tmean
 !
@@ -74,16 +74,12 @@
 !
 !     determining the jacobian vector on the surface 
 !
-c      if(nterms.eq.9) then
-c         call shape9q(xi,et,pl,xsj2,xs2,shp2,iflag)
       if(nterms.eq.8) then
          call shape8q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.4) then
          call shape4q(xi,et,pl,xsj2,xs2,shp2,iflag)
       elseif(nterms.eq.6) then
          call shape6tri(xi,et,pl,xsj2,xs2,shp2,iflag)
-c      elseif(nterms.eq.7) then
-c         call shape7tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       else
          call shape3tri(xi,et,pl,xsj2,xs2,shp2,iflag)
       endif
