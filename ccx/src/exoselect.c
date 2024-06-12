@@ -64,6 +64,7 @@ void exoselect(double *field1,double *field2,ITG *iset,ITG *nkcoords,ITG *inum,
   int num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets, errr;
   char title [ MAX_LINE_LENGTH +1];
   errr = ex_get_init (exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk, &num_node_sets, &num_side_sets);
+  if (errr) printf ("ERROR exoselect found uninitialized file\n");
   
   float *nodal_var_vals = (float *) calloc(num_nodes, sizeof(float));
   
