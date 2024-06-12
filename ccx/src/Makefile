@@ -22,23 +22,23 @@
 ################################################################################
 ################################################################################
 
-CC=gcc
-FC=gfortran
+CC=/usr/x86_64-pc-linux-gnu/gcc-bin/13/gcc
+FC=/usr/x86_64-pc-linux-gnu/gcc-bin/13/gfortran
 
-## CFLAGS=-march=native -g -O0 ## debugging  -pg
-## FFLAGS=-march=native -g -O0 ## debugging  -pg
-## LDFLAGS += -g
-## CFLAGS=-march=native -O2 -Wall ## conservative
-## FFLAGS=-march=native -O2 -Wall ## conservative
-CFLAGS=-march=native -O3 ## -Wall ## -fcommon ## -flto ## aggressive -fprofile-generate -fprofile-use
-FFLAGS=-march=native -O3 ## -Wall -fallow-argument-mismatch ## -flto ## aggressive -fprofile-generate -fprofile-use
+ALLFLAGS = -march=native -g -O0 ## debugging -pg
+ALLFLAGS = -march=native -O2    ## conservative
+ALLFLAGS = -march=native -O3 -Wall -flto # -fcommon -fprofile-generate -fprofile-use
+#ALLFLAGS = -march=native -O3 -Wall -flto -fprofile-generate -fprofile-dir=/dev/shm
+#ALLFLAGS = -march=native -O3 -Wall -flto -fprofile-use -fprofile-dir=/dev/shm
+CFLAGS=$(ALLFLAGS)
+FFLAGS=$(ALLFLAGS) -fno-stack-protector -fallow-argument-mismatch -finit-local-zero
 
 ## Integer8.  Note at least Arpack and Pardiso need to be compiled for
 ## Integer8 as well.  Spooles does not appear to be int8 according to Guido
-## LONGLONG = -DLONGLONG
-## CFLAGS  += $(LONGLONG)
-## FFLAGS  += -fdefault-integer-8
-## INTEXT = 64
+# LONGLONG = -DLONGLONG
+# CFLAGS  += $(LONGLONG)
+# FFLAGS  += -fdefault-integer-8
+# INTEXT = 64
 
 ## Other CCX Options
 CFLAGS  += -DARCH="Linux" -DMATRIXSTORAGE
@@ -91,14 +91,17 @@ LDFLAGS += `pkg-config --libs lapack$(INTEXT)`
 CFLAGS  += `pkg-config --cflags blas$(INTEXT)`
 LDFLAGS += `pkg-config --libs blas$(INTEXT)`
 
-## Assuming MKL pardiso since pardiso not generally distributed anymore https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html#gs.qklzaa
+## Assuming MKL pardiso since pardiso not generally distributed anymore
+## https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html
 ## PARDISO 
-## CFLAGS  += -DPARDISO
-## LDFLAGS += -L/home/pete/local/lib64/ -lpardiso -lgfortran -lpthread -lm -fopenmp
-CFLAGS  += `pkg-config --cflags mkl-dynamic-lp64-tbb` -DPARDISO -I/opt/intel/oneapi/mkl/2023.0.0/include/
-LDFLAGS += `pkg-config --libs mkl-dynamic-lp64-tbb` -L/opt/intel/oneapi/mkl/2023.0.0/lib/intel64/
-## 32bit ints would be: mkl-dynamic-lp64-tbb
-## 64bit ints would be: mkl-dynamic-ilp64-tbb
+## CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
+## LDFLAGS += `pkg-config --libs pardiso`
+CFLAGS += -I${MKLROOT}/include/intel64/ilp64 -I${MKLROOT}/include -DPARDISO ## -fdefault-integer-8 -m64
+FFLAGS += -I${MKLROOT}/include/intel64/ilp64 -I${MKLROOT}/include	    ## -fdefault-integer-8 -m64
+## 64bit ints gfortran openmp libgomp on gentoo
+## LDFLAGS += -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+## 32bit ints gfortran openmp libgomp
+LDFLAGS += -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
 
 ################################################################################
 ################################################################################
