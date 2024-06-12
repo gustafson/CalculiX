@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -441,7 +441,7 @@ c              enddo
       enddo
 !     
  100  format(/,'*ERROR reading *EQUATION: the DOF corresponding to',
-     &     /,'node ',i10,' in direction',i1,' is detected on',
+     &     /,'node ',i10,' in direction ',i1,' is detected on',
      &     /,'the dependent side of two different MPC''s') 
       return
       end

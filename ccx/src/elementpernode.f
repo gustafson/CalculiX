@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,8 +24,6 @@
 !
       integer iponoel(*),inoel(2,*),ipkon(*),kon(*),i,j,ne,
      &  inoelfree,nope,indexe,node
-!
-!
 !
 !     determining the elements belonging to the nodes of
 !     the elements

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -82,9 +82,6 @@
                noset(81:81)=' '
                ipos=index(noset,' ')
                noset(ipos:ipos)='N'
-c               do j=1,nset
-c                  if(set(j).eq.noset) exit
-c               enddo
                call cident81(set,noset,nset,id)
                j=nset+1
                if(id.gt.0) then
@@ -151,6 +148,7 @@ c               enddo
          write(*,*) '*WARNING reading *CONTACT PAIR'
          write(*,*) '         The option SMALL SLIDING cannot be'
          write(*,*) '         used with SURFACE TO SURFACE contact'
+         write(*,*)
          tietol(1,ntie)=-tietol(1,ntie)
       endif
 !

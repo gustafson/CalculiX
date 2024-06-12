@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -48,7 +48,7 @@
      &     imat
 !     
       real*8 lambdap,gnc,pn_d(40),gn_d(40),aninv1(40),t(40),
-     &     beta,p0,aninvloc,elconloc(21),plconloc(802),t1l,
+     &     beta,p0,aninvloc,elconloc(ncmat_),plconloc(802),t1l,
      &     elcon(0:ncmat_,ntmat_,*),plicon(0:2*npmat_,ntmat_,*),
      &     tietol(4,*),scal
 !      

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -94,6 +94,8 @@
          isolver=4
       elseif(solver(1:5).eq.'TAUCS') then
          isolver=5
+      elseif(solver(1:13).eq.'MATRIXSTORAGE') then
+         isolver=isolver+10
       elseif(solver(1:7).eq.'PARDISO') then
          isolver=7
       elseif(solver(1:6).eq.'PASTIX') then

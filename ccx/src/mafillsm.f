@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,7 +43,7 @@
 !     
       character*8 lakon(*)
       character*20 sideload(*)
-      character*80 matname(*)
+      character*80 matname(*),filestiff,filemass
       character*81 tieset(3,*),set(*)
 !     
       integer kon(*),nodeboun(*),ndirboun(*),ipompc(*),nodempc(3,*),
@@ -62,12 +62,12 @@
      &     nea,neb,kscale,iponoel(*),inoel(2,*),network,ndof,
      &     nset,islavelinv(*),jqtloc(*),irowtloc(*),ii,jqtloc1(21),
      &     irowtloc1(96),i1,j1,j2,konl(26),mortartrafoflag,ikmpc(*),
-     &     mscalmethod
+     &     mscalmethod,kk,imat,istiff
 !     
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &     p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
      &     t0(*),t1(*),prestr(6,mi(1),*),vold(0:mi(2),*),s(60,60),
-     &     ff(60),fnext(0:mi(2),*),
+     &     ff(60),fnext(0:mi(2),*),dd,
      &     sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
      &     elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
      &     alcon(0:6,ntmat_,*),physcon(*),cocon(0:6,ntmat_,*),prop(*),
@@ -76,7 +76,7 @@
      &     plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &     xstiff(27,mi(1),*),veold(0:mi(2),*),om,valu2,value,dtime,
      &     time,thicke(mi(3),*),doubleglob(*),clearini(3,9,*),ttime,
-     &     pslavsurf(3,*),pmastsurf(6,*),smscale(*),autloc(*),
+     &     pslavsurf(3,*),pmastsurf(6,*),smscale(*),autloc(*),val,
      &     autloc1(96)
 !     
       kflag=2
@@ -285,7 +285,53 @@ c     mortar end
      &           ne0,ipkon,thicke,
      &           integerglob,doubleglob,tieset,istartset,
      &           iendset,ialset,ntie,nasym,
-     &           ielprop,prop)
+     &           ielprop,prop,nope)
+          endif
+!
+!         treatment of substructure (superelement)
+!
+          if(nope.eq.-1) then
+            nope=ichar(lakon(i)(8:8))
+            imat=ielmat(1,i)
+            filestiff=matname(imat)
+            open(20,file=filestiff,status='old')
+            istiff=1
+            do
+              read(20,*,end=1) node1,k,node2,m,val
+              call nident(kon(indexe+1),node1,nope,id1)
+              jj=(id1-1)*3+k
+              call nident(kon(indexe+1),node2,nope,id2)
+              ll=(id2-1)*3+m
+c              write(*,*) 'mafillsm ',node1,k,node2,m,jj,ll
+              call mafillsmmatrix(ipompc,nodempc,coefmpc,nmpc,
+     &             ad,au,nactdof,jq,irow,neq,nmethod,mi,rhsi,
+     &             k,m,node1,node2,jj,ll,val,istiff)
+            enddo
+ 1          close(20)
+!     
+            if(mass(1).ne.0) then
+!
+!             only if mass matrix is needed (not for static calculation)
+!
+              imat=ielmat(2,i)
+              if(imat.ne.0) then
+                filemass=matname(imat)
+                open(20,file=filemass,status='old')
+                istiff=0
+                do
+                  read(20,*,end=2) node1,k,node2,m,val
+                  call nident(kon(indexe+1),node1,nope,id1)
+                  jj=(id1-1)*3+k
+                  call nident(kon(indexe+1),node2,nope,id2)
+                  ll=(id2-1)*3+m
+                  call mafillsmmatrix(ipompc,nodempc,coefmpc,nmpc,
+     &                 adb,aub,nactdof,jq,irow,neq,nmethod,mi,rhsi,
+     &                 k,m,node1,node2,jj,ll,val,istiff)
+                enddo
+ 2              close(20)
+              endif
+            endif
+            return
           endif
 !     
           do jj=1,ndof*nope
@@ -303,6 +349,11 @@ c     mortar end
 !     
               node2=kon(indexe+l)
               jdof2=nactdof(m,node2)
+c              if(i.eq.96) then
+c                write(20,100) node1,k,node2,m,s(jj,ll)
+c                write(21,100) node1,k,node2,m,sm(jj,ll)
+c              endif
+c 100          format(i10,",",i5,",",i10,",",i5,",",e20.13)
 !     
 !     check whether one of the DOF belongs to a SPC or MPC
 !     

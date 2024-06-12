@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine map3dto1d2d(yn,ipkon,inum,kon,lakon,nfield,nk,
-     &  ne,cflag,co,vold,force,mi,ielprop,prop)
+     &  ne,cflag,co,vold,iforce,mi,ielprop,prop)
 !
 !     interpolates 3d field nodal values to 1d/2d nodal locations
 !
@@ -26,7 +26,7 @@
 !
       implicit none
 !
-      logical force,quadratic
+      logical quadratic
 !
       character*1 cflag
       character*8 lakon(*),lakonl
@@ -34,13 +34,11 @@
       integer ipkon(*),inum(*),kon(*),ne,indexe,nfield,nk,i,j,k,l,m,
      &  node3(8,3),node6(3,6),node8(3,8),node2d,node3d,indexe2d,ne1d2d,
      &  node3m(8,3),node(8),m1,m2,nodea,nodeb,nodec,iflag,mi(*),jmax,
-     &  jinc,nope,mint3d,null,ielprop(*)
+     &  jinc,nope,mint3d,null,ielprop(*),iforce
 !
       real*8 yn(nfield,*),cg(3),p(3),pcg(3),t(3),xl(3,8),shp(7,8),
      &  xsj(3),e1(3),e2(3),e3(3),s(6),dd,xi,et,ze,co(3,*),xs(3,7),
      &  vold(0:mi(2),*),ratioe(3),weight,prop(*),xil,etl
-!
-!
 !
       include "gauss.f"
 !
@@ -168,7 +166,7 @@
             do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=inum(node2d)-1
-               if(.not.force) then
+               if(iforce.eq.0) then
 !
 !                 taking the mean across the thickness
 !
@@ -254,7 +252,7 @@
 !
                do j=1,jmax
                   node2d=kon(indexe2d+j)
-                  if(.not.force) then
+                  if(iforce.eq.0) then
 !
 !                    mean value of vertex values
 !
@@ -511,7 +509,7 @@ c                     write(*,*) 's4-6',s(4),s(5),s(6)
             do j=1,jmax
                node2d=kon(indexe2d+j)
                inum(node2d)=inum(node2d)-1
-               if(.not.force) then
+               if(iforce.eq.0) then
 !
 !                 taking the mean across the thickness
 !

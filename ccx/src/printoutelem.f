@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -38,7 +38,7 @@
      &  ithermal(*),nrhcon(*),ntmat_,imat,i1,ipobody(2,*),ibody(3,*),
      &  index,nbody
 !
-      real*8 ener(mi(1),*),energytot,volumetot,energy,volume,co(3,*),
+      real*8 ener(2,mi(1),*),energytot,volumetot,energy,volume,co(3,*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,enerkintot,enerkin,
      &  stx(6,mi(1),*),a,gs(8,4),dlayer(4),tlayer(4),thickness,
      &  thicke(mi(3),*),xlayer(mi(3),4),shp2(7,8),xs2(3,7),xsj2(3),
@@ -141,7 +141,7 @@
             do
                j=ipobody(1,index)
                if(j.eq.0) exit
-               if(ibody(1,j).eq.1) then
+               if(abs(ibody(1,j)).eq.1) then
                   om=xbody(1,j)
                   exit
                endif
@@ -299,7 +299,7 @@
          mint3d=2
       else
          if(nener.eq.1)then
-            energy=ener(1,nelem)
+            energy=ener(1,1,nelem)
          endif
          mint3d=0
       endif
@@ -425,9 +425,9 @@
          endif
 !
          if(nener.eq.1) then
-            energy=energy+weight*xsj*ener(jj,nelem)
+            energy=energy+weight*xsj*ener(1,jj,nelem)
          elseif(nkin.eq.1) then
-            enerkin=enerkin+weight*xsj*ener(jj,nelem+ne)
+            enerkin=enerkin+weight*xsj*ener(2,jj,nelem)
          elseif(nvol.eq.1) then
             volume=volume+weight*xsj
          elseif(nmas.eq.1) then

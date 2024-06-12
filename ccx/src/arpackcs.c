@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -129,7 +129,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     *cdnt=NULL,*cdnr=NULL,*cdni=NULL,*eme=NULL,alea=0.1,sum,
     *pslavsurfold=NULL,*energyini=NULL,*energy=NULL,xn[3],e1[3],e2[3],
     *smscale=NULL,*auw=NULL,*autloc=NULL,*xboun2=NULL,*coefmpc2=NULL,
-    *dstorage=NULL,*distorage=NULL;
+    *dstorage=NULL,*distorage=NULL,*physcon=NULL;
 
   FILE *f1;
 
@@ -153,7 +153,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     igreen=1;
   }
 
-  if(*nener==1){NNEW(ener,double,mi[0]**ne);}
+  if(*nener==1){NNEW(ener,double,2*mi[0]**ne);}
   
   for(k=0;k<3;k++){
     strcpy1(&jobnamef[k*132],&jobnamec[k*132],132);
@@ -235,7 +235,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	RENEW(kon,ITG,*nkon+11**nslavs);
 	NNEW(springarea,double,2**nslavs);
 	if(*nener==1){
-	  RENEW(ener,double,mi[0]*(*ne+*nslavs)*2);
+	  RENEW(ener,double,2*mi[0]*(*ne+*nslavs));
+	  DMEMSET(ener,2*mi[0]**ne,2*mi[0]*(*ne+*nslavs),0.);
 	}
 	RENEW(ipkon,ITG,*ne+*nslavs);
 	RENEW(lakon,char,8*(*ne+*nslavs));
@@ -281,7 +282,8 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	RENEW(pmastsurf,double,6**nintpoint);
 	      
 	if(*nener==1){
-	  RENEW(ener,double,mi[0]*(*ne+*nintpoint)*2);
+	  RENEW(ener,double,2*mi[0]*(*ne+*nintpoint));
+	  DMEMSET(ener,2*mi[0]**ne,2*mi[0]*(*ne+*nintpoint),0.);
 	}
 	RENEW(ipkon,ITG,*ne+*nintpoint);
 	RENEW(lakon,char,8*(*ne+*nintpoint));
@@ -356,7 +358,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		   labmpc,nk,&memmpc_,&icascade,&maxlenmpc,
 		   kon,ipkon,lakon,ne,nactdof,icol,jq,&irow,isolver,
 		   neq,nzs,nmethod,ithermal,iperturb,&mass,mi,ics,cs,
-		   mcs,mortar,typeboun,&iit,&network,iexpl);
+		   mcs,mortar,typeboun,&iit,&network,iexpl,ielmat,matname);
     }
   }
   
@@ -392,7 +394,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
   NNEW(eei,double,6*mi[0]**ne);
   NNEW(stiini,double,6*mi[0]*ne0);
   NNEW(emeini,double,6*mi[0]*ne0);
-  if(*nener==1) NNEW(enerini,double,mi[0]*ne0);
+  if(*nener==1) NNEW(enerini,double,2*mi[0]*ne0);
       
   if(*iperturb==0){
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
@@ -417,7 +419,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 	    ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	    &intscheme);
+	    &intscheme,physcon);
   }else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
 	    elcon,nelcon,rhcon,nrhcon,alcon,nalcon,alzero,ielmat,
@@ -441,7 +443,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	    islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 	    ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	    &intscheme);
+	    &intscheme,physcon);
   }
   SFREE(eei);SFREE(stiini);SFREE(emeini);SFREE(vini);
   if(*nener==1) SFREE(enerini);
@@ -476,33 +478,19 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
     if((is==1)&&(*mcs==1)) continue;
     ielset=cs[17*i+12];
     if(ielset==0) continue;
-    for(i1=istartset[ielset-1]-1;i1<iendset[ielset-1];i1++){
-      if(ialset[i1]>0){
-	iel=ialset[i1]-1;
-	if(ipkon[iel]<0) continue;
-	ielcs[iel]=i;
-	indexe=ipkon[iel];
-	if(strcmp1(&lakon[8*iel+3],"2")==0)nope=20;
-	else if (strcmp1(&lakon[8*iel+3],"8")==0)nope=8;
-	else if (strcmp1(&lakon[8*iel+3],"10")==0)nope=10;
-	else if (strcmp1(&lakon[8*iel+3],"4")==0)nope=4;
-	else if (strcmp1(&lakon[8*iel+3],"15")==0)nope=15;
-	else if (strcmp1(&lakon[8*iel+3],"6")==0)nope=6;
-	else if (strcmp1(&lakon[8*iel],"ES")==0){
-	  lakonl[0]=lakon[8*iel+7];
-	  nope=atoi(lakonl)+1;}
-	else continue;
-	      
-	for(i2=0;i2<nope;++i2){
-	  node=kon[indexe+i2]-1;
-	  inocs[node]=i;
-	}
+    if(ielset<0){
+      iel=-ielset;
+      ielcs[iel]=i;
+      indexe=ipkon[iel];
+      nope=lakon[8*iel+7];
+      for(i2=0;i2<nope;++i2){
+	node=kon[indexe+i2]-1;
+	inocs[node]=i;
       }
-      else{
-	iel=ialset[i1-2]-1;
-	do{
-	  iel=iel-ialset[i1];
-	  if(iel>=ialset[i1-1]-1) break;
+    }else{
+      for(i1=istartset[ielset-1]-1;i1<iendset[ielset-1];i1++){
+	if(ialset[i1]>0){
+	  iel=ialset[i1]-1;
 	  if(ipkon[iel]<0) continue;
 	  ielcs[iel]=i;
 	  indexe=ipkon[iel];
@@ -511,14 +499,39 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 	  else if (strcmp1(&lakon[8*iel+3],"10")==0)nope=10;
 	  else if (strcmp1(&lakon[8*iel+3],"4")==0)nope=4;
 	  else if (strcmp1(&lakon[8*iel+3],"15")==0)nope=15;
-	  else {nope=6;}
+	  else if (strcmp1(&lakon[8*iel+3],"6")==0)nope=6;
+	  else if (strcmp1(&lakon[8*iel],"ES")==0){
+	    lakonl[0]=lakon[8*iel+7];
+	    nope=atoi(lakonl)+1;}
+	  else continue;
+	      
 	  for(i2=0;i2<nope;++i2){
 	    node=kon[indexe+i2]-1;
 	    inocs[node]=i;
 	  }
-	}while(1);
+	}
+	else{
+	  iel=ialset[i1-2]-1;
+	  do{
+	    iel=iel-ialset[i1];
+	    if(iel>=ialset[i1-1]-1) break;
+	    if(ipkon[iel]<0) continue;
+	    ielcs[iel]=i;
+	    indexe=ipkon[iel];
+	    if(strcmp1(&lakon[8*iel+3],"2")==0)nope=20;
+	    else if (strcmp1(&lakon[8*iel+3],"8")==0)nope=8;
+	    else if (strcmp1(&lakon[8*iel+3],"10")==0)nope=10;
+	    else if (strcmp1(&lakon[8*iel+3],"4")==0)nope=4;
+	    else if (strcmp1(&lakon[8*iel+3],"15")==0)nope=15;
+	    else {nope=6;}
+	    for(i2=0;i2<nope;++i2){
+	      node=kon[indexe+i2]-1;
+	      inocs[node]=i;
+	    }
+	  }while(1);
+	}
       }
-    } 
+    }
   }
   
   /* loop over the nodal diameters */
@@ -669,7 +682,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       matrixstorage(ad,&au,adb,aub,&sigma,icol,&irow,&neq[1],&nzs[1],
 		    ntrans,inotr,trab,co,nk,nactdof,jobnamec,mi,ipkon,
 		    lakon,kon,ne,mei,nboun,nmpc,cs,mcs,ithermal,nmethod);
-      strcpy(fneig,jobnamec);
+      strcpy2(fneig,jobnamec,132);
       strcat(fneig,".frd");
       if((f1=fopen(fneig,"ab"))==NULL){
 	printf(" *ERROR in frd: cannot open frd file for writing...");
@@ -1007,7 +1020,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       
     if(mei[3]==1){
 	  
-      strcpy(fneig,jobnamec);
+      strcpy2(fneig,jobnamec,132);
       strcat(fneig,".eig");
 	  
       /* the first time the file is erased before writing, all subsequent
@@ -1408,7 +1421,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
       NNEW(vini,double,mt**nk);
       NNEW(stiini,double,6*mi[0]*ne0);
       NNEW(emeini,double,6*mi[0]*ne0);
-      if(*nener==1) NNEW(enerini,double,mi[0]*ne0);
+      if(*nener==1) NNEW(enerini,double,2*mi[0]*ne0);
 	  
       DMEMSET(v,0,2*mt**nk,0.);
 	  
@@ -1475,10 +1488,12 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  prestr,iprestr,filab,&eme[kkx],&emn[kk6],&een[kk6],iperturb,
 		  f,&fn[kkv],nactdof,&iout,qa,vold,&z[lint+k],
 		  nodeboun,ndirboun,xboun,nboun,ipompc,
-		  nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
+		  nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neq[1],veold,
+		  accold,
 		  &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
 		  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-		  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],emeini,
+		  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],
+		  emeini,
 		  xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 		  ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 		  nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
@@ -1491,7 +1506,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 		  ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 		  labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-		  &intscheme);}
+		  &intscheme,physcon);}
 	else{
 	  results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
 		  &stx[kkx],elcon,
@@ -1500,10 +1515,12 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  prestr,iprestr,filab,&eme[kkx],&emn[kk6],&een[kk6],iperturb,
 		  f,&fn[kkv],nactdof,&iout,qa,vold,&z[lint+k],
 		  nodeboun,ndirboun,xboun,nboun,ipompc,
-		  nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neq[1],veold,accold,
+		  nodempc,coefmpcnew,labmpc,nmpc,nmethod,cam,&neq[1],veold,
+		  accold,
 		  &bet,&gam,&dtime,&time,ttime,plicon,nplicon,plkcon,nplkcon,
 		  xstateini,xstiff,xstate,npmat_,epn,matname,mi,&ielas,&icmd,
-		  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],emeini,
+		  ncmat_,nstate_,stiini,vini,ikboun,ilboun,ener,&enern[kk],
+		  emeini,
 		  xstaten,eei,enerini,cocon,ncocon,set,nset,istartset,iendset,
 		  ialset,nprint,prlab,prset,qfx,qfn,trab,inotr,ntrans,fmpc,
 		  nelemload,nload,ikmpc,ilmpc,istep,&iinc,springarea,&reltime,
@@ -1516,7 +1533,7 @@ void arpackcs(double *co, ITG *nk, ITG **konp, ITG **ipkonp, char **lakonp,
 		  islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 		  ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 		  labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-		  &intscheme);
+		  &intscheme,physcon);
 	}
 	      
       }

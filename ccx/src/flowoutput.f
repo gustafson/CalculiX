@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -158,8 +158,8 @@
           thetado=theta
         elseif((lakon(nelem)(6:7).eq.'CO').or.
      &         (lakon(nelem)(6:7).eq.'EL').or.
-     &         (lakon(nelem)(6:7).eq.'ST').or.
-     &         (lakon(nelem)(6:7).eq.'DR')) then
+     &         (lakon(nelem)(6:7).eq.'ST')) then
+c     &         (lakon(nelem)(6:7).eq.'DR')) then
           b1=prop(index+1)
           theta1=prop(index+2)
           b2=prop(index+3)

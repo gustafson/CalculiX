@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,9 @@
 !
 !     assigning a number to the load type (stored in ibody(1,*))
 !
-      if(label(1:7).eq.'CENTRIF') then
+      if(label(1:8).eq.'CENTRIFP') then
+         ilabel=-1
+      elseif(label(1:7).eq.'CENTRIF') then
          ilabel=1
       elseif(label(1:4).eq.'GRAV') then
          ilabel=2

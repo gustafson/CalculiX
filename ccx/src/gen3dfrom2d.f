@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -365,7 +365,6 @@ c         do j=1,2*nedge
 !
 !                    fixing the middle plane
 !
-c            if(rig(nodel(j)).gt.0) cycle
             if(rig(nodel(j)).gt.0) then
                nodefixz=nodel(j)
             else
@@ -377,7 +376,6 @@ c            if(rig(nodel(j)).gt.0) cycle
                k=3
                if(nam.gt.0) iamplitude=0
                type='M'
-c               call bounadd(nodes(2,j),k,k,val,nodeboun,
                call bounadd(nodefixz,k,k,val,nodeboun,
      &              ndirboun,xboun,nboun,nboun_,iamboun,
      &              iamplitude,nam,ipompc,nodempc,coefmpc,

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -66,6 +66,9 @@
         write(*,*) 
      &       '*ERROR reading *RADIATE: *RADIATE card was selected'
         write(*,*) '       but no *PHYSICAL CONSTANTS card encountered'
+        write(*,*) '       or incomplete (Stefan Boltzmann constant'
+        write(*,*) '       is lacking)'
+        write(*,*)
         ier=1
         return
       endif

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -190,7 +190,7 @@
           ndprop=7
         elseif(typename(8:17).eq.'STRAIGHT') then
           elname='LICH   '
-          ndprop=5
+          ndprop=6
         elseif(typename(8:16).eq.'RESERVOIR') then
           elname='LICHRE '
           ndprop=5
@@ -203,9 +203,9 @@
         elseif(typename(8:11).eq.'STEP') then
           elname='LICHST '
           ndprop=7
-        elseif(typename(8:11).eq.'DROP') then
-          elname='LICHDR '
-          ndprop=7
+c        elseif(typename(8:11).eq.'DROP') then
+c          elname='LICHDR '
+c          ndprop=7
         else
           write(*,*) '*ERROR reading *FLUID SECTION:'
           write(*,*) '       unknown channel section'
@@ -695,7 +695,7 @@ c     enddo
 !     
       elseif(elname.eq.'ACCTUBE') then
 !     
-!     acc-tube (proprietary)
+!     acc-tube (code not available)
 !     
       elseif(ndprop.gt.0) then
 !     
@@ -849,9 +849,11 @@ c     enddo
 !     Orifice types which are not allowed for liquids:
 !     - Bragg (ORBG)
 !     - Bleed Tapping (ORBT)
-!     - own table+Albers rotating correction(proprietary) (ORMA)
+!     - own table+Albers rotating correction (not in the internet distribution
+!       of CalculiX (ORMA)
 !     - McGreehan and Schotsch (ORMM)
-!     - Parker and Kercher+Albers rotation correction (proprietary) (ORPA)
+!     - Parker and Kercher+Albers rotation correction (not in the internet
+!       distribution of CalculiX) (ORPA)
 !     - Parker and Kercher+Mac Grehan and Schotsch rotation correction (ORPM)
 !     - Preswirl Nozzle (ORPN)          
 !

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -272,11 +272,17 @@
 !     
       read(15)(r8,i=1,6*mi(1)*ne)
       read(15)(r8,i=1,6*mi(1)*ne)
-      if(nener.eq.1) read(15)(r8,i=1,mi(1)*ne)
+      if(nener.eq.1) then
+        if(mortar.ne.1) then
+          read(15)(r8,i=1,2*mi(1)*(ne+nslavs))
+        else
+          read(15)(r8,i=1,2*mi(1)*ne)
+        endif
+      endif
       if(nstate_.gt.0) then
-        if(mortar.eq.0) then
+        if(mortar.ne.1) then
           read(15)(r8,i=1,nstate_*mi(1)*(ne+nslavs))
-        elseif(mortar.eq.1) then
+        else
           read(15)(r8,i=1,nstate_*mi(1)*(ne+nintpoint))
         endif
       endif

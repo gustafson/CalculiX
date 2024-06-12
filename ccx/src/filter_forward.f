@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,9 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
-      subroutine filter(dgdxglob,nobject,nk,nodedesi,ndesi,
+      subroutine filter_forward(gradproj,nk,nodedesi,ndesi,
      &           objectset,xo,yo,zo,x,y,z,nx,ny,nz,neighbor,r,
-     &           ndesia,ndesib,xdesi,distmin)               
+     &           ndesia,ndesib,xdesi,distmin,feasdir,filterval)               
 !
 !     Filtering of sensitivities      
 !
@@ -26,14 +26,12 @@
 !
       character*81 objectset(5,*)
 
-      integer nobject,nk,nodedesi(*),nnodesinside,i,actdir,
-     &        ndesi,j,m,neighbor(ndesi+6),nx(ndesi),
-     &        ny(ndesi),nz(ndesi),istat,ndesia,ndesib
+      integer nk,nodedesi(*),nnodesinside,i,actdir,ndesi,j,m,node,
+     &   neighbor(*),nx(*),ny(*),nz(*),istat,ndesia,ndesib
 !
-      real*8 dgdxglob(2,nk,nobject),xo(ndesi),yo(ndesi),zo(ndesi),
-     &       x(ndesi),y(ndesi),z(ndesi),filterrad,r(ndesi+6),
-     &       filterval(ndesi),nominator,denominator,distmin,
-     &       xdesi(3,ndesi),scalar,pi,sigma
+      real*8 gradproj(3,*),xo(*),yo(*),zo(*),x(*),y(*),z(*),filterrad,
+     &   r(*),filterval(*),nominator,denominator,distmin,pi,
+     &   dd,xdesi(3,*),scalar,sigma,feasdir(2,*)
 !
 !     Calculate filtered sensitivities
 !
@@ -103,34 +101,31 @@
 !  
 !        Calculate filtered sensitivity
 ! 
-         do m=1,nobject
-            if(objectset(1,m)(4:13).eq.'MEMBERSIZE') cycle             
-            if(objectset(1,m)(1:9).eq.'FIXGROWTH') cycle             
-            if(objectset(1,m)(1:12).eq.'FIXSHRINKAGE') cycle
-            nominator=0.d0
-            denominator=0.d0
-            do i=1,nnodesinside
-               if(actdir.eq.1) then          
-                  scalar=(xdesi(1,j)*xdesi(1,neighbor(i))
-     &                +xdesi(2,j)*xdesi(2,neighbor(i))
-     &                +xdesi(3,j)*xdesi(3,neighbor(i)))/(distmin**2)
-c                  if(objectset(1,m)(1:4).eq.'MASS') then
-c                     scalar=1.d0
-c                  endif
-                  if(scalar.lt.0.d0) then
-                     scalar=0.d0
-                  endif
-                  nominator=nominator+filterval(i)*scalar*
-     &                dgdxglob(1,nodedesi(neighbor(i)),m)
-                  denominator=denominator+filterval(i)      
-               else
-                  nominator=nominator+filterval(i)*
-     &                dgdxglob(1,nodedesi(neighbor(i)),m)
-                  denominator=denominator+filterval(i)
+         nominator=0.d0
+         denominator=0.d0
+         do i=1,nnodesinside
+            if(actdir.eq.1) then    
+               scalar=(xdesi(1,j)*xdesi(1,neighbor(i))
+     &        +xdesi(2,j)*xdesi(2,neighbor(i))
+     &        +xdesi(3,j)*xdesi(3,neighbor(i)))/(distmin**2)
+c          if(objectset(1,m)(1:4).eq.'MASS') then
+c             scalar=1.d0
+c          endif
+               if(scalar.lt.0.d0) then
+                  scalar=0.d0
                endif
-            enddo 
-            dgdxglob(2,nodedesi(j),m)=nominator/denominator
-         enddo
+               nominator=nominator+filterval(i)*scalar*
+     &         gradproj(3,nodedesi(neighbor(i)))
+               denominator=denominator+filterval(i)   
+            else
+               nominator=nominator+filterval(i)*
+     &         gradproj(3,nodedesi(neighbor(i)))
+               denominator=denominator+filterval(i)
+            endif
+          enddo
+c     ALREADY DONE AT THE START OF FILTER_FORWARDMAIN
+c         feasdir(1,nodedesi(j))=gradproj(3,nodedesi(j))
+         feasdir(2,nodedesi(j))=nominator/denominator
       enddo
 !
       return        

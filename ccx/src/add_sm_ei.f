@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,17 +20,15 @@
      &  i0,i1)
 !
 !     stores the stiffness coefficient (i,j) with value "value"
-!     in the stiffness matrix stored in spare matrix format and 
-!     the mass coefficient (i,j) with value "valuem" in the lumped 
-!     mass matrix
+!     in the stiffness matrix stored in sparse matrix format and 
+!     the mass coefficient (i,j) with value "valuem" in the  
+!     mass matrix stored in sparse matrix format
 !
       implicit none
 !
       integer jq(*),irow(*),i,j,ii,jj,ipointer,id,i0,i1
 !
       real*8 ad(*),au(*),adb(*),aub(*),value,valuem
-!
-!
 !
       if(i.eq.j) then
          if(i0.eq.i1) then

@@ -26,20 +26,20 @@ CC=gcc
 FC=gfortran
 UBUNTU := $(shell lsb_release -d)
 
-## CFLAGS=-march=native -g -O0 ## debugging  -pg
-## FFLAGS=-march=native -g -O0 ## debugging  -pg
-## LDFLAGS += -g
-## CFLAGS=-march=native -O2 -Wall ## conservative
-## FFLAGS=-march=native -O2 -Wall ## conservative
-CFLAGS=-march=native -O3 -Wall ## -flto ## aggressive -fprofile-generate -fprofile-use
-FFLAGS=-march=native -O3 -Wall -fallow-argument-mismatch ## -flto ## aggressive -fprofile-generate -fprofile-use
+ALLFLAGS = -march=native -g -O0 ## debugging -pg
+ALLFLAGS = -march=native -O2    ## conservative
+ALLFLAGS = -march=native -O3 -Wall -flto # -fcommon -fprofile-generate -fprofile-use
+#ALLFLAGS = -march=native -O3 -Wall -flto -fprofile-generate -fprofile-dir=/dev/shm
+#ALLFLAGS = -march=native -O3 -Wall -flto -fprofile-use -fprofile-dir=/dev/shm
+CFLAGS=$(ALLFLAGS)
+FFLAGS=$(ALLFLAGS) -fno-stack-protector -fallow-argument-mismatch -finit-local-zero
 
 ## Integer8.  Note at least Arpack and Pardiso need to be compiled for
 ## Integer8 as well.  Spooles does not appear to be int8 according to Guido
-## LONGLONG = -DLONGLONG
-## CFLAGS  += $(LONGLONG)
-## FFLAGS  += -fdefault-integer-8
-## INTEXT = 64
+# LONGLONG = -DLONGLONG
+# CFLAGS  += $(LONGLONG)
+# FFLAGS  += -fdefault-integer-8
+# INTEXT = 64
 
 ## Other CCX Options
 CFLAGS  += -DARCH="Linux" -DMATRIXSTORAGE
@@ -47,7 +47,8 @@ LDFLAGS +=
 
 ## Multi Threaded and MPI
 CFLAGS += -DUSE_MT
-#CFLAGS += -DCALCULIX_MPI -fopenmp
+#CFLAGS += -DCALCULIX_MPI 
+FFLAGS += -fopenmp
 
 ## This is now default for calculix and relates to CFD
 CFLAGS += -DNETWORKOUT
@@ -75,7 +76,7 @@ LDFLAGS += -lspooles -lpthread
 ## LDFLAGS += -larpack
 CFLAGS  += `pkg-config --cflags arpack$(INTEXT)` -DARPACK
 LDFLAGS += `pkg-config --libs arpack$(INTEXT)`
-## 
+
 ## TAUCS
 ## CFLAGS  += -DTAUCS
 ## LDFLAGS += -ltaucs -lmetis
@@ -183,7 +184,7 @@ LDFLAGS += -lexoIIv2c -lnetcdf
 
 include Makefile.inc
 
-SCCXMAIN = ccx_2.20.c
+SCCXMAIN = ccx_2.21.c
 
 ## Define all the object file rules to identify dependencies
 OCCXCU = $(SCCXCU:.cu=.o)
@@ -194,14 +195,14 @@ OCCXMAIN = $(SCCXMAIN:.c=.o)
 ## Link to math and standard c
 CFLAGS += -lm -lc
 
-all: ccx_2.20
-	@echo Successfully compiled ccx_2.20
+all: ccx_2.21
+	@echo Successfully compiled ccx_2.21
 
-ccx_2.20: $(OCCXMAIN) ccx_2.20.a
+ccx_2.21: $(OCCXMAIN) ccx_2.21.a
 	./date.pl;
-	$(CC) $(CFLAGS) -c ccx_2.20.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.20.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -c ccx_2.21.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.21.a $(LDFLAGS)
 
-ccx_2.20.a: $(OCCXF) $(OCCXC)
+ccx_2.21.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
 
 clean:

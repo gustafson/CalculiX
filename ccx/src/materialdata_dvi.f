@@ -1,5 +1,5 @@
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,19 +16,19 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
       subroutine materialdata_dvi(shcon,nshcon,imat,dvi,t1l,ntmat_,
-     &  ithermal)
+     &  itherm)
 !
       implicit none
 !
 !     determines the dynamic viscosity
 !
-      integer imat,ntmat_,id,nshcon(*),four,ithermal
+      integer imat,ntmat_,id,nshcon(*),four,itherm
 !
       real*8 t1l,shcon(0:3,ntmat_,*),dvi
 !
       four=4
 !     
-      if(ithermal.eq.0) then
+      if(itherm.eq.0) then
          dvi=shcon(2,1,imat)
       else
          call ident2(shcon(0,1,imat),t1l,nshcon(imat),four,id)

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -32,7 +32,7 @@ void sensitivity_out(char *jobnamec,double *dgdxglob,ITG *neq,ITG *nobject,
            		 
   /* writing the sensitivities in the sen-file for optimizer */
         	
-  strcpy(sensitivities,jobnamec);
+  strcpy2(sensitivities,jobnamec,132);
   strcat(sensitivities,".sen");
   
   if((f1=fopen(sensitivities,"w"))==NULL){
@@ -59,7 +59,7 @@ void sensitivity_out(char *jobnamec,double *dgdxglob,ITG *neq,ITG *nobject,
 
   /* writing the nominal values in the nom-file for optimizer */
         	
-  strcpy(nominal,jobnamec);
+  strcpy2(nominal,jobnamec,132);
   strcat(nominal,".nom");
   
   if((f1=fopen(nominal,"w"))==NULL){

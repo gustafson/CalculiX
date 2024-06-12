@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -44,13 +44,13 @@
      &  nk,ne,nboun,nmpc,nforc,nload,neq(2),nzl,nmethod,icolumn,
      &  ithermal(*),iprestr,iperturb(*),nzs(3),i,j,k,l,m,idist,jj,
      &  ll,id,id1,id2,ist,ist1,ist2,index,jdof1,jdof2,idof1,idof2,
-     &  mpc1,mpc2,index1,index2,node1,node2,ielprop(*),
+     &  mpc1,mpc2,index1,index2,node1,node2,ielprop(*),kk,
      &  ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
      &  nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_
 !
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &  p2(3),ad(*),au(*),bodyf(3),t0(*),t1(*),prestr(6,mi(1),*),
-     &  vold(0:mi(2),*),s(60,60),ff(60),prop(*),
+     &  vold(0:mi(2),*),s(60,60),ff(60),prop(*),dd,
      &  sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),adb(*),aub(*),
      &  elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),
      &  alcon(0:6,ntmat_,*),alzero(*),orab(7,*),xbody(7,*),cgr(4,*)

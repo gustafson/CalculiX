@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -186,6 +186,7 @@
                write(*,*) '         but no time increment nor step is sp
      &ecified'
                write(*,*) '         the defaults (1,1) are used'
+               write(*,*)
                tinc=1.d0
                tper=1.d0
                tmin=1.d-5

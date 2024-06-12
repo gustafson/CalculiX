@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -23,8 +23,14 @@
 
 ITG strcpy1(char *s1, const char *s2, ITG length)
 {
-  ITG b,i,blank=0;
 
+  /* copies up to 'length' characters from s2 into s1;
+     as soon as '\0' is encountered all characters in s1 are
+     replaced by blanks */
+
+  char b;
+  ITG i,blank=0;
+  
   for(i=0;i<length;i++) {
       if(blank==0){
 	  b=*s2;

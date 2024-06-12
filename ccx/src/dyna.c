@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -207,7 +207,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
 
   /* opening the eigenvalue file and checking for cyclic symmetry */
 
-  strcpy(fneig,jobnamec);
+  strcpy2(fneig,jobnamec,132);
   strcat(fneig,".eig");
 
   if((f1=fopen(fneig,"rb"))==NULL){
@@ -718,7 +718,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
     RENEW(sti,double,6*mi[0]**ne);
 
     //      RENEW(xstiff,double,(long long)27*mi[0]**ne);
-    if(*nener==1) RENEW(ener,double,mi[0]**ne*2);
+    if(*nener==1) RENEW(ener,double,2*mi[0]**ne);
   }
 
   fclose(f1);
@@ -1021,7 +1021,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
   if(*nener==1){
     NNEW(stiini,double,6*mi[0]**ne);
     NNEW(emeini,double,6*mi[0]**ne);
-    NNEW(enerini,double,mi[0]**ne);}
+    NNEW(enerini,double,2*mi[0]**ne);}
 
   /*  check for nonzero SPC's */
 
@@ -1252,7 +1252,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
     //    printf("\nnew increment\n");
     
     if(*nener==1){
-      memcpy(&enerini[0],&ener[0],sizeof(double)*mi[0]*ne0);
+      memcpy(&enerini[0],&ener[0],sizeof(double)*2*mi[0]*ne0);
       if(*ithermal!=2){
 	memcpy(&stiini[0],&sti[0],sizeof(double)*6*mi[0]*ne0);
 	memcpy(&emeini[0],&eme[0],sizeof(double)*6*mi[0]*ne0);
@@ -1788,7 +1788,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
 	      islavelinv,autloc,irowtloc,jqtloc,&nboun2,
 	      ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
 	      labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
-	      &intscheme);
+	      &intscheme,physcon);
 
       /* restoring */
 
@@ -2038,7 +2038,7 @@ void dyna(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG *ne,
     RENEW(veold,double,mt**nk);
     RENEW(eme,double,6*mi[0]**ne);
     RENEW(sti,double,6*mi[0]**ne);
-    if(*nener==1)RENEW(ener,double,mi[0]**ne*2);
+    if(*nener==1)RENEW(ener,double,2*mi[0]**ne);
 
     /* distributed loads */
 

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                          */
+/*              Copyright (C) 1998-2023 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -42,12 +42,12 @@ void peeq_sen_dv(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 		   double *dgdu,ITG *ialeneigh,ITG *neaneigh,ITG *nebneigh,
 		   ITG *ialnneigh,ITG *naneigh,ITG *nbneigh,double *epn,
 		   double *expks,char *objectset,ITG *idof,ITG *node,ITG *idir,
-		   double *vold,double *dispmin){         
+		   double *vold,double *dispmin,double *physcon){         
             
   ITG mt=mi[1]+1,calcul_fn,list,
     calcul_qa,calcul_cauchy,ikin=0,nal,iout=2,icmd=3,nener=0,
     *inum=NULL,nfield,ndim,iorienglob,
-    force,mscalmethod=0,*islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,
+    iforce,mscalmethod=0,*islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,
     mortartrafoflag=0,intscheme=0;
 
   double *fn=NULL,*eei=NULL,qa[4]={0.,0.,-1.,0.},*xstiff=NULL,*ener=NULL,    
@@ -84,14 +84,14 @@ void peeq_sen_dv(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
 		       pslavsurf,pmastsurf,mortar,clearini,nea,neb,ielprop,
 		       prop,kscale,&list,ialnk,smscale,&mscalmethod,&enerscal,
 		       t0g,t1g,islavelinv,autloc,irowtloc,jqtloc,
-		       &mortartrafoflag,&intscheme));
+		       &mortartrafoflag,&intscheme,physcon));
 
   /* extrapolating the stresses */
 
   nfield=1;
   ndim=*nstate_;
   iorienglob=0;
-  force=0;
+  iforce=0;
 
   /* 2D-flag */
   
@@ -99,7 +99,7 @@ void peeq_sen_dv(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   
   FORTRAN(extrapolate_se,(dxstate,depn,ipkon,inum,kon,lakon,
 			  &nfield,nk,ne,mi,&ndim,orab,ielorien,co,&iorienglob,
-			  cflag,dv,&force,ielmat,thicke,ielprop,prop,ialeneigh,
+			  cflag,dv,&iforce,ielmat,thicke,ielprop,prop,ialeneigh,
 			  neaneigh,nebneigh,ialnneigh,naneigh,nbneigh));
 
   /* Calculate KS-function and sensitivity */
@@ -110,6 +110,5 @@ void peeq_sen_dv(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne,
   dgdu[*idof]=dksper/(*dispmin**expks);
       
   SFREE(fn);SFREE(eei);SFREE(eme);SFREE(inum);
-  SFREE(ener);SFREE(xstiff);   
 
 }

@@ -207,6 +207,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 		       &IO_word_size);  /* I/O float word size in bytes */
 #endif
 
+    /* Set names in calculix can be 80 characters, longer than default 32 */
+    ex_set_max_name_length(exoid, 81);
+    
     /* determining the number of elements */
     if(*nmethod!=0){
       nelout=0;

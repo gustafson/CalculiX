@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -29,7 +29,7 @@
      &  konl(20),mint3d,jj,iflag,ne,ki,kl,ilayer,nlayer,kk,
      &  nopes,ielmat(mi(3),*),mint2d,null,ielprop(*),nea,neb
 !
-      real*8 ener(mi(1),*),enerinttot,enerint,co(3,*),prop(*),
+      real*8 ener(2,mi(1),*),enerinttot,enerint,co(3,*),prop(*),
      &  xl(3,20),xi,et,ze,xsj,shp(4,20),weight,enerkintot,enerkin,
      &  a,gs(8,4),dlayer(4),tlayer(4),thickness,
      &  thicke(mi(3),*),xlayer(mi(3),4),shp2(7,8),xs2(3,7),xsj2(3),
@@ -37,7 +37,6 @@
 !
       include "gauss.f"
 !
-c      data iflag /2/
       iflag=2
       null=0
 !     
@@ -189,10 +188,10 @@ c      data iflag /2/
             mint3d=2
          elseif(lakonl(1:2).eq.'ES') then
             if(lakonl(7:7).eq.'C') then
-               enerelc=ener(1,nelem)
-               enervic=ener(1,nelem+ne)
+               enerelc=ener(1,1,nelem)
+               enervic=ener(2,1,nelem)
             else
-               enerint=ener(1,nelem)
+               enerint=ener(1,1,nelem)
             endif
             mint3d=0
          else
@@ -317,8 +316,8 @@ c      data iflag /2/
                call shape6w(xi,et,ze,xl,xsj,shp,iflag)
             endif
 !     
-            enerint=enerint+weight*xsj*ener(jj,nelem)
-            enerkin=enerkin+weight*xsj*ener(jj,nelem+ne)
+            enerint=enerint+weight*xsj*ener(1,jj,nelem)
+            enerkin=enerkin+weight*xsj*ener(2,jj,nelem)
          enddo
 !     
          enerinttot=enerinttot+enerint

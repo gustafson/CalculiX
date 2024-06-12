@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,8 +35,6 @@
       real*8 y1,y2,y3,y4,y5,y6,y7,y8
       real*8 z1,z2,z3,z4,z5,z6,z7,z8
       real*8 gb(8,4),gs(8,4),s0,a
-!
-!
 !
       gb = reshape((
      &      / 1.0d0, 1.0d0,-1.0d0,-1.0d0,-1.0d0,-1.0d0, 1.0d0, 1.0d0,

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -369,7 +369,7 @@
 !     
 !     check for a distributing coupling constraint
 !     
-              idof=8*(l-1)+iforcdir
+              idof=8*(k-1)+iforcdir
               call nident(ikdc,idof,ndc,id)
               if(id.gt.0) then
                 if(ikdc(id).eq.idof) then
@@ -415,7 +415,7 @@
 !
 !         check for a distributing coupling constraint
 !
-                idof=8*(l-1)+iforcdir
+                idof=8*(k-1)+iforcdir
                 call nident(ikdc,idof,ndc,id)
                 if(id.gt.0) then
                   if(ikdc(id).eq.idof) then

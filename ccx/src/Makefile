@@ -22,24 +22,23 @@
 ################################################################################
 ################################################################################
 
-# GCCROOT=/usr/x86_64-pc-linux-gnu/gcc-bin/9.4.0/
-CC=$(GCCROOT)gcc
-FC=$(GCCROOT)gfortran
+CC=/usr/x86_64-pc-linux-gnu/gcc-bin/13/gcc
+FC=/usr/x86_64-pc-linux-gnu/gcc-bin/13/gfortran
 
-## CFLAGS=-march=native -g -O0 ## debugging  -pg
-## FFLAGS=-march=native -g -O0 ## debugging  -pg
-## LDFLAGS += -g
-## CFLAGS=-march=native -O2 -Wall ## conservative
-## FFLAGS=-march=native -O2 -Wall ## conservative
-CFLAGS=-march=native -O3 -Wall ## -fcommon ## -flto ## aggressive -fprofile-generate -fprofile-use
-FFLAGS=-march=native -O3 -Wall -fallow-argument-mismatch ## -flto ## aggressive -fprofile-generate -fprofile-use
+ALLFLAGS = -march=native -g -O0 ## debugging -pg
+ALLFLAGS = -march=native -O2    ## conservative
+ALLFLAGS = -march=native -O3 -Wall -flto # -fcommon -fprofile-generate -fprofile-use
+#ALLFLAGS = -march=native -O3 -Wall -flto -fprofile-generate -fprofile-dir=/dev/shm
+#ALLFLAGS = -march=native -O3 -Wall -flto -fprofile-use -fprofile-dir=/dev/shm
+CFLAGS=$(ALLFLAGS)
+FFLAGS=$(ALLFLAGS) -fno-stack-protector -fallow-argument-mismatch -finit-local-zero
 
 ## Integer8.  Note at least Arpack and Pardiso need to be compiled for
 ## Integer8 as well.  Spooles does not appear to be int8 according to Guido
-## LONGLONG = -DLONGLONG
-## CFLAGS  += $(LONGLONG)
-## FFLAGS  += -fdefault-integer-8
-## INTEXT = 64
+# LONGLONG = -DLONGLONG
+# CFLAGS  += $(LONGLONG)
+# FFLAGS  += -fdefault-integer-8
+# INTEXT = 64
 
 ## Other CCX Options
 CFLAGS  += -DARCH="Linux" -DMATRIXSTORAGE
@@ -47,7 +46,8 @@ LDFLAGS +=
 
 ## Multi Threaded and MPI
 CFLAGS += -DUSE_MT
-#CFLAGS += -DCALCULIX_MPI -fopenmp
+#CFLAGS += -DCALCULIX_MPI 
+FFLAGS += -fopenmp
 
 ## This is now default for calculix and relates to CFD
 CFLAGS += -DNETWORKOUT
@@ -91,25 +91,17 @@ LDFLAGS += `pkg-config --libs lapack$(INTEXT)`
 CFLAGS  += `pkg-config --cflags blas$(INTEXT)`
 LDFLAGS += `pkg-config --libs blas$(INTEXT)`
 
-## Assuming MKL pardiso since pardiso not generally distributed anymore https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html#gs.qklzaa
+## Assuming MKL pardiso since pardiso not generally distributed anymore
+## https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html
 ## PARDISO 
-## CFLAGS  += -DPARDISO
-## LDFLAGS += -L/home/pete/local/lib64/ -lpardiso -lgfortran -lpthread -lm -fopenmp
 ## CFLAGS  += `pkg-config --cflags pardiso` -DPARDISO
 ## LDFLAGS += `pkg-config --libs pardiso`
-CFLAGS += `pkg-config --cflags mkl-dynamic-lp64-gomp` -DPARDISO
-LDFLAGS += `pkg-config --libs mkl-dynamic-lp64-gomp`
-CFLAGS += -m64 -I/opt/intel/oneapi/mkl/2023.0.0/include
-FFLAGS += -m64 -I/opt/intel/oneapi/mkl/2023.0.0/include
-LDFLAGS += -L/opt/intel/oneapi/mkl/2023.0.0/lib/intel64
-
-## PastiX
-## CFLAGS += -DPASTIX # -DPASTIX_FP32
-
+CFLAGS += -I${MKLROOT}/include/intel64/ilp64 -I${MKLROOT}/include -DPARDISO ## -fdefault-integer-8 -m64
+FFLAGS += -I${MKLROOT}/include/intel64/ilp64 -I${MKLROOT}/include	    ## -fdefault-integer-8 -m64
 ## 64bit ints gfortran openmp libgomp on gentoo
-LDFLAGS += -Wl,--no-as-needed -lmkl_gf_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+## LDFLAGS += -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_ilp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
 ## 32bit ints gfortran openmp libgomp
-## LDFLAGS += -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
+LDFLAGS += -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl
 
 ################################################################################
 ################################################################################
@@ -189,7 +181,7 @@ LDFLAGS += `pkg-config --libs exodusii`
 
 include Makefile.inc
 
-SCCXMAIN = ccx_2.20.c
+SCCXMAIN = ccx_2.21.c
 
 ## Define all the object file rules to identify dependencies
 OCCXCU = $(SCCXCU:.cu=.o)
@@ -200,11 +192,11 @@ OCCXMAIN = $(SCCXMAIN:.c=.o)
 ## Link to math and standard c
 CFLAGS += -lm -lc
 
-ccx_2.20: $(OCCXMAIN) ccx_2.20.a
+ccx_2.21: $(OCCXMAIN) ccx_2.21.a
 	#./date.pl;
-	$(CC) $(CFLAGS) -c ccx_2.20.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.20.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -c ccx_2.21.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.21.a $(LDFLAGS)
 
-ccx_2.20.a: $(OCCXF) $(OCCXC)
+ccx_2.21.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
 
 clean:

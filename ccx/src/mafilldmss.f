@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2022 Guido Dhondt
+!     Copyright (C) 1998-2023 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,7 +32,8 @@
      &     pmastsurf,mortar,clearini,ielprop,prop,ne0,nea,neb,
      &     freq,ndamp,dacon,set,nset)
 !     
-!     filling the stiffness matrix in spare matrix format (sm)
+!     filling the damping matrix in spare matrix format for
+!     steady state calculations(dmss)
 !     
       implicit none
 !     
@@ -56,12 +57,12 @@
      &     ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,imat,
      &     nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,kode,
      &     nea,neb,kscale,ndof,ii,igauss,islavelinv(1),irowtloc(1),
-     &     jqtloc(1),mortartrafoflag
+     &     jqtloc(1),mortartrafoflag,kk
 !     
-      real*8 co(3,*),coefmpc(*),xload(2,*),p1(3),smscale(1),
+      real*8 co(3,*),coefmpc(*),xload(2,*),p1(3),smscale(1),dd,
      &     p2(3),ad(*),au(*),bodyf(3),xloadold(2,*),reltime,
      &     t0(*),t1(*),vold(0:mi(2),*),s(60,60),
-     &     ff(60),xl(3,26),voldl(0:mi(2),26),
+     &     ff(60),xl(3,20),voldl(0:mi(2),20),
      &     sti(6,mi(1),*),sm(60,60),stx(6,mi(1),*),
      &     elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),springarea(2,*),
      &     alcon(0:6,ntmat_,*),physcon(*),prop(*),
@@ -306,7 +307,7 @@ c     Bernhardi end
      &           ne0,ipkon,thicke,
      &           integerglob,doubleglob,tieset,istartset,
      &           iendset,ialset,ntie,nasym,
-     &           ielprop,prop)
+     &           ielprop,prop,nope)
           endif
           do jj=1,ndof*nope
             do ii=1,jj

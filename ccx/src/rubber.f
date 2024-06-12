@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@
 !
       subroutine rubber(elconloc,elas,emec,kode,didc,
      &  d2idc2,dibdc,d2ibdc2,dudc,d2udc2,dldc,d2ldc2,dlbdc,d2lbdc2,
-     &  ithermal,icmd,beta,stre)
+     &  ithermal,icmd,beta,stre,ncmat_)
 !
 !     calculates stiffness and stresses for rubber and elastomeric
 !     foam materials
@@ -31,7 +31,7 @@
       integer ogden,hyperfoam,taylor
 !
       integer nelconst,kode,kk(84),i,j,k,l,m,nt,icmd,istart,iend,
-     &  nc,n,ithermal(*),ii,jj,mm,neig
+     &  nc,n,ithermal(*),ii,jj,mm,neig,ncmat_
 !
       real*8 elconloc(*),elas(*),emec(*),didc(3,3,3),
      &  d2idc2(3,3,3,3,3),dibdc(3,3,3),d2ibdc2(3,3,3,3,3),dudc(3,3),
@@ -50,7 +50,7 @@
 !     they can be mixed without influencing the field in the
 !     calling program
 !
-      do i=1,21
+      do i=1,ncmat_
          constant(i)=elconloc(i)
       enddo
 !

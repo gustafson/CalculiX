@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -60,8 +60,8 @@
      &  iemchange,kon(*),mortar,nplicon(0:ntmat_,*),indexe,igauss,
      &  iponoel(*),inoel(2,*),nstate_,network,ipobody(2,*),ibody(3,*)
 !
-      real*8 co(3,*),xl(3,26),shp(4,26),xstiff(27,mi(1),*),
-     &  s(60,60),w(3,3),ff(60),shpj(4,26),sinktemp,xs2(3,7),
+      real*8 co(3,*),xl(3,20),shp(4,20),xstiff(27,mi(1),*),
+     &  s(60,60),w(3,3),ff(60),shpj(4,20),sinktemp,xs2(3,7),
      &  rhcon(0:1,ntmat_,*),dxsj2,temp,press,xloadold(2,*),
      &  orab(7,*),t0(*),t1(*),coords(3),c1,c2,reltime,prop(*),
      &  xl2(3,9),xsj2(3),shp2(7,9),vold(0:mi(2),*),xload(2,*),
@@ -69,15 +69,13 @@
      &  sume,factorm,factore,alp,weight,pgauss(3),timeend(2),
      &  cocon(0:6,ntmat_,*),shcon(0:3,ntmat_,*),sph,coconloc(6),
      &  field,areaj,sax(60,60),ffax(60),coefmpc(*),tl2(8),
-     &  voldl(0:mi(2),26),springarea(2,*),plkcon(0:2*npmat_,ntmat_,*),
-     &  elcon(0:ncmat_,ntmat_,*),elconloc(21),pslavsurf(3,*),
+     &  voldl(0:mi(2),20),springarea(2,*),plkcon(0:2*npmat_,ntmat_,*),
+     &  elcon(0:ncmat_,ntmat_,*),elconloc(ncmat_),pslavsurf(3,*),
      &  pmastsurf(2,*),clearini(3,9,*),plicon(0:2*npmat_,ntmat_,*),
      &  sti(6,mi(1),*),xstate(nstate_,mi(1),*),xbody(7,*),
      &  xstateini(nstate_,mi(1),*),heatnod,heatfac
 !
       real*8 dtime,physcon(*)
-!
-!
 !
       include "gauss.f"
 !
@@ -194,38 +192,6 @@ c      if(intscheme.eq.0) then
          else
             mint3d=0
          endif
-c      else
-c!
-c!        # of 3D integration points
-c!
-c         if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
-c            mint3d=27
-c         elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
-c            mint3d=15
-c         elseif((lakonl(4:5).eq.'15').or.(lakonl(4:4).eq.'6')) then
-c            mint3d=9
-c         else
-c            mint3d=0
-c         endif
-c!
-c!        # of 2D integration points
-c!
-c         if(lakonl(4:5).eq.'8R') then
-c            mint2d=1
-c         elseif((lakonl(4:4).eq.'8').or.(lakonl(4:6).eq.'20R')) then
-c            if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'E')) then
-c               mint2d=2
-c            else
-c               mint2d=4
-c            endif
-c         elseif(lakonl(4:4).eq.'2') then
-c            mint2d=9
-c         elseif(lakonl(4:5).eq.'10') then
-c            mint2d=3
-c         elseif(lakonl(4:4).eq.'4') then
-c            mint2d=1
-c         endif
-c      endif
 !
 !     computation of the coordinates of the local nodes
 !
@@ -373,24 +339,6 @@ c         if(intscheme.eq.0) then
                ze=gauss3d7(3,kk)
                weight=weight3d7(kk)
             endif
-c         else
-c            if((lakonl(4:4).eq.'8').or.(lakonl(4:4).eq.'2')) then
-c               xi=gauss3d3(1,kk)
-c               et=gauss3d3(2,kk)
-c               ze=gauss3d3(3,kk)
-c               weight=weight3d3(kk)
-c            elseif((lakonl(4:5).eq.'10').or.(lakonl(4:4).eq.'4')) then
-c               xi=gauss3d6(1,kk)
-c               et=gauss3d6(2,kk)
-c               ze=gauss3d6(3,kk)
-c               weight=weight3d6(kk)
-c            else
-c               xi=gauss3d8(1,kk)
-c               et=gauss3d8(2,kk)
-c               ze=gauss3d8(3,kk)
-c               weight=weight3d8(kk)
-c            endif
-c         endif
 !
 !           calculation of the shape functions and their derivatives
 !           in the gauss point
@@ -713,16 +661,12 @@ c            read(sideload(id)(2:2),'(i1)') ig
                 weight=weight2d4(i)
              endif
 !
-c             if(nopes.eq.9) then
-c                call shape9q(xi,et,xl2,xsj2,xs2,shp2,iflag)
              if(nopes.eq.8) then
                 call shape8q(xi,et,xl2,xsj2,xs2,shp2,iflag)
              elseif(nopes.eq.4) then
                 call shape4q(xi,et,xl2,xsj2,xs2,shp2,iflag)
              elseif(nopes.eq.6) then
                 call shape6tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
-c             elseif(nopes.eq.7) then
-c                call shape7tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
              else
                 call shape3tri(xi,et,xl2,xsj2,xs2,shp2,iflag)
              endif

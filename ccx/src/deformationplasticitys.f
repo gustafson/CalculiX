@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -43,16 +43,16 @@
 !
       if((istep.gt.0).and.(irstrt(1).ge.0)) then
          write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
-         write(*,*) '       *DEFORMATION PLASTICITY'
-         write(*,*) '  should be placed before all step definitions'
+         write(*,*) '       *DEFORMATION PLASTICITY should be'
+         write(*,*) '       placed before all step definitions'
          ier=1
          return
       endif
 !
       if(nmat.eq.0) then
          write(*,*) '*ERROR reading *DEFORMATION PLASTICITY:'
-         write(*,*) '       *DEFORMATION PLASTICITY'
-         write(*,*) '  should bepreceded by a *MATERIAL card'
+         write(*,*) '       *DEFORMATION PLASTICITY should be'
+         write(*,*) '       preceded by a *MATERIAL card'
          ier=1
          return
       endif

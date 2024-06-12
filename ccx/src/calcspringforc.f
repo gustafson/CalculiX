@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2022 Guido Dhondt
+!              Copyright (C) 1998-2023 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -26,12 +26,10 @@
       integer i,imat,ncmat_,ntmat_,kode,niso,id,nplicon(0:ntmat_,*),
      &    npmat_,nelcon(2,*),nener
 !
-      real*8 t1l,elcon(0:ncmat_,ntmat_,*),elconloc(21),plconloc(802),
+      real*8 t1l,elcon(0:ncmat_,ntmat_,*),elconloc(ncmat_),
      &  xk,fk,val,xiso(200),yiso(200),plicon(0:2*npmat_,ntmat_,*),
-     &  senergy
+     &  senergy,plconloc(802)
 !
-!
-!     
 !     interpolating the material data
 !     
       call materialdata_sp(elcon,nelcon,imat,ntmat_,i,t1l,
