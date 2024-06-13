@@ -31,7 +31,7 @@ ALLFLAGS = -march=native -O3 -Wall -flto # -fcommon -fprofile-generate -fprofile
 #ALLFLAGS = -march=native -O3 -Wall -flto -fprofile-generate -fprofile-dir=/dev/shm
 #ALLFLAGS = -march=native -O3 -Wall -flto -fprofile-use -fprofile-dir=/dev/shm
 CFLAGS=$(ALLFLAGS)
-FFLAGS=$(ALLFLAGS) -fno-stack-protector -fallow-argument-mismatch -finit-local-zero
+FFLAGS=$(ALLFLAGS) -fno-stack-protector -fallow-argument-mismatch
 
 ## Integer8.  Note at least Arpack and Pardiso need to be compiled for
 ## Integer8 as well.  Spooles does not appear to be int8 according to Guido
