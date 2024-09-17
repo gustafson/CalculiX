@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,13 +17,17 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
 !
-!   function calculation islavelinv
+!     calculates islavquadel(i) for all elements i
 !
-!  [out] islavelinv       (i)==0 if there is no slave node in the element, >0 otherwise
-!  [in] jqtloc	        pointer into field irowtloc
+!     islavquadel(i)=1 if i is a quadratic element containing
+!                         at least one slave node
+!                     else the value is 0.
 !
-      subroutine genislavelinv(islavelinv,jqtloc,
-     &     lakon,ipkon,kon,ne,nasym)
+!     the regular shape functions for elements i for which islavquadel(i)=1
+!     have to be replaced by the tilde shape functions.
+!
+      subroutine genislavquadel(islavquadel,jqt,lakon,ipkon,kon,ne,
+     &     nasym,nslavquadel)
 !     
 !     Author: Saskia Sitzmann
 !     
@@ -31,11 +35,11 @@
 !     
       character*8 lakon(*)
 !     
-      integer kon(*),islavelinv(*),i,j,ne,jqtloc(*),
+      integer kon(*),islavquadel(*),i,j,ne,jqt(*),nslavquadel,
      &     ipkon(*),konl(26),nope,node,indexe,nasym
-!     
-      do i=1,ne
-c     if(islavelinv(i).lt.1)cycle
+!
+      nslavquadel=0
+      loop: do i=1,ne
 !     
          indexe=ipkon(i)
          if(lakon(i)(1:5).eq.'C3D8I') then
@@ -78,14 +82,13 @@ c     Bernhardi end
 !     
          do j=1,nope
             node=konl(j)
-cccccc error?????? (Guido 22 Nov 2019)
-c            if(jqtloc(node+1)-jqtloc(node).gt.1)then
-            if(jqtloc(node+1)-jqtloc(node).gt.0)then
-               islavelinv(i)=1
+            if(jqt(node+1)-jqt(node).gt.1)then
+              islavquadel(i)=1
+              nslavquadel=nslavquadel+1
+              cycle loop
             endif
-            
          enddo
-      enddo
+      enddo loop
 !     
       return
       end

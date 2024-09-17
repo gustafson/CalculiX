@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2023 Guido Dhondt                          */
+/*              Copyright (C) 1998-2024 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include "CalculiX.h"
 #ifdef SPOOLES
 #include "spooles.h"
@@ -74,7 +75,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	       ITG *jmax){
   
   char description[13]="            ",*lakon=NULL,stiffmatrix[132]="",
-    fneig[132]="",jobnamef[396]="",*labmpc2=NULL;
+    jobnamef[396]="";
 
   ITG *inum=NULL,k,*icol=NULL,*irow=NULL,ielas=0,icmd=0,iinc=1,nasym=0,i,j,ic,ir,
     mass[2]={0,0},stiffness=1,buckling=0,rhsi=1,intscheme=0,*ncocon=NULL,
@@ -88,11 +89,10 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     *itiefac=NULL,*imastnode=NULL,*nmastnode=NULL,*imastop=NULL,iitsta,
     *iponoels=NULL,*inoels=NULL,*ipe=NULL,*ime=NULL,iit=-1,iflagact=0,
     icutb=0,*kon=NULL,*ipkon=NULL,*ielmat=NULL,ialeatoric=0,kscale=1,
-    *iponoel=NULL,*inoel=NULL,zero=0,nherm=1,nev=*nforc,node,idir,
+    *iponoel=NULL,*inoel=NULL,
     *ielorien=NULL,network=0,nrhs=1,iperturbsav,mscalmethod=0,*jqw=NULL,
-    *iroww=NULL,nzsw,*islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,nboun2,
-    *ndirboun2=NULL,*nodeboun2=NULL,nmpc2,*ipompc2=NULL,*nodempc2=NULL,
-    *ikboun2=NULL,*ilboun2=NULL,*ikmpc2=NULL,*ilmpc2=NULL,mortartrafoflag=0;
+    *iroww=NULL,nzsw,*islavquadel=NULL,*irowt=NULL,*jqt=NULL,
+    mortartrafoflag=0;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*xstiff=NULL,*stiini=NULL,*tper,
     *f=NULL,*fn=NULL,qa[4],*fext=NULL,*epn=NULL,*xstateini=NULL,
@@ -106,10 +106,10 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
     *adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,*cdn=NULL,*cdnr=NULL,
     *cdni=NULL,*submatrix=NULL,*xnoels=NULL,*cg=NULL,*straight=NULL,
     *areaslav=NULL,*xmastnor=NULL,theta=0.,*ener=NULL,*xstate=NULL,
-    *fnext=NULL,*energyini=NULL,*energy=NULL,*d=NULL,alea=0.1,*smscale=NULL,
-    *auw=NULL,*autloc=NULL,*xboun2=NULL,*coefmpc2=NULL;
+    *fnext=NULL,*energyini=NULL,*energy=NULL,alea=0.1,*smscale=NULL,
+    *auw=NULL,*aut=NULL;
 
-  FILE *f1,*f2;
+  FILE *f1;
   
 #ifdef SGI
   ITG token;
@@ -241,7 +241,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 		   iendset,ialset,itietri,lakon,ipkon,kon,koncont,ne,
 		   cg,straight,co,vold,istep,&iinc,&iit,itiefac,
 		   islavsurf,islavnode,imastnode,nslavnode,nmastnode,
-		   imastop,mi,ipe,ime,tietol,&iflagact,
+		   imastop,mi,ipe,ime,tietol,
 		   &nintpoint,&pslavsurf,xmastnor,cs,mcs,ics,clearini,
 		   &nslavs);
 	      
@@ -375,9 +375,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
           inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun,
 	  itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	  islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	  ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	  labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	  islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	  &intscheme,physcon);
   SFREE(v);SFREE(fn);SFREE(stx);SFREE(inum);
   iout=1;
@@ -458,7 +456,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	       tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 	       pmastsurf,mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
 	       iponoel,inoel,&network,ntrans,inotr,trab,smscale,&mscalmethod,
-	       set,nset,islavelinv,autloc,irowtloc,jqtloc,&mortartrafoflag);
+	       set,nset,islavquadel,aut,irowt,jqt,&mortartrafoflag);
 
   /* check for negative Jacobians */
 
@@ -611,9 +609,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
 	      inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun,
 	      itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	      islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	      ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	      labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	      islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	      &intscheme,physcon);
 	      
       xbounact[iretain[i]-1]=0.;
@@ -838,9 +834,7 @@ void linstatic(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
             inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun,
 	    itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	    islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	    ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	    islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	    &intscheme,physcon);
 
     SFREE(eei);

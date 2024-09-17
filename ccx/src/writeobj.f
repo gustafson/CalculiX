@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,8 +37,8 @@
          write(5,'(a113)') '   #########################################
      &##################################################################
      &######'
-         write(5,*) '  D E S I G N   R E S P O N S E   
-     &I N F O R M A T I O N'
+         write(5,*) '  D E S I G N   R E S P O N S E   ',
+     &'I N F O R M A T I O N'
          write(5,*)
          write(5,'(3x,16a,3x,18a,3x,18a,3x,80a)') 'FUNCTION        ',
      &   'FUNCTION VALUE    ','LENGTH GRADIENT   ','NAME                                    

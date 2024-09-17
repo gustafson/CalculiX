@@ -1,6 +1,6 @@
  
 ========
-LOG-BOOK Version 2.21
+LOG-BOOK Version 2.22
 ========
 
 09 Nov 1998	- removed mistake from anisotropic.f
@@ -5121,7 +5121,7 @@ Dec 2002        - started to work on single crystal plasticity
  4 Feb 2023     - taking the thermal expansion into account in
                   umat_abaqusnl: the total right stretch tensor has to
 		  be taken to calculate the corotational stress from the
-		  PK2 stress, no the mechanical right stretch tensor.
+		  PK2 stress, not the mechanical right stretch tensor.
 
  11 Feb 2023    - updated the feasible direction procedure
 
@@ -5222,3 +5222,181 @@ Dec 2002        - started to work on single crystal plasticity
  27 July 2023   - made some changes for the gas network elements
                 - corrected an error for the connection of linear beams
 		  and trusses.
+
+ 31 July 2023   - posted version 2.21.
+
+ 1 Aug 2023     - solved problem with normal on truss axis
+
+ 2 Aug 2023     - applied an aleatoric variation of the MEANROTBS coefficients
+                  for beam elements: seems to solve the zero coefficient
+		  issue of the dependent term
+		- corrected an error in changekon.f
+
+ 7 Sept 2023    - made some corrections in umat_aniso_plas.f
+                - added test examples for anisotropic elasticity with
+		  isotropic plasticity (isotropic and kinematic hardening)
+                - increased the number of state variables for
+		  umat_aniso_plas from 14 to 20 (included q2)
+
+ 8 Sept 2023    - allowed arbitrary hardening curves for orthotropic
+                  elasticity with isotropic plasticity
+
+ 11 Sept 2023   - worked on ortho_plas.f in Abaqus umat-form (for
+                  nlgeom calculations)
+
+ 12 Sept 2023   - continued to work on ortho_plas with NLGEOM
+
+ 13 Sept 2023   - extended the Mohr-Coulomb and Anisotropic Creep model
+                  to large strains and/or rotations by using the Abaqus
+		  interface routines
+
+ 15 Sept 2023   - reworked umat_aniso_creep.f based on ortho_plas.f
+
+ 16 Sept 2023   - updated the documentation on anisotropic elasticity
+                  combined with isotropic viscoplasticity
+ 
+ 17 Sept 2023   - worked on writeinputdeck.f
+
+ 26 Sept 2023   - corrected an error in writeinputdeck.f
+                - corrected an error in the documentation (RF).
+		- worked on the consistent tangent in umat_abaqusnl_total.f
+
+ 28 Sept 2023   - continued work on the consistent tangent
+                - reenabled output for the optimizer vamos in
+		  calcfeasibledirection_gd.f
+
+ 30 Sept 2023   - removed some calls of results.c for massless contact
+
+ 6 Oct 2023     - for linear massless contact calculations non-changing
+                  distributed loading is taken into account at the start of
+		  a new step
+
+ 10 Oct 2023    - parallellized op.f (matrix-vector-multiplication)
+
+ 13 Oct 2023    - corrected an error in frd.c for static calculations with
+                  gas elements
+                - parallellized the collection of results in opmain.c
+
+ 16 Oct 2023    - moved resforccont from FORTRAN to C
+                - parallallized resforcont.c and mulmatvec_asym.f
+
+ 17 Oct 2023    - introduced globr for linear massless contact
+                - converted inclusion.f into inclusion.c
+                - parallellized the matrix-vector multiplication in
+		  inclusion.c
+
+ 27 Oct 2023    - checked for negative dg in "dg=dg+ddg" in ortho_plas.f
+                  and umat_aniso_creep.f; if negative, dg=dg/2.d0.
+
+ 31 Oct 2023    - modified e_c3d.f for C3D8R elements in implicit dynamic
+                  calculations (parameter intscheme)
+                - worked on umat_abaqusnl_total.f
+
+ 3 Nov 2023     - worked on umat_abaqusnl_total.f and umat_abaqusnl.f
+
+ 11 Nov 2023    - corrected contact if adjacent elements have been removed.
+                - included xmodal(*) in the restart file
+
+ 24 Nov 2023    - worked on the definition of the active set in massless
+                  explicit dynamics
+		- changed the documentation on Abaqus umat-routines.
+
+ 25 Nov 2023    - coded a discontinuous slope channel element
+                - finished the documentation on Abaqus umat-routines.
+
+ 1 Dec 2023     - introduced selective mass scaling for frequency calculations
+
+ 2 Dec 2023     - modified umat_aniso_creep.f
+                - modified calcstabletimeincvol.f
+		
+ 3 Dec 2023     - modified the calculation of the crack length.
+
+ 5 Dec 2023     - check crack length modification.
+
+ 8 Dec 2023     - finished crack length modification.
+                - provided a solution for zero coefficients in the
+		  cascade.c routine
+
+ 13 Dec 2023    - worked on branch elements (type LPBR and REBR)
+                  
+ 19 Dec 2023    - expanded the use of multistages.f (difference of
+                  adjacent sector sizes can be arbitrary now)
+
+ 23 Jan 2024    - removed an error in allocation.f
+                - removed the initialization of inum to zero from
+		  createinum.f
+
+ 24 Jan 2024    - took createinum out of the major loop for
+                  explicit dynamic massless calculations
+
+ 31 Jan 2024    - reinserted inclusion.c instead of inclusion.f
+
+ 2 Feb 2024     - corrected an error in inclusion.c
+                - reverted to inclusion.f (BLAS faster and
+		  parallellized?)
+                - changed shape3tr,shape4q,shape6tri and shape8q.f
+
+ 15 Feb 2024    - changed xforc into xforcact in the mafillsmmain
+                  call in premortar.c
+
+ 17 Feb 2024    - cleaned up checkspcmpc.f
+
+ 23 Feb 2024    - cleaned up bdfill.c
+                - corrected multistages.f for radial connections
+                - cleaned up stressmortar.c
+
+ 24 Feb 2024    - cleaned up trafontmortar2.c
+
+ 25 Feb 2024    - cleaned up results.c
+
+ 27 Feb 2024    - cleaned up inimortar.c and premortar.c
+
+ 28 Feb 2024    - cleaned up Iwan-elements
+
+ 1 Mar 2024     - switched mortar=2 with mortar=3
+                - cleaned up inimortar.c
+                - changed autloc into aut etc...
+
+ 5 Mar 2024     - removed LINMORTAR and Petrov-Galerkin Mortar
+
+ 12 Mar 2024    - replaced islavspc(2,*) by islavspc(*) and similar
+                  fields
+
+ 15 Mar 2024    - made some small changes in dynamics.f
+                - worked on inimortar.c and premortar.c
+
+ 18 Mar 2024    - set ismallsliding by default to 1 for mortar
+
+ 22 Mar 2024    - simplified premortar.c
+
+ 27 Mar 2024    - worked on premortar.c
+                - covered the calculation of the stiffness matrix and
+		  forces for mortar with quadratic contact elements by
+		  the usual calls of results and mafillsm in nonlingeo
+		  (use of nslavquadel) instead of in premortar.c.
+
+ 2 April 2024   - worked on speeding up mortar contact
+
+ 3 April 2024   - optimized e_c3d.f
+
+ 5 April 2024   - cleaned up genfirstactif.f
+                - optimized e_c3d.f further
+
+ 27 April 2024  - no equations are generated for slave nodes with no
+                  master partner face in multistages.f
+
+ 3 May 2024     - replaced iprestr=0 by *iprestr=0 in arpack(cs).c
+                - included string.h in each file with memcpy
+
+ 17 May 2024    - inserted implicit filtering for sensitivities
+
+ 21 May 2024    - corrected errors in feasibledirection.c
+
+ 15 July 2024   - corrected examples channel2 and channel2a (included
+                  the conductivity)
+
+ 19 July 2024   - corrected an error in frdvector.c and frdgeneralvector.c
+                  (for OUTPUT ALL).
+
+ 31 July 2024   - corrected some spelling errors
+                - removed an error in frd.c (composites)

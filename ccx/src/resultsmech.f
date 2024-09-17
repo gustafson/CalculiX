@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,15 +27,13 @@
      &     ikin,nal,ne0,thicke,emeini,pslavsurf,
      &     pmastsurf,mortar,clearini,nea,neb,ielprop,prop,kscale,
      &     list,ilist,smscale,mscalmethod,enerscal,t0g,t1g,
-     &     islavelinv,autloc,irowtloc,jqtloc,mortartrafoflag,
+     &     islavquadel,aut,irowt,jqt,mortartrafoflag,
      &     intscheme,physcon)
 !     
 !     calculates stresses and the material tangent at the integration
 !     points and the internal forces at the nodes
 !     
       implicit none
-!     
-      integer cauchy
 !     
       character*8 lakon(*),lakonl
       character*80 amat,matname(*)
@@ -50,14 +48,14 @@
      &     nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,calcul_fn,
      &     calcul_cauchy,calcul_qa,nopered,mortar,jfaces,igauss,
      &     istrainfree,nlgeom_undo,list,ilist(*),m,j1,mscalmethod,
-     &     irowtloc(*),jqtloc(*),jqtloc1(21),irowtloc1(96),icmdcpy,
-     &     islavelinv(*),node1,node2,j2,ii,mortartrafoflag
+     &     irowt(*),jqt(*),jqte(21),irowte(96),icmdcpy,length,id,
+     &     islavquadel(*),node1,node2,j2,ii,mortartrafoflag
 !     
       real*8 co(3,*),v(0:mi(2),*),shp(4,20),stiini(6,mi(1),*),
      &     stx(6,mi(1),*),xl(3,20),vl(0:mi(2),20),stre(6),prop(*),
      &     elcon(0:ncmat_,ntmat_,*),rhcon(0:1,ntmat_,*),xs2(3,7),
      &     alcon(0:6,ntmat_,*),vini(0:mi(2),*),thickness,
-     &     alzero(*),orab(7,*),elas(21),rho,fn(0:mi(2),*),
+     &     alzero(*),orab(7,*),stiff(21),rho,fn(0:mi(2),*),
      &     fnl(3,10),skl(3,3),beta(6),q(0:mi(2),20),xl2(3,8),
      &     vkl(0:3,3),t0(*),t1(*),prestr(6,mi(1),*),eme(6,mi(1),*),
      &     ckl(3,3),vold(0:mi(2),*),eloc(6),veold(0:mi(2),*),
@@ -73,8 +71,8 @@
      &     gs(8,4),a,reltime,tlayer(4),dlayer(4),xlayer(mi(3),4),
      &     thicke(mi(3),*),emeini(6,mi(1),*),clearini(3,9,*),
      &     pslavsurf(3,*),pmastsurf(6,*),smscale(*),sum1,sum2,
-     &     scal,enerscal,elineng(6),t0g(2,*),t1g(2,*),autloc(*),
-     &     autloc1(96),shptil(4,20)
+     &     scal,enerscal,elineng(6),t0g(2,*),t1g(2,*),aut(*),
+     &     aute(96),shptil(4,20)
 !     
       include "gauss.f"
 !
@@ -328,28 +326,33 @@ c     Bernhardi end
         enddo
 !     
 !     mortar start
-!     autloc for element
 !     
-        if(mortartrafoflag.eq.1) then
-          if(islavelinv(i).gt.0) then
-            if((nope.eq.20).or.(nope.eq.10).or.(nope.eq.15)) then
-              jqtloc1(1)=1
+!     calculating the transformation matrix for a quadratic element containing
+!     at least one slave node; this matrix transforms the regular 
+!     quadratic shape functions into purely positive ones for slave
+!     faces.    
+!     
+        if(mortartrafoflag.gt.0) then
+          if(islavquadel(i).gt.0) then
+              jqte(1)=1
               ii=1
               do i1=1,nope
                 node1=konl(i1)
-                do j1=jqtloc(node1),jqtloc(node1+1)-1
-                  node2=irowtloc(j1)
-                  do j2=1,nope
-                    if(konl(j2).eq.node2) then
-                      autloc1(ii)=autloc(j1)
-                      irowtloc1(ii)=j2
+                length=jqt(node1+1)-jqt(node1)
+                do j2=1,nope
+                  node2=konl(j2)
+                  call nident(irowt(jqt(node1)),node2,length,id)
+                  if(id.gt.0) then
+                    j1=jqt(node1)+id-1
+                    if(irowt(j1).eq.node2) then
+                      aute(ii)=aut(j1)
+                      irowte(ii)=j2
                       ii=ii+1
                     endif
-                  enddo
+                  endif
                 enddo
-                jqtloc1(i1+1)=ii
+                jqte(i1+1)=ii
               enddo
-            endif
           endif
         endif
 !     
@@ -407,7 +410,7 @@ c     Bernhardi end
 c                venergy=enerini(2,1,nr)
                 venergy=0.d0
               endif
-              call springforc_n2f(xl,konl,vl,imat,elcon,nelcon,elas,
+              call springforc_n2f(xl,konl,vl,imat,elcon,nelcon,stiff,
      &             fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
      &             plicon,nplicon,npmat_,senergy,nener,
      &             stx(1,1,i),mi,springarea(1,konl(nope+1)),nmethod,
@@ -425,7 +428,7 @@ c                venergy=enerini(2,1,nr)
               igauss=kon(indexe+nope+1)
 c              if(nener.eq.1) venergy=enerini(2,1,ne0+igauss)
               if(nener.eq.1) venergy=0.d0
-              call springforc_f2f(xl,vl,imat,elcon,nelcon,elas,
+              call springforc_f2f(xl,vl,imat,elcon,nelcon,stiff,
      &             fnl,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
      &             plicon,nplicon,npmat_,senergy,nener,
      &             stx(1,1,i),mi,springarea(1,igauss),nmethod,
@@ -648,37 +651,43 @@ c     Bernhardi end
           endif
 !     
 !     mortar start
+!     transforming the shape functions for quadratic elements containing at    
+!     lease one slave node into purely positive functions on the slave    
+!     faces     
 !     
-          if(mortartrafoflag.eq.1) then
-            do i1=1,nope
-              shptil(1,i1)=shp(1,i1)
-              shptil(2,i1)=shp(2,i1)
-              shptil(3,i1)=shp(3,i1)
-              shptil(4,i1)=shp(4,i1)
-            enddo
-            if(islavelinv(i).gt.0) then
-              if((nope.eq.20).or.(nope.eq.10).or.(nope.eq.15)) then
+          if(mortartrafoflag.gt.0) then
+            if(islavquadel(i).gt.0) then
                 do i1=1,nope
-                  if(jqtloc1(i1+1)-jqtloc1(i1).gt.0) then
+                  if(jqte(i1+1)-jqte(i1).gt.0) then
                     shptil(1,i1)=0.0
                     shptil(2,i1)=0.0
                     shptil(3,i1)=0.0
                     shptil(4,i1)=0.0
+                  else
+                    shptil(1,i1)=shp(1,i1)
+                    shptil(2,i1)=shp(2,i1)
+                    shptil(3,i1)=shp(3,i1)
+                    shptil(4,i1)=shp(4,i1)
                   endif
-                  do j1=jqtloc1(i1),jqtloc1(i1+1)-1
-                    j2=irowtloc1(j1)
-                    shptil(1,i1)=shptil(1,i1)+autloc1(j1)
+                  do j1=jqte(i1),jqte(i1+1)-1
+                    j2=irowte(j1)
+                    shptil(1,i1)=shptil(1,i1)+aute(j1)
      &                   *shp(1,j2)
-                    shptil(2,i1)=shptil(2,i1)+autloc1(j1)
+                    shptil(2,i1)=shptil(2,i1)+aute(j1)
      &                   *shp(2,j2)
-                    shptil(3,i1)=shptil(3,i1)+autloc1(j1)
+                    shptil(3,i1)=shptil(3,i1)+aute(j1)
      &                   *shp(3,j2)
-                    shptil(4,i1)=shptil(4,i1)+autloc1(j1)
+                    shptil(4,i1)=shptil(4,i1)+aute(j1)
      &                   *shp(4,j2)
                   enddo
                 enddo
-!
-              endif
+            else
+              do i1=1,nope
+                shptil(1,i1)=shp(1,i1)
+                shptil(2,i1)=shp(2,i1)
+                shptil(3,i1)=shp(3,i1)
+                shptil(4,i1)=shp(4,i1)
+              enddo
             endif
           endif
 !
@@ -737,7 +746,8 @@ c     Bernhardi end
 !     coordinates to material coordinates
 !     deformation plasticity)
 !     
-          if((kode.eq.-50).or.(kode.le.-100)) then
+          if((kode.eq.-50).or.(kode.eq.-53).or.(kode.eq.-54).or.
+     &         (kode.le.-100)) then
 !     
 !     calculating the deformation gradient
 !     
@@ -922,7 +932,7 @@ c            endif
 !     
           call materialdata_me(elcon,nelcon,rhcon,nrhcon,alcon,
      &         nalcon,imat,amat,iorien,pgauss,orab,ntmat_,
-     &         elas,rho,i,ithermal,alzero,mattyp,t0l,t1l,ihyper,
+     &         stiff,rho,i,ithermal,alzero,mattyp,t0l,t1l,ihyper,
      &         istiff,elconloc,eth,kode,plicon,nplicon,
      &         plkcon,nplkcon,npmat_,plconloc,mi(1),dtime,jj,
      &         xstiff,ncmat_)
@@ -962,7 +972,7 @@ c            endif
 !     calculating the local stiffness and stress
 !     
           nlgeom_undo=0
-          call mechmodel(elconloc,elas,emec,kode,emec0,ithermal,
+          call mechmodel(elconloc,stiff,emec,kode,emec0,ithermal,
      &         icmd,beta,stre,xkl,ckl,vj,xikl,vij,
      &         plconloc,xstate,xstateini,ielas,
      &         amat,t1l,dtime,time,ttime,i,jj,nstate_,mi(1),
@@ -973,7 +983,7 @@ c            endif
           if(((nmethod.ne.4).or.(iperturb(1).ne.0)).and.
      &         (nmethod.ne.5).and.(icmd.ne.3)) then
             do m1=1,21
-              xstiff(m1,jj,i)=elas(m1)
+              xstiff(m1,jj,i)=stiff(m1)
             enddo
           endif
 !     
@@ -996,8 +1006,8 @@ c            endif
             eloc(6)=elineng(6)-(vokl(2,3)+vokl(3,2))
 !     
             if(mattyp.eq.1) then
-              e=elas(1)
-              un=elas(2)
+              e=stiff(1)
+              un=stiff(2)
               um=e/(1.d0+un)
               al=un*um/(1.d0-2.d0*un)
               um=um/2.d0
@@ -1009,34 +1019,34 @@ c            endif
               stre(5)=um*eloc(5)
               stre(6)=um*eloc(6)
             elseif(mattyp.eq.2) then
-              stre(1)=eloc(1)*elas(1)+eloc(2)*elas(2)
-     &             +eloc(3)*elas(4)
-              stre(2)=eloc(1)*elas(2)+eloc(2)*elas(3)
-     &             +eloc(3)*elas(5)
-              stre(3)=eloc(1)*elas(4)+eloc(2)*elas(5)
-     &             +eloc(3)*elas(6)
-              stre(4)=eloc(4)*elas(7)
-              stre(5)=eloc(5)*elas(8)
-              stre(6)=eloc(6)*elas(9)
+              stre(1)=eloc(1)*stiff(1)+eloc(2)*stiff(2)
+     &             +eloc(3)*stiff(4)
+              stre(2)=eloc(1)*stiff(2)+eloc(2)*stiff(3)
+     &             +eloc(3)*stiff(5)
+              stre(3)=eloc(1)*stiff(4)+eloc(2)*stiff(5)
+     &             +eloc(3)*stiff(6)
+              stre(4)=eloc(4)*stiff(7)
+              stre(5)=eloc(5)*stiff(8)
+              stre(6)=eloc(6)*stiff(9)
             elseif(mattyp.eq.3) then
-              stre(1)=eloc(1)*elas(1)+eloc(2)*elas(2)+
-     &             eloc(3)*elas(4)+eloc(4)*elas(7)+
-     &             eloc(5)*elas(11)+eloc(6)*elas(16)
-              stre(2)=eloc(1)*elas(2)+eloc(2)*elas(3)+
-     &             eloc(3)*elas(5)+eloc(4)*elas(8)+
-     &             eloc(5)*elas(12)+eloc(6)*elas(17)
-              stre(3)=eloc(1)*elas(4)+eloc(2)*elas(5)+
-     &             eloc(3)*elas(6)+eloc(4)*elas(9)+
-     &             eloc(5)*elas(13)+eloc(6)*elas(18)
-              stre(4)=eloc(1)*elas(7)+eloc(2)*elas(8)+
-     &             eloc(3)*elas(9)+eloc(4)*elas(10)+
-     &             eloc(5)*elas(14)+eloc(6)*elas(19)
-              stre(5)=eloc(1)*elas(11)+eloc(2)*elas(12)+
-     &             eloc(3)*elas(13)+eloc(4)*elas(14)+
-     &             eloc(5)*elas(15)+eloc(6)*elas(20)
-              stre(6)=eloc(1)*elas(16)+eloc(2)*elas(17)+
-     &             eloc(3)*elas(18)+eloc(4)*elas(19)+
-     &             eloc(5)*elas(20)+eloc(6)*elas(21)
+              stre(1)=eloc(1)*stiff(1)+eloc(2)*stiff(2)+
+     &             eloc(3)*stiff(4)+eloc(4)*stiff(7)+
+     &             eloc(5)*stiff(11)+eloc(6)*stiff(16)
+              stre(2)=eloc(1)*stiff(2)+eloc(2)*stiff(3)+
+     &             eloc(3)*stiff(5)+eloc(4)*stiff(8)+
+     &             eloc(5)*stiff(12)+eloc(6)*stiff(17)
+              stre(3)=eloc(1)*stiff(4)+eloc(2)*stiff(5)+
+     &             eloc(3)*stiff(6)+eloc(4)*stiff(9)+
+     &             eloc(5)*stiff(13)+eloc(6)*stiff(18)
+              stre(4)=eloc(1)*stiff(7)+eloc(2)*stiff(8)+
+     &             eloc(3)*stiff(9)+eloc(4)*stiff(10)+
+     &             eloc(5)*stiff(14)+eloc(6)*stiff(19)
+              stre(5)=eloc(1)*stiff(11)+eloc(2)*stiff(12)+
+     &             eloc(3)*stiff(13)+eloc(4)*stiff(14)+
+     &             eloc(5)*stiff(15)+eloc(6)*stiff(20)
+              stre(6)=eloc(1)*stiff(16)+eloc(2)*stiff(17)+
+     &             eloc(3)*stiff(18)+eloc(4)*stiff(19)+
+     &             eloc(5)*stiff(20)+eloc(6)*stiff(21)
             endif
           endif
 !     
@@ -1132,7 +1142,10 @@ c          if((iout.ge.0).or.(iout.eq.-2).or.(kode.le.-100).or.
 !     
 !     mortar start
 !     
-            if(mortartrafoflag.eq.1) then
+            if(mortartrafoflag.gt.0) then
+!
+!             using the tilde shape functions
+!
               do m1=1,nope
                 do m2=1,3
 !
@@ -1190,7 +1203,7 @@ c          if((iout.ge.0).or.(iout.eq.-2).or.(kode.le.-100).or.
             endif
 c     Bernhardi start
             if(lakonl(1:5).eq.'C3D8R') then
-              call hgforce(fn,elas,a,gs,vl,mi,konl)
+              call hgforce(fn,stiff,a,gs,vl,mi,konl)
               icmd=icmdcpy
             endif
 c     Bernhardi end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -265,11 +265,11 @@
      &'*WARNING reading *NODE/EL/CONTACT FILE: OUTPUT=3D has no'
               write(*,*) '         effect in all but the first step'
            endif
-        elseif(textpart(ii)(1:13).eq.'SECTIONFORCES') then
-              filab(3)(5:5)='M'
-           elseif(textpart(ii)(1:9).eq.'OUTPUTALL') then
-              output(4:4)='a'
-        elseif(textpart(ii)(1:11).eq.'TIMEPOINTS=') then
+         elseif(textpart(ii)(1:13).eq.'SECTIONFORCES') then
+           filab(3)(5:5)='M'
+         elseif(textpart(ii)(1:9).eq.'OUTPUTALL') then
+           output(4:4)='a'
+         elseif(textpart(ii)(1:11).eq.'TIMEPOINTS=') then
            timepointsname=textpart(ii)(12:91)
            do i=1,nam
               if(amname(i).eq.timepointsname) then
@@ -404,11 +404,13 @@
                   write(*,*) '         frequency or bucking calculation'
                else
                   write(*,*) 
-     &            '*WARNING in elprints: selection of CEEQ or CE or PE'
+     &                '*WARNING reading *NODE/EL/CONTACT FILE:'
+                  write(*,*) '         selection of CEEQ or CE or PE'
                   write(*,*) '         is converted into PEEQ; no distin
      &ction'
                   write(*,*) 
-     &             '        is made between PEEQ, CEEQ, CE and PE'
+     &                 '         is made between PEEQ, CEEQ, CE and PE'
+                  write(*,*)
                   filab(6)(1:4)='PEEQ'
                   filab(6)(6:6)=elemsys
                   filab(6)(7:87)=noset

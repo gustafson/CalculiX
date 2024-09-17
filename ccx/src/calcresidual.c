@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2023 Guido Dhondt                          */
+/*              Copyright (C) 1998-2024 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -30,15 +30,15 @@
 #endif
 
 
-void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
-		  ITG *iexpl, ITG *nactdof, double *aux2, double *vold,
-		  double *vini, double *dtime, double *accold, ITG *nk, double *adb,
-		  double *aub, ITG *jq, ITG *irow, ITG *nzl, double *alpha,
-		  double *fextini, double *fini, ITG *islavnode, ITG *nslavnode,
-		  ITG *mortar, ITG *ntie,double *f_cm,
-		  double* f_cs, ITG *mi,ITG *nzs,ITG *nasym,ITG *idamping,
-		  double *veold,double *adc,double *auc,double *cvini,double *cv,
-		  double *alpham,ITG *num_cpus){
+void calcresidual(ITG *nmethod,ITG *neq,double *b,double *fext,double *f,
+		  ITG *iexpl,ITG *nactdof,double *aux2,double *vold,
+		  double *vini,double *dtime,double *accold,ITG *nk,double *adb,
+		  double *aub,ITG *jq,ITG *irow,ITG *nzl,double *alpha,
+		  double *fextini,double *fini,ITG *islavnode,ITG *nslavnode,
+		  ITG *mortar,ITG *ntie,
+		  ITG *mi,ITG *nzs,ITG *nasym,ITG *idamping,
+		  double *veold,double *adc,double *auc,double *cvini,
+		  double *cv,double *alpham,ITG *num_cpus){
 
   ITG j,k,mt=mi[1]+1;
   double scal1;
@@ -63,7 +63,7 @@ void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
       }
     }
     if(*nasym==0){
-      FORTRAN(op,(&neq[1],aux2,b,adb,aub,jq,irow)); 
+      opmain(&neq[1],aux2,b,adb,aub,jq,irow); 
     }else{
       FORTRAN(opas,(&neq[1],aux2,b,adb,aub,jq,irow,nzs)); 
     }
@@ -87,7 +87,7 @@ void calcresidual(ITG *nmethod, ITG *neq, double *b, double *fext, double *f,
 	}
       }
       if(*nasym==0){
-	FORTRAN(op,(&neq[1],aux2,cv,adc,auc,jq,irow));
+	opmain(&neq[1],aux2,cv,adc,auc,jq,irow);
       }else{
 	FORTRAN(opas,(&neq[1],aux2,cv,adc,auc,jq,irow,nzs)); 
       }

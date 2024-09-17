@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -18,14 +18,6 @@
 !     
 !     
 !     Calculating the normals and tangential vectors in the nodes of the slave surface (slavnor, slavtan)
-!     
-!     
-!     [in]     islavsurf   islavsurf(1,i) slaveface i islavsurf(2,i) pointer into imastsurf and pmastsurf
-!     [in]     itiefac     pointer into field islavsurf: (1,i) beginning slave_i (2,i) end of slave_i
-!     [in]     islavnode   fields containing nodes of slace surfaces
-!     [in]     nslavnode   (i) for contraint i pointer into field islavnode
-!     [out]    slavnor     normal vektors in the nods of slave surface
-!     [out]    slavtan     tangetial vektors in the nodes of slave surface 
 !     
       subroutine nortanslav(tieset,ntie,ipkon,kon,lakon,set,
      &     co,vold,nset,islavsurf,itiefac,

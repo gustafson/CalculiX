@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2023 Guido Dhondt                          */
+/*              Copyright (C) 1998-2024 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -75,7 +75,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		 ITG *ndamp,double *dacon,double *t0g,double *t1g){
 
   char fneig[132]="",description[13]="            ",*lakon=NULL,*labmpc=NULL,
-    *labmpcold=NULL,cflag[1]=" ",*labmpc2=NULL;
+    *labmpcold=NULL,cflag[1]=" ";
 
   ITG nev,i,j,k,*inum=NULL,nsectors,im,intscheme=0,*ibodysav=NULL,
     iinc=0,l,iout,ielas,icmd=0,iprescribedboundary,ndata,nmd,nevd,
@@ -85,7 +85,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     *nodeboun=NULL,*ndirboun=NULL,*iamboun=NULL,*ikboun=NULL,jj,
     *ilboun=NULL,*nactdof=NULL,*ipompc=NULL,*nodempc=NULL,*ikmpc=NULL,
     *ilmpc=NULL,*ipompcold=NULL,*nodempcold=NULL,*ikmpcold=NULL,
-    *ilmpcold=NULL,nmpcold,mpcendold,kflag=2,*iamt1=NULL,ifreebody,
+    *ilmpcold=NULL,nmpcold,mpcendold,kflag=2,*iamt1=NULL,
     *itg=NULL,ntg=0,symmetryflag=0,inputformat=0,dampmat=0,nrhs=1,
     *ipiv=NULL,info,nev2,ngraph=1,nkg,neg,iflag=1,idummy=1,imax,
     nzse[3],mt=mi[1]+1,*ikactmech=NULL,nactmech,id,nasym=0,
@@ -96,9 +96,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     nmdelem,*integerglob=NULL,*nshcon=NULL,nherm,icfd=0,*inomat=NULL,
     *islavnode=NULL,*nslavnode=NULL,*islavsurf=NULL,iit=-1,
     network=0,kscale=0,nmethodact=1,iperturbsav,coriolis,*itiefac=NULL,
-    mscalmethod=0,*islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,nboun2,
-    *ndirboun2=NULL,*nodeboun2=NULL,nmpc2,*ipompc2=NULL,*nodempc2=NULL,
-    *ikboun2=NULL,*ilboun2=NULL,*ikmpc2=NULL,*ilmpc2=NULL,mortartrafoflag=0;
+    mscalmethod=0,*islavquadel=NULL,*irowt=NULL,*jqt=NULL,mortartrafoflag=0;
 
   long long i2;
 
@@ -125,7 +123,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     *doubleglob=NULL,*shcon=NULL,*veold=NULL,*xmr=NULL,*xmi=NULL,*eig=NULL,
     *ax=NULL,*bx=NULL,*pslavsurf=NULL,*pmastsurf=NULL,xnull=0.,
     *cdnr=NULL,*cdni=NULL,*energyini=NULL,*energy=NULL,*v=NULL,*b=NULL,
-    *cco=NULL,*smscale=NULL,*autloc=NULL,*xboun2=NULL,*coefmpc2=NULL,
+    *cco=NULL,*smscale=NULL,*aut=NULL,
     *umubr=NULL,*umubi=NULL,*fnext=NULL;
 
   /* dummy arguments for the call of expand*/
@@ -1206,9 +1204,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
 		inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun,
 		itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		islavquadel,aut,irowt,jqt,&mortartrafoflag,
 		&intscheme,physcon);
 	SFREE(v);SFREE(f);
 	if(intpointvar!=1){SFREE(fn);SFREE(stx);}
@@ -1241,8 +1237,8 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		  
 	  NNEW(zc,double,neq[1]*nev);
 	  for(i=0;i<nev;i++){
-	    FORTRAN(op,(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],adc,auc,
-			jq,irow));
+	    opmain(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],adc,auc,
+			jq,irow);
 	  }
 	  SFREE(adc);SFREE(auc);
 	      
@@ -1287,8 +1283,8 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	      
 	  NNEW(zc,double,neq[1]*nev);
 	  for(i=0;i<nev;i++){
-	    FORTRAN(op,(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],adc,auc,
-			jq,irow));
+	    opmain(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],adc,auc,
+			jq,irow);
 	  }
 	  SFREE(adc);SFREE(auc);
 	      
@@ -1517,7 +1513,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	  }
 	}
 		
-	FORTRAN(op,(&neq[1],ubr,mubr,adb,aub,jq,irow));
+	opmain(&neq[1],ubr,mubr,adb,aub,jq,irow);
       }
 	  
       /* imaginary part of forces */
@@ -1690,7 +1686,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	  }
 	}
 	      
-	FORTRAN(op,(&neq[1],ubi,mubi,adb,aub,jq,irow));
+	opmain(&neq[1],ubi,mubi,adb,aub,jq,irow);
 
 	/* calculating the eigenmodes x mass x particular solution */
 
@@ -2004,9 +2000,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
 		inoel,nener,orname,&network,ipobody,xbodyact,ibody,
 		typeboun,itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		islavquadel,aut,irowt,jqt,&mortartrafoflag,
 		&intscheme,physcon);}
       else{
       
@@ -2038,9 +2032,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
 		iponoel,inoel,nener,orname,&network,ipobody,xbodyact,
 		ibody,typeboun,itiefac,tieset,smscale,&mscalmethod,nbody,
-		t0g,t1g,islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		t0g,t1g,islavquadel,aut,irowt,jqt,&mortartrafoflag,
 		&intscheme,physcon);
 	      
 	if(nmdnode==0){
@@ -2103,9 +2095,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
 		inoel,nener,orname,&network,ipobody,xbodyact,ibody,
 		typeboun,itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		islavquadel,aut,irowt,jqt,&mortartrafoflag,
 		&intscheme,physcon);}
       else{ 
       
@@ -2137,9 +2127,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		clearini,islavsurf,ielprop,prop,energyini,energy,&iit,
 		iponoel,inoel,nener,orname,&network,ipobody,xbodyact,
 		ibody,typeboun,itiefac,tieset,smscale,&mscalmethod,nbody,
-		t0g,t1g,islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		t0g,t1g,islavquadel,aut,irowt,jqt,&mortartrafoflag,
 		&intscheme,physcon);
 
 	if(nmdnode==0){
@@ -2714,9 +2702,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
 		  inoel,nener,orname,&network,ipobody,xbodyact,ibody,typeboun,
 		  itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-		  islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-		  ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-		  labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		  islavquadel,aut,irowt,jqt,&mortartrafoflag,
 		  &intscheme,physcon);
 	  SFREE(v);SFREE(f);
 	  if(intpointvar!=1){SFREE(fn);SFREE(stx);}
@@ -2751,8 +2737,8 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		      
 	    NNEW(zc,double,neq[1]*nev);
 	    for(i=0;i<nev;i++){
-	      FORTRAN(op,(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],
-			  adc,auc,jq,irow));
+	      opmain(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],
+			  adc,auc,jq,irow);
 	    }
 	    SFREE(adc);SFREE(auc);
 		      
@@ -2798,8 +2784,8 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		      
 	    NNEW(zc,double,neq[1]*nev);
 	    for(i=0;i<nev;i++){
-	      FORTRAN(op,(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],adc,auc,
-			  jq,irow));
+	      opmain(&neq[1],&z[(long long)i*neq[1]],&zc[i*neq[1]],adc,auc,
+			  jq,irow);
 	    }
 	    SFREE(adc);SFREE(auc);
 		      
@@ -2979,28 +2965,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	    }
 	  }
 		  
-	  FORTRAN(op,(&neq[1],ubr,mubr,adb,aub,jq,irow));
-		  
-	  /*	  for(i=0;i<neq[1];i++){
-	    br[i]+=freq[l]*(freq[l]*mubr[i]);
-	    bi[i]+=freq[l]*(-alpham*mubr[i]-betam*fr[i]);
-	    }*/
-	      
-	  /* real and imaginary modal coefficients */
-		  
-	  /*	  for(i=0;i<nev;i++){
-	    aa[i]=0.;
-	    for(j=0;j<neq[1];j++){
-	      aa[i]+=z[(long long)i*neq[1]+j]*br[j];
-	    }
-	  }
-		  
-	  for(i=0;i<nev;i++){
-	    bb[i]=0.;
-	    for(j=0;j<neq[1];j++){
-	      bb[i]+=z[(long long)i*neq[1]+j]*bi[j];
-	    }
-	    }*/
+	  opmain(&neq[1],ubr,mubr,adb,aub,jq,irow);
 
 	  /* calculating the eigenmodes x mass x particular solution */
 
@@ -3338,9 +3303,7 @@ void steadystate(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
 		inoel,nener,orname,&network,ipobody,xbodyact,ibody,
 		typeboun,itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		islavquadel,aut,irowt,jqt,&mortartrafoflag,
 		&intscheme,physcon);
 	  
 	(*kode)++;

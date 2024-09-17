@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2023 Guido Dhondt                     */
+/*              Copyright (C) 1998-2024 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -20,6 +20,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
 #include "CalculiX.h"
 #ifdef SPOOLES
 #include "spooles.h"
@@ -187,7 +188,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 				  nelemload,ixnode,iyload,nload,sideload,
 				  xloadact,cocon,ncocon,iinc,nforc,ikforc,
 				  ilforc,xforcact));
-	  SFREE(itreated);SFREE(istack);SFREE(hfr);SFREE(hba);SFREE(istackb);
+	  SFREE(itreated);SFREE(istack);SFREE(istackb);
 	  SFREE(ixnode);SFREE(iyload);
 	  break;
 	}
@@ -397,9 +398,9 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
 			  camt,camf,camp,rhcon,nrhcon,
 			  vold,jobnamef,set,istartset,iendset,ialset,nset,
 			  mi,iaxial,istep,iit,ipobody,ibody,xbodyact,nbody,
-			  &ndata,sfr,sba,jumpup,jumpdo));
+			  &ndata,sfr,sba,jumpup,jumpdo,hfr,hba));
       if(ichannel==1){
-	SFREE(sfr);SFREE(sba);SFREE(jumpup);SFREE(jumpdo);
+	SFREE(sfr);SFREE(sba);SFREE(jumpup);SFREE(jumpdo);SFREE(hfr);SFREE(hba);
       }
       
     }
@@ -463,7 +464,7 @@ void radflowload(ITG *itg,ITG *ieg,ITG *ntg,ITG *ntr,double *adrad,
       }
     }
       
-    // next line is to be inserted in a similar way for all other paralell parts
+    // next line is to be inserted in a similar way for all other parallel parts
       
     if(*ntr<num_cpus) num_cpus=*ntr;
       

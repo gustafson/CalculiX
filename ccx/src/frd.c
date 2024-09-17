@@ -1,8 +1,7 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2022 Guido Dhondt                     */
+/*              Copyright (C) 1998-2024 Guido Dhondt                     */
 /*     Modifications of this subroutine                                  */
-/*              Copyright (C) 2013-2022 Peter A. Gustafson               */
-
+/*              Copyright (C) 2013-2024 Peter A. Gustafson               */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -218,8 +217,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1,"%5sUTIME              %8s                                        \n",p1,newclock);
     fprintf(f1,"%5sUHOST                                                              \n",p1);
     fprintf(f1,"%5sUPGM               CalculiX                                        \n",p1);
-    fprintf(f1,"%5sUVERSION           Version 2.21                             \n",p1);
-    fprintf(f1,"%5sUCOMPILETIME       Sat Jul 29 10:52:01 CEST 2023                    \n",p1);
+    fprintf(f1,"%5sUVERSION           Version 2.22                             \n",p1);
+    fprintf(f1,"%5sUCOMPILETIME       Mon Aug  5 19:15:25 CEST 2024                    \n",p1);
     fprintf(f1,"%5sUDIR                                                               \n",p1);
     fprintf(f1,"%5sUDBN                                                               \n",p1);
     
@@ -301,6 +300,11 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	}else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
 	  continue;
 
+	  /* gas element in a procedure other than heat transfer */
+
+	}else if((strcmp1(&lakon[8*i],"D")==0)&&(ithermal[1]<=1)){
+	  continue;
+
 	  /* mass element */
 
 	}else if(strcmp1(&lakon[8*i],"MASS")==0){
@@ -356,6 +360,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
                (strcmp1(&lakon[8*i+6],"1")==0)){
 	continue;
       }else if(strcmp1(&lakon[8*i],"DCOUP3D")==0){
+	continue;
+      }else if((strcmp1(&lakon[8*i],"D")==0)&&(ithermal[1]<=1)){
 	continue;
       }else if(strcmp1(&lakon[8*i],"MASS")==0){
 	continue;
@@ -420,7 +426,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	    nemax++;
 	    if(strcmp1(output,"asc")==0){
 	      fprintf(f1,"%3s%10" ITGFORMAT "%5s%5s%5" ITGFORMAT "\n%3s",
-		      m1,nemax,p4,p0,imat,m2);
+		      m1,nemax,p4,p0,ielmat[i*mi[2]+k],m2);
 	      for(j=0;j<10;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+28+20*k+j]);
 	      fprintf(f1,"\n%3s",m2);
 	      for(j=10;j<12;j++)fprintf(f1,"%10" ITGFORMAT "",kon[indexe+28+20*k+j]);
@@ -432,7 +438,7 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	      iw=(int)nemax;fwrite(&iw,sizeof(int),1,f1);
 	      iw=(int)ip4;fwrite(&iw,sizeof(int),1,f1);
 	      iw=(int)ip0;fwrite(&iw,sizeof(int),1,f1);
-	      iw=(int)imat;fwrite(&iw,sizeof(int),1,f1);
+	      iw=(int)ielmat[i*mi[2]+k];fwrite(&iw,sizeof(int),1,f1);
 	      for(j=0;j<10;j++){iw=(int)kon[indexe+28+20*k+j];
 		fwrite(&iw,sizeof(int),1,f1);}
 	      for(j=10;j<12;j++){iw=(int)kon[indexe+28+20*k+j];
@@ -872,7 +878,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
       
 	frdvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		  &ioutall);
 
       }else if((mi[1]>3)&&(mi[1]<7)){
 
@@ -886,7 +893,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
 
 	frdgeneralvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-			 trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+			 trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,
+			 m3,&ioutall);
       }else{
 	printf("*WARNING in frd:\n");
 	printf("         for output purposes only 4, 5 or 6\n");
@@ -914,7 +922,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
       
       frdvector(&v[*nk*mt],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		&ioutall);
     }
   }
 
@@ -939,7 +948,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
       
       frdvector(v,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+		trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		&ioutall);
     }
   }
 
@@ -962,7 +972,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
     fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
 
     frdvector(veold,&iset,ntrans,&filab[1740],&nkcoords,inum,m1,inotr,
-	      trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+	      trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+	      &ioutall);
   }
 
   /* storing the temperatures in the nodes */
@@ -1509,7 +1520,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
   
 	if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]*=180.;fn[2+i*mt]*=180.;fn[3+i*mt]*=180.;}}
 	frdvector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
-		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		  &ioutall);
 	if((iaxial==1)&&(strcmp1(&filab[352],"I")==0)){for(i=0;i<*nk;i++){fn[1+i*mt]/=180.;fn[2+i*mt]/=180.;fn[3+i*mt]/=180.;}}
 
       }else if((mi[1]>3)&&(mi[1]<7)){
@@ -1524,7 +1536,8 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 	fprintf(f1," -5  ALL         1    2    0    0    1ALL\n");
 
 	frdgeneralvector(fn,&iset,ntrans,&filab[348],&nkcoords,inum,m1,inotr,
-			 trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+			 trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,
+			 m3,&ioutall);
       }else{
 	printf("*WARNING in frd:\n");
 	printf("         for output purposes only 4, 5 or 6\n");
@@ -1563,10 +1576,12 @@ void frd(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
       
       if(*noddiam>=0){
 	frdvector(&fn[*nk*mt],&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		  &ioutall);
       }else{
 	frdvector(fn,&iset,ntrans,filab,&nkcoords,inum,m1,inotr,
-		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3);
+		  trab,co,istartset,iendset,ialset,mi,ngraph,f1,output,m3,
+		  &ioutall);
       }
     }
   }

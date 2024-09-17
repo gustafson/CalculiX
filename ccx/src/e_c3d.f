@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -28,8 +28,8 @@
      &     nstate_,xstateini,xstate,ne0,ipkon,thicke,
      &     integerglob,doubleglob,tieset,istartset,iendset,ialset,ntie,
      &     nasym,pslavsurf,pmastsurf,mortar,clearini,ielprop,prop,
-     &     kscale,smscalel,mscalmethod,set,nset,islavelinv,autloc,
-     &     irowtloc,jqtloc,mortartrafoflag)
+     &     kscale,smscalel,mscalmethod,set,nset,islavquadel,aute,
+     &     irowte,jqte,mortartrafoflag)
 !     
 !     computation of the element matrix and rhs for the element with
 !     the topology in konl
@@ -60,8 +60,8 @@
       character*80 matname(*),amat
       character*81 tieset(3,*),set(*)
 !     
-      integer konl(20),ifaceq(8,6),nelemload(2,*),nbody,nelem,
-     &     mi(*),jfaces,igauss,mortar,kon(*),ielprop(*),null,
+      integer konl(20),ifaceq(8,6),nelemload(2,*),nbody,nelem,id1,
+     &     mi(*),jfaces,igauss,mortar,kon(*),ielprop(*),null,length,
      &     mattyp,ithermal(*),iperturb(*),nload,idist,i,j,k,l,i1,i2,j1,
      &     nmethod,k1,l1,ii,jj,ii1,jj1,id,ipointer,ig,m1,m2,m3,m4,kk,
      &     nelcon(2,*),nrhcon(*),nalcon(2,*),ielmat(mi(3),*),six,
@@ -73,8 +73,8 @@
      &     nmpc,ikmpc(*),ilmpc(*),iscale,nstate_,ne0,iselect(6),kscale,
      &     istartset(*),iendset(*),ialset(*),ntie,integerglob(*),nasym,
      &     nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,nopered,
-     &     mscalmethod,nset,islavelinv(*),jqtloc(*),irowtloc(*),
-     &     node1,node2,irowtloc1(16),jqtloc1(9),j2,mortartrafoflag
+     &     mscalmethod,nset,islavquadel(*),jqte(*),irowte(*),
+     &     node1,node2,irowtf(16),jqtf(9),j2,mortartrafoflag
 !     
       real*8 co(3,*),xl(3,20),shp(4,20),xs2(3,7),veold(0:mi(2),*),
      &     s(60,60),w(3,3),p1(3),p2(3),bodyf(3),bodyfx(3),ff(60),
@@ -88,15 +88,15 @@
      &     om,omx,e,un,al,um,xi,et,ze,tt,const,xsj,xsjj,sm(60,60),
      &     sti(6,mi(1),*),stx(6,mi(1),*),s11,s22,s33,s12,s13,s23,s11b,
      &     s22b,s33b,s12b,s13b,s23b,t0l,t1l,coefmpc(*),xlayer(mi(3),4),
-     &     senergy,senergyb,rho,elas(21),summass,summ,thicke(mi(3),*),
+     &     senergy,senergyb,rho,stiff(21),summass,summ,thicke(mi(3),*),
      &     sume,factorm,factore,alp,elconloc(ncmat_),eth(6),
      &     weight,coords(3),dmass,xl1(3,9),term,clearini(3,9,*),
      &     plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &     xstiff(27,mi(1),*),plconloc(802),dtime,ttime,time,tvar(2),
      &     sax(60,60),ffax(60),gs(8,4),a,stress(6),stre(3,3),
      &     pslavsurf(3,*),pmastsurf(6,*),xmass,xsjmass,shpmass(4,20),
-     &     shpjmass(4,20),smscalel,smfactor,shptil(4,20),autloc(*),
-     &     shptil2(7,9),autloc1(16),doubleglob(*)
+     &     shpjmass(4,20),smscalel,smfactor,shptil(4,20),aute(*),
+     &     shptil2(7,9),autf(16),doubleglob(*)
 !     
       include "gauss.f"
 !     
@@ -409,7 +409,7 @@ c     Bernhardi end
 !     
           if((lakonl(7:7).eq.'A').or.(lakonl(7:7).eq.'1').or.
      &         (lakonl(7:7).eq.'2').or.(mortar.eq.0)) then
-            call springstiff_n2f(xl,elas,konl,voldl,s,imat,elcon,
+            call springstiff_n2f(xl,stiff,konl,voldl,s,imat,elcon,
      &           nelcon,ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,
      &           plicon,nplicon,npmat_,iperturb,
      &           springarea(1,konl(nope+1)),nmethod,mi,ne0,nstate_,
@@ -419,7 +419,7 @@ c     Bernhardi end
             jfaces=kon(indexe+nope+2)
             igauss=kon(indexe+nope+1)
 c     write(*,*) 'e_c3d ',nelem
-            call springstiff_f2f(xl,elas,voldl,s,imat,elcon,nelcon,
+            call springstiff_f2f(xl,stiff,voldl,s,imat,elcon,nelcon,
      &           ncmat_,ntmat_,nope,lakonl,t1l,kode,elconloc,plicon,
      &           nplicon,npmat_,iperturb,springarea(1,igauss),
      &           nmethod,mi,ne0,nstate_,xstateini,xstate,reltime,
@@ -673,32 +673,40 @@ c     Bernhardi end
           call shape6w(xi,et,ze,xl,xsj,shp,iflag)
         endif
 !     
+!       aute,jqte,irowte: describe local transformation matrix for element    
+!       autf,jqtf,irowtf: describe local transformation matrix for face of
+!                         element
+!     
 c     mortar start
-        if(mortartrafoflag.eq.1) then
-          do i1=1,nope
-            shptil(1,i1)=shp(1,i1)
-            shptil(2,i1)=shp(2,i1)
-            shptil(3,i1)=shp(3,i1)
-            shptil(4,i1)=shp(4,i1)
-          enddo
-          if(islavelinv(nelem).gt.0) then
-            if((nope.eq.20).or.(nope.eq.10).or.(nope.eq.15)) then
-              do i1=1,nope
-                if(jqtloc(i1+1)-jqtloc(i1).gt.0) then
-                  shptil(1,i1)=0.0
-                  shptil(2,i1)=0.0
-                  shptil(3,i1)=0.0
-                  shptil(4,i1)=0.0
-                endif
-                do j1=jqtloc(i1),jqtloc(i1+1)-1
-                  j2=irowtloc(j1)
-                  shptil(1,i1)=shptil(1,i1)+autloc(j1)*shp(1,j2)
-                  shptil(2,i1)=shptil(2,i1)+autloc(j1)*shp(2,j2)
-                  shptil(3,i1)=shptil(3,i1)+autloc(j1)*shp(3,j2)
-                  shptil(4,i1)=shptil(4,i1)+autloc(j1)*shp(4,j2)
-                enddo
+        if(mortartrafoflag.gt.0) then
+          if(islavquadel(nelem).gt.0) then
+            do i1=1,nope
+              if(jqte(i1+1)-jqte(i1).gt.0) then
+                shptil(1,i1)=0.0
+                shptil(2,i1)=0.0
+                shptil(3,i1)=0.0
+                shptil(4,i1)=0.0
+              else
+                shptil(1,i1)=shp(1,i1)
+                shptil(2,i1)=shp(2,i1)
+                shptil(3,i1)=shp(3,i1)
+                shptil(4,i1)=shp(4,i1)
+              endif
+              do j1=jqte(i1),jqte(i1+1)-1
+                j2=irowte(j1)
+                shptil(1,i1)=shptil(1,i1)+aute(j1)*shp(1,j2)
+                shptil(2,i1)=shptil(2,i1)+aute(j1)*shp(2,j2)
+                shptil(3,i1)=shptil(3,i1)+aute(j1)*shp(3,j2)
+                shptil(4,i1)=shptil(4,i1)+aute(j1)*shp(4,j2)
               enddo
-            endif
+            enddo
+          else
+            do i1=1,nope
+              shptil(1,i1)=shp(1,i1)
+              shptil(2,i1)=shp(2,i1)
+              shptil(3,i1)=shp(3,i1)
+              shptil(4,i1)=shp(4,i1)
+            enddo
           endif
         endif
 c     mortar end
@@ -796,7 +804,7 @@ c     mortar end
 !     
         istiff=1
         call materialdata_me(elcon,nelcon,rhcon,nrhcon,alcon,nalcon,
-     &       imat,amat,iorien,coords,orab,ntmat_,elas,rho,
+     &       imat,amat,iorien,coords,orab,ntmat_,stiff,rho,
      &       nelem,ithermal,alzero,mattyp,t0l,t1l,
      &       ihyper,istiff,elconloc,eth,kode,plicon,
      &       nplicon,plkcon,nplkcon,npmat_,
@@ -804,16 +812,16 @@ c     mortar end
      &       xstiff,ncmat_)
 !     
         if(mattyp.eq.1) then
-c     write(*,*) 'elastic co', elas(1),elas(2)
-          e=elas(1)
-          un=elas(2)
+c     write(*,*) 'elastic co', stiff(1),stiff(2)
+          e=stiff(1)
+          un=stiff(2)
           um=e/(1.d0+un)
           al=un*um/(1.d0-2.d0*un)
           um=um/2.d0
         elseif(mattyp.eq.2) then
-c     call orthotropic(elas,anisox)
+c     call orthotropic(stiff,anisox)
         else
-          call anisotropic(elas,anisox)
+          call anisotropic(stiff,anisox)
         endif
 !     
 !     initialisation for the body forces
@@ -846,7 +854,7 @@ c     call orthotropic(elas,anisox)
         xsjj=dsqrt(xsj)
 !        
 c     mortar start
-        if(mortartrafoflag.eq.1) then
+        if(mortartrafoflag.gt.0) then
           do i1=1,nope
             shpj(1,i1)=shptil(1,i1)*xsjj
             shpj(2,i1)=shptil(2,i1)*xsjj
@@ -882,7 +890,9 @@ c     mortar end
 !     lumping purposes: only for explicit
 !     dynamic calculations
 !     
-            if((mass.eq.1).and.(iexpl.gt.1)) then
+            if((mass.eq.1).and.((iexpl.gt.1).or.
+     &           ((nmethod.eq.2).and.(mscalmethod.gt.0)))) then
+c            if((mass.eq.1).and.(iexpl.gt.1)) then
               summass=summass+rho*xsj*weight
             endif
 !     
@@ -932,29 +942,29 @@ c     mortar end
 !     
                   elseif(mattyp.eq.2) then
 !     
-                    s(ii1,jj1)=s(ii1,jj1)+(elas(1)*w(1,1)+
-     &                   elas(7)*w(2,2)+elas(8)*w(3,3))*weight
-                    s(ii1,jj1+1)=s(ii1,jj1+1)+(elas(2)*w(1,2)+
-     &                   elas(7)*w(2,1))*weight
-                    s(ii1,jj1+2)=s(ii1,jj1+2)+(elas(4)*w(1,3)+
-     &                   elas(8)*w(3,1))*weight
-                    s(ii1+1,jj1)=s(ii1+1,jj1)+(elas(7)*w(1,2)+
-     &                   elas(2)*w(2,1))*weight
+                    s(ii1,jj1)=s(ii1,jj1)+(stiff(1)*w(1,1)+
+     &                   stiff(7)*w(2,2)+stiff(8)*w(3,3))*weight
+                    s(ii1,jj1+1)=s(ii1,jj1+1)+(stiff(2)*w(1,2)+
+     &                   stiff(7)*w(2,1))*weight
+                    s(ii1,jj1+2)=s(ii1,jj1+2)+(stiff(4)*w(1,3)+
+     &                   stiff(8)*w(3,1))*weight
+                    s(ii1+1,jj1)=s(ii1+1,jj1)+(stiff(7)*w(1,2)+
+     &                   stiff(2)*w(2,1))*weight
                     s(ii1+1,jj1+1)=s(ii1+1,jj1+1)+
-     &                   (elas(7)*w(1,1)+
-     &                   elas(3)*w(2,2)+elas(9)*w(3,3))*weight
+     &                   (stiff(7)*w(1,1)+
+     &                   stiff(3)*w(2,2)+stiff(9)*w(3,3))*weight
                     s(ii1+1,jj1+2)=s(ii1+1,jj1+2)+
-     &                   (elas(5)*w(2,3)+
-     &                   elas(9)*w(3,2))*weight
+     &                   (stiff(5)*w(2,3)+
+     &                   stiff(9)*w(3,2))*weight
                     s(ii1+2,jj1)=s(ii1+2,jj1)+
-     &                   (elas(8)*w(1,3)+
-     &                   elas(4)*w(3,1))*weight
+     &                   (stiff(8)*w(1,3)+
+     &                   stiff(4)*w(3,1))*weight
                     s(ii1+2,jj1+1)=s(ii1+2,jj1+1)+
-     &                   (elas(9)*w(2,3)+
-     &                   elas(5)*w(3,2))*weight
+     &                   (stiff(9)*w(2,3)+
+     &                   stiff(5)*w(3,2))*weight
                     s(ii1+2,jj1+2)=s(ii1+2,jj1+2)+
-     &                   (elas(8)*w(1,1)+
-     &                   elas(9)*w(2,2)+elas(6)*w(3,3))*weight
+     &                   (stiff(8)*w(1,1)+
+     &                   stiff(9)*w(2,2)+stiff(6)*w(3,3))*weight
 !     
                   else
 !     
@@ -978,7 +988,7 @@ c     mortar end
                   if(mass.eq.1) then
                     if(lakonl(4:5).ne.'8I') then
 c     mortar start
-                      if(mortartrafoflag.eq.1) then
+                      if(mortartrafoflag.gt.0) then
                         sm(ii1,jj1)=sm(ii1,jj1)
      &                       +rho*shpj(4,ii)*shptil(4,jj)*weight
                       else
@@ -998,7 +1008,7 @@ c     mortar end
 !     
                   if(coriolis.eq.1) then
 c     mortar start
-                    if(mortartrafoflag.eq.1) then
+                    if(mortartrafoflag.gt.0) then
                       dmass=2.d0*
      &                     rho*shpj(4,ii)*shptil(4,jj)*weight
      &                     *dsqrt(omx)
@@ -1057,7 +1067,9 @@ c     mortar end
 !     lumping purposes: only for explicit
 !     dynamic calculations
 !     
-            if((mass.eq.1).and.(iexpl.gt.1)) then
+            if((mass.eq.1).and.((iexpl.gt.1).or.
+     &           ((nmethod.eq.2).and.(mscalmethod.gt.0)))) then
+c            if((mass.eq.1).and.(iexpl.gt.1)) then
               summass=summass+rho*xsj*weight
             endif
 !     
@@ -1092,11 +1104,11 @@ c     mortar end
 !     
                 elseif(mattyp.eq.2) then
 !     
-                  call orthonl(w,vo,elas,s,ii1,jj1,weight)
+                  call orthonl(w,vo,stiff,s,ii1,jj1,weight)
 !     
                 else
 !     
-                  call anisonl(w,vo,elas,s,ii1,jj1,weight)
+                  call anisonl(w,vo,stiff,s,ii1,jj1,weight)
 !     
                 endif
 !     
@@ -1114,7 +1126,7 @@ c     mortar end
 !     
                 if((mass.eq.1).and.(om.gt.0.d0)) then
 c     mortar start                  
-                  if(mortartrafoflag.eq.1) then
+                  if(mortartrafoflag.gt.0) then
                     dmass=shpj(4,ii)*shptil(4,jj)*weight*om
                   else
 c     mortar end                  
@@ -1135,7 +1147,7 @@ c     mortar end
                 if(mass.eq.1) then
                   if(lakonl(4:5).ne.'8I') then
 c     mortar start                    
-                    if(mortartrafoflag.eq.1) then
+                    if(mortartrafoflag.gt.0) then
                       sm(ii1,jj1)=sm(ii1,jj1)
      &                     +rho*shpj(4,ii)*shptil(4,jj)*weight
                     else
@@ -1155,7 +1167,7 @@ c     mortar end
 !     
                 if(coriolis.eq.1) then
 c     mortar start                    
-                  if(mortartrafoflag.eq.1) then
+                  if(mortartrafoflag.gt.0) then
                     dmass=2.d0*
      &                   rho*shpj(4,ii)*shptil(4,jj)*
      &                   weight*dsqrt(omx)
@@ -1181,8 +1193,8 @@ c     mortar end
         endif
 !     
 !     add hourglass control stiffnesses: C3D8R only. 
-        if(lakonl(1:5).eq.'C3D8R') then 
-          call hgstiffness(s,elas,a,gs)
+        if((lakonl(1:5).eq.'C3D8R').and.(intscheme.eq.0)) then 
+          call hgstiffness(s,stiff,a,gs)
         endif
 !     
 !     computation of the right hand side
@@ -1398,43 +1410,43 @@ c     Bernhardi end
           endif
 !     
 c     mortar start
-          if(mortartrafoflag.eq.1) then
 !
-!     generate autloc1
+!     generate autf
 !
-            if(islavelinv(nelem).gt.0) then
-              if((nope.eq.20).or.(nope.eq.10).or.(nope.eq.15)) then
-                jqtloc1(1)=1
-                ii=1
-                do i1=1,nopes
+          if(mortartrafoflag.gt.0) then
+            if(islavquadel(nelem).gt.0) then
+              jqtf(1)=1
+              ii=1
+              do i1=1,nopes
+                if(nope.eq.20) then
+                  node1=ifaceq(i1,ig)
+                elseif(nope.eq.10) then
+                  node1=ifacet(i1,ig)
+                else
+                  node1=ifacew(i1,ig)
+                endif
+                length=jqte(node1+1)-jqte(node1)
+                do j2=1,nopes
                   if(nope.eq.20) then
-                    ipointer=ifaceq(i1,ig)
+                    node2=ifaceq(j2,ig)
                   elseif(nope.eq.10) then
-                    ipointer=ifacet(i1,ig)
+                    node2=ifacet(j2,ig)
                   else
-                    ipointer=ifacew(i1,ig)
+                    node2=ifacew(j2,ig)
                   endif
-                  node1=ipointer
-                  do j1=jqtloc(node1),jqtloc(node1+1)-1
-                    node2=irowtloc(j1)
-                    do j2=1,nopes
-                      if(nope.eq.20) then
-                        ipointer=ifaceq(j2,ig)
-                      elseif(nope.eq.10) then
-                        ipointer=ifacet(j2,ig)
-                      else
-                        ipointer=ifacew(j2,ig)
-                      endif
-                      if(ipointer.eq.node2) then
-                        autloc1(ii)=autloc(j1)
-                        irowtloc1(ii)=j2
-                        ii=ii+1
-                      endif
-                    enddo
-                  enddo
-                  jqtloc1(i1+1)=ii
+                  id1=0
+                 call nident(irowte(jqte(node1)),node2,length,id1)
+                  if(id1.gt.0) then
+                    j1=jqte(node1)+id1-1
+                    if(irowte(j1).eq.node2) then
+                      autf(ii)=aute(j1)
+                      irowtf(ii)=j2
+                      ii=ii+1
+                    endif
+                  endif
                 enddo
-              endif
+                jqtf(i1+1)=ii
+              enddo
             endif
           endif
 c     mortar end
@@ -1479,32 +1491,32 @@ c     mortar end
               endif
 !     
 c     mortar start
-              if(mortartrafoflag.eq.1) then
+              if(mortartrafoflag.gt.0) then
                 do i1=1,nopes
                   shptil2(1,i1)=shp2(1,i1)
                   shptil2(2,i1)=shp2(2,i1)
                   shptil2(3,i1)=shp2(3,i1)
                   shptil2(4,i1)=shp2(4,i1)
                 enddo
-                if(islavelinv(nelem).gt.0) then
+                if(islavquadel(nelem).gt.0) then
                   if((nopes.eq.8).or.(nopes.eq.6)) then
                     do i1=1,nopes
-                      if(jqtloc1(i1+1)-jqtloc1(i1).gt.0) then
+                      if(jqtf(i1+1)-jqtf(i1).gt.0) then
                         shptil2(1,i1)=0.0
                         shptil2(2,i1)=0.0
                         shptil2(3,i1)=0.0
                         shptil2(4,i1)=0.0
                       endif
-                      do j1=jqtloc1(i1),jqtloc1(i1+1)-1
-                        j2=irowtloc1(j1)
+                      do j1=jqtf(i1),jqtf(i1+1)-1
+                        j2=irowtf(j1)
                         shptil2(1,i1)=shptil2(1,i1)
-     &                       +autloc1(j1)*shp2(1,j2)
+     &                       +autf(j1)*shp2(1,j2)
                         shptil2(2,i1)=shptil2(2,i1)
-     &                       +autloc1(j1)*shp2(2,j2)
+     &                       +autf(j1)*shp2(2,j2)
                         shptil2(3,i1)=shptil2(3,i1)
-     &                       +autloc1(j1)*shp2(3,j2)
+     &                       +autf(j1)*shp2(3,j2)
                         shptil2(4,i1)=shptil2(4,i1)
-     &                       +autloc1(j1)*shp2(4,j2)
+     &                       +autf(j1)*shp2(4,j2)
                       enddo
                     enddo
                   endif
@@ -1522,7 +1534,6 @@ c     mortar end
                     coords(k)=coords(k)+xl2(k,j)*shp2(4,j)
                   enddo
                 enddo
-c     read(sideload(id)(2:2),'(i1)') jltyp
                 jltyp=ichar(sideload(id)(2:2))-48
                 jltyp=jltyp+20
                 iscale=1
@@ -1585,7 +1596,7 @@ c     Bernhardi end
                   ipointer=(ifacew(k,ig)-1)*3
                 endif
 c     mortar start                
-                if(mortartrafoflag.eq.1) then
+                if(mortartrafoflag.gt.0) then
                   ff(ipointer+1)=ff(ipointer+1)
      &                 -shptil2(4,k)*xload(1,id)
      &                 *xsj2(1)*weight
@@ -1623,32 +1634,32 @@ c     mortar end
                 call shape3tri(xi,et,xl1,xsj2,xs2,shp2,iflag)
               endif
 c     mortar start
-              if(mortartrafoflag.eq.1) then
+              if(mortartrafoflag.gt.0) then
                 do i1=1,nopes
                   shptil2(1,i1)=shp2(1,i1)
                   shptil2(2,i1)=shp2(2,i1)
                   shptil2(3,i1)=shp2(3,i1)
                   shptil2(4,i1)=shp2(4,i1)
                 enddo
-                if(islavelinv(nelem).gt.0) then
+                if(islavquadel(nelem).gt.0) then
                   if((nopes.eq.8).or.(nopes.eq.6)) then
                     do i1=1,nopes
-                      if(jqtloc1(i1+1)-jqtloc1(i1).gt.0) then
+                      if(jqtf(i1+1)-jqtf(i1).gt.0) then
                         shptil2(1,i1)=0.0
                         shptil2(2,i1)=0.0
                         shptil2(3,i1)=0.0
                         shptil2(4,i1)=0.0
                       endif
-                      do j1=jqtloc1(i1),jqtloc1(i1+1)-1
-                        j2=irowtloc1(j1)
+                      do j1=jqtf(i1),jqtf(i1+1)-1
+                        j2=irowtf(j1)
                         shptil2(1,i1)=shptil2(1,i1)
-     &                       +autloc1(j1)*shp2(1,j2)
+     &                       +autf(j1)*shp2(1,j2)
                         shptil2(2,i1)=shptil2(2,i1)
-     &                       +autloc1(j1)*shp2(2,j2)
+     &                       +autf(j1)*shp2(2,j2)
                         shptil2(3,i1)=shptil2(3,i1)
-     &                       +autloc1(j1)*shp2(3,j2)
+     &                       +autf(j1)*shp2(3,j2)
                         shptil2(4,i1)=shptil2(4,i1)
-     &                       +autloc1(j1)*shp2(4,j2)
+     &                       +autf(j1)*shp2(4,j2)
                       enddo
                     enddo
                   endif
@@ -1766,7 +1777,7 @@ c     Bernhardi end
                           if(k.lt.l) eknlsign=-1.d0
                         endif
 c     mortar start                        
-                        if(mortartrafoflag.eq.1) then
+                        if(mortartrafoflag.gt.0) then
                           term=weight*xload(1,id)*shptil2(4,ii)*
      &                         eknlsign*(xsj2(1)*
      &                         (xkl(n,2)*shptil2(3,jj)-xkl(n,3)*
@@ -1809,7 +1820,7 @@ c     mortar end
                             if(k.lt.l) eknlsign=-1.d0
                           endif
 c     mortar start                          
-                          if(mortartrafoflag.eq.1) then
+                          if(mortartrafoflag.gt.0) then
                             term=-weight*stre(kk,k)*
      &                           shptil2(4,ii)*
      &                           eknlsign*(xsj2(1)*
@@ -1953,22 +1964,20 @@ c     mortar end
           sm(i+2,i+2)=sm(i,i)
         enddo
 !     
-c        if((mscalmethod.ne.1).and.(mscalmethod.ne.3)) then
-!     
 !     setting all off-diagonal terms to zero     
 !     
-          do i=1,3*nope
-            do j=1,3*nope
-              if(i.eq.j) cycle
-              sm(i,j)=0.d0
-            enddo
+        do i=1,3*nope
+          do j=1,3*nope
+            if(i.eq.j) cycle
+            sm(i,j)=0.d0
           enddo
-c        endif
+        enddo
       endif
 !
 !     mscalmethod = 1 or 3: selective mass scaling SMS
 !     
-      if((mass.eq.1).and.(iexpl.gt.1)) then
+      if((mass.eq.1).and.((iexpl.gt.1).or.
+     &     ((nmethod.eq.2).and.(mscalmethod.gt.0)))) then
         if((mscalmethod.eq.1).or.(mscalmethod.eq.3)) then
 !     
 !     beta = smscalel
@@ -1976,48 +1985,23 @@ c        endif
           smfactor=smscalel*summass/((nope-1)*nope)
 !     
           do i=1,3*nope
-c            do j=1,3*nope
-c              if(i.ne.j) then
-c!     set non diagonals to zero           
-c                sm(i,j)=0.d0
-c!     diagonal terms of M for SMS
-c              else
-c                sm(i,j)=sm(i,j)+(nope-1)*smfactor
-                sm(i,i)=sm(i,i)+(nope-1)*smfactor
-c              endif
-c            enddo
+            sm(i,i)=sm(i,i)+(nope-1)*smfactor
           enddo
 !     
 !     nondiagonal terms of M for SMS
 !     
-!         no massless method: regular mass matrix was lumped     
+!     no massless method: regular mass matrix was lumped     
 !     
-c          if(mortar.ne.-1) then
-c            i=0
-c            do j=0,nope*3-1,3
-c              i=i+1
-c              do k=1,(nope-i)
-c                do l=1,3
-c                  sm(j+l+k*3,j+l)=-smfactor
-c                  sm(j+l,j+l+k*3)=-smfactor
-c                enddo
-c              enddo
-c            enddo
-c          else
-c!     
-c!          massless method: regular mass matrix was not lumped     
-c!     
-            i=0
-            do j=0,nope*3-1,3
-              i=i+1
-              do k=1,(nope-i)
-                do l=1,3
-                  sm(j+l+k*3,j+l)=sm(j+l+k*3,j+l)-smfactor
-                  sm(j+l,j+l+k*3)=sm(j+l,j+l+k*3)-smfactor
-                enddo
+          i=0
+          do j=0,nope*3-1,3
+            i=i+1
+            do k=1,(nope-i)
+              do l=1,3
+                sm(j+l+k*3,j+l)=sm(j+l+k*3,j+l)-smfactor
+                sm(j+l,j+l+k*3)=sm(j+l,j+l+k*3)-smfactor
               enddo
             enddo
-c          endif
+          enddo
 !     to calculate additional energy in resultsmech.f:
           smscalel=smfactor
         endif

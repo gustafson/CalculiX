@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,8 +56,8 @@
      &     mpc1,mpc2,index1,index2,node1,node2,kflag,icalccg,ndamp,
      &     ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,imat,
      &     nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,kode,
-     &     nea,neb,kscale,ndof,ii,igauss,islavelinv(1),irowtloc(1),
-     &     jqtloc(1),mortartrafoflag,kk
+     &     nea,neb,kscale,ndof,ii,igauss,islavquadel(1),irowt(1),
+     &     jqt(1),mortartrafoflag,kk
 !     
       real*8 co(3,*),coefmpc(*),xload(2,*),p1(3),smscale(1),dd,
      &     p2(3),ad(*),au(*),bodyf(3),xloadold(2,*),reltime,
@@ -71,8 +71,8 @@
      &     plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &     xstiff(27,mi(1),*),veold(0:mi(2),*),om,value,dtime,ttime,
      &     time,thicke(mi(3),*),doubleglob(*),clearini(3,9,*),damping,
-     &     pslavsurf(3,*),pmastsurf(6,*),freq,elas(21),dacon(*),
-     &     autloc(1)
+     &     pslavsurf(3,*),pmastsurf(6,*),freq,stiff(21),dacon(*),
+     &     aut(1)
 !     
       mortartrafoflag=0
       one=1
@@ -174,14 +174,14 @@
 !     determined and saved
 !     
           if(mortar.eq.0) then
-            call springdamp_n2f(xl,elas,voldl,s,imat,elcon,
+            call springdamp_n2f(xl,stiff,voldl,s,imat,elcon,
      &           ncmat_,ntmat_,nope,iperturb,
      &           springarea(1,konl(nope+1)),nmethod,
      &           mi,reltime,nasym)
           elseif(mortar.eq.1) then
             jfaces=kon(indexe+nope+2)
             igauss=kon(indexe+nope+1) 
-            call springdamp_f2f(xl,elas,voldl,s,imat,elcon,
+            call springdamp_f2f(xl,stiff,voldl,s,imat,elcon,
      &           ncmat_,ntmat_,nope,lakon(i),iperturb,
      &           springarea(1,igauss),
      &           nmethod,mi,reltime,nasym,jfaces,igauss,pslavsurf,
@@ -292,8 +292,8 @@ c     Bernhardi end
      &           integerglob,doubleglob,tieset,istartset,
      &           iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
      &           clearini,ielprop,prop,kscale,smscale(1),mscalmethod,
-     &           set,nset,islavelinv,
-     &           autloc,irowtloc,jqtloc,mortartrafoflag)
+     &           set,nset,islavquadel,
+     &           aut,irowt,jqt,mortartrafoflag)
           else
             call e_c3d_u(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,
      &           ff,i,nmethod,elcon,nelcon,rhcon,nrhcon,alcon,nalcon,

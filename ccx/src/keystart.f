@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@
 !     7)  *ELSET
 !     8)  *SURFACE
 !     9)  *TRANSFORM
-!     10)  *MATERIAL
+!     10) *MATERIAL
 !     11) *DISTRIBUTION
 !     12) *ORIENTATION
 !     13) *TIE

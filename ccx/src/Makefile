@@ -181,7 +181,7 @@ LDFLAGS += `pkg-config --libs exodusii`
 
 include Makefile.inc
 
-SCCXMAIN = ccx_2.21.c
+SCCXMAIN = ccx_2.22.c
 
 ## Define all the object file rules to identify dependencies
 OCCXCU = $(SCCXCU:.cu=.o)
@@ -192,11 +192,11 @@ OCCXMAIN = $(SCCXMAIN:.c=.o)
 ## Link to math and standard c
 CFLAGS += -lm -lc
 
-ccx_2.21: $(OCCXMAIN) ccx_2.21.a
+ccx_2.22: $(OCCXMAIN) ccx_2.22.a
 	#./date.pl;
-	$(CC) $(CFLAGS) -c ccx_2.21.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.21.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -c ccx_2.22.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.22.a $(LDFLAGS)
 
-ccx_2.21.a: $(OCCXF) $(OCCXC)
+ccx_2.22.a: $(OCCXF) $(OCCXC)
 	ar vr $@ $?
 
 clean:
