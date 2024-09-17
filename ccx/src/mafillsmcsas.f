@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -59,7 +59,7 @@
      &     ntmat_,indexe,nope,norien,iexpl,i0,nm,inode,icomplex,
      &     inode1,icomplex1,inode2,icomplex2,ner,ncmat_,intscheme,istep,
      &     iinc,mcs,ielcs(*),nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),
-     &     npmat_,nset,islavelinv(1),irowtloc(1),jqtloc(1),
+     &     npmat_,nset,islavquadel(1),irowt(1),jqt(1),
      &     mortartrafoflag,mscalmethod
 !     
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
@@ -74,7 +74,7 @@
      &     xstiff(27,mi(1),*),pi,theta,ti,tr,veold(0:mi(2),*),om,
      &     xstate(nstate_,mi(1),*),xstateini(nstate_,mi(1),*),
      &     value,dtime,walue,time,ttime,clearini(3,9,*),
-     &     pslavsurf(3,*),pmastsurf(6,*),autloc(1)
+     &     pslavsurf(3,*),pmastsurf(6,*),aut(1)
 !
       mortartrafoflag=0
 !     
@@ -129,8 +129,8 @@
      &       integerglob,doubleglob,tieset,istartset,
      &       iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
      &       clearini,ielprop,prop,kscale,smscale(1),mscalmethod,
-     &       set,nset,islavelinv,autloc,
-     &       irowtloc,jqtloc,mortartrafoflag)
+     &       set,nset,islavquadel,aut,
+     &       irowt,jqt,mortartrafoflag)
 !     
         do jj=1,3*nope
 !     

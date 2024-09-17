@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2023 Guido Dhondt                     */
+/*              Copyright (C) 1998-2024 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include "CalculiX.h"
 #ifdef SPOOLES
 #include "spooles.h"
@@ -273,7 +274,7 @@ void robustdesign(double *co,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,
 			  iponexp,nmpc,labmpc,ipompc,nodempc,ipretinfo,
 			  kon,ipkon,lakon,iponoel,inoel,iponor2d,knor2d,
 			  ipoface,nodface,ne,x,y,z,xo,yo,zo,nx,ny,nz,nodes,
-			  dist,ne2d,nod1st,nod2nd3rd,extnor));
+			  dist,ne2d,nod1st,nod2nd3rd,extnor,nodedesi,&ndesi));
     	  
   SFREE(konfa);SFREE(ipkonfa);SFREE(lakonfa);SFREE(iponor);SFREE(xnor);
   SFREE(iponoelfa);SFREE(inoelfa);SFREE(iponexp);SFREE(ipretinfo);

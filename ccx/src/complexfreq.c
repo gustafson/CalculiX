@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2023 Guido Dhondt                          */
+/*              Copyright (C) 1998-2024 Guido Dhondt                          */
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
 /*     published by the Free Software Foundation(version 2);    */
@@ -77,7 +77,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     ielset,*istartnmd=NULL,*iendnmd=NULL,inmd,neqact,*nshcon=NULL,
     *ipev=NULL,icfd=0,*inomat=NULL,mortar=0,*islavsurf=NULL,
     *iponoel=NULL,*inoel=NULL,iperturbsav,nevcomplex,*itiefac=NULL,
-    mscalmethod=0,*islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,nboun2,
+    mscalmethod=0,*islavquadel=NULL,*irowt=NULL,*jqt=NULL,nboun2,
     *ndirboun2=NULL,*nodeboun2=NULL,nmpc2,*ipompc2=NULL,*nodempc2=NULL,
     *ikboun2=NULL,*ilboun2=NULL,*ikmpc2=NULL,*ilmpc2=NULL,mortartrafoflag=0,
     intscheme=0;
@@ -104,7 +104,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     fmin=0.,fmax=1.e30,*xmr=NULL,*xmi=NULL,*zi=NULL,*eigx=NULL,
     *pslavsurf=NULL,*pmastsurf=NULL,*cdnr=NULL,*cdni=NULL,*tinc,*tper,
     *tmin,*tmax,*energyini=NULL,*energy=NULL,e1[3],e2[3],xn[3],*smscale=NULL,
-    *autloc=NULL,*xboun2=NULL,*coefmpc2=NULL,*physcon=NULL;
+    *aut=NULL,*xboun2=NULL,*coefmpc2=NULL,*physcon=NULL;
 
   FILE *f1;
 
@@ -758,7 +758,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
     for(l=0;l<nev;l++){
       sum=0.;
       DMEMSET(z,0,neq[1],0.);
-      FORTRAN(op,(&neq[1],&zz[l*neq[1]],z,adb,aub,jq,irow));
+      opmain(&neq[1],&zz[l*neq[1]],z,adb,aub,jq,irow);
       for(k=0;k<neq[1];k++){
 	sum+=zz[l*neq[1]+k]*z[k];
       }
@@ -784,7 +784,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	  
       for(l=0;l<nev;l++){
 	DMEMSET(z,0,neq[1],0.);
-	FORTRAN(op,(&neq[1],&zz[l*neq[1]],z,adb,aub,jq,irow));
+	opmain(&neq[1],&zz[l*neq[1]],z,adb,aub,jq,irow);
 	for(m=l;m<nev;m++){
 	  for(k=0;k<neq[1];k++){
 	    xmr[l*nev+m]+=zz[m*neq[1]+k]*z[k];
@@ -794,7 +794,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	memcpy(&zi[0],&zz[(2*l+1)*neqact],sizeof(double)*neqact);
 	for(k=0;k<neqact;k++){zi[neqact+k]=-zz[2*l*neqact+k];}
 	DMEMSET(z,0,neq[1],0.);
-	FORTRAN(op,(&neq[1],zi,z,adb,aub,jq,irow));
+	opmain(&neq[1],zi,z,adb,aub,jq,irow);
 	for(m=l;m<nev;m++){
 	  for(k=0;k<neq[1];k++){
 	    xmi[l*nev+m]+=zz[m*neq[1]+k]*z[k];
@@ -869,7 +869,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
       /* Ureal^T*M*Ureal */
 	  
       DMEMSET(z,0,neq[1],0.);
-      FORTRAN(op,(&neq[1],&zz[2*l*neq[1]],z,adb,aub,jq,irow));
+      opmain(&neq[1],&zz[2*l*neq[1]],z,adb,aub,jq,irow);
       for(k=0;k<neq[1];k++){
 	sum+=zz[2*l*neq[1]+k]*z[k];
       }
@@ -877,7 +877,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
       /* Uimag^T*M*Uimag */
 	  
       DMEMSET(z,0,neq[1],0.);
-      FORTRAN(op,(&neq[1],&zz[(2*l+1)*neq[1]],z,adb,aub,jq,irow));
+      opmain(&neq[1],&zz[(2*l+1)*neq[1]],z,adb,aub,jq,irow);
       for(k=0;k<neq[1];k++){
 	sum+=zz[(2*l+1)*neq[1]+k]*z[k];
       }
@@ -909,7 +909,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	/* M*Ureal */
 	      
 	DMEMSET(z,0,neq[1],0.);
-	FORTRAN(op,(&neq[1],&zz[2*l*neq[1]],z,adb,aub,jq,irow));
+	opmain(&neq[1],&zz[2*l*neq[1]],z,adb,aub,jq,irow);
 	      
 	/* Ureal^T*M*Ureal and Uimag^T*M*Ureal */
 	      
@@ -925,7 +925,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 	/* M*Uimag */
 	      
 	DMEMSET(z,0,neq[1],0.);
-	FORTRAN(op,(&neq[1],&zz[(2*l+1)*neq[1]],z,adb,aub,jq,irow));
+	opmain(&neq[1],&zz[(2*l+1)*neq[1]],z,adb,aub,jq,irow);
 	      
 	/* Ureal^T*M*Uimag and Uimag^T*M*Uimag */
 	      
@@ -1474,9 +1474,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
 		inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
 		itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		islavquadel,aut,irowt,jqt,&mortartrafoflag,
 		&intscheme,physcon);}
       else{
 	results(co,nk,kon,ipkon,lakon,ne,&v[kkv],&stn[kk6],inum,
@@ -1499,9 +1497,7 @@ void complexfreq(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,char **lakonp,ITG 
 		islavsurf,ielprop,prop,energyini,energy,&iit,iponoel,
 		inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
 		itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-		islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-		ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-		labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+		islavquadel,aut,irowt,jqt,&mortartrafoflag,
 		&intscheme,physcon);
       }
 

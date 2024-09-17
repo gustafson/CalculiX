@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -119,9 +119,6 @@
 !     
 !     determining the slave surface 
 !     
-c          do j=1,nset
-c            if(set(j).eq.slavset) exit
-c          enddo
           call cident81(set,slavset,nset,id)
           j=nset+1
           if(id.gt.0) then
@@ -142,7 +139,6 @@ c          enddo
           islav=j
 !     
           if((mortar.le.0).and.(nodeslavsurf)) then
-c          if((mortar.eq.0).and.(nodeslavsurf)) then
 !     
 !     nodal slave surface and node-to-surface contact
 !     
@@ -411,7 +407,8 @@ c          if((mortar.eq.0).and.(nodeslavsurf)) then
 !     
                 ifaces=ialset(j)
                 nelems=int(ifaces/10)
-                jfaces=ifaces - nelems*10
+                if(ipkon(nelems).lt.0) cycle
+                jfaces=ifaces-nelems*10
                 indexe=ipkon(nelems)
 !     
                 if(lakon(nelems)(4:5).eq.'20') then
@@ -470,7 +467,6 @@ c          if((mortar.eq.0).and.(nodeslavsurf)) then
 !     filling fields iponoels and inoels
 !     
                   if(mortar.le.0) then
-c                  if(mortar.eq.0) then
                     ifreenoels=ifreenoels+1
                     inoels(1,ifreenoels)=ifacecount
                     inoels(2,ifreenoels)=iponoels(node)
@@ -551,7 +547,8 @@ c          enddo
 !     
             ifacem=ialset(j)
             nelemm=int(ifacem/10)
-            jfacem=ifacem - nelemm*10
+            if(ipkon(nelemm).lt.0) cycle
+            jfacem=ifacem-nelemm*10
             indexe=ipkon(nelemm)
 !     
             if(lakon(nelemm)(4:5).eq.'20') then

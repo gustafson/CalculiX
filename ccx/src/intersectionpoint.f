@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -34,7 +34,7 @@
 !      
       if(abs(eplane(pab,xcp,tnull)).lt.1.d-13)then
          write(*,*) 'SH: IP no intersection point can be found'
-         write(*,*) 'SH: IP pab paralell to plane! '
+         write(*,*) 'SH: IP pab parallel to plane! '
          call exit(201)
       else 
          diff=-eplane(pa,xcp,t)/eplane(pab,xcp,tnull)

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2023 Guido Dhondt                     */
+/*              Copyright (C) 1998-2024 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -20,6 +20,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
 #include "CalculiX.h"
 #ifdef SPOOLES
 #include "spooles.h"
@@ -198,7 +199,7 @@ void compfluidfem(double **cop,ITG *nk,ITG **ipkonp,ITG **konp,char **lakonp,
     }
   }
   
-  // next line is to be inserted in a similar way for all other paralell parts
+  // next line is to be inserted in a similar way for all other parallel parts
   
   if(*ne<num_cpus) num_cpus=*ne;
   

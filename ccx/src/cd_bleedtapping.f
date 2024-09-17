@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -86,7 +86,7 @@
          elseif(curve.gt.2) then
             write(*,*)
             write(*,*) 'no characteristic available under this index'
-            write(*,*) 'cd is implicitely assumed equal to 1'
+            write(*,*) 'cd is implicitly assumed equal to 1'
             cd=1.d0
             return
          endif

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -721,7 +721,7 @@ c     call exit(201)
             write(*,*) '          node1',node1,' pressure'
      &           ,v(2,node1)    
             write(*,*) '          node2',node2,
-     &           'given intial pressure',
+     &           'given initial pressure',
      &           v(2,node2)
             v(2,node2)=0.9d0*v(2,node2)
             write(*,*) '          node2',node2,
@@ -741,12 +741,12 @@ c     call exit(201)
      &           ' given initial pressure',v(2,node1)  
             v(2,node1)=1.05d0*v(2,node2)
             write(*,*) '          node1',node1,
-     &           ' new intial pressure',v(2,node1)
+     &           ' new initial pressure',v(2,node1)
             write(*,*) '          node2',node2,
      &           ' given initial pressure',v(2,node2)
             v(2,node2)=0.95d0*v(2,node2)
             write(*,*) '          node2',node2,
-     &           ' new intial pressure',v(2,node2)
+     &           ' new initial pressure',v(2,node2)
           endif
         endif
 !     
@@ -1014,10 +1014,10 @@ c     &         (lakon(nelem)(2:4).ne.'RTA')) then
         node=itg(i)
         if(v(2,node).eq.1.235711d-10) v(2,node)=0.d0
       enddo
-c     write(*,*) 'initialnet '
-c     do i=1,ntg
-c     write(*,'(i10,3(1x,e11.4))') itg(i),(v(j,itg(i)),j=0,2)
-c     enddo
+c      write(*,*) 'initialnet '
+c      do i=1,ntg
+c        write(*,'(i10,3(1x,e11.4))') itg(i),(v(j,itg(i)),j=0,2)
+c      enddo
 !     
       return
       end

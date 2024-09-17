@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -16,9 +16,9 @@
 !     along with this program; if not, write to the Free Software
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !     
-      subroutine auglag_inclusion(gmatrix,cvec,iacti,nacti,
+      subroutine inclusion(gmatrix,cvec,iacti,nacti,
      &     fric,atol,rtol,alglob,kitermax,
-     &     auw,jqw,iroww,nslavs,al,alnew,r,omega)
+     &     auw,jqw,iroww,nslavs,al,alnew,r,omega,masslesslinear,fullr)
 !     
       implicit none
 !
@@ -28,13 +28,13 @@
 !
       character*1 uplo
 !     
-      integer i,j,nacti,kitermax,iacti(*),incx,incy,
+      integer i,j,nacti,kitermax,iacti(*),incx,incy,masslesslinear,
      &     icont,inorm,irow,jqw(*),iroww(*),nslavs
 !     
 !     al is in local contact coordinates!
 !     alglob is in global coordinates
 !     
-      real*8 fric(*),atol,rtol,alglob(*),alsize,al(*),err,
+      real*8 fric(*),atol,rtol,alglob(*),alsize,al(*),err,fullr(*),
      &     alnew(*),r(*),cvec(*),gmatrix(nacti,nacti),
      &     omega,value,auw(*),alpha,beta,altan,altanmax,ratio
 !
@@ -53,7 +53,15 @@
 !
 !     determine the relaxation parameter
 !
-      call relaxval_al(r,gmatrix,nacti)
+      if(masslesslinear.gt.0) then
+        do i=1,3*nslavs
+          if(iacti(i).ne.0) then
+            r(iacti(i))=fullr(i)
+          endif
+        enddo
+      else
+        call relaxval_al(r,gmatrix,nacti)
+      endif
 !
       do while((icont.le.kitermax).and.(.not.(iscvg)))
 !        
@@ -129,9 +137,6 @@
         write(*,*) '*WARNING!!: maximum iterations for massless'
         write(*,*) ' contact solution reached:' ,kitermax
         write(*,*) ' with error norm:', err
-        ! call exit(201) ! TODO CMT should it be error or not? 
-c      else
-c        write(*,*) 'AL converged! NactiveDOF,it,err:',nacti,icont,err
       endif
 !
 !     Expansion of pk to global cys: alglob = Wb*al

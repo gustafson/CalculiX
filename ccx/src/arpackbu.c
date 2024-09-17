@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                   */
-/*              Copyright (C) 1998-2023 Guido Dhondt                          */
+/*              Copyright (C) 1998-2024 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -74,7 +74,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      double *t1g,ITG *mcs,ITG *istep){
   
   char bmat[2]="G",which[3]="LM",howmny[2]="A",fneig[132]="",
-    description[13]="            ",*tieset=NULL,*labmpc2=NULL;
+    description[13]="            ",*tieset=NULL;
 
   ITG *inum=NULL,k,ido,dz,iparam[11],ipntr[11],lworkl,im,nasym=0,
     info,rvec=1,*select=NULL,lfin,j,lint,iout,iconverged=0,ielas=1,icmd=0,
@@ -85,9 +85,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     *integerglob=NULL,ntie,icfd=0,*inomat=NULL,mortar=0,*islavnode=NULL,
     *islavact=NULL,*nslavnode=NULL,*islavsurf=NULL,kscale=1,
     *iponoel=NULL,*inoel=NULL,network=0,nrhs=1,*itiefac=NULL,mscalmethod=0,
-    *islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,nboun2,
-    *ndirboun2=NULL,*nodeboun2=NULL,nmpc2,*ipompc2=NULL,*nodempc2=NULL,
-    *ikboun2=NULL,*ilboun2=NULL,*ikmpc2=NULL,*ilmpc2=NULL,mortartrafoflag=0;
+    *islavquadel=NULL,*irowt=NULL,*jqt=NULL,mortartrafoflag=0;
 
   double *stn=NULL,*v=NULL,*resid=NULL,*z=NULL,*workd=NULL,
     *workl=NULL,*d=NULL,sigma,*temp_array=NULL,*fnext=NULL,
@@ -101,7 +99,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
     *emeini=NULL,*doubleglob=NULL,*au=NULL,*clearini=NULL,
     *ad=NULL,*b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,
     *cdnr=NULL,*cdni=NULL,*energyini=NULL,*energy=NULL,*smscale=NULL,
-    *autloc=NULL,*xboun2=NULL,*coefmpc2=NULL;
+    *aut=NULL;
 
   FILE *f1;
 
@@ -171,9 +169,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
 	    inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
 	    itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	    islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	    ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	    islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	    &intscheme,physcon);
   }else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,stx,
@@ -195,9 +191,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
 	    inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
 	    itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	    islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	    ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	    islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	    &intscheme,physcon);
   }
   
@@ -231,7 +225,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		 tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,pmastsurf,
 		 &mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,iponoel,inoel,
 		 &network,ntrans,inotr,trab,smscale,&mscalmethod,set,nset,
-		 islavelinv,autloc,irowtloc,jqtloc,&mortartrafoflag);
+		 islavquadel,aut,irowt,jqt,&mortartrafoflag);
   }
   else{
     mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -251,7 +245,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		 tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
 		 pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
 		 iponoel,inoel,&network,ntrans,inotr,trab,smscale,&mscalmethod,
-		 set,nset,islavelinv,autloc,irowtloc,jqtloc,&mortartrafoflag);
+		 set,nset,islavquadel,aut,irowt,jqt,&mortartrafoflag);
   }
 
   /* determining the right hand side */
@@ -380,9 +374,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
             inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
 	    itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	    islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	    ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	    islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	    &intscheme,physcon);}
   else{
     results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
@@ -404,9 +396,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	    islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
             inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
 	    itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	    islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	    ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	    labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	    islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	    &intscheme,physcon);
   }
 
@@ -466,7 +456,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		 tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
 		 pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
 		 iponoel,inoel,&network,ntrans,inotr,trab,smscale,&mscalmethod,
-		 set,nset,islavelinv,autloc,irowtloc,jqtloc,&mortartrafoflag);
+		 set,nset,islavquadel,aut,irowt,jqt,&mortartrafoflag);
   }
   else{
     mafillsmmain(co,nk,kon,ipkon,lakon,ne,nodeboun,ndirboun,xboun,nboun,
@@ -486,7 +476,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 		 tieset,istartset,iendset,ialset,&ntie,&nasym,pslavsurf,
 		 pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
 		 iponoel,inoel,&network,ntrans,inotr,trab,smscale,&mscalmethod,
-		 set,nset,islavelinv,autloc,irowtloc,jqtloc,&mortartrafoflag);
+		 set,nset,islavquadel,aut,irowt,jqt,&mortartrafoflag);
   }
 
   SFREE(stx);SFREE(fext);
@@ -597,7 +587,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 
     while((ido==-1)||(ido==1)||(ido==2)){
       if(ido==-1){
-	FORTRAN(op,(&neq[0],&workd[ipntr[0]-1],temp_array,ad,au,jq,irow));
+	opmain(&neq[0],&workd[ipntr[0]-1],temp_array,ad,au,jq,irow);
       }
       if((ido==-1)||(ido==1)){
 
@@ -681,7 +671,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
       }
 
       if(ido==2){
-	FORTRAN(op,(&neq[0],&workd[ipntr[0]-1],&workd[ipntr[1]-1],ad,au,jq,irow));
+	opmain(&neq[0],&workd[ipntr[0]-1],&workd[ipntr[1]-1],ad,au,jq,irow);
       }
 
       FORTRAN(dsaupd,(&ido,bmat,&neq[0],which,&nev,&tol,resid,&ncv,z,&dz,iparam,ipntr,workd,
@@ -802,9 +792,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
               inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
 	      itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	      islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	      ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	      labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	      islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	      &intscheme,physcon);}
     else{
       results(co,nk,kon,ipkon,lakon,ne,v,stn,inum,
@@ -827,9 +815,7 @@ void arpackbu(double *co, ITG *nk, ITG *kon, ITG *ipkon, char *lakon,
 	      islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
               inoel,nener,orname,&network,ipobody,xbody,ibody,typeboun,
 	      itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	      islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	      ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	      labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	      islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	      &intscheme,physcon);
     }
 

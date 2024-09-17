@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2023 Guido Dhondt                          */
+/*              Copyright (C) 1998-2024 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -35,7 +35,7 @@ static ITG *nk1,*kon1,*ipkon1,*ne1,*nodeboun1,*ndirboun1,*nboun1,
   *integerglob1,*istartset1,*iendset1,*ialset1,*ntie1,*nasym1,
   *mortar1,*ielprop1,*ne01,num_cpus,*kscale1,*iponoel1,*inoel1,
   *network1,*neapar=NULL,*nebpar=NULL,*mscalmethod1,*nset1,
-  *irowtloc1,*jqtloc1,*islavelinv1,*mortartrafoflag1;
+  *irowt1,*jqt1,*islavquadel1,*mortartrafoflag1;
 
 static double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*cgr1,
   *ad1=NULL,*au1=NULL,*fext1=NULL,*elcon1,*rhcon1,*alcon1,*alzero1,
@@ -43,7 +43,7 @@ static double *co1,*xboun1,*coefmpc1,*xforc1,*xload1,*xbody1,*cgr1,
   *plicon1,*plkcon1,*xstiff1,*dtime1,*physcon1,*shcon1,*cocon1,
   *ttime1,*time1,*xloadold1,*reltime1,*veold1,*springarea1,
   *xstateini1,*xstate1,*thicke1,*doubleglob1,*pslavsurf1,*pmastsurf1,
-  *clearini1,*prop1,*fnext1=NULL,*smscale1,*autloc1;
+  *clearini1,*prop1,*fnext1=NULL,*smscale1,*aut1;
 
 void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 		  ITG *ne,ITG *nodeboun,ITG *ndirboun,double *xboun, 
@@ -80,7 +80,7 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
 		  double *fnext,ITG *kscale,ITG *iponoel,ITG *inoel,
 		  ITG *network,ITG *ntrans,ITG *inotr,double *trab,
 		  double *smscale,ITG *mscalmethod,char *set,ITG *nset,
-		  ITG *islavelinv,double *autloc,ITG *irowtloc,ITG *jqtloc,
+		  ITG *islavquadel,double *aut,ITG *irowt,ITG *jqt,
 		  ITG *mortartrafoflag){
 
   /* mafillsmmain = main program for MAtrix FILLing of the Stiffnes
@@ -139,7 +139,7 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
     }
   }
 
-  // next line is to be inserted in a similar way for all other paralell parts
+  // next line is to be inserted in a similar way for all other parallel parts
 
   if(*ne<num_cpus) num_cpus=*ne;
     
@@ -235,7 +235,7 @@ void mafillsmmain(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,
   clearini1=clearini;ielprop1=ielprop;prop1=prop;ne01=ne0;kscale1=kscale;
   iponoel1=iponoel;inoel1=inoel;network1=network;
   smscale1=smscale;mscalmethod1=mscalmethod;set1=set;nset1=nset;
-  islavelinv1=islavelinv;autloc1=autloc;irowtloc1=irowtloc;jqtloc1=jqtloc;
+  islavquadel1=islavquadel;aut1=aut;irowt1=irowt;jqt1=jqt;
   mortartrafoflag1=mortartrafoflag; 
 
   /* calculating the stiffness/mass */
@@ -455,8 +455,8 @@ void *mafillsmmt(ITG *i){
 		    tieset1,istartset1,iendset1,ialset1,ntie1,nasym1,pslavsurf1,
 		    pmastsurf1,mortar1,clearini1,ielprop1,prop1,ne01,
 		    &fnext1[indexfnext],&nea,&neb,kscale1,iponoel1,inoel1,
-		    network1,smscale1,mscalmethod1,set1,nset1,islavelinv1,
-		    autloc1,irowtloc1,jqtloc1,mortartrafoflag1));
+		    network1,smscale1,mscalmethod1,set1,nset1,islavquadel1,
+		    aut1,irowt1,jqt1,mortartrafoflag1));
 
   return NULL;
 }

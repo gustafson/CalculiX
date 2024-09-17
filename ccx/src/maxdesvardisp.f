@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -78,22 +78,21 @@
                scalprod=dispvector(1)*xdesi(1,nodedesipos(node))+
      &                  dispvector(2)*xdesi(2,nodedesipos(node))+
      &                  dispvector(3)*xdesi(3,nodedesipos(node))
-               if(scalprod.le.0.d0) then
-                  dgdxglob(1,node,iobject)=-actmove
-               else
-                  dgdxglob(1,node,iobject)=actmove
-               endif
                if((objectset(1,iobject)(1:9).eq.'MAXGROWTH').and.
      &            (scalprod.ge.0d0)) then
+                  dgdxglob(1,node,iobject)=actmove
                   dgdxglob(2,node,iobject)=actmove-bound
                elseif((objectset(1,iobject)(1:9).eq.'MAXGROWTH').and.
      &            (scalprod.lt.0d0)) then
+                  dgdxglob(1,node,iobject)=-actmove
                   dgdxglob(2,node,iobject)=-actmove-bound
                elseif((objectset(1,iobject)(1:12).eq.'MAXSHRINKAGE')
      &            .and.(scalprod.le.0d0)) then
+                  dgdxglob(1,node,iobject)=-actmove
                   dgdxglob(2,node,iobject)=actmove-bound
                elseif((objectset(1,iobject)(1:12).eq.'MAXSHRINKAGE')
      &            .and.(scalprod.gt.0d0)) then
+                  dgdxglob(1,node,iobject)=actmove
                   dgdxglob(2,node,iobject)=-actmove-bound
                endif
 ! 
@@ -127,22 +126,21 @@
                 scalprod=dispvector(1)*xdesi(1,nodedesipos(node))+
      &                   dispvector(2)*xdesi(2,nodedesipos(node))+
      &                   dispvector(3)*xdesi(3,nodedesipos(node))
-                if(scalprod.le.0.d0) then
-                   dgdxglob(1,node,iobject)=-actmove
-                else
-                   dgdxglob(1,node,iobject)=actmove
-                endif
                 if((objectset(1,iobject)(1:9).eq.'MAXGROWTH').and.
      &             (scalprod.ge.0d0)) then
+                   dgdxglob(1,node,iobject)=actmove
                    dgdxglob(2,node,iobject)=actmove-bound
                 elseif((objectset(1,iobject)(1:9).eq.'MAXGROWTH').and.
      &             (scalprod.lt.0d0)) then
+                   dgdxglob(1,node,iobject)=-actmove
                    dgdxglob(2,node,iobject)=-actmove-bound
                 elseif((objectset(1,iobject)(1:12).eq.'MAXSHRINKAGE')
      &             .and.(scalprod.le.0d0)) then
+                   dgdxglob(1,node,iobject)=-actmove
                    dgdxglob(2,node,iobject)=actmove-bound
                 elseif((objectset(1,iobject)(1:12).eq.'MAXSHRINKAGE')
      &             .and.(scalprod.gt.0d0)) then
+                   dgdxglob(1,node,iobject)=actmove
                    dgdxglob(2,node,iobject)=-actmove-bound
                 endif
 ! 

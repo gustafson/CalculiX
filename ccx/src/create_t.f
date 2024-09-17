@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -17,44 +17,35 @@
 !     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 !
 !
-!     Generate local transformation matrix \f$ T_e^{quad} \f$  needed for quad-quad mortar method
-!    see phd-thesis Sitzmann equation (4.3)
-!    Author: Saskia Sitzmann
+!     Generate local transformation matrix
+!     see phd-thesis Sitzmann equation (4.3)
+!     Author: Saskia Sitzmann
 !
-!    [in]     ipkon       pointer into field kon
-!    [in]     kon         Field containing the connectivity of the elements in succesive order
-!    [in]     lakon       element label 
-!    [in]     islavsurf   islavsurf(1,i) slaveface i islavsurf(2,i) pointer into imastsurf and pmastsurf
 !    [out]    contr       field containing T_e contributions for current face
-!    [out]    icontr1     (i)  row  of contribution(i)
-!    [out]    icontr2     (i)  column of contribution(i)
+!    [out]    krow     (i)  row  of contribution(i)
+!    [out]    kcol     (i)  column of contribution(i)
 !    [out]    icounter    counter variable for contr
 !    [in]     lface	 current slave face
 !
-      subroutine createtele(ipkon,kon,lakon,islavsurf,
-     &     contr,icontr1,icontr2,icounter,lface)
+      subroutine create_t(ipkon,kon,lakon,islavsurf,
+     &     contr,krow,kcol,icounter,lface)
 !     
 !     Generate local transformation matrix T
 !     
-!     Author: Sitzmann,Saskia ;
+!     Author: Sitzmann,Saskia
 !     
       implicit none
-!     
-      logical debug
 !     
       character*8 lakon(*)
 !     
       integer ipkon(*),kon(*),konl(20),islavsurf(2,*),
-     &     lface,icounter,icontr1(*),icontr2(*),j,nope,
+     &     lface,icounter,krow(*),kcol(*),j,nope,
      &     ifaces,nelems,jfaces,m,nopes,
-     &     ifac,getlocno,lnode(2,8),modf,idummy
+     &     ifac,getlocno,nodes(8),modf,idummy
 !     
       real*8 contr(*),alpha
 !
-!
-!     
-      debug=.false.
-      alpha=1.0/5.0
+      alpha=1.d0/5.d0
       icounter=0
       ifaces=islavsurf(1,lface)
       nelems=int(ifaces/10)
@@ -69,77 +60,70 @@
 !       
       do m=1,nopes
          ifac=getlocno(m,jfaces,nope)
-         lnode(1,m)=konl(ifac)
+         nodes(m)=konl(ifac)
        enddo
 !       
       if(nopes.eq.8) then
          do j=1,4
             icounter=icounter+1
-            contr(icounter)=1.0
-            icontr1(icounter)=lnode(1,j)
-            icontr2(icounter)=lnode(1,j)
+            contr(icounter)=1.d0
+            krow(icounter)=nodes(j)
+            kcol(icounter)=nodes(j)
          enddo
          do j=5,8
             icounter=icounter+1
-            contr(icounter)=1.0-2*alpha
-            icontr1(icounter)=lnode(1,j)
-            icontr2(icounter)=lnode(1,j)
+            contr(icounter)=1.d0-2.d0*alpha
+            krow(icounter)=nodes(j)
+            kcol(icounter)=nodes(j)
          enddo
          do j=1,4
             icounter=icounter+1
             contr(icounter)=alpha
-            icontr1(icounter)=lnode(1,j+4)
-            icontr2(icounter)=lnode(1,j)
+            krow(icounter)=nodes(j+4)
+            kcol(icounter)=nodes(j)
             icounter=icounter+1
             contr(icounter)=alpha
-            icontr1(icounter)=lnode(1,modf(4,j-1)+4)
-            icontr2(icounter)=lnode(1,j)
+            krow(icounter)=nodes(modf(4,j-1)+4)
+            kcol(icounter)=nodes(j)
          enddo         
       elseif(nopes.eq.4) then
          do j=1,4
             icounter=icounter+1
-            contr(icounter)=1.0
-            icontr1(icounter)=lnode(1,j)
-            icontr2(icounter)=lnode(1,j)
+            contr(icounter)=1.d0
+            krow(icounter)=nodes(j)
+            kcol(icounter)=nodes(j)
          enddo                 
       elseif(nopes.eq.6) then
          do j=1,3
             icounter=icounter+1
-            contr(icounter)=1.0
-            icontr1(icounter)=lnode(1,j)
-            icontr2(icounter)=lnode(1,j)
+            contr(icounter)=1.d0
+            krow(icounter)=nodes(j)
+            kcol(icounter)=nodes(j)
          enddo
          do j=4,6
             icounter=icounter+1
-            contr(icounter)=1.0-2*alpha
-            icontr1(icounter)=lnode(1,j)
-            icontr2(icounter)=lnode(1,j)
+            contr(icounter)=1.d0-2.d0*alpha
+            krow(icounter)=nodes(j)
+            kcol(icounter)=nodes(j)
          enddo
          do j=1,3
             icounter=icounter+1
             contr(icounter)=alpha
-            icontr1(icounter)=lnode(1,j+3)
-            icontr2(icounter)=lnode(1,j)
+            krow(icounter)=nodes(j+3)
+            kcol(icounter)=nodes(j)
             icounter=icounter+1
             contr(icounter)=alpha
-            icontr1(icounter)=lnode(1,modf(3,j-1)+3)
-            icontr2(icounter)=lnode(1,j)
+            krow(icounter)=nodes(modf(3,j-1)+3)
+            kcol(icounter)=nodes(j)
          enddo
       else
          do j=1,3
             icounter=icounter+1
-            contr(icounter)=1.0
-            icontr1(icounter)=lnode(1,j)
-            icontr2(icounter)=lnode(1,j)
+            contr(icounter)=1.d0
+            krow(icounter)=nodes(j)
+            kcol(icounter)=nodes(j)
          enddo
       endif 
-!     
-      if(debug)then
-         write(*,*) 'createtele: contri,iscontr,imcontr',lface
-         do j=1, icounter
-            write(*,*)contr(j),icontr1(j),icontr2(j)
-         enddo             
-      endif
 !     
       return
       end

@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -139,31 +139,26 @@ c            enddo
 !
 !              face-to-face penalty contact (facial slave surface)
 !
-c               mortar=1
                nodeslavsurf=.false.
             elseif(slavset(ipos:ipos).eq.'M') then
 !
 !              quad-quad Mortar contact (facial slave surface)
 !
-c               mortar=2
                nodeslavsurf=.false.
             elseif(slavset(ipos:ipos).eq.'P') then
 !
 !              quad-lin Petrov Galerkin Mortar contact (facial slave surface)
 !
-c               mortar=4
                nodeslavsurf=.false.
             elseif(slavset(ipos:ipos).eq.'G') then
 !
 !              quad-quad Petrov Galerkin Mortar contact (facial slave surface)
 !
-c               mortar=5
                nodeslavsurf=.false.
             elseif(slavset(ipos:ipos).eq.'O') then
 !
 !              quad-lin Mortar contact (facial slave surface)
 !
-c               mortar=3
                nodeslavsurf=.false.
             else
 !
@@ -175,9 +170,6 @@ c               mortar=3
 !
 !           determining the slave surface
 !
-c            do j=1,nset
-c               if(set(j).eq.slavset) exit
-c            enddo
             call cident81(set,slavset,nset,id)
             j=nset+1
             if(id.gt.0) then
