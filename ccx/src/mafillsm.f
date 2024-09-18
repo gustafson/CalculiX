@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -33,7 +33,7 @@
      &     istartset,iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,
      &     mortar,clearini,ielprop,prop,ne0,fnext,nea,neb,kscale,
      &     iponoel,inoel,network,smscale,mscalmethod,set,nset,
-     &     islavelinv,autloc,irowtloc,jqtloc,mortartrafoflag)
+     &     islavquadel,aut,irowt,jqt,mortartrafoflag)
 !     
 !     filling the stiffness matrix in spare matrix format (sm)
 !     
@@ -60,9 +60,9 @@
      &     ntmat_,indexe,nope,norien,iexpl,i0,ncmat_,istep,iinc,
      &     nplicon(0:ntmat_,*),nplkcon(0:ntmat_,*),npmat_,mortar,
      &     nea,neb,kscale,iponoel(*),inoel(2,*),network,ndof,
-     &     nset,islavelinv(*),jqtloc(*),irowtloc(*),ii,jqtloc1(21),
-     &     irowtloc1(96),i1,j1,j2,konl(26),mortartrafoflag,ikmpc(*),
-     &     mscalmethod,kk,imat,istiff
+     &     nset,islavquadel(*),jqt(*),irowt(*),ii,jqte(21),
+     &     irowte(96),i1,j1,j2,konl(26),mortartrafoflag,ikmpc(*),
+     &     mscalmethod,kk,imat,istiff,length
 !     
       real*8 co(3,*),xboun(*),coefmpc(*),xforc(*),xload(2,*),p1(3),
      &     p2(3),ad(*),au(*),bodyf(3),fext(*),xloadold(2,*),reltime,
@@ -76,8 +76,8 @@
      &     plicon(0:2*npmat_,ntmat_,*),plkcon(0:2*npmat_,ntmat_,*),
      &     xstiff(27,mi(1),*),veold(0:mi(2),*),om,valu2,value,dtime,
      &     time,thicke(mi(3),*),doubleglob(*),clearini(3,9,*),ttime,
-     &     pslavsurf(3,*),pmastsurf(6,*),smscale(*),autloc(*),val,
-     &     autloc1(96)
+     &     pslavsurf(3,*),pmastsurf(6,*),smscale(*),aut(*),val,
+     &     aute(96)
 !     
       kflag=2
       i0=0
@@ -172,7 +172,7 @@ c     Bernhardi end
           endif
 !     
 c     mortar start
-          if(mortartrafoflag.eq.1) then
+          if(mortartrafoflag.gt.0) then
             do j=1,nope
               konl(j)=kon(indexe+j)
             enddo
@@ -223,36 +223,62 @@ c     mortar end
 !     
 !     mortar start
 !     
-!     generate local transformation matrix for current element
+!     calculating the transformation matrix for a quadratic element containing
+!     at least one slave node; this matrix transforms the regular 
+!     quadratic shape functions into purely positive ones for slave
+!     faces.    
 !     
-          if(mortartrafoflag.eq.1) then
-            if(islavelinv(i).gt.0) then
-              if((nope.eq.20).or.(nope.eq.10).or.(nope.eq.15)) then
-                jqtloc1(1)=1
+          if(mortartrafoflag.gt.0) then
+            if(islavquadel(i).gt.0) then
+                jqte(1)=1
                 ii=1
                 do i1=1,nope
                   node1=konl(i1)
-                  do j1=jqtloc(node1),jqtloc(node1+1)-1
-                    node2=irowtloc(j1)
-                    do j2=1,nope
-                      if(konl(j2).eq.node2) then
-                        autloc1(ii)=autloc(j1)
-                        irowtloc1(ii)=j2
+                  length=jqt(node1+1)-jqt(node1)
+                  do j2=1,nope
+                    node2=konl(j2)
+                    call nident(irowt(jqt(node1)),node2,length,id)
+                    if(id.gt.0) then
+                      j1=jqt(node1)+id-1
+                      if(irowt(j1).eq.node2) then
+                        aute(ii)=aut(j1)
+                        irowte(ii)=j2
                         ii=ii+1
                       endif
-                    enddo
+                    endif
                   enddo
-                  jqtloc1(i1+1)=ii
+                  jqte(i1+1)=ii
                 enddo
-              else
-                jqtloc1(1)=1
-                ii=1
-                do i1=1,nope
-                  jqtloc1(i1+1)=ii
-                enddo
-              endif
             endif
           endif
+c          if(mortartrafoflag.gt.0) then
+c            if(islavquadel(i).gt.0) then
+c              if((nope.eq.20).or.(nope.eq.10).or.(nope.eq.15)) then
+c                jqte(1)=1
+c                ii=1
+c                do i1=1,nope
+c                  node1=konl(i1)
+c                  do j1=jqt(node1),jqt(node1+1)-1
+c                    node2=irowt(j1)
+c                    do j2=1,nope
+c                      if(konl(j2).eq.node2) then
+c                        aute(ii)=aut(j1)
+c                        irowte(ii)=j2
+c                        ii=ii+1
+c                      endif
+c                    enddo
+c                  enddo
+c                  jqte(i1+1)=ii
+c                enddo
+c              else
+c                jqte(1)=1
+c                ii=1
+c                do i1=1,nope
+c                  jqte(i1+1)=ii
+c                enddo
+c              endif
+c            endif
+c          endif
 !     
 !     mortar end
 !     
@@ -270,7 +296,7 @@ c     mortar end
      &           integerglob,doubleglob,tieset,istartset,
      &           iendset,ialset,ntie,nasym,pslavsurf,pmastsurf,mortar,
      &           clearini,ielprop,prop,kscale,smscale(i),mscalmethod,
-     &           set,nset,islavelinv,autloc1,irowtloc1,jqtloc1,
+     &           set,nset,islavquadel,aute,irowte,jqte,
      &           mortartrafoflag)
           else
             call e_c3d_u(co,kon,lakon(i),p1,p2,om,bodyf,nbody,s,sm,ff,i,
@@ -331,7 +357,7 @@ c              write(*,*) 'mafillsm ',node1,k,node2,m,jj,ll
  2              close(20)
               endif
             endif
-            return
+            cycle
           endif
 !     
           do jj=1,ndof*nope

@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -100,7 +100,7 @@
       if(mode.eq.'F') then
 !
         v(3,nup)=hk
-        hup=v(2,nup)/sqrts0
+        hup=v(2,nup)
 !     
 !     calculate the normal depth
 !     
@@ -138,8 +138,7 @@
 !
 !             first calculate the backwater curve starting in nup
 !
-c              v(2,nup)=(hk+epsilon)*sqrts0
-              v(2,nup)=(hk)*sqrts0
+              v(2,nup)=(hk)
               ndo=nup
               nelem=nelup
               mode='B'
@@ -201,7 +200,7 @@ c              v(2,nup)=(hk+epsilon)*sqrts0
 !           initialization jumpdo(nel)
 !     
             jumpdo(nel)=ndata+1
-            v(2,ndo)=hfr(k)*sqrts0
+            v(2,ndo)=hfr(k)
             exit
           endif
         enddo
@@ -234,7 +233,7 @@ c              v(2,nup)=(hk+epsilon)*sqrts0
 !     mode='B'
 !     
         v(3,ndo)=hk
-        hdo=v(2,ndo)/sqrts0
+        hdo=v(2,ndo)
         if(hdo.lt.hk+epsilon) hdo=hk+epsilon
 !     
 !     calculate the normal depth
@@ -337,7 +336,7 @@ c              write(*,*) 'B jump ',s,h1,h2,hback
 !
         if(.not.jump) then
           jumpup(nel)=0
-          v(2,nup)=hba(jumpdo(nel))*sqrts0
+          v(2,nup)=hba(jumpdo(nel))
           ndo=nup
           neldo=nelem
           nelem=0

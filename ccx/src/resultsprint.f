@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -395,6 +395,9 @@
         ndim=0
         iorienloc=0
         cflag=filab(1)(5:5)
+        do i=1,nk
+          inum(i)=0
+        enddo
         call createinum(ipkon,inum,kon,lakon,nk,ne,cflag,nelemload,
      &       nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat,
      &       ielprop,prop)

@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2023 Guido Dhondt                          */
+/*              Copyright (C) 1998-2024 Guido Dhondt                          */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include "CalculiX.h"
 #ifdef SPOOLES
 #include "spooles.h"
@@ -89,8 +90,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 
   char description[13]="            ",*lakon=NULL,jobnamef[396]="",
     *labmpc=NULL,kind1[2]="E",kind2[2]="E",*set=NULL,*tieset=NULL,
-    cflag[1]=" ",*sideloadref=NULL,*sideload=NULL,*env,*envsys,
-    *labmpc2=NULL; 
+    cflag[1]=" ",*sideloadref=NULL,*sideload=NULL,*env,*envsys; 
  
   ITG *inum=NULL,k,iout=0,icntrl,iinc=0,jprint=0,iit=-1,jnz=0,
     icutb=0,istab=0,ifreebody,uncoupled=0,maxfaces,indexe,nope,
@@ -118,9 +118,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
     *iponoel=NULL,*inoel=NULL,inoelsize,nrhs=1,neqfreq,nzsfreq,
     *irowfreq=NULL,*icolfreq=NULL,*jqfreq=NULL,*jq=NULL,
     *itiefac=NULL,mscalmethod=0,nkon0,*nintpoint=0,num_cpus,sys_cpus,
-    *islavelinv=NULL,*irowtloc=NULL,*jqtloc=NULL,nboun2,
-    *ndirboun2=NULL,*nodeboun2=NULL,nmpc2,*ipompc2=NULL,*nodempc2=NULL,
-    *ikboun2=NULL,*ilboun2=NULL,*ikmpc2=NULL,*ilmpc2=NULL,mortartrafoflag=0;
+    *islavquadel=NULL,*irowt=NULL,*jqt=NULL,mortartrafoflag=0;
 
   double *stn=NULL,*v=NULL,*een=NULL,cam[5],*epn=NULL,*cdn=NULL,
     *f=NULL,*fn=NULL,qa[4]={0.,0.,-1.,0.},qam[2]={0.,0.},dtheta,theta,
@@ -145,8 +143,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
     *emeini=NULL,*doubleglob=NULL,*au=NULL,
     *ad=NULL,*b=NULL,*aub=NULL,*adb=NULL,*pslavsurf=NULL,*pmastsurf=NULL,
     *cdnr=NULL,*cdni=NULL,*energyini=NULL,*energy=NULL,*adfreq=NULL,
-    *aufreq=NULL,*bfreq=NULL,om,*smscale=NULL,*autloc=NULL,*xboun2=NULL,
-    *coefmpc2=NULL;
+    *aufreq=NULL,*bfreq=NULL,om,*smscale=NULL,*aut=NULL;
 
 #ifdef SGI
   ITG token;
@@ -504,9 +501,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
           inoel,nener,orname,network,ipobody,xbodyact,ibody,typeboun,
 	  itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	  islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	  ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	  labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	  islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	  &intscheme,physcon);
   
   SFREE(fn);SFREE(inum);SFREE(v);
@@ -533,7 +528,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 	       tieset,istartset,iendset,ialset,ntie,&nasym,pslavsurf,
 	       pmastsurf,&mortar,clearini,ielprop,prop,&ne0,fnext,&kscale,
 	       iponoel,inoel,network,ntrans,inotr,trab,smscale,&mscalmethod,
-	       set,nset,islavelinv,autloc,irowtloc,jqtloc,&mortartrafoflag);
+	       set,nset,islavquadel,aut,irowt,jqt,&mortartrafoflag);
   
   if(nmethodact==0){
       
@@ -634,9 +629,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
 	  islavsurf,ielprop,prop,energyini,energy,&kscale,iponoel,
           inoel,nener,orname,network,ipobody,xbodyact,ibody,typeboun,
 	  itiefac,tieset,smscale,&mscalmethod,nbody,t0g,t1g,
-	  islavelinv,autloc,irowtloc,jqtloc,&nboun2,
-	  ndirboun2,nodeboun2,xboun2,&nmpc2,ipompc2,nodempc2,coefmpc2,
-	  labmpc2,ikboun2,ilboun2,ikmpc2,ilmpc2,&mortartrafoflag,
+	  islavquadel,aut,irowt,jqt,&mortartrafoflag,
 	  &intscheme,physcon);
   
   //  memcpy(&vold[0],&v[0],sizeof(double)*mt**nk);
@@ -673,6 +666,7 @@ void electromagnetics(double **cop,ITG *nk,ITG **konp,ITG **ipkonp,
   /* createinum is called in order to store the nodes and elements
      of the complete structure, not only of the coil */
 
+  ITGMEMSET(inum,0,*nk,0);
   FORTRAN(createinum,(ipkon,inum,kon,lakon,nk,ne,&cflag[0],nelemload,
 		      nload,nodeboun,nboun,ndirboun,ithermal,co,vold,mi,ielmat,
                       ielprop,prop));

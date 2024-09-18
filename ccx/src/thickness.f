@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -61,7 +61,7 @@
         deltay=yo(irefnode)-ydesi
         deltaz=zo(irefnode)-zdesi
 !
-!       check if node lies in negativ normal direction w.r.t. the
+!       check if node lies in negative normal direction w.r.t. the
 !       design variable
 !       --> simplified check that node lies on other side of the volume
 !

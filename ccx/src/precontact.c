@@ -1,5 +1,5 @@
 /*     CalculiX - A 3-dimensional finite element program                 */
-/*              Copyright (C) 1998-2023 Guido Dhondt                     */
+/*              Copyright (C) 1998-2024 Guido Dhondt                     */
 
 /*     This program is free software; you can redistribute it and/or     */
 /*     modify it under the terms of the GNU General Public License as    */
@@ -28,7 +28,7 @@ void precontact(ITG *ncont, ITG *ntie, char *tieset, ITG *nset, char *set,
         ITG *istep,ITG *iinc,ITG *iit,ITG *itiefac,
         ITG *islavsurf, ITG *islavnode, ITG *imastnode,
         ITG *nslavnode, ITG *nmastnode,ITG *imastop,ITG *mi,
-	ITG *ipe, ITG *ime,double *tietol,ITG *iflagact,
+	ITG *ipe, ITG *ime,double *tietol,
 	ITG *nintpoint,double **pslavsurfp,double *xmastnor,double *cs,
 	ITG *mcs,ITG *ics,double *clearini,ITG *nslavs){
 

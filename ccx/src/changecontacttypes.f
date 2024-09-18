@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -79,12 +79,6 @@
         write(*,*) '      SURFACE TO SURFACE'
       elseif(mortar.eq.2) then
         write(*,*) '      MORTAR'
-      elseif(mortar.eq.3) then
-        write(*,*) '      LINMORTAR'
-      elseif(mortar.eq.4) then
-        write(*,*) '      PGLINMORTAR'
-      elseif(mortar.eq.5) then
-        write(*,*) '      PGMORTAR'
       endif
       write(*,*)
 !     

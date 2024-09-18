@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -20,12 +20,6 @@
 !     it links an active slave degree of freedom to the 
 !     corresponding slave node position in field islavnode and the
 !     global (x-y-z) degree of freedom
-!
-!  [in] nslavnode  	(i) for contraint i pointer into field islavnode
-!  [in] nmastnode	(i)pointer into field imastnode for contact tie i 
-!  [in] imastnode	field storing the nodes of the master surfaces
-!  [out] islavactdof     (i)=10*slavenodenumber+direction for active dof i
-!  [in] islavnode	field storing the nodes of the slave surface
 !
       subroutine genislavactdof(ntie,tieset,nactdof,nslavnode,
      &     nmastnode,imastnode,islavactdof,islavnode,mi,

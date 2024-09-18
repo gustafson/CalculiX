@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -24,36 +24,11 @@
 !     
 !     Author:Saskia Sitzmann
 !     
-!     [in] ict               current tie
-!     [in] l                 current slave face
-!     [in] gapmints		(i) gap between slave surface and master surface in integration point i
-!     [in] islavsurf         islavsurf(1,i) slaveface i islavsurf(2,i) pointer into imastsurf and pmastsurf
-!     [in] imastsurf         index of masterface corresponding to integration point i
-!     [in] pmastsurf         field storing position xil, etal and weight for integration point on master side
-!     [out] contr            field containing B_d contributions for current face
-!     [out] iscontr          (i) slave node  of contribution(i)
-!     [out] imcontr          (i) master node of contribution(i)
-!     [out] dcontr            field containing D_d contributions for current face
-!     [out] idcontr1          (i) slave node of contribution(i)
-!     [out] idcontr2          (i) master node of contribution(i)
-!     [out] gcontr            field containing gap contributions for current face
-!     [out] igcontr          (i) nodesf of contribution(i)
-!     [in] pslavsurf         field storing position xil, etal and weight for integration point on slave side
-!     [in] pslavdual         (:,i)coefficients \f$ \alpha_{ij}\f$, \f$ 1,j=1,..8\f$ for dual shape functions for face i
-!     [in] nslavnode	(i)pointer into field isalvnode for contact tie i
-!     [in] islavnode	field storing the nodes of the slave surface
-!     [in] nmastnode	(i)pointer into field imastnode for contact tie i
-!     [in] imastnode	field storing the nodes of the master surfaces
-!     [out] icounter	counter variable for contr
-!     [out] icounter2      	counter variable for dcontr
-!     [in] islavact		(i) indicates, if slave node i is active (=-3 no-slave-node, =-2 no-LM-node, =-1 no-gap-node, =0 inactive node, =1 sticky node, =2 slipping/active node) 
-!     [in]  iflagdualquad   flag indicating what mortar contact is used (=1 quad-lin, =2 quad-quad, =3 PG quad-lin, =4 PG quad-quad)
-!     
       subroutine createbd(ict,l,ipkon,kon,lakon,co, vold, gapmints,
      &     islavsurf,imastsurf,pmastsurf,contr,iscontr,imcontr,
      &     dcontr,idcontr1,idcontr2,gcontr,igcontr,mi,
      &     pslavsurf,pslavdual,nslavnode,islavnode,nmastnode,imastnode,
-     &     icounter,icounter2,islavact,iflagdualquad)
+     &     icounter,icounter2,islavact)
 !     
       implicit none
 !     
@@ -69,7 +44,7 @@
      &     ifs,ifm,nope1,nope2, iscontr(*),imcontr(*),getlocno,
      &     jfacem,nelemenm,icounter,idummy,ifac,idcontr1(*),idcontr2(*),
      &     igcontr(*),icounter2,nslavnode(*),islavnode(*),ict,id,
-     &     nmastnode(*),imastnode(*),islavact(*),iflagdualquad
+     &     nmastnode(*),imastnode(*),islavact(*)
 !     
       real*8 pmastsurf(2,*),co(3,*),gapmints(*),
      &     vold(0:mi(2),*),weight,dx,help,
@@ -154,47 +129,27 @@
           ns=l
           iflag = 2
           if(nopes1.eq.8) then
-            if(iflagdualquad.eq.2 .or. iflagdualquad.eq.4)then
-              call dualshape8qtilde(xis,ets,xl2s,xsj2s,xs2s,shp2s,
-     &             ns,pslavdual,iflag)
-            else
-              call dualshape8qtilde_lin(xis,ets,xl2s,xsj2s,xs2s,
-     &             shp2s,ns,pslavdual,iflag)
-            endif
+            call dualshape8qtilde(xis,ets,xl2s,xsj2s,xs2s,shp2s,
+     &           ns,pslavdual,iflag)
           elseif(nopes1.eq.4) then
             call dualshape4q(xis,ets,xl2s,xsj2s,xs2s,shp2s,ns,
      &           pslavdual,iflag)
           elseif(nopes1.eq.6) then
-            if(iflagdualquad.eq.2 .or. iflagdualquad.eq.4)then
-              call dualshape6tritilde(xis,ets,xl2s,xsj2s,xs2s,shp2s,
-     &             ns,pslavdual,iflag)
-            else
-              call dualshape6tritilde_lin(xis,ets,xl2s,xsj2s,xs2s,
-     &             shp2s,ns,pslavdual,iflag)       
-            endif
+            call dualshape6tritilde(xis,ets,xl2s,xsj2s,xs2s,shp2s,
+     &           ns,pslavdual,iflag)
           else
             call dualshape3tri(xis,ets,xl2s,xsj2s,xs2s,shp2s,ns,
      &           pslavdual,iflag)
           endif
           if(nopes1.eq.8) then
-            if(iflagdualquad.eq.2 .or. iflagdualquad.eq.4)then
-              call shape8qtilde(xis,ets,xl2s,xsj2s2,xs2s2,
-     &             shp2s2,iflag)
-            else
-              call shape8qtilde_lin(xis,ets,xl2s,xsj2s2,xs2s2,
-     &             shp2s2,iflag)
-            endif
+            call shape8qtilde(xis,ets,xl2s,xsj2s2,xs2s2,
+     &           shp2s2,iflag)
           elseif(nopes1.eq.4) then
             call shape4q(xis,ets,xl2s,xsj2s2,xs2s2,
      &           shp2s2,iflag)
           elseif(nopes1.eq.6) then
-            if(iflagdualquad.eq.2 .or. iflagdualquad.eq.4)then
-              call shape6tritilde(xis,ets,xl2s,xsj2s2,xs2s2,
-     &             shp2s2,iflag)
-            else
-              call shape6tritilde_lin(xis,ets,xl2s,xsj2s2,xs2s2,
-     &             shp2s2,iflag)
-            endif
+            call shape6tritilde(xis,ets,xl2s,xsj2s2,xs2s2,
+     &           shp2s2,iflag)
           else
             call shape3tri(xis,ets,xl2s,xsj2s2,xs2s2,
      &           shp2s2,iflag)

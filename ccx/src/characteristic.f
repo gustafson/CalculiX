@@ -1,6 +1,6 @@
 !     
 !     CalculiX - A 3-dimensional finite element program
-!     Copyright (C) 1998-2023 Guido Dhondt
+!     Copyright (C) 1998-2024 Guido Dhondt
 !     
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@
 !     massflow*dsqrt(T1)/Pt1=f((Pt1-Pt2)/Pt1) and T1=T2
 !     characteristics the subroutine proceeds using 
 !     linear interpolation to estimate the values for the whole characteristic
-!     note that the characteristic is implicitely containing the point (0,0)
+!     note that the characteristic is implicitly containing the point (0,0)
 !
 !     author: Yannick Muller
 !     

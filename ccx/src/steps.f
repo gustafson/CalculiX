@@ -1,6 +1,6 @@
 !
 !     CalculiX - A 3-dimensional finite element program
-!              Copyright (C) 1998-2023 Guido Dhondt
+!              Copyright (C) 1998-2024 Guido Dhondt
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -145,7 +145,8 @@
 !           removing the present loading (check!!)
 !
             nforc=0
-            iprestr=0
+c   change on 26012024            
+c            iprestr=0
             if((ithermal(1).eq.1).or.(ithermal(1).eq.3)) then
                do j=1,nk
                   t1(j)=t0(j)
