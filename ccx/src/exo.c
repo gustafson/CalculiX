@@ -21,6 +21,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <locale.h>
 #include "CalculiX.h"
 #ifdef EXODUSII
 #include "exodusII.h"
@@ -49,7 +50,9 @@ void exo(double *co,ITG *nk,ITG *kon,ITG *ipkon,char *lakon,ITG *ne0,
 
 #ifdef EXODUSII
   /* stores the results in exo format
-
+  
+     setlocale(LC_NUMERIC, "C");
+     
      iselect selects which nodes are to be stored:
      iselect=-1 means only those nodes for which inum negative
      ist, i.e. network nodes
