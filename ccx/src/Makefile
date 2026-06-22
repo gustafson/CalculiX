@@ -22,8 +22,8 @@
 ################################################################################
 ################################################################################
 
-CC=/usr/x86_64-pc-linux-gnu/gcc-bin/13/gcc
-FC=/usr/x86_64-pc-linux-gnu/gcc-bin/13/gfortran
+CC=mpicc
+FC=gfortran
 
 ALLFLAGS = -march=native -g -O0 ## debugging -pg
 ALLFLAGS = -march=native -O2    ## conservative
@@ -66,8 +66,8 @@ CFLAGS += -DNETWORKOUT
 ## SPOOLES
 ## CFLAGS  += -I/usr/include/spooles -I/usr/include/spooles/MT -DSPOOLES
 ## LDFLAGS += -lspooles -lpthread
-CFLAGS  += `pkg-config --cflags spooles` -DSPOOLES
-LDFLAGS += `pkg-config --libs spooles`
+CFLAGS  += -I/mnt/home/k0142674/github/CalculiX/deps/spooles -DSPOOLES
+LDFLAGS += /mnt/home/k0142674/github/CalculiX/deps/spooles/spooles.a -lpthread
 
 ## ARPACK
 ## CFLAGS  += -DARPACK
@@ -82,14 +82,14 @@ LDFLAGS += `pkg-config --libs arpack$(INTEXT)`
 ## LAPACK
 ## CFLAGS  += -I/usr/include/openblas
 ## LDFLAGS += -lreflapack -lopenblas
-CFLAGS  += `pkg-config --cflags lapack$(INTEXT)`
-LDFLAGS += `pkg-config --libs lapack$(INTEXT)`
+#CFLAGS  += `pkg-config --cflags lapack$(INTEXT)`
+#LDFLAGS += `pkg-config --libs lapack$(INTEXT)`
 
 ## BLAS
 ## CFLAGS  += -I/usr/include/openblas
 ## LDFLAGS += -lopenblas
-CFLAGS  += `pkg-config --cflags blas$(INTEXT)`
-LDFLAGS += `pkg-config --libs blas$(INTEXT)`
+#CFLAGS  += `pkg-config --cflags openblas$(INTEXT)`
+#LDFLAGS += `pkg-config --libs openblas$(INTEXT)`
 
 ## Assuming MKL pardiso since pardiso not generally distributed anymore
 ## https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl-link-line-advisor.html
@@ -155,8 +155,8 @@ LDFLAGS += -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_gnu_t
 ## EXODUSII
 ## CFLAGS  += -DEXODUSII
 ## LDFLAGS += -lexoIIv2c -lnetcdf
-CFLAGS  += `pkg-config --cflags exodusii` -DEXODUSII
-LDFLAGS += `pkg-config --libs exodusii`
+CFLAGS  += -I/mnt/home/k0142674/github/CalculiX/deps/exodus/include `pkg-config --cflags netcdf` -DEXODUSII
+LDFLAGS += -L/mnt/home/k0142674/github/CalculiX/deps/exodus/lib -lexodus -lexodus_for `pkg-config --libs netcdf`
 
 
 
@@ -197,7 +197,7 @@ ccx_2.22: $(OCCXMAIN) ccx_2.22.a
 	$(CC) $(CFLAGS) -c ccx_2.22.c $(LDFLAGS); $(FC) -Wall $(FFLAGS) -o $@ $(OCCXMAIN) ccx_2.22.a $(LDFLAGS)
 
 ccx_2.22.a: $(OCCXF) $(OCCXC)
-	ar vr $@ $?
+	gcc-ar vr $@ $?
 
 clean:
 	rm *.a *.o
